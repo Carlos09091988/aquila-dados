@@ -44,7 +44,7 @@ def raiox():
     if i < 0 or j < 0 or j < i: raise SystemExit('Âncoras do Raio-X não encontradas')
     s = s[:i] + ler('raiox-dados.js') + s[j:]
     raw = raw.replace(b, enc(s))
-    post('pages/2127', {'content': raw}); print('Raio-X atualizado')
+    post('pages/2127', {'content': raw}); print('::notice::Raio-X atualizado')
 
 
 def cut(raw, a, z, rep):
@@ -67,7 +67,7 @@ def banco():
     raw = raw.replace('Encontrou indícios de ligação entre licitantes?', 'Proposta desclassificada por preço ou edital com preço fora da realidade?')
     body = {'title': 'Banco de preços: preços praticados em compras públicas', 'slug': 'banco-de-precos', 'status': 'publish', 'template': 'elementor_canvas', 'featured_media': 2206, 'content': raw,
             'excerpt': 'Pesquise materiais e serviços e veja os preços praticados nas compras públicas: mediana, média, menor e maior valor, com órgão, fornecedor e data.'}
-    pg = post('pages/%d' % ja[0]['id'] if ja else 'pages', body); print('Banco de preços:', pg.get('link'))
+    pg = post('pages/%d' % ja[0]['id'] if ja else 'pages', body); print('::notice::Banco de preços: ' + str(pg.get('link')))
     f = get(2057); fr = f['content']['raw']
     if '/banco-de-precos/' not in fr:
         i = fr.find('<a class="tool" href="/comparador-de-licitantes/">'); j = fr.find('</a>', i) + 4
@@ -90,10 +90,17 @@ def banco():
 
 def teste():
     r = requests.get(f'{SITE}/wp-json/wp/v2/users/me', auth=AUTH, headers=H, timeout=30)
-    print('Acesso ao WordPress:', r.status_code, r.json().get('name') if r.ok else r.text[:200])
+    msg = f'Acesso ao WordPress: {r.status_code} ' + (str(r.json().get('name')) if r.ok else r.text[:300].replace(chr(10), ' '))
+    print(('::notice::' if r.ok else '::error::') + msg)
     if not r.ok: raise SystemExit(1)
 
 
 if __name__ == '__main__':
     etapas = sys.argv[1:] or ['teste', 'raiox', 'banco']
-    for e in etapas: globals()[e]()
+    for e in etapas:
+        try:
+            globals()[e](); print(f'::notice::Etapa {e} concluída')
+        except SystemExit as x:
+            print(f'::error::Etapa {e}: {x}'); raise
+        except Exception as x:
+            print(f'::error::Etapa {e}: {type(x).__name__}: {str(x)[:300]}'); raise

@@ -20,7 +20,7 @@ jobs:
       - name: Liberar espaço em disco
         run: |
           sudo rm -rf /usr/share/dotnet /usr/local/lib/android /opt/ghc /opt/hostedtoolcache/CodeQL
-          df -h /
+          df -h / /mnt
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
         with:

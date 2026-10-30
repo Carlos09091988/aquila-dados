@@ -1,0 +1,47 @@
+name: Atualizar dados do Raio-X
+
+on:
+  schedule:
+    - cron: '17 6 12 * *'   # todo dia 12, 03:17 em Brasília
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: dados
+  cancel-in-progress: false
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    timeout-minutes: 300
+    steps:
+      - name: Liberar espaço em disco
+        run: |
+          sudo rm -rf /usr/share/dotnet /usr/local/lib/android /opt/ghc /opt/hostedtoolcache/CodeQL
+          df -h /
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Dependências
+        run: pip install duckdb==1.2.2 requests==2.32.3
+      - name: Gerar índice (PGFN e Receita Federal)
+        env:
+          WORK: /mnt/work
+          OUT: site
+        run: |
+          sudo mkdir -p /mnt/work && sudo chown $USER /mnt/work
+          python build.py
+          du -sh site site/*
+      - name: Publicar no GitHub Pages
+        uses: peaceiris/actions-gh-pages@v4
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          publish_dir: ./site
+          publish_branch: gh-pages
+          force_orphan: true
+          user_name: robo-aquila
+          user_email: robo@aquilaadvocacia.com.br
+          commit_message: Atualização dos dados abertos

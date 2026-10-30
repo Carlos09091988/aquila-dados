@@ -1,0 +1,237 @@
+#!/usr/bin/env python3
+"""Robô de dados abertos do Raio-X do fornecedor (Aquila Advocacia).
+
+Baixa as bases públicas da PGFN (dívida ativa da União e do FGTS) e da Receita
+Federal (quadro de sócios e empresas) e gera um índice enxuto, dividido em
+arquivos pequenos (gzip), publicado no GitHub Pages e consultado pelo site.
+
+Saída (pasta site/):
+  pgfn/<3 primeiros dígitos do CNPJ>.json.gz  -> {cnpj: [total, prev, naoprev, fgts, em_cobranca, qtd, ajuizadas, tipos]}
+  socios/<3 primeiros hex do sha256(chave)>.json.gz -> {chave: [[cnpj_basico, razao, qualificacao, data_entrada], ...]}
+  meta.json -> datas de referência
+"""
+import datetime as dt
+import glob
+import gzip
+import hashlib
+import json
+import os
+import re
+import shutil
+import sys
+import unicodedata
+import zipfile
+import xml.etree.ElementTree as ET
+
+import duckdb
+import requests
+
+UA = {'User-Agent': 'Mozilla/5.0 (compatible; AquilaRaioX/1.0; +https://aquilaadvocacia.com.br)'}
+WORK = os.environ.get('WORK', 'work')
+OUT = os.environ.get('OUT', 'site')
+LIMITE = int(os.environ.get('LIMITE_ARQUIVOS', '0'))  # 0 = todos (usado só em teste)
+RF_SHARE = 'gn672Ad4CF8N6TK'
+RF_DAV = 'https://arquivos.receitafederal.gov.br/public.php/webdav/Dados/Cadastros/CNPJ/'
+
+
+def log(*a):
+    print(dt.datetime.now().strftime('%H:%M:%S'), *a, flush=True)
+
+
+def norm(s):
+    s = unicodedata.normalize('NFKD', str(s or '')).encode('ascii', 'ignore').decode()
+    return re.sub(r'\s+', ' ', s.upper()).strip()
+
+
+def chave(nome, doc):
+    return norm(nome) + '|' + re.sub(r'\D', '', str(doc or ''))
+
+
+def baixar(url, destino, auth=None):
+    if os.path.exists(destino) and os.path.getsize(destino) > 0:
+        return destino
+    for t in range(4):
+        try:
+            with requests.get(url, stream=True, timeout=120, headers=UA, auth=auth) as r:
+                r.raise_for_status()
+                with open(destino + '.part', 'wb') as f:
+                    for ch in r.iter_content(1 << 20):
+                        f.write(ch)
+            os.replace(destino + '.part', destino)
+            log('baixado', os.path.basename(destino), os.path.getsize(destino) // (1 << 20), 'MB')
+            return destino
+        except Exception as e:
+            log('falha', url, e, 'tentativa', t + 1)
+    raise SystemExit('Não foi possível baixar ' + url)
+
+
+def extrair(zips, pasta):
+    os.makedirs(pasta, exist_ok=True)
+    for z in zips:
+        with zipfile.ZipFile(z) as zf:
+            zf.extractall(pasta)
+    return [p for p in glob.glob(os.path.join(pasta, '**', '*'), recursive=True) if os.path.isfile(p)]
+
+
+def gravar_shards(rows, pasta, prefixo):
+    """rows: iterável de (chave_do_shard, chave, valor) já ordenado pela chave do shard."""
+    os.makedirs(pasta, exist_ok=True)
+    atual, buf, n = None, {}, 0
+
+    def flush():
+        if atual is not None:
+            with gzip.open(os.path.join(pasta, atual + '.json.gz'), 'wt', encoding='utf-8') as f:
+                json.dump(buf, f, ensure_ascii=False, separators=(',', ':'))
+
+    for sh, k, v in rows:
+        if sh != atual:
+            flush(); atual, buf = sh, {}
+        buf[k] = v; n += 1
+    flush()
+    log(prefixo, n, 'registros gravados')
+    return n
+
+
+# ---------------- PGFN ----------------
+PGFN_ARQS = {'prev': 'Dados_abertos_Previdenciario.zip', 'naoprev': 'Dados_abertos_Nao_Previdenciario.zip', 'fgts': 'Dados_abertos_FGTS.zip'}
+
+
+def pgfn_trimestre():
+    hoje = dt.date.today()
+    for ano in range(hoje.year, hoje.year - 3, -1):
+        for tri in (4, 3, 2, 1):
+            base = f'https://dadosabertos.pgfn.gov.br/{ano}_trimestre_{tri:02d}/'
+            try:
+                r = requests.head(base + PGFN_ARQS['naoprev'], timeout=30, headers=UA, allow_redirects=True)
+                if r.status_code == 200:
+                    return base, f'{tri}º trimestre de {ano}'
+            except Exception:
+                pass
+    raise SystemExit('Trimestre da PGFN não encontrado')
+
+
+def pgfn(con):
+    base, ref = pgfn_trimestre()
+    log('PGFN', base)
+    primeiro = True
+    for nat, arq in PGFN_ARQS.items():
+        z = baixar(base + arq, os.path.join(WORK, 'pgfn_' + arq))
+        pasta = os.path.join(WORK, 'pgfn_' + nat)
+        fs = [f for f in extrair([z], pasta) if f.lower().endswith('.csv')]
+        os.remove(z)
+        if LIMITE: fs = fs[:LIMITE]
+        log(nat, len(fs), 'arquivos CSV')
+        lista = '[' + ','.join("'" + f.replace("'", "''") + "'" for f in fs) + ']'
+        q = f"""SELECT '{nat}' AS nat, CPF_CNPJ, TIPO_PESSOA, TIPO_DEVEDOR, TIPO_SITUACAO_INSCRICAO, INDICADOR_AJUIZADO, VALOR_CONSOLIDADO
+          FROM read_csv({lista}, delim=';', header=true, all_varchar=true, encoding='latin-1', union_by_name=true, ignore_errors=true, quote='"')
+          WHERE upper(TIPO_PESSOA) LIKE '%JUR%'"""
+        con.execute(('CREATE TABLE pg AS ' if primeiro else 'INSERT INTO pg ') + q)
+        primeiro = False
+        shutil.rmtree(pasta, ignore_errors=True)
+    con.execute(r"""CREATE TABLE pga AS
+      SELECT regexp_replace(CPF_CNPJ, '\D', '', 'g') AS cnpj,
+        sum(v) AS total, sum(v) FILTER (WHERE nat='prev') AS prev, sum(v) FILTER (WHERE nat='naoprev') AS naoprev,
+        sum(v) FILTER (WHERE nat='fgts') AS fgts,
+        sum(v) FILTER (WHERE upper(TIPO_SITUACAO_INSCRICAO) LIKE '%COBRAN%') AS cobranca,
+        count(*) AS qtd, count(*) FILTER (WHERE upper(INDICADOR_AJUIZADO) LIKE 'S%') AS ajuiz,
+        string_agg(DISTINCT upper(TIPO_DEVEDOR), ',') AS tipos
+      FROM (SELECT *, coalesce(try_cast(CASE WHEN VALOR_CONSOLIDADO LIKE '%,%' THEN replace(replace(VALOR_CONSOLIDADO, '.', ''), ',', '.') ELSE VALOR_CONSOLIDADO END AS DOUBLE), 0) AS v FROM pg
+            WHERE upper(TIPO_PESSOA) LIKE '%JUR%')
+      GROUP BY 1 HAVING length(cnpj) = 14""")
+    con.execute('DROP TABLE pg')
+    cur = con.execute('SELECT substr(cnpj,1,3), cnpj, round(total,2), round(coalesce(prev,0),2), round(coalesce(naoprev,0),2), round(coalesce(fgts,0),2), round(coalesce(cobranca,0),2), qtd, ajuiz, tipos FROM pga ORDER BY cnpj')
+
+    def it():
+        while True:
+            lote = cur.fetchmany(50000)
+            if not lote: break
+            for r in lote:
+                yield r[0], r[1], [r[2], r[3], r[4], r[5], r[6], r[7], r[8], r[9] or '']
+    n = gravar_shards(it(), os.path.join(OUT, 'pgfn'), 'PGFN')
+    return {'referencia': ref, 'fonte': base, 'empresas': n}
+
+
+# ---------------- Receita: sócios ----------------
+def rf_mes():
+    body = '<?xml version="1.0"?><d:propfind xmlns:d="DAV:"><d:prop><d:displayname/></d:prop></d:propfind>'
+    r = requests.request('PROPFIND', RF_DAV, data=body, headers={**UA, 'Depth': '1'}, auth=(RF_SHARE, ''), timeout=60)
+    r.raise_for_status()
+    meses = sorted(set(re.findall(r'/CNPJ/(\d{4}-\d{2})/', r.text)))
+    if not meses: raise SystemExit('Pastas da Receita não encontradas')
+    for m in reversed(meses):
+        rr = requests.request('PROPFIND', RF_DAV + m + '/', data=body, headers={**UA, 'Depth': '1'}, auth=(RF_SHARE, ''), timeout=60)
+        if 'Socios9.zip' in rr.text and 'Empresas9.zip' in rr.text:
+            return m
+    raise SystemExit('Mês completo da Receita não encontrado')
+
+
+def socios(con):
+    mes = rf_mes(); log('Receita', mes)
+    auth = (RF_SHARE, '')
+    def b(nome): return baixar(RF_DAV + mes + '/' + nome, os.path.join(WORK, 'rf_' + nome), auth)
+    n = 10 if not LIMITE else 1
+    zs = [b(f'Socios{i}.zip') for i in range(n)]
+    soc = extrair(zs, os.path.join(WORK, 'rf_soc'))
+    for z in zs: os.remove(z)
+    qual = extrair([b('Qualificacoes.zip')], os.path.join(WORK, 'rf_qual'))
+    con.execute(f"""CREATE TABLE q AS SELECT column0 AS cod, column1 AS nome FROM read_csv({qual!r}, delim=';', header=false, all_varchar=true, encoding='latin-1', quote='"')""")
+    con.execute(f"""CREATE TABLE s AS SELECT column00 AS basico, column01 AS ident, column02 AS nome, column03 AS doc, column04 AS qual, column05 AS entrada
+       FROM read_csv({soc!r}, delim=';', header=false, all_varchar=true, encoding='latin-1', quote='"', ignore_errors=true, columns={{
+       'column00':'VARCHAR','column01':'VARCHAR','column02':'VARCHAR','column03':'VARCHAR','column04':'VARCHAR','column05':'VARCHAR','column06':'VARCHAR','column07':'VARCHAR','column08':'VARCHAR','column09':'VARCHAR','column10':'VARCHAR'}})""")
+    shutil.rmtree(os.path.join(WORK, 'rf_soc'), ignore_errors=True)
+    con.execute(r"""CREATE TABLE sk AS SELECT CASE WHEN ident = '1' THEN 'PJ|' || regexp_replace(coalesce(doc,''), '\D', '', 'g') ELSE trim(regexp_replace(upper(strip_accents(nome)), '\s+', ' ', 'g')) || '|' || regexp_replace(coalesce(doc,''), '\D', '', 'g') END AS k,
+       basico, ident, qual, entrada FROM s WHERE nome IS NOT NULL""")
+    con.execute('DROP TABLE s')
+    # chaves de pessoas com 2 a 300 empresas, e todas as participações de pessoas jurídicas (holdings)
+    con.execute("""CREATE TABLE kk AS SELECT k FROM sk GROUP BY k HAVING (count(DISTINCT basico) BETWEEN 2 AND 300) OR max(ident) = '1'""")
+    con.execute('CREATE TABLE sel AS SELECT sk.* FROM sk JOIN kk USING (k)')
+    con.execute('DROP TABLE sk')
+    log('vínculos selecionados', con.execute('SELECT count(*) FROM sel').fetchone()[0])
+    con.execute('CREATE TABLE b AS SELECT DISTINCT basico FROM sel')
+    con.execute('CREATE TABLE e (basico VARCHAR, razao VARCHAR)')
+    for i in range(n):
+        z = b(f'Empresas{i}.zip'); emp = extrair([z], os.path.join(WORK, 'rf_emp')); os.remove(z)
+        con.execute(f"""INSERT INTO e SELECT column0, column1 FROM read_csv({emp!r}, delim=';', header=false, all_varchar=true, encoding='latin-1', quote='"', ignore_errors=true)
+           WHERE column0 IN (SELECT basico FROM b)""")
+        shutil.rmtree(os.path.join(WORK, 'rf_emp'), ignore_errors=True)
+        log('empresas', i, 'ok')
+    cur = con.execute("""SELECT substr(sha256(sel.k), 1, 3) AS shard, sel.k, sel.basico, left(coalesce(e.razao,''), 80), coalesce(q.nome, sel.qual), sel.entrada
+       FROM sel LEFT JOIN e USING (basico) LEFT JOIN q ON q.cod = sel.qual ORDER BY shard, sel.k""")
+
+    def it():
+        k0, sh0, lst = None, None, []
+        while True:
+            lote = cur.fetchmany(50000)
+            if not lote: break
+            for shard, k, basico, razao, qn, ent in lote:
+                if k != k0:
+                    if k0 is not None: yield sh0, k0, lst
+                    k0, sh0, lst = k, shard, []
+                if len(lst) < 300: lst.append([basico, razao, qn, ent])
+        if k0 is not None: yield sh0, k0, lst
+    total = gravar_shards(it(), os.path.join(OUT, 'socios'), 'Sócios')
+    for p in glob.glob(os.path.join(WORK, 'rf_*.zip')):
+        os.remove(p)
+    return {'referencia': mes, 'chaves': total}
+
+
+def main():
+    os.makedirs(WORK, exist_ok=True); os.makedirs(OUT, exist_ok=True)
+    con = duckdb.connect(os.path.join(WORK, 'db.duckdb'))
+    con.execute("SET preserve_insertion_order=false"); con.execute(f"SET temp_directory='{WORK}/tmp'")
+    meta = {'gerado_em': dt.datetime.utcnow().strftime('%Y-%m-%dT%H:%M:%SZ')}
+    etapas = sys.argv[1:] or ['pgfn', 'socios']
+    if 'pgfn' in etapas: meta['pgfn'] = pgfn(con)
+    if 'socios' in etapas: meta['socios'] = socios(con)
+    antigo = {}
+    if os.path.exists(os.path.join(OUT, 'meta.json')):
+        antigo = json.load(open(os.path.join(OUT, 'meta.json')))
+    antigo.update(meta)
+    json.dump(antigo, open(os.path.join(OUT, 'meta.json'), 'w'), ensure_ascii=False, indent=1)
+    open(os.path.join(OUT, '.nojekyll'), 'w').close()
+    open(os.path.join(OUT, 'index.html'), 'w').write('<!doctype html><meta charset="utf-8"><title>Dados do Raio-X</title><p>Índice de dados abertos (PGFN e Receita Federal) usado pelo Raio-X do fornecedor da <a href="https://aquilaadvocacia.com.br/raio-x-do-fornecedor/">Aquila Advocacia</a>.</p>')
+    log('pronto', meta)
+
+
+if __name__ == '__main__':
+    main()

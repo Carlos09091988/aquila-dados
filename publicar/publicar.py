@@ -91,13 +91,14 @@ def banco():
 def verificar():
     import time
     t = int(time.time())
+    res = []
     def chk(nome, url, cond):
         try:
             r = requests.get(url, headers={'User-Agent': 'Mozilla/5.0'}, timeout=60)
             ok = r.ok and cond(r)
-            print(('::notice::' if ok else '::warning::') + f'{nome}: {r.status_code} ' + ('ok' if ok else 'FALHOU'))
+            res.append(f'{nome}: {r.status_code} ' + ('ok' if ok else 'FALHOU'))
         except Exception as e:
-            print(f'::warning::{nome}: erro {e}')
+            res.append(f'{nome}: erro {e}')
     def tem_js(r, termo):
         m = re.search(r'atob\("([A-Za-z0-9+/=]{3000,})"\)', r.text)
         return bool(m) and termo in base64.b64decode(m.group(1)).decode('utf-8', 'ignore')
@@ -109,6 +110,7 @@ def verificar():
     chk('Rota de preços', f'{SITE}/wp-json/aquila/v1/precos?item=S23477&meses=12', lambda r: 'estatisticas' in r.text)
     chk('Home com link', f'{SITE}/?v={t}', lambda r: '/banco-de-precos/' in r.text)
     chk('Ferramentas com cartão', f'{SITE}/ferramentas/?v={t}', lambda r: '/banco-de-precos/' in r.text)
+    print('::error::VERIFICACAO | ' + ' | '.join(res))
 
 
 def teste():

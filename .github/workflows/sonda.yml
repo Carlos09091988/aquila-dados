@@ -1,10 +1,14 @@
 name: Sonda de APIs
 on: workflow_dispatch
+permissions:
+  contents: write
 jobs:
   sonda:
     runs-on: ubuntu-latest
     steps:
+      - uses: actions/checkout@v4
       - run: |
+          exec > sonda.txt 2>&1
           p(){ echo "=== $1"; curl -s -m 60 -A "Mozilla/5.0" "$1" | head -c 1500; echo; }
           p "https://dadosabertos.compras.gov.br/modulo-pesquisa-preco/1_consultarMaterial?pagina=1&tamanhoPagina=3&codigoItemCatalogo=150486"
           p "https://dadosabertos.compras.gov.br/modulo-pesquisa-preco/3_consultarServico?pagina=1&tamanhoPagina=3&codigoItemCatalogo=23477"
@@ -12,3 +16,6 @@ jobs:
           p "https://dadosabertos.compras.gov.br/modulo-material/4_consultarItemMaterial?pagina=1&tamanhoPagina=3"
           p "https://dadosabertos.compras.gov.br/modulo-servico/6_consultarItemServico?pagina=1&tamanhoPagina=3"
           p "https://dadosabertos.compras.gov.br/v3/api-docs"
+      - run: |
+          git config user.name robo-aquila; git config user.email robo@aquilaadvocacia.com.br
+          git checkout -B sonda && git add -f sonda.txt && git commit -qm sonda && git push -f origin sonda

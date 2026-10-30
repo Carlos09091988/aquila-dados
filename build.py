@@ -34,8 +34,14 @@ RF_SHARE = 'gn672Ad4CF8N6TK'
 RF_DAV = 'https://arquivos.receitafederal.gov.br/public.php/webdav/Dados/Cadastros/CNPJ/'
 
 
+MARCOS = ('PGFN', 'PGFN corresponsáveis', 'sobrenomes', 'vínculos selecionados', 'contatos em comum', 'Sócios', 'Sinais', 'Receita')
+
+
 def log(*a):
     print(dt.datetime.now().strftime('%H:%M:%S'), *a, flush=True)
+    if a and a[0] in MARCOS:
+        du = shutil.disk_usage(WORK if os.path.exists(WORK) else '.')
+        print('::notice::' + dt.datetime.now().strftime('%H:%M') + ' ' + ' '.join(map(str, a))[:300] + f' | disco livre {du.free // (1 << 30)} GB', flush=True)
 
 
 def norm(s):
@@ -280,7 +286,7 @@ def socios(con):
 def main():
     os.makedirs(WORK, exist_ok=True); os.makedirs(OUT, exist_ok=True)
     con = duckdb.connect(os.path.join(WORK, 'db.duckdb'))
-    con.execute("SET preserve_insertion_order=false"); con.execute(f"SET temp_directory='{WORK}/tmp'")
+    con.execute("SET preserve_insertion_order=false"); con.execute("SET memory_limit='11GB'"); con.execute(f"SET temp_directory='{WORK}/tmp'")
     meta = {'gerado_em': dt.datetime.utcnow().strftime('%Y-%m-%dT%H:%M:%SZ')}
     etapas = sys.argv[1:] or ['pgfn', 'socios']
     if 'pgfn' in etapas: meta['pgfn'] = pgfn(con)
@@ -296,4 +302,13 @@ def main():
 
 
 if __name__ == '__main__':
-    main()
+    try:
+        main()
+    except BaseException as e:
+        import traceback
+        tb = traceback.format_exc().replace('\n', ' | ')
+        du = shutil.disk_usage(WORK if os.path.exists(WORK) else '.')
+        msg = f'FALHA ({type(e).__name__}) disco livre {du.free // (1 << 30)} GB: ' + tb[-1500:]
+        for i in range(0, len(msg), 700):
+            print('::error::' + msg[i:i + 700], flush=True)
+        raise

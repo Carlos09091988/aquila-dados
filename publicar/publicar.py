@@ -9,7 +9,7 @@ import requests
 
 SITE = 'https://aquilaadvocacia.com.br'
 AUTH = (os.environ['WP_USER'], os.environ['WP_APP_PASSWORD'])
-H = {'User-Agent': 'robo-aquila/1.0'}
+H = {'User-Agent': 'robo-aquila/1.0', 'X-Aquila-Auth': base64.b64encode(f"{AUTH[0]}:{AUTH[1]}".encode()).decode()}
 DIR = os.path.dirname(os.path.abspath(__file__))
 
 

@@ -11,4 +11,6 @@ jobs:
       - uses: actions/checkout@v4
       - uses: actions/checkout@v4
         with: { ref: gh-pages, path: pages }
-      - run: python3 publicar/investigar.py ${{ github.event.inputs.termos }}
+      - run: python3 publicar/investigar.py "$TERMOS"
+        env:
+          TERMOS: ${{ github.event.inputs.termos }}

@@ -1,0 +1,27 @@
+name: Publicar no site da Aquila
+
+on:
+  workflow_dispatch:
+    inputs:
+      etapas:
+        description: 'Etapas (teste raiox banco)'
+        default: 'teste raiox banco'
+
+permissions:
+  contents: read
+
+jobs:
+  publicar:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - run: pip install requests==2.32.3
+      - name: Publicar
+        env:
+          WP_USER: ${{ secrets.WP_USER }}
+          WP_APP_PASSWORD: ${{ secrets.WP_APP_PASSWORD }}
+        run: python publicar/publicar.py ${{ github.event.inputs.etapas }}

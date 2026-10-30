@@ -221,11 +221,21 @@ def socios(con):
     con.execute('CREATE TABLE ct0 (k VARCHAR, basico VARCHAR)')
     for i in range(n):
         z = b(f'Estabelecimentos{i}.zip'); est = extrair([z], os.path.join(WORK, 'rf_est')); os.remove(z)
+        conv = []
+        for f in est:  # converte latin-1 -> utf-8 (alguns arquivos vêm com bytes que o leitor recusa)
+            g = f + '.utf8'
+            with open(f, 'rb') as fi, open(g, 'wb') as fo:
+                while True:
+                    ch = fi.read(1 << 24)
+                    if not ch: break
+                    fo.write(ch.decode('latin-1').encode('utf-8'))
+            os.remove(f); conv.append(g)
+        est = conv
         con.execute(f"""CREATE OR REPLACE TABLE es AS SELECT column00 AS basico, regexp_replace(coalesce(column21,'') || coalesce(column22,''), '\\D', '', 'g') AS t1,
            regexp_replace(coalesce(column23,'') || coalesce(column24,''), '\\D', '', 'g') AS t2, lower(trim(coalesce(column27,''))) AS em,
            regexp_replace(coalesce(column18,''), '\\D', '', 'g') AS cep, regexp_replace(upper(coalesce(column15,'')), '[^A-Z0-9]', '', 'g') AS num,
            regexp_replace(upper(strip_accents(coalesce(column16,''))), '[^A-Z0-9]', '', 'g') AS comp
-           FROM read_csv({est!r}, delim=';', header=false, all_varchar=true, encoding='latin-1', quote='"', ignore_errors=true, null_padding=true)
+           FROM read_csv({est!r}, delim=';', header=false, all_varchar=true, quote='"', ignore_errors=true, null_padding=true)
            WHERE column05 = '02'""")
         con.execute("""INSERT INTO ct0 SELECT 'T|' || t1, basico FROM es WHERE length(t1) BETWEEN 10 AND 11
            UNION ALL SELECT 'T|' || t2, basico FROM es WHERE length(t2) BETWEEN 10 AND 11

@@ -14,7 +14,7 @@ DIR = os.path.dirname(os.path.abspath(__file__))
 
 
 def get(pid):
-    r = requests.get(f'{SITE}/wp-json/wp/v2/pages/{pid}?context=edit', auth=AUTH, headers=H, timeout=60)
+    r = requests.get(f'{SITE}/wp-json/wp/v2/pages/{pid}?context=edit&_={pid}{os.getpid()}', auth=AUTH, headers=H, timeout=60)
     r.raise_for_status(); return r.json()
 
 
@@ -89,8 +89,9 @@ def banco():
 
 
 def teste():
-    r = requests.get(f'{SITE}/wp-json/wp/v2/users/me', auth=AUTH, headers=H, timeout=30)
-    msg = f'Acesso ao WordPress: {r.status_code} ' + (str(r.json().get('name')) if r.ok else r.text[:300].replace(chr(10), ' '))
+    import time
+    r = requests.get(f'{SITE}/wp-json/wp/v2/users/me?_={int(time.time())}', auth=AUTH, headers=H, timeout=30)
+    msg = f'Acesso ao WordPress: {r.status_code} robo={r.headers.get("X-Aquila-Robo")} cache={r.headers.get("x-litespeed-cache")} ' + (str(r.json().get('name')) if r.ok else r.text[:300].replace(chr(10), ' '))
     print(('::notice::' if r.ok else '::error::') + msg)
     if not r.ok: raise SystemExit(1)
 

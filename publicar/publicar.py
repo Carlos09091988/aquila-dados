@@ -91,6 +91,8 @@ def banco():
 def teste():
     import time
     r = requests.get(f'{SITE}/wp-json/wp/v2/users/me?_={int(time.time())}', auth=AUTH, headers=H, timeout=30)
+    r0 = requests.get(f'{SITE}/wp-json/?_={int(time.time())}', headers={'User-Agent': 'robo-aquila/1.0'}, timeout=30)
+    print('::notice::Sem credencial: ' + str(r0.status_code) + ' robo=' + str(r0.headers.get('X-Aquila-Robo')) + ' server=' + str(r0.headers.get('server')) + ' cdn=' + str(r0.headers.get('x-hcdn-cache-status')))
     msg = f'Acesso ao WordPress: {r.status_code} robo={r.headers.get("X-Aquila-Robo")} cache={r.headers.get("x-litespeed-cache")} ' + (str(r.json().get('name')) if r.ok else r.text[:300].replace(chr(10), ' '))
     print(('::notice::' if r.ok else '::error::') + msg)
     if not r.ok: raise SystemExit(1)

@@ -9,13 +9,19 @@ jobs:
       - uses: actions/checkout@v4
       - run: |
           exec > sonda.txt 2>&1
-          p(){ echo "=== $1"; curl -s -m 60 -A "Mozilla/5.0" "$1" | head -c 1500; echo; }
-          p "https://dadosabertos.compras.gov.br/modulo-pesquisa-preco/1_consultarMaterial?pagina=1&tamanhoPagina=3&codigoItemCatalogo=150486"
-          p "https://dadosabertos.compras.gov.br/modulo-pesquisa-preco/3_consultarServico?pagina=1&tamanhoPagina=3&codigoItemCatalogo=23477"
-          p "https://dadosabertos.compras.gov.br/modulo-material/4_consultarItemMaterial?pagina=1&tamanhoPagina=3&descricaoItem=papel%20a4"
-          p "https://dadosabertos.compras.gov.br/modulo-material/4_consultarItemMaterial?pagina=1&tamanhoPagina=3"
-          p "https://dadosabertos.compras.gov.br/modulo-servico/6_consultarItemServico?pagina=1&tamanhoPagina=3"
-          p "https://dadosabertos.compras.gov.br/v3/api-docs"
+          curl -s -m 60 https://dadosabertos.compras.gov.br/v3/api-docs -o docs.json
+          python3 - <<'PY'
+          import json
+          d=json.load(open('docs.json'))
+          for p,v in d['paths'].items():
+              if any(k in p for k in ['pesquisa-preco','modulo-material','modulo-servico']):
+                  for m,o in v.items():
+                      print(p, '|', ', '.join(x['name']+('*' if x.get('required') else '') for x in o.get('parameters',[])))
+          PY
+          p(){ echo "=== $1"; curl -s -m 60 -A "Mozilla/5.0" "$1" | head -c 1800; echo; }
+          p "https://dadosabertos.compras.gov.br/modulo-pesquisa-preco/1_consultarMaterial?pagina=1&tamanhoPagina=10&codigoItemCatalogo=150486"
+          p "https://dadosabertos.compras.gov.br/modulo-pesquisa-preco/3_consultarServico?pagina=1&tamanhoPagina=10&codigoItemCatalogo=23477"
+          p "https://dadosabertos.compras.gov.br/modulo-material/4_consultarItemMaterial?pagina=1&tamanhoPagina=10&descricaoItem=papel"
       - run: |
           git config user.name robo-aquila; git config user.email robo@aquilaadvocacia.com.br
           git checkout -B sonda && git add -f sonda.txt && git commit -qm sonda && git push -f origin sonda

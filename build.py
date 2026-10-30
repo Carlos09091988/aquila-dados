@@ -179,6 +179,15 @@ def socios(con):
        FROM read_csv({soc!r}, delim=';', header=false, all_varchar=true, encoding='latin-1', quote='"', ignore_errors=true, columns={{
        'column00':'VARCHAR','column01':'VARCHAR','column02':'VARCHAR','column03':'VARCHAR','column04':'VARCHAR','column05':'VARCHAR','column06':'VARCHAR','column07':'VARCHAR','column08':'VARCHAR','column09':'VARCHAR','column10':'VARCHAR'}})""")
     shutil.rmtree(os.path.join(WORK, 'rf_soc'), ignore_errors=True)
+    # sobrenomes raros (últimos dois sobrenomes): possível parentesco entre sócios
+    con.execute(r"""CREATE TABLE sn0 AS SELECT t[len(t)-1] || ' ' || t[len(t)] AS sob, nome, doc, basico, qual FROM (
+       SELECT list_filter(string_split(trim(regexp_replace(upper(strip_accents(nome)), '[^A-Z ]', ' ', 'g')), ' '),
+         x -> length(x) > 1 AND x NOT IN ('DE','DA','DO','DOS','DAS','DI','DEL','FILHO','FILHA','JUNIOR','NETO','NETA','SOBRINHO','SEGUNDO','TERCEIRO')) AS t,
+         trim(regexp_replace(upper(strip_accents(nome)), '\s+', ' ', 'g')) AS nome, regexp_replace(coalesce(doc,''), '\D', '', 'g') AS doc, basico, qual
+       FROM s WHERE ident = '2' AND nome IS NOT NULL) WHERE len(t) >= 3""")
+    con.execute("""CREATE TABLE sn AS SELECT sn0.* FROM sn0 JOIN (SELECT sob FROM sn0 GROUP BY sob HAVING count(DISTINCT nome || doc) BETWEEN 2 AND 25) USING (sob)""")
+    con.execute('DROP TABLE sn0')
+    log('sobrenomes', con.execute('SELECT count(*) FROM sn').fetchone()[0])
     con.execute(r"""CREATE TABLE sk AS SELECT CASE WHEN ident = '1' THEN 'PJ|' || regexp_replace(coalesce(doc,''), '\D', '', 'g') ELSE trim(regexp_replace(upper(strip_accents(nome)), '\s+', ' ', 'g')) || '|' || regexp_replace(coalesce(doc,''), '\D', '', 'g') END AS k,
        basico, ident, qual, entrada FROM s WHERE nome IS NOT NULL""")
     con.execute('DROP TABLE s')
@@ -187,7 +196,27 @@ def socios(con):
     con.execute('CREATE TABLE sel AS SELECT sk.* FROM sk JOIN kk USING (k)')
     con.execute('DROP TABLE sk')
     log('vínculos selecionados', con.execute('SELECT count(*) FROM sel').fetchone()[0])
-    con.execute('CREATE TABLE b AS SELECT DISTINCT basico FROM sel')
+    # contatos em comum (telefone, e-mail, endereço) entre estabelecimentos ativos
+    con.execute('CREATE TABLE ct0 (k VARCHAR, basico VARCHAR)')
+    for i in range(n):
+        z = b(f'Estabelecimentos{i}.zip'); est = extrair([z], os.path.join(WORK, 'rf_est')); os.remove(z)
+        con.execute(f"""CREATE OR REPLACE TABLE es AS SELECT column00 AS basico, regexp_replace(coalesce(column21,'') || coalesce(column22,''), '\\D', '', 'g') AS t1,
+           regexp_replace(coalesce(column23,'') || coalesce(column24,''), '\\D', '', 'g') AS t2, lower(trim(coalesce(column27,''))) AS em,
+           regexp_replace(coalesce(column18,''), '\\D', '', 'g') AS cep, regexp_replace(upper(coalesce(column15,'')), '[^A-Z0-9]', '', 'g') AS num,
+           regexp_replace(upper(strip_accents(coalesce(column16,''))), '[^A-Z0-9]', '', 'g') AS comp
+           FROM read_csv({est!r}, delim=';', header=false, all_varchar=true, encoding='latin-1', quote='"', ignore_errors=true, null_padding=true)
+           WHERE column05 = '02'""")
+        con.execute("""INSERT INTO ct0 SELECT 'T|' || t1, basico FROM es WHERE length(t1) BETWEEN 10 AND 11
+           UNION ALL SELECT 'T|' || t2, basico FROM es WHERE length(t2) BETWEEN 10 AND 11
+           UNION ALL SELECT 'E|' || em, basico FROM es WHERE em LIKE '%_@_%._%'
+           UNION ALL SELECT 'A|' || cep || '|' || num || '|' || comp, basico FROM es WHERE length(cep) = 8 AND num <> '' AND num NOT IN ('SN','0','00','000','SNO')""")
+        con.execute('DROP TABLE es')
+        shutil.rmtree(os.path.join(WORK, 'rf_est'), ignore_errors=True)
+        log('estabelecimentos', i, 'ok')
+    con.execute("""CREATE TABLE ct AS SELECT DISTINCT ct0.k, ct0.basico FROM ct0 JOIN (SELECT k FROM ct0 GROUP BY k HAVING count(DISTINCT basico) BETWEEN 2 AND 30) USING (k)""")
+    con.execute('DROP TABLE ct0')
+    log('contatos em comum', con.execute('SELECT count(*) FROM ct').fetchone()[0])
+    con.execute('CREATE TABLE b AS SELECT DISTINCT basico FROM (SELECT basico FROM sel UNION ALL SELECT basico FROM ct UNION ALL SELECT basico FROM sn)')
     con.execute('CREATE TABLE e (basico VARCHAR, razao VARCHAR)')
     for i in range(n):
         z = b(f'Empresas{i}.zip'); emp = extrair([z], os.path.join(WORK, 'rf_emp')); os.remove(z)
@@ -210,9 +239,27 @@ def socios(con):
                 if len(lst) < 300: lst.append([basico, razao, qn, ent])
         if k0 is not None: yield sh0, k0, lst
     total = gravar_shards(it(), os.path.join(OUT, 'socios'), 'Sócios')
+    # índice de sinais: contatos em comum e sobrenomes raros
+    cur = con.execute("""SELECT substr(sha256(k), 1, 3) AS shard, k, basico, left(coalesce(razao,''), 80), nome, qn FROM (
+         SELECT ct.k, ct.basico, e.razao, NULL AS nome, NULL AS qn FROM ct LEFT JOIN e USING (basico)
+         UNION ALL SELECT 'S|' || sn.sob, sn.basico, e.razao, sn.nome || '|' || sn.doc, coalesce(q.nome, sn.qual) FROM sn LEFT JOIN e USING (basico) LEFT JOIN q ON q.cod = sn.qual)
+       ORDER BY shard, k""")
+
+    def it2():
+        k0, sh0, lst = None, None, []
+        while True:
+            lote = cur.fetchmany(50000)
+            if not lote: break
+            for shard, k, basico, razao, nome, qn in lote:
+                if k != k0:
+                    if k0 is not None: yield sh0, k0, lst
+                    k0, sh0, lst = k, shard, []
+                if len(lst) < 80: lst.append([basico, razao] if nome is None else [basico, razao, nome, qn])
+        if k0 is not None: yield sh0, k0, lst
+    sinais = gravar_shards(it2(), os.path.join(OUT, 'vinc'), 'Sinais')
     for p in glob.glob(os.path.join(WORK, 'rf_*.zip')):
         os.remove(p)
-    return {'referencia': mes, 'chaves': total}
+    return {'referencia': mes, 'chaves': total, 'sinais': sinais}
 
 
 def main():

@@ -122,9 +122,8 @@ def pgfn(con):
         if LIMITE: fs = fs[:LIMITE]
         log(nat, len(fs), 'arquivos CSV')
         lista = '[' + ','.join("'" + f.replace("'", "''") + "'" for f in fs) + ']'
-        q = f"""SELECT '{nat}' AS nat, CPF_CNPJ, TIPO_PESSOA, TIPO_DEVEDOR, TIPO_SITUACAO_INSCRICAO, INDICADOR_AJUIZADO, VALOR_CONSOLIDADO
-          FROM read_csv({lista}, delim=';', header=true, all_varchar=true, encoding='latin-1', union_by_name=true, ignore_errors=true, quote='"')
-          WHERE upper(TIPO_PESSOA) LIKE '%JUR%'"""
+        q = f"""SELECT '{nat}' AS nat, CPF_CNPJ, TIPO_PESSOA, TIPO_DEVEDOR, TIPO_SITUACAO_INSCRICAO, INDICADOR_AJUIZADO, VALOR_CONSOLIDADO, NUMERO_INSCRICAO, NOME_DEVEDOR
+          FROM read_csv({lista}, delim=';', header=true, all_varchar=true, encoding='latin-1', union_by_name=true, ignore_errors=true, quote='"')"""
         con.execute(('CREATE TABLE pg AS ' if primeiro else 'INSERT INTO pg ') + q)
         primeiro = False
         shutil.rmtree(pasta, ignore_errors=True)
@@ -138,15 +137,31 @@ def pgfn(con):
       FROM (SELECT *, coalesce(try_cast(CASE WHEN VALOR_CONSOLIDADO LIKE '%,%' THEN replace(replace(VALOR_CONSOLIDADO, '.', ''), ',', '.') ELSE VALOR_CONSOLIDADO END AS DOUBLE), 0) AS v FROM pg
             WHERE upper(TIPO_PESSOA) LIKE '%JUR%')
       GROUP BY 1 HAVING length(cnpj) = 14""")
+    # devedores que dividem as mesmas inscrições (corresponsáveis e solidários): grupo econômico reconhecido pela PGFN
+    con.execute(r"""CREATE TABLE ins AS SELECT nat, NUMERO_INSCRICAO AS ni, regexp_replace(CPF_CNPJ, '\D', '', 'g') AS doc, CPF_CNPJ AS docm,
+      upper(trim(NOME_DEVEDOR)) AS nome, upper(TIPO_DEVEDOR) AS td,
+      coalesce(try_cast(CASE WHEN VALOR_CONSOLIDADO LIKE '%,%' THEN replace(replace(VALOR_CONSOLIDADO, '.', ''), ',', '.') ELSE VALOR_CONSOLIDADO END AS DOUBLE), 0) AS v
+      FROM pg WHERE NUMERO_INSCRICAO IS NOT NULL AND NUMERO_INSCRICAO <> ''""")
     con.execute('DROP TABLE pg')
-    cur = con.execute('SELECT substr(cnpj,1,3), cnpj, round(total,2), round(coalesce(prev,0),2), round(coalesce(naoprev,0),2), round(coalesce(fgts,0),2), round(coalesce(cobranca,0),2), qtd, ajuiz, tipos FROM pga ORDER BY cnpj')
+    con.execute('CREATE TABLE mul AS SELECT nat, ni FROM ins GROUP BY nat, ni HAVING count(DISTINCT doc) BETWEEN 2 AND 60')
+    con.execute('CREATE TABLE insm AS SELECT ins.* FROM ins JOIN mul USING (nat, ni)')
+    con.execute('DROP TABLE ins'); con.execute('DROP TABLE mul')
+    con.execute("""CREATE TABLE lk0 AS SELECT a.doc AS cnpj, b.docm AS outro, max(b.nome) AS nome, string_agg(DISTINCT b.td, ',') AS td, round(sum(a.v), 2) AS valor, count(DISTINCT a.ni) AS n
+      FROM insm a JOIN insm b USING (nat, ni) WHERE a.doc <> b.doc AND length(a.doc) = 14 GROUP BY 1, 2""")
+    con.execute('DROP TABLE insm')
+    con.execute("""CREATE TABLE lk AS SELECT cnpj, list([outro, nome, td, CAST(valor AS VARCHAR), CAST(n AS VARCHAR)] ORDER BY valor DESC)[1:50] AS l FROM lk0 GROUP BY cnpj""")
+    con.execute('DROP TABLE lk0')
+    log('PGFN corresponsáveis', con.execute('SELECT count(*) FROM lk').fetchone()[0])
+    cur = con.execute('SELECT substr(cnpj,1,3), cnpj, round(total,2), round(coalesce(prev,0),2), round(coalesce(naoprev,0),2), round(coalesce(fgts,0),2), round(coalesce(cobranca,0),2), qtd, ajuiz, tipos, lk.l FROM pga LEFT JOIN lk USING (cnpj) ORDER BY cnpj')
 
     def it():
         while True:
             lote = cur.fetchmany(50000)
             if not lote: break
             for r in lote:
-                yield r[0], r[1], [r[2], r[3], r[4], r[5], r[6], r[7], r[8], r[9] or '']
+                v = [r[2], r[3], r[4], r[5], r[6], r[7], r[8], r[9] or '']
+                if r[10]: v.append([[x[0], x[1], x[2], float(x[3]), int(x[4])] for x in r[10]])
+                yield r[0], r[1], v
     n = gravar_shards(it(), os.path.join(OUT, 'pgfn'), 'PGFN')
     return {'referencia': ref, 'fonte': base, 'empresas': n}
 

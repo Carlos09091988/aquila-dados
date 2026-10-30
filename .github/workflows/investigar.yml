@@ -1,0 +1,14 @@
+name: Investigar grupo
+on:
+  workflow_dispatch:
+    inputs:
+      termos:
+        default: 'APPA ESPECIALY GODOY'
+jobs:
+  inv:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/checkout@v4
+        with: { ref: gh-pages, path: pages }
+      - run: python3 publicar/investigar.py ${{ github.event.inputs.termos }}

@@ -88,6 +88,29 @@ def banco():
         post('pages/1784', {'meta': {'_elementor_data': json.dumps(ed, ensure_ascii=False)}}); print('Home atualizada')
 
 
+def verificar():
+    import time
+    t = int(time.time())
+    def chk(nome, url, cond):
+        try:
+            r = requests.get(url, headers={'User-Agent': 'Mozilla/5.0'}, timeout=60)
+            ok = r.ok and cond(r)
+            print(('::notice::' if ok else '::warning::') + f'{nome}: {r.status_code} ' + ('ok' if ok else 'FALHOU'))
+        except Exception as e:
+            print(f'::warning::{nome}: erro {e}')
+    def tem_js(r, termo):
+        m = re.search(r'atob\("([A-Za-z0-9+/=]{3000,})"\)', r.text)
+        return bool(m) and termo in base64.b64decode(m.group(1)).decode('utf-8', 'ignore')
+    chk('Índice GitHub Pages', 'https://carlos09091988.github.io/aquila-dados/meta.json', lambda r: 'pgfn' in r.text)
+    chk('Índice PGFN (construtora)', 'https://carlos09091988.github.io/aquila-dados/pgfn/312.json.gz', lambda r: len(r.content) > 1000)
+    chk('Catálogo', 'https://raw.githubusercontent.com/Carlos09091988/aquila-dados/catalogo/meta.json', lambda r: 'itens' in r.text)
+    chk('Raio-X com dados abertos', f'{SITE}/raio-x-do-fornecedor/?v={t}', lambda r: tem_js(r, 'var DADOS='))
+    chk('Página banco de preços', f'{SITE}/banco-de-precos/?v={t}', lambda r: 'bp-app' in r.text and tem_js(r, 'raw.githubusercontent.com'))
+    chk('Rota de preços', f'{SITE}/wp-json/aquila/v1/precos?item=S23477&meses=12', lambda r: 'estatisticas' in r.text)
+    chk('Home com link', f'{SITE}/?v={t}', lambda r: '/banco-de-precos/' in r.text)
+    chk('Ferramentas com cartão', f'{SITE}/ferramentas/?v={t}', lambda r: '/banco-de-precos/' in r.text)
+
+
 def teste():
     import time
     r = requests.get(f'{SITE}/wp-json/wp/v2/users/me?_={int(time.time())}', auth=AUTH, headers=H, timeout=30)

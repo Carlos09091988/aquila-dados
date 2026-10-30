@@ -1,0 +1,29 @@
+name: Atualizar catálogo de preços
+
+on:
+  schedule:
+    - cron: '43 7 5 * *'   # todo dia 5, 04:43 em Brasília
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  catalogo:
+    runs-on: ubuntu-latest
+    timeout-minutes: 120
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - run: pip install requests==2.32.3
+      - name: Gerar índice do catálogo (CATMAT e CATSER)
+        run: python catalogo.py
+      - name: Publicar no ramo catalogo
+        run: |
+          cd cat
+          git init -q -b catalogo
+          git config user.name robo-aquila; git config user.email robo@aquilaadvocacia.com.br
+          git add -A && git commit -qm "Catálogo atualizado"
+          git push -f "https://x-access-token:${{ secrets.GITHUB_TOKEN }}@github.com/${{ github.repository }}.git" catalogo

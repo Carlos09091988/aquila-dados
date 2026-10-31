@@ -45,7 +45,7 @@ add_action( 'rest_api_init', function () {
 		if ( ! $ok ) { return new WP_Error( 'dv_ct', 'Cadastre a empresa primeiro.', array( 'status' => 400 ) ); }
 		if ( ! function_exists( 'dv_ds_pncp' ) ) { return new WP_Error( 'dv_ct', 'Serviço indisponível.', array( 'status' => 500 ) ); }
 		$fil = function_exists( 'dv_capt_filiais' ) ? array_map( function ( $x ) { return explode( '|', $x )[0]; }, (array) dv_capt_filiais( $cnpj ) ) : array();
-		$p = dv_ds_pncp( $cnpj, $nome, $fil ); $g = function_exists( 'dv_ds_cgu_contratos' ) ? dv_ds_cgu_contratos( $cnpj ) : array();
+		$p = dv_ds_pncp( $cnpj, $nome, $fil ); if ( empty( $p['total'] ) || $p['total'] < 3 ) { sleep( 2 ); $p2 = dv_ds_pncp( $cnpj, $nome, $fil ); if ( $p2['total'] > $p['total'] ) { $p = $p2; } } $g = function_exists( 'dv_ds_cgu_contratos' ) ? dv_ds_cgu_contratos( $cnpj ) : array();
 		$novos = array();
 		foreach ( (array) $p['itens'] as $x ) { $novos[] = array( 'orgao' => $x['orgao'], 'uf' => $x['uf'], 'municipio' => $x['municipio'], 'numero' => $x['titulo'], 'objeto' => $x['objeto'], 'valor' => $x['valor'], 'assinatura' => substr( (string) $x['assinatura'], 0, 10 ), 'inicio' => substr( (string) $x['inicio'], 0, 10 ), 'fim' => substr( (string) $x['fim'], 0, 10 ), 'link' => $x['link'], 'fonte' => 'PNCP', 'fornecedor' => $x['fornecedor'] ); }
 		foreach ( $g as $x ) { $novos[] = array( 'orgao' => $x['orgao'] . ( $x['unidade'] ? ' · ' . $x['unidade'] : '' ), 'uf' => '', 'municipio' => '', 'numero' => 'Contrato ' . $x['numero'], 'objeto' => $x['objeto'], 'valor' => $x['valor'], 'assinatura' => substr( (string) $x['assinatura'], 0, 10 ), 'inicio' => substr( (string) $x['inicio'], 0, 10 ), 'fim' => substr( (string) $x['fim'], 0, 10 ), 'link' => $x['link'], 'fonte' => 'Portal da Transparência', 'fornecedor' => $cnpj ); }
@@ -61,7 +61,7 @@ add_action( 'rest_api_init', function () {
 			$l[] = $x + array( 'id' => substr( md5( uniqid( $k, true ) ), 0, 10 ), 'chave' => $k, 'cnpj' => $cnpj, 'data_base' => '', 'indice' => '', 'garantia_tipo' => '', 'garantia_valor' => 0, 'garantia_vence' => '', 'notas' => '', 'aviso' => '' ); $add++;
 		}
 		dv_ct_salvar_itens( $uid, $l );
-		return array( 'ok' => true, 'adicionados' => $add, 'encontrados' => count( $novos ), 'encerrados' => $venc );
+		return array( 'ok' => true, 'adicionados' => $add, 'encontrados' => count( $novos ), 'encerrados' => $venc, 'pncp' => (int) $p['total'], 'cgu' => count( $g ) );
 	} ) );
 	register_rest_route( $ns, '/contratos/salvar', array( 'methods' => 'POST', 'permission_callback' => $perm, 'callback' => function ( WP_REST_Request $r ) {
 		$uid = get_current_user_id(); $l = dv_ct_itens( $uid ); $id = sanitize_key( (string) $r['id'] );
@@ -196,7 +196,7 @@ R.addEventListener('click',function(ev){var t=ev.target,c;
  if(t.dataset.t){aba=t.dataset.t;pintar();return}
  if(t.matches('.ct-novo')){if(!emp){alert('Cadastre a empresa primeiro.');return}form(null);return}
  if(t.matches('.ct-imp')){if(!emp){alert('Cadastre a empresa primeiro.');return}t.disabled=true;M.className='ct-msg ct-h';M.textContent='Buscando no PNCP e no Portal da Transparência (matriz e filiais)… pode levar até 1 minuto.';
-  req('POST','contratos/importar',{cnpj:emp}).then(function(j){M.className='ct-msg ct-h o';M.textContent=j.encontrados+' contrato(s) encontrados, '+j.adicionados+' novo(s) na sua carteira'+(j.encerrados?' ('+j.encerrados+' encerrados há mais de 1 ano ficaram de fora)':'')+'. Complete a data-base e a garantia de cada um para receber os avisos certos.';aba='vigentes';t.disabled=false;return carregar()}).catch(function(j){t.disabled=false;M.className='ct-msg ct-h e';M.textContent=(j&&j.message)||'A busca demorou demais. Tente de novo.'});return}
+  req('POST','contratos/importar',{cnpj:emp}).then(function(j){M.className='ct-msg ct-h o';M.textContent=j.encontrados+' contrato(s) encontrados, '+j.adicionados+' novo(s) na sua carteira'+(j.encerrados?' ('+j.encerrados+' encerrados há mais de 1 ano ficaram de fora)':'')+'. Complete a data-base e a garantia de cada um para receber os avisos certos.'+(j.pncp<3?' O PNCP respondeu pouco agora: rode a busca de novo em alguns minutos (o que já está na carteira não se duplica).':'');aba='vigentes';t.disabled=false;return carregar()}).catch(function(j){t.disabled=false;M.className='ct-msg ct-h e';M.textContent=(j&&j.message)||'A busca demorou demais. Tente de novo.'});return}
  if(t.dataset.ed){c=S.itens.filter(function(x){return x.id===t.dataset.ed})[0];form(c);return}
  if(t.dataset.x){if(confirm('Remover este contrato da carteira?'))req('POST','contratos/excluir',{ids:[t.dataset.x]}).then(carregar)}});
 carregar();

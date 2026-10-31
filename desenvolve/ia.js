@@ -2,7 +2,7 @@
 (function(){
 var tool=document.querySelector('.dv-tool');if(!tool||!window.DV||!DV.logado)return;
 var dossie=!!document.getElementById('ds');
-var IAS=[['ChatGPT','https://chatgpt.com/','https://chatgpt.com/?q=','chatgpt.com'],['Claude','https://claude.ai/new','https://claude.ai/new?q=','claude.ai'],['Gemini','https://gemini.google.com/app','','gemini.google.com'],['Perplexity','https://www.perplexity.ai/','https://www.perplexity.ai/search?q=','perplexity.ai'],['Grok','https://grok.com/','https://grok.com/?q=','grok.com'],['DeepSeek','https://chat.deepseek.com/','','deepseek.com'],['Copilot','https://copilot.microsoft.com/','','copilot.microsoft.com']];
+var IAS=[['ChatGPT','https://chatgpt.com/','https://chatgpt.com/?q=','chatgpt.com'],['Claude','https://claude.ai/new','https://claude.ai/new?q=','claude.ai'],['Perplexity','https://www.perplexity.ai/','https://www.perplexity.ai/search?q=','perplexity.ai'],['Grok','https://grok.com/','https://grok.com/?q=','grok.com'],['DeepSeek','https://chat.deepseek.com/','','deepseek.com']];
 var LIM=3800;
 function cnpj(){var m=location.search.match(/cnpj=(\d{14})/);if(m)return m[1];var i=tool.querySelector('input');var d=i?String(i.value).replace(/\D/g,''):'';return d.length===14?d:''}
 function relatorio(){var base=dossie?tool.querySelector('.rp'):tool;if(!base)return'';var c=base.cloneNode(true);c.querySelectorAll('.dv-ia,script,style,form,button,.rp-bar').forEach(function(x){x.remove()});return c.innerText.replace(/[ \t]+\n/g,'\n').replace(/\n{3,}/g,'\n\n').trim()}

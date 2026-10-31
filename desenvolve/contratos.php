@@ -87,17 +87,37 @@ function dv_ct_num( $n ) { // "Contrato nº 00026/2025" -> "26/2025"
 }
 function dv_ct_diarios( $c, $nome ) {
 	$num = dv_ct_num( $c['numero'] ?? '' ); $out = array(); if ( ! $num ) { return $out; }
-	$ck = 'dv_ctd1_' . md5( $num . $nome ); $x = get_transient( $ck ); if ( is_array( $x ) ) { return $x; }
-	$pal = array_slice( array_filter( explode( ' ', preg_replace( '/[^A-Z0-9 ]/', ' ', strtoupper( remove_accents( $nome ) ) ) ), function ( $w ) { return strlen( $w ) > 3 && ! in_array( $w, array( 'LTDA', 'EIRELI', 'S/A', 'EPP' ), true ); } ), 0, 2 );
-	$q = '"' . $num . '"' . ( $pal ? ' + "' . implode( ' ', $pal ) . '"' : '' );
-	$desde = $c['inicio'] ? gmdate( 'Y-m-d', strtotime( $c['inicio'] . ' -60 days' ) ) : gmdate( 'Y-m-d', strtotime( '-3 years' ) );
-	$u = add_query_arg( array( 'querystring' => rawurlencode( $q ), 'published_since' => $desde, 'size' => 30, 'excerpt_size' => 400, 'number_of_excerpts' => 2, 'sort_by' => 'descending_date' ), 'https://queridodiario.ok.org.br/api/gazettes' );
-	$r = wp_remote_get( $u, array( 'timeout' => 30 ) );
-	if ( ! is_wp_error( $r ) && wp_remote_retrieve_response_code( $r ) === 200 ) {
-		foreach ( (array) ( json_decode( wp_remote_retrieve_body( $r ), true )['gazettes'] ?? array() ) as $g ) {
-			$out[] = array( 'data' => $g['date'] ?? '', 'fonte' => ( $g['territory_name'] ?? '' ) . ( ! empty( $g['state_code'] ) ? '/' . $g['state_code'] : '' ), 'url' => $g['url'] ?? '', 'trecho' => mb_substr( implode( ' … ', array_map( function ( $e ) { return trim( preg_replace( '/\s+/', ' ', wp_strip_all_tags( $e ) ) ); }, (array) ( $g['excerpts'] ?? array() ) ) ), 0, 700 ) );
+	$ck = 'dv_ctd2_' . md5( $num . $nome . ( $c['municipio'] ?? '' ) ); $x = get_transient( $ck ); if ( is_array( $x ) ) { return $x; }
+	$pal = array_slice( array_values( array_filter( explode( ' ', preg_replace( '/[^A-Z0-9 ]/', ' ', strtoupper( remove_accents( $nome ) ) ) ), function ( $w ) { return strlen( $w ) > 3 && ! in_array( $w, array( 'LTDA', 'EIRELI', 'EPP' ), true ); } ) ), 0, 2 );
+	$desde = ! empty( $c['inicio'] ) ? gmdate( 'Y-m-d', strtotime( $c['inicio'] . ' -60 days' ) ) : gmdate( 'Y-m-d', strtotime( '-3 years' ) );
+	$norm = function ( $t ) { return strtoupper( preg_replace( '/[^A-Z0-9]/i', '', remove_accents( (string) $t ) ) ); };
+	$mun = $norm( $c['municipio'] ?? '' );
+	/* Diários municipais (Querido Diário): só da cidade do contrato */
+	if ( $mun ) {
+		$q = '"' . $num . '"' . ( $pal ? ' + "' . implode( ' ', $pal ) . '"' : '' );
+		$u = add_query_arg( array( 'querystring' => rawurlencode( $q ), 'published_since' => $desde, 'size' => 50, 'excerpt_size' => 400, 'number_of_excerpts' => 2, 'sort_by' => 'descending_date' ), 'https://queridodiario.ok.org.br/api/gazettes' );
+		$r = wp_remote_get( $u, array( 'timeout' => 30 ) );
+		if ( ! is_wp_error( $r ) && wp_remote_retrieve_response_code( $r ) === 200 ) {
+			foreach ( (array) ( json_decode( wp_remote_retrieve_body( $r ), true )['gazettes'] ?? array() ) as $g ) {
+				if ( $norm( $g['territory_name'] ?? '' ) !== $mun ) { continue; }
+				$out[] = array( 'data' => $g['date'] ?? '', 'fonte' => ( $g['territory_name'] ?? '' ) . ( ! empty( $g['state_code'] ) ? '/' . $g['state_code'] : '' ), 'url' => $g['url'] ?? '', 'trecho' => mb_substr( implode( ' … ', array_map( function ( $e ) { return trim( preg_replace( '/\s+/', ' ', wp_strip_all_tags( $e ) ) ); }, (array) ( $g['excerpts'] ?? array() ) ) ), 0, 700 ) );
+			}
 		}
 	}
+	/* Diário Oficial da União: número do contrato + nome da empresa */
+	if ( $pal ) {
+		$u = 'https://www.in.gov.br/consulta/-/buscar/dou?q=' . rawurlencode( '"' . $num . '" "' . implode( ' ', $pal ) . '"' ) . '&s=todos&exactDate=personalizado&sortType=0&delta=30&publishFrom=' . gmdate( 'd-m-Y', strtotime( $desde ) ) . '&publishTo=' . current_time( 'd-m-Y' );
+		$r = wp_remote_get( $u, array( 'timeout' => 30, 'user-agent' => 'Mozilla/5.0 (compatible; Desenvolve/1.0)' ) );
+		if ( ! is_wp_error( $r ) && wp_remote_retrieve_response_code( $r ) === 200 && preg_match( '#<script[^>]*id="_br_com_seatecnologia_in_buscadou_BuscaDouPortlet_params"[^>]*>(.*?)</script>#s', wp_remote_retrieve_body( $r ), $m ) ) {
+			foreach ( (array) ( json_decode( trim( $m[1] ), true )['jsonArray'] ?? array() ) as $it ) {
+				$tx = trim( preg_replace( '/\s+/', ' ', wp_strip_all_tags( html_entity_decode( ( $it['title'] ?? '' ) . ' — ' . ( $it['content'] ?? '' ), ENT_QUOTES, 'UTF-8' ) ) ) );
+				if ( strpos( $norm( $tx ), $norm( $pal[0] ) ) === false ) { continue; }
+				$d = (string) ( $it['pubDate'] ?? '' );
+				$out[] = array( 'data' => preg_match( '#^(\d{2})/(\d{2})/(\d{4})#', $d, $y ) ? "$y[3]-$y[2]-$y[1]" : '', 'fonte' => 'Diário Oficial da União', 'url' => ! empty( $it['urlTitle'] ) ? 'https://www.in.gov.br/web/dou/-/' . $it['urlTitle'] : '', 'trecho' => mb_substr( $tx, 0, 700 ) );
+			}
+		}
+	}
+	usort( $out, function ( $a, $b ) { return strcmp( $b['data'], $a['data'] ); } );
 	set_transient( $ck, $out, 12 * HOUR_IN_SECONDS );
 	return $out;
 }
@@ -239,7 +259,7 @@ R.addEventListener('click',function(ev){var t=ev.target,c;
  if(t.dataset.ed){c=S.itens.filter(function(x){return x.id===t.dataset.ed})[0];form(c);return}
  if(t.dataset.fi){ficha(t.dataset.fi);return}
  if(t.matches('.ct-fx')){FI.close();return}
- if(t.matches('.ct-dio')){t.disabled=true;t.textContent='Buscando nos diários oficiais…';req('GET','contratos/ficha?diarios=1&id='+t.dataset.id).then(function(j){t.outerHTML=pubs(j.diarios,'Nada encontrado nos diários municipais disponíveis com o número deste contrato e o nome da empresa.')}).catch(function(){t.disabled=false;t.textContent='Tentar de novo'});return}
+ if(t.matches('.ct-dio')){t.disabled=true;t.textContent='Buscando nos diários oficiais…';req('GET','contratos/ficha?diarios=1&id='+t.dataset.id).then(function(j){t.outerHTML=pubs(j.diarios,'Nada encontrado com o número deste contrato e o nome da empresa no Diário Oficial da União e no diário da cidade do contrato (quando disponível).')}).catch(function(){t.disabled=false;t.textContent='Tentar de novo'});return}
  if(t.dataset.x){if(confirm('Remover este contrato da carteira?'))req('POST','contratos/excluir',{ids:[t.dataset.x]}).then(carregar)}});
 var FI=R.querySelector('.ct-fi');
 function pubs(l,vazio){return l&&l.length?l.map(function(p){return'<div class="it"><div class="m">'+br(p.data)+' · '+e(p.fonte||((p.municipio||'')+(p.uf?'/'+p.uf:'')))+'</div>'+e(String(p.trecho||'').slice(0,500))+(p.url?' <a href="'+e(p.url)+'" target="_blank" rel="noopener">abrir</a>':'')+'</div>'}).join(''):'<p class="ct-h">'+vazio+'</p>'}

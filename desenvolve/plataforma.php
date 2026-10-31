@@ -20,6 +20,8 @@ function dv_cfg( $k = null ) {
 		'alerta_hora'      => 30,
 		'email_alertas'    => get_option( 'admin_email' ),
 		'asaas_ambiente'   => 'sandbox',
+		'creditos_dossie'  => 3,
+		'email_remetente'  => 'contato@desenvolveestrategias.com.br',
 	);
 	$c = wp_parse_args( (array) get_option( 'dv_cfg', array() ), $d );
 	return $k ? ( $c[ $k ] ?? null ) : $c;
@@ -358,8 +360,8 @@ function dv_admin_config() {
 	dv_admin_css();
 	if ( isset( $_POST['dv_cfg'] ) && check_admin_referer( 'dv_cfg' ) ) {
 		$in = wp_unslash( $_POST['dv_cfg'] ); $c = dv_cfg();
-		foreach ( array( 'preco_assinatura', 'preco_extra', 'pacotes', 'email_alertas', 'asaas_ambiente' ) as $k ) { $c[ $k ] = sanitize_text_field( $in[ $k ] ?? $c[ $k ] ); }
-		foreach ( array( 'creditos_mes', 'dedupe_dias', 'validade_extra', 'alerta_hora' ) as $k ) { $c[ $k ] = max( 0, (int) ( $in[ $k ] ?? $c[ $k ] ) ); }
+		foreach ( array( 'preco_assinatura', 'preco_extra', 'pacotes', 'email_alertas', 'asaas_ambiente', 'email_remetente' ) as $k ) { $c[ $k ] = sanitize_text_field( $in[ $k ] ?? $c[ $k ] ); }
+		foreach ( array( 'creditos_mes', 'dedupe_dias', 'validade_extra', 'alerta_hora', 'creditos_dossie' ) as $k ) { $c[ $k ] = max( 0, (int) ( $in[ $k ] ?? $c[ $k ] ) ); }
 		update_option( 'dv_cfg', $c, false );
 		if ( ! empty( $_POST['dv_asaas_key'] ) ) { update_option( 'dv_asaas_key', trim( wp_unslash( $_POST['dv_asaas_key'] ) ), false ); }
 		if ( ! get_option( 'dv_webhook_token' ) ) { update_option( 'dv_webhook_token', wp_generate_password( 32, false ), false ); }
@@ -372,6 +374,8 @@ function dv_admin_config() {
 	$f( 'creditos_mes', 'Créditos por mês na assinatura', 'number' );
 	$f( 'preco_extra', 'Preço do crédito extra (R$)', 'text', 'Ex.: 2.50' );
 	$f( 'pacotes', 'Pacotes de créditos à venda', 'text', 'Quantidades separadas por vírgula. Ex.: 10,20,50' );
+	$f( 'creditos_dossie', 'Créditos cobrados pelo dossiê completo', 'number' );
+	$f( 'email_remetente', 'E-mail que envia os avisos aos assinantes', 'email' );
 	$f( 'validade_extra', 'Validade dos créditos extras (meses)', 'number' );
 	$f( 'dedupe_dias', 'Dias em que repetir a mesma consulta não gasta crédito', 'number' );
 	$f( 'alerta_hora', 'Alerta quando uma conta passar de X usos em uma hora', 'number' );
@@ -445,7 +449,7 @@ add_shortcode( 'dv_ctx', function ( $a ) {
 	elseif ( strlen( $doc ) === 11 ) { $doc = preg_replace( '/^(\d{3})\d{6}(\d{2})$/', '$1.***.***-$2', $doc ); }
 	$ctx = array( 'api' => rest_url( 'desenvolve/v1/' ), 'nonce' => $uid ? wp_create_nonce( 'wp_rest' ) : '', 'tool' => $tool,
 		'logado' => (bool) $uid, 'acesso' => (bool) $acesso, 'master' => $uid ? dv_is_master( $uid ) : false,
-		'nome' => $u ? $u->display_name : '', 'doc' => $doc, 'saldo' => $uid ? dv_saldo( $uid )['total'] : 0 );
+		'nome' => $u ? $u->display_name : '', 'doc' => $doc, 'saldo' => $uid ? dv_saldo( $uid )['total'] : 0, 'cr_dossie' => (int) dv_cfg( 'creditos_dossie' ) );
 	$h = '<script>window.DV=' . wp_json_encode( $ctx ) . ';window.DVWM=' . wp_json_encode( $u ? $u->display_name . ( $doc ? ' · ' . $doc : '' ) : '' ) . ';</script>';
 	$h .= '<div class="dv-tbar"><a href="/painel/">&larr; Meu painel</a><span id="dv-saldo">' . ( $uid ? ( $ctx['master'] ? 'Créditos: ilimitado' : 'Créditos: ' . (int) $ctx['saldo'] ) : '' ) . '</span></div>';
 	if ( ! $uid ) {
@@ -539,8 +543,8 @@ add_action( 'wp_footer', function () {
 (function(){var el=document.getElementById('dv-painel');if(!el)return;var api=el.dataset.api,n=el.dataset.nonce;
 function g(p){return fetch(api+p,{headers:{'X-WP-Nonce':n},credentials:'same-origin'}).then(function(r){return r.json()})}
 function e(s){return String(s==null?'':s).replace(/[&<>"]/g,function(c){return{'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]})}
-var nomes={raiox:'Raio-X do fornecedor',comparador:'Comparador de licitantes',precos:'Banco de preços',buscador:'Buscador de licitações',prazos:'Calculadora de prazos',reajuste:'Calculadora de reajuste',repactuacao:'Repactuação e reequilíbrio',captador:'Captador de publicações'};
-var links=[['raiox','/plataforma/raio-x/'],['comparador','/plataforma/comparador/'],['precos','/plataforma/banco-de-precos/'],['buscador','/plataforma/buscador/'],['prazos','/plataforma/prazos/'],['reajuste','/plataforma/reajuste/'],['repactuacao','/plataforma/repactuacao/'],['captador','/plataforma/captador/']];
+var nomes={raiox:'Raio-X do fornecedor',comparador:'Comparador de licitantes',precos:'Banco de preços',buscador:'Buscador de licitações',prazos:'Calculadora de prazos',reajuste:'Calculadora de reajuste',repactuacao:'Repactuação e reequilíbrio',captador:'Captador de publicações',dossie:'Dossiê completo'};
+var links=[['dossie','/plataforma/dossie/'],['raiox','/plataforma/raio-x/'],['comparador','/plataforma/comparador/'],['precos','/plataforma/banco-de-precos/'],['buscador','/plataforma/buscador/'],['prazos','/plataforma/prazos/'],['reajuste','/plataforma/reajuste/'],['repactuacao','/plataforma/repactuacao/'],['captador','/plataforma/captador/']];
 Promise.all([g('me'),g('historico')]).then(function(a){var m=a[0],h=a[1]||[];var s=m.saldo||{};
 var sit={ativo:'Assinatura ativa',pendente:'Assinatura pendente',atrasado:'Pagamento em atraso',cancelado:'Assinatura cancelada',bloqueado:'Acesso bloqueado'}[m.situacao]||m.situacao;
 var H='<h2>Olá, '+e((m.nome||'').split(' ')[0])+'</h2>';

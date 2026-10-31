@@ -1,6 +1,6 @@
 /**
  * Desenvolve — Documentos de habilitação (controle de certidões e vencimentos)
- * - Guarda os documentos da empresa em pasta protegida (fora do alcance público).
+ * - Só cadastro para alerta: a plataforma NÃO guarda arquivos. O PDF pode ser lido no navegador para preencher os dados, sem envio.
  * - Lê o PDF no navegador do assinante: identifica a certidão, a validade, o CNPJ e se é negativa/positiva.
  * - Checklist de habilitação da Lei 14.133/2021 (arts. 66 a 69) por empresa, com % de prontidão.
  * - Radar: avisa antes de emitir quando há dívida ativa na PGFN, sanção (CEIS/CNEP/TCU) ou CNPJ irregular.
@@ -42,6 +42,12 @@ function dv_docs_tipos() {
 }
 
 add_action( 'init', function () {
+	if ( get_option( 'dv_docs_semarq' ) !== '1' ) { // a plataforma deixou de guardar arquivos: apaga a pasta antiga, se existir
+		$up = wp_upload_dir(); $base = trailingslashit( $up['basedir'] ) . 'dv-docs';
+		if ( is_dir( $base ) ) { $it = new RecursiveIteratorIterator( new RecursiveDirectoryIterator( $base, FilesystemIterator::SKIP_DOTS ), RecursiveIteratorIterator::CHILD_FIRST ); foreach ( $it as $f ) { $f->isDir() ? @rmdir( $f->getPathname() ) : @unlink( $f->getPathname() ); } @rmdir( $base ); }
+		global $wpdb; $wpdb->query( "UPDATE {$wpdb->prefix}dv_docs SET arquivo='', nome_arq='', tamanho=0" );
+		update_option( 'dv_docs_semarq', '1' );
+	}
 	if ( get_option( 'dv_docs_db' ) !== '1' ) {
 		global $wpdb; require_once ABSPATH . 'wp-admin/includes/upgrade.php';
 		dbDelta( "CREATE TABLE {$wpdb->prefix}dv_docs (
@@ -167,19 +173,9 @@ add_action( 'rest_api_init', function () {
 		$row = array( 'cnpj' => $c, 'tipo' => $tipo, 'titulo' => mb_substr( sanitize_text_field( (string) $r['titulo'] ) ?: $T[ $tipo ][0], 0, 190 ),
 			'emissao' => $dt( $r['emissao'] ), 'validade' => $dt( $r['validade'] ), 'resultado' => sanitize_key( (string) $r['resultado'] ), 'obs' => mb_substr( sanitize_text_field( (string) $r['obs'] ), 0, 500 ) );
 		if ( ! $row['validade'] && $T[ $tipo ][2] && $row['emissao'] ) { $row['validade'] = gmdate( 'Y-m-d', strtotime( $row['emissao'] . ' +' . $T[ $tipo ][2] . ' days' ) ); }
-		$f = $r->get_file_params(); $f = $f['arquivo'] ?? null;
-		if ( $f && ! empty( $f['tmp_name'] ) && is_uploaded_file( $f['tmp_name'] ) ) {
-			if ( $f['size'] > DV_DOCS_MAX_MB * 1048576 ) { return new WP_Error( 'dv_docs', 'Arquivo maior que ' . DV_DOCS_MAX_MB . ' MB.', array( 'status' => 400 ) ); }
-			$ck = wp_check_filetype_and_ext( $f['tmp_name'], $f['name'], array( 'pdf' => 'application/pdf', 'jpg|jpeg' => 'image/jpeg', 'png' => 'image/png', 'docx' => 'application/vnd.openxmlformats-officedocument.wordprocessingml.document', 'xlsx' => 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet', 'zip' => 'application/zip' ) );
-			if ( empty( $ck['ext'] ) ) { return new WP_Error( 'dv_docs', 'Envie PDF, imagem (JPG/PNG), Word, Excel ou ZIP.', array( 'status' => 400 ) ); }
-			$nome = wp_generate_password( 24, false ) . '.' . $ck['ext'];
-			if ( ! move_uploaded_file( $f['tmp_name'], dv_docs_dir( $uid ) . '/' . $nome ) ) { return new WP_Error( 'dv_docs', 'Não foi possível gravar o arquivo.', array( 'status' => 500 ) ); }
-			$row += array( 'arquivo' => $nome, 'nome_arq' => mb_substr( sanitize_file_name( $f['name'] ), 0, 190 ), 'tamanho' => (int) $f['size'] );
-		}
 		if ( $id ) {
-			$old = $wpdb->get_row( $wpdb->prepare( "SELECT arquivo FROM $tb WHERE id=%d AND user_id=%d", $id, $uid ), ARRAY_A );
+			$old = $wpdb->get_var( $wpdb->prepare( "SELECT id FROM $tb WHERE id=%d AND user_id=%d", $id, $uid ) );
 			if ( ! $old ) { return new WP_Error( 'dv_docs', 'Documento não encontrado.', array( 'status' => 404 ) ); }
-			if ( ! empty( $row['arquivo'] ) && $old['arquivo'] ) { @unlink( dv_docs_dir( $uid ) . '/' . basename( $old['arquivo'] ) ); }
 			$row['avisado'] = ''; $wpdb->update( $tb, $row, array( 'id' => $id, 'user_id' => $uid ) );
 		} else {
 			$row += array( 'user_id' => $uid, 'criado' => current_time( 'mysql' ) ); $wpdb->insert( $tb, $row ); $id = (int) $wpdb->insert_id;
@@ -189,40 +185,12 @@ add_action( 'rest_api_init', function () {
 
 	register_rest_route( $ns, '/docs/excluir', array( 'methods' => 'POST', 'permission_callback' => $perm, 'callback' => function ( WP_REST_Request $r ) {
 		global $wpdb; $uid = get_current_user_id(); $tb = $wpdb->prefix . 'dv_docs';
-		$d = $wpdb->get_row( $wpdb->prepare( "SELECT arquivo FROM $tb WHERE id=%d AND user_id=%d", (int) $r['id'], $uid ), ARRAY_A );
+		$d = $wpdb->get_var( $wpdb->prepare( "SELECT id FROM $tb WHERE id=%d AND user_id=%d", (int) $r['id'], $uid ) );
 		if ( ! $d ) { return new WP_Error( 'dv_docs', 'Documento não encontrado.', array( 'status' => 404 ) ); }
-		if ( $d['arquivo'] ) { @unlink( dv_docs_dir( $uid ) . '/' . basename( $d['arquivo'] ) ); }
 		$wpdb->delete( $tb, array( 'id' => (int) $r['id'], 'user_id' => $uid ) );
 		return array( 'ok' => true );
 	} ) );
 
-	/* Download de um arquivo ou da pasta de habilitação (ZIP com índice) */
-	register_rest_route( $ns, '/docs/baixar', array( 'methods' => 'GET', 'permission_callback' => $perm, 'callback' => function ( WP_REST_Request $r ) {
-		global $wpdb; $uid = get_current_user_id(); $tb = $wpdb->prefix . 'dv_docs'; $dir = dv_docs_dir( $uid );
-		$ids = array_filter( array_map( 'intval', explode( ',', (string) $r['ids'] ) ) );
-		if ( ! $ids ) { return new WP_Error( 'dv_docs', 'Nada selecionado.', array( 'status' => 400 ) ); }
-		$rows = $wpdb->get_results( $wpdb->prepare( "SELECT * FROM $tb WHERE user_id=%d AND arquivo<>'' AND id IN (" . implode( ',', $ids ) . ') ORDER BY cnpj, tipo', $uid ), ARRAY_A );
-		if ( ! $rows ) { return new WP_Error( 'dv_docs', 'Os documentos selecionados não têm arquivo.', array( 'status' => 404 ) ); }
-		nocache_headers();
-		if ( count( $rows ) === 1 && ! $r['zip'] ) {
-			$p = $dir . '/' . basename( $rows[0]['arquivo'] ); if ( ! is_file( $p ) ) { return new WP_Error( 'dv_docs', 'Arquivo não encontrado.', array( 'status' => 404 ) ); }
-			$ft = wp_check_filetype( $p ); header( 'Content-Type: ' . ( $ft['type'] ?: 'application/octet-stream' ) );
-			header( 'Content-Disposition: attachment; filename="' . rawurlencode( $rows[0]['nome_arq'] ?: 'documento.' . $ft['ext'] ) . '"' ); header( 'Content-Length: ' . filesize( $p ) ); readfile( $p ); exit;
-		}
-		if ( ! class_exists( 'ZipArchive' ) ) { return new WP_Error( 'dv_docs', 'O servidor não gera ZIP.', array( 'status' => 500 ) ); }
-		require_once ABSPATH . 'wp-admin/includes/file.php'; $T = dv_docs_tipos(); $tmp = wp_tempnam( 'dvpasta' ); $z = new ZipArchive(); $z->open( $tmp, ZipArchive::OVERWRITE );
-		$idx = "PASTA DE HABILITAÇÃO — gerada em " . date_i18n( 'd/m/Y H:i' ) . " pela plataforma Desenvolve\r\n\r\n"; $n = 0;
-		foreach ( $rows as $d ) {
-			$p = $dir . '/' . basename( $d['arquivo'] ); if ( ! is_file( $p ) ) { continue; } $n++;
-			$ext = pathinfo( $p, PATHINFO_EXTENSION ); $g = preg_replace( '/[^A-Za-z0-9]+/', '-', remove_accents( strtok( $T[ $d['tipo'] ][1] ?? 'Outros', '(' ) ) );
-			$nm = sprintf( '%s/%02d-%s.%s', trim( $g, '-' ), $n, sanitize_file_name( remove_accents( $d['titulo'] ) ), $ext );
-			$z->addFile( $p, $d['cnpj'] . '/' . $nm );
-			$idx .= sprintf( "%02d. %s — CNPJ %s%s%s\r\n", $n, $d['titulo'], $d['cnpj'], $d['emissao'] ? ' — emitido em ' . date_i18n( 'd/m/Y', strtotime( $d['emissao'] ) ) : '', $d['validade'] ? ' — válido até ' . date_i18n( 'd/m/Y', strtotime( $d['validade'] ) ) : '' );
-		}
-		$z->addFromString( '00-INDICE.txt', $idx ); $z->close();
-		header( 'Content-Type: application/zip' ); header( 'Content-Disposition: attachment; filename="pasta-de-habilitacao-' . current_time( 'Y-m-d' ) . '.zip"' ); header( 'Content-Length: ' . filesize( $tmp ) );
-		readfile( $tmp ); @unlink( $tmp ); exit;
-	} ) );
 } );
 
 /* Alertas diários por e-mail: 30, 15, 7, 3 e 1 dia antes, no dia e no dia seguinte ao vencimento */
@@ -266,9 +234,9 @@ add_shortcode( 'dv_documentos', function () {
 <div class="dc" id="dv-docs" data-api="<?php echo esc_attr( rest_url( 'desenvolve/v1/' ) ); ?>" data-nonce="<?php echo esc_attr( wp_create_nonce( 'wp_rest' ) ); ?>">
 	<div class="dc-emps"></div>
 	<div class="dc-body"><p class="dc-h">Carregando…</p></div>
-	<dialog class="dc-dlg"><form method="dialog" class="dc-f" enctype="multipart/form-data">
-		<h3 class="dc-ft">Enviar documento</h3>
-		<label class="dc-drop">Arraste o PDF aqui ou <u>escolha o arquivo</u><input type="file" name="arquivo" accept=".pdf,.jpg,.jpeg,.png,.docx,.xlsx,.zip"><span class="dc-fn"></span></label>
+	<dialog class="dc-dlg"><form method="dialog" class="dc-f">
+		<h3 class="dc-ft">Cadastrar documento</h3>
+		<label class="dc-drop">Opcional: arraste o PDF da certidão ou <u>escolha o arquivo</u> para preencher os dados sozinho<input type="file" accept=".pdf"><span class="dc-fn"></span><small style="display:block;color:#6E6A60;margin-top:6px">O arquivo não é enviado nem guardado: a leitura acontece só no seu computador. Guarde a certidão na rede da sua empresa.</small></label>
 		<p class="dc-lido dc-h"></p>
 		<label>Tipo de documento<select name="tipo"></select></label>
 		<label>Descrição<input name="titulo" maxlength="190"></label>
@@ -292,7 +260,7 @@ add_shortcode( 'dv_documentos', function () {
 .dc-rad.ok{border-color:#BFDCCB;background:#EEF7F1}.dc-rad.ok b{color:var(--gr)}
 .dc-top{display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap;margin:8px 0 10px}
 .dc-g{margin:16px 0 6px;font-size:.78rem;letter-spacing:.12em;text-transform:uppercase;color:var(--gd);font-weight:700}
-.dc-r{display:grid;grid-template-columns:22px 1fr auto;gap:12px;align-items:center;border:1px solid var(--ln);border-radius:12px;padding:10px 14px;background:#fff;margin-bottom:6px}
+.dc-r{display:grid;grid-template-columns:1fr auto;gap:12px;align-items:center;border:1px solid var(--ln);border-radius:12px;padding:10px 14px;background:#fff;margin-bottom:6px}
 .dc-r.falta{background:#FBFAF6;border-style:dashed}.dc-r .t{font-weight:600;font-size:.94rem}.dc-r .m{color:var(--mu);font-size:.8rem;margin-top:2px}
 .dc-r .a{display:flex;gap:6px;flex-wrap:wrap;justify-content:flex-end}.dc-r .a a,.dc-r .a button{font-size:.8rem;padding:6px 10px;border-radius:8px;text-decoration:none;font-weight:700}
 .dc-r .a a{color:#8A6A2C;border:1px solid var(--ln);background:#fff}
@@ -304,7 +272,7 @@ add_shortcode( 'dv_documentos', function () {
 .dc-lido{background:#EEF7F1;border-radius:8px;padding:8px 10px;color:var(--gr)!important;display:none}.dc-lido.on{display:block}.dc-lido.w{background:#FFF4DC;color:var(--am)!important}
 .dc-act{display:flex;justify-content:flex-end;gap:8px;margin-top:6px}.dc-fm.e{color:var(--rd)}
 .dc-src{color:var(--mu);font-size:.8rem;margin-top:22px}
-@media(max-width:700px){.dc{padding:16px}.dc-r{grid-template-columns:22px 1fr}.dc-r .a{grid-column:1/-1;justify-content:flex-start}.dc-add input{width:100%}.dc-add{width:100%}}
+@media(max-width:700px){.dc{padding:16px}.dc-r{grid-template-columns:1fr}.dc-r .a{grid-column:1/-1;justify-content:flex-start}.dc-add input{width:100%}.dc-add{width:100%}}
 </style>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
 <script>
@@ -321,30 +289,29 @@ function buscarRadar(c){radar[c]={carregando:1};req('GET','docs/radar?cnpj='+c).
 function pintar(){
  var E=R.querySelector('.dc-emps');E.innerHTML=S.empresas.map(function(x){return'<span class="e'+(x.cnpj===emp?' on':'')+'" data-c="'+x.cnpj+'">'+e(x.nome.split(' ').slice(0,3).join(' ').replace(/[\s.,-]+$/,''))+'</span>'}).join('')+'<form class="dc-add"><input placeholder="CNPJ de outra empresa" inputmode="numeric"><button>Adicionar</button></form>';
  var B=R.querySelector('.dc-body');
- if(!S.empresas.length){B.innerHTML='<div class="dc-rad ok"><b>Comece pela empresa.</b><p class="dc-h">Informe o CNPJ acima. Montamos o checklist de habilitação da Lei 14.133/2021, e você envia os PDFs: a validade, o tipo de certidão e o resultado são lidos automaticamente. Avisamos por e-mail antes de cada vencimento.</p></div>';return}
+ if(!S.empresas.length){B.innerHTML='<div class="dc-rad ok"><b>Comece pela empresa.</b><p class="dc-h">Informe o CNPJ acima. Montamos o checklist de habilitação da Lei 14.133/2021, e você cadastra cada certidão com a validade (ou arrasta o PDF e os dados são lidos sozinhos, sem o arquivo sair do seu computador). Avisamos por e-mail antes de cada vencimento.</p></div>';return}
  var ds=S.docs.filter(function(d){return d.cnpj===emp}),por={};ds.forEach(function(d){(por[d.tipo]=por[d.tipo]||[]).push(d)});
  var obrig=S.tipos.filter(function(t){return t.obrig}),okc=0,venc=0,vencendo=0,falta=0;
  obrig.forEach(function(t){var l=por[t.k]||[];var bom=l.some(function(d){return d.situacao==='ok'||d.situacao==='sem_validade'||d.situacao==='vencendo'});if(bom)okc++;else if(l.length)venc++;else falta++});
  ds.forEach(function(d){if(d.situacao==='vencendo')vencendo++});
  var pct=Math.round(okc*100/obrig.length),H='';
- H+='<div class="dc-kpi"><div><b>'+pct+'%</b><span>Pronta para habilitar</span><div class="dc-bar"><i style="width:'+pct+'%"></i></div></div><div><b style="color:var(--rd)">'+venc+'</b><span>Obrigatórios vencidos</span></div><div><b style="color:var(--am)">'+vencendo+'</b><span>Vencem em até 30 dias</span></div><div><b style="color:var(--mu)">'+falta+'</b><span>Obrigatórios faltando</span></div><div><b>'+ds.length+'</b><span>Documentos guardados</span></div></div>';
+ H+='<div class="dc-kpi"><div><b>'+pct+'%</b><span>Pronta para habilitar</span><div class="dc-bar"><i style="width:'+pct+'%"></i></div></div><div><b style="color:var(--rd)">'+venc+'</b><span>Obrigatórios vencidos</span></div><div><b style="color:var(--am)">'+vencendo+'</b><span>Vencem em até 30 dias</span></div><div><b style="color:var(--mu)">'+falta+'</b><span>Obrigatórios faltando</span></div><div><b>'+ds.length+'</b><span>Documentos cadastrados</span></div></div>';
  var rd=radar[emp]||{};
  if(rd.carregando)H+='<div class="dc-rad ok"><b>Radar de habilitação</b><p class="dc-h">Verificando dívida ativa, sanções e situação do CNPJ…</p></div>';
  else if(rd.alertas&&rd.alertas.length)H+='<div class="dc-rad"><b>Radar de habilitação: '+rd.alertas.length+' ponto(s) de atenção antes de emitir as certidões</b><ul>'+rd.alertas.map(function(a){return'<li>'+e(a.txt)+'</li>'}).join('')+'</ul><p class="dc-h">Fontes: PGFN (dívida ativa), CGU (CEIS e CNEP), TCU (inidôneos) e Receita Federal. Precisa regularizar? Acione um consultor da Desenvolve.</p></div>';
  else if(rd.alertas)H+='<div class="dc-rad ok"><b>Radar de habilitação: nada impeditivo encontrado</b><p class="dc-h">Sem dívida ativa da União, sem sanções no CEIS, CNEP e TCU e CNPJ ativo na Receita. Fontes oficiais, atualizadas periodicamente.</p></div>';
- var n=Object.keys(sel).filter(function(k){return sel[k]}).length;
- H+='<div class="dc-top"><button class="dc-novo">+ Enviar documento</button><span><button class="g dc-sel">Selecionar todos em dia</button> <button class="g dc-zip"'+(n?'':' disabled')+'>Baixar pasta de habilitação'+(n?' ('+n+')':'')+'</button></span></div>';
+ H+='<div class="dc-top"><button class="dc-novo">+ Cadastrar documento</button></div>';
  var grupos=[];S.tipos.forEach(function(t){if(grupos.indexOf(t.grupo)<0)grupos.push(t.grupo)});
  grupos.forEach(function(g){var linhas='';
   S.tipos.filter(function(t){return t.grupo===g}).forEach(function(t){var l=por[t.k]||[];
    l.forEach(function(d){var st=d.situacao,q=d.dias===null?'':d.dias<0?'venceu há '+(-d.dias)+' dia(s)':d.dias===0?'vence hoje':'faltam '+d.dias+' dia(s)';
-    linhas+='<div class="dc-r"><input type="checkbox" data-s="'+d.id+'"'+(sel[d.id]?' checked':'')+(d.tem_arq?'':' disabled title="Sem arquivo"')+'><div><div class="t">'+e(d.titulo)+'<span class="st '+st+'">'+SN[st]+'</span>'+(d.resultado==='positiva'?'<span class="st positiva">Positiva</span>':d.resultado==='pcen'?'<span class="st pcen">Positiva c/ efeito de negativa</span>':'')+'</div><div class="m">'+(d.emissao?'Emitido em '+br(d.emissao)+' · ':'')+(d.validade?'válido até '+br(d.validade)+' · '+q:'sem data de validade')+(d.obs?' · '+e(d.obs):'')+'</div></div><div class="a">'+(t.link&&(st==='vencido'||st==='vencendo')?'<a href="'+e(t.link)+'" target="_blank" rel="noopener">Emitir nova</a>':'')+(d.tem_arq?'<button class="g" data-b="'+d.id+'">Baixar</button>':'')+'<button class="g" data-ed="'+d.id+'">Editar</button><button class="g" data-x="'+d.id+'">Excluir</button></div></div>'});
-   if(!l.length&&t.obrig)linhas+='<div class="dc-r falta"><span></span><div><div class="t">'+e(t.nome)+'<span class="st falta">Falta</span></div><div class="m">'+(t.dias?'Validade usual: '+t.dias+' dias. ':'')+'Obrigatório na maioria dos editais.</div></div><div class="a">'+(t.link?'<a href="'+e(t.link)+'" target="_blank" rel="noopener">Emitir</a>':'')+'<button class="g" data-n="'+t.k+'">Enviar</button></div></div>'});
+    linhas+='<div class="dc-r"><div><div class="t">'+e(d.titulo)+'<span class="st '+st+'">'+SN[st]+'</span>'+(d.resultado==='positiva'?'<span class="st positiva">Positiva</span>':d.resultado==='pcen'?'<span class="st pcen">Positiva c/ efeito de negativa</span>':'')+'</div><div class="m">'+(d.emissao?'Emitido em '+br(d.emissao)+' · ':'')+(d.validade?'válido até '+br(d.validade)+' · '+q:'sem data de validade')+(d.obs?' · '+e(d.obs):'')+'</div></div><div class="a">'+(t.link&&(st==='vencido'||st==='vencendo')?'<a href="'+e(t.link)+'" target="_blank" rel="noopener">Emitir nova</a>':'')+'<button class="g" data-ed="'+d.id+'">Editar</button><button class="g" data-x="'+d.id+'">Excluir</button></div></div>'});
+   if(!l.length&&t.obrig)linhas+='<div class="dc-r falta"><div><div class="t">'+e(t.nome)+'<span class="st falta">Falta</span></div><div class="m">'+(t.dias?'Validade usual: '+t.dias+' dias. ':'')+'Obrigatório na maioria dos editais.</div></div><div class="a">'+(t.link?'<a href="'+e(t.link)+'" target="_blank" rel="noopener">Emitir</a>':'')+'<button class="g" data-n="'+t.k+'">Cadastrar</button></div></div>'});
   if(linhas)H+='<div class="dc-g">'+e(g)+'</div>'+linhas});
- H+='<p class="dc-src">Os arquivos ficam numa pasta protegida, acessível só com o seu login. A leitura automática do PDF acontece no seu navegador. Confira sempre o que o edital exige: prazos de validade podem variar por órgão (art. 70 da Lei 14.133/2021 permite substituir por registro cadastral). Avisos por e-mail 30, 15, 7, 3 e 1 dia antes do vencimento, para os mesmos e-mails do Captador. <a href="#" class="dc-rmv" style="color:var(--rd)">Remover esta empresa</a></p>';
+ H+='<p class="dc-src">A Desenvolve não guarda os seus documentos: aqui ficam só os dados para o alerta (tipo, emissão e validade). Guarde as certidões na rede da sua empresa. Confira sempre o que o edital exige: prazos de validade podem variar por órgão (art. 70 da Lei 14.133/2021 permite substituir por registro cadastral). Avisos por e-mail 30, 15, 7, 3 e 1 dia antes do vencimento, para os mesmos e-mails do Captador. <a href="#" class="dc-rmv" style="color:var(--rd)">Remover esta empresa</a></p>';
  B.innerHTML=H}
 function abrir(d,tk){edit=d?d.id:0;F.reset();F.querySelector('.dc-fn').textContent='';var L=F.querySelector('.dc-lido');L.className='dc-lido dc-h';F.querySelector('.dc-fm').textContent='';
- F.querySelector('.dc-ft').textContent=d?'Editar documento':'Enviar documento';
+ F.querySelector('.dc-ft').textContent=d?'Editar documento':'Cadastrar documento';
  var sl=F.querySelector('[name=tipo]'),g='',o='';S.tipos.forEach(function(t){if(t.grupo!==g){if(g)o+='</optgroup>';g=t.grupo;o+='<optgroup label="'+e(g)+'">'}o+='<option value="'+t.k+'">'+e(t.nome)+'</option>'});sl.innerHTML=o+'</optgroup>';
  if(d){['tipo','titulo','emissao','validade','resultado','obs'].forEach(function(k){F.querySelector('[name='+k+']').value=d[k]||''})}else if(tk){sl.value=tk;F.querySelector('[name=titulo]').value=tipo(tk).nome}
  dlg.showModal()}
@@ -374,19 +341,14 @@ inp.addEventListener('change',function(){if(inp.files[0])ler(inp.files[0])});
 ['dragover','dragenter'].forEach(function(ev){drop.addEventListener(ev,function(x){x.preventDefault();drop.classList.add('on')})});
 ['dragleave','drop'].forEach(function(ev){drop.addEventListener(ev,function(x){x.preventDefault();drop.classList.remove('on')})});
 drop.addEventListener('drop',function(x){if(x.dataTransfer.files[0]){inp.files=x.dataTransfer.files;ler(x.dataTransfer.files[0])}});
-F.querySelector('.dc-ok').addEventListener('click',function(){var fd=new FormData(F),m=F.querySelector('.dc-fm');fd.append('cnpj',emp);if(edit)fd.append('id',edit);if(!edit&&!inp.files[0]){m.className='dc-fm dc-h e';m.textContent='Escolha o arquivo.';return}
- m.className='dc-fm dc-h';m.textContent='Enviando…';req('POST','docs/salvar',fd,true).then(function(){dlg.close();carregar()}).catch(function(j){m.className='dc-fm dc-h e';m.textContent=(j&&j.message)||'Não foi possível salvar.'})});
-function baixar(ids,zip){fetch(api+'docs/baixar?ids='+ids.join(',')+(zip?'&zip=1':''),{credentials:'same-origin',headers:{'X-WP-Nonce':nonce}}).then(function(r){if(!r.ok)return r.json().then(function(j){throw j});var cd=r.headers.get('Content-Disposition')||'',nm=decodeURIComponent((cd.match(/filename="([^"]+)"/)||[])[1]||'documento');return r.blob().then(function(b){var a=document.createElement('a');a.href=URL.createObjectURL(b);a.download=nm;document.body.appendChild(a);a.click();setTimeout(function(){URL.revokeObjectURL(a.href);a.remove()},800)})}).catch(function(j){alert((j&&j.message)||'Não foi possível baixar.')})}
+F.querySelector('.dc-ok').addEventListener('click',function(){var o={},m=F.querySelector('.dc-fm');['tipo','titulo','emissao','validade','resultado','obs'].forEach(function(k){o[k]=F.querySelector('[name='+k+']').value});o.cnpj=emp;if(edit)o.id=edit;if(!o.validade&&!o.emissao&&tipo(o.tipo).dias){m.className='dc-fm dc-h e';m.textContent='Informe a emissão ou a validade para receber o alerta.';return}
+ m.className='dc-fm dc-h';m.textContent='Salvando…';req('POST','docs/salvar',o).then(function(){dlg.close();carregar()}).catch(function(j){m.className='dc-fm dc-h e';m.textContent=(j&&j.message)||'Não foi possível salvar.'})});
 R.addEventListener('click',function(x){var t=x.target,d;
  if(t.matches('.e')){emp=t.dataset.c;sel={};pintar();if(!radar[emp])buscarRadar(emp);return}
  if(t.matches('.dc-novo')){abrir();return}
  if(t.dataset.n){abrir(null,t.dataset.n);return}
  if(t.dataset.ed){d=S.docs.filter(function(y){return y.id==t.dataset.ed})[0];abrir(d);return}
- if(t.dataset.b){baixar([t.dataset.b]);return}
- if(t.dataset.x){if(confirm('Excluir este documento e o arquivo?'))req('POST','docs/excluir',{id:+t.dataset.x}).then(carregar);return}
- if(t.dataset.s){sel[t.dataset.s]=t.checked;pintar();return}
- if(t.matches('.dc-sel')){S.docs.forEach(function(y){if(y.cnpj===emp&&y.tem_arq&&y.situacao!=='vencido')sel[y.id]=true});pintar();return}
- if(t.matches('.dc-zip')){baixar(Object.keys(sel).filter(function(k){return sel[k]}),1);return}
+ if(t.dataset.x){if(confirm('Excluir este cadastro?'))req('POST','docs/excluir',{id:+t.dataset.x}).then(carregar);return}
  if(t.matches('.dc-rmv')){x.preventDefault();if(confirm('Remover esta empresa da lista?'))req('POST','docs/empresa',{cnpj:emp,remover:1}).then(function(){emp='';carregar()}).catch(function(j){alert(j.message)});return}});
 R.addEventListener('submit',function(x){if(!x.target.matches('.dc-add'))return;x.preventDefault();var i=x.target.querySelector('input'),c=i.value.replace(/\D/g,'');var b=x.target.querySelector('button');b.disabled=true;
  req('POST','docs/empresa',{cnpj:c}).then(function(){emp=c;return carregar()}).catch(function(j){alert((j&&j.message)||'Erro')}).then(function(){b.disabled=false})});

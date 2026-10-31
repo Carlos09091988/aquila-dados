@@ -26,6 +26,7 @@ function dv_ct_calc( $c, $hoje ) {
 	$c['dias_reajuste'] = dv_ct_dias( $c['prox_reajuste'], $hoje );
 	$c['dias_garantia'] = dv_ct_dias( $c['garantia_vence'] ?? '', $hoje );
 	$c['vigente'] = $c['dias_fim'] === null || $c['dias_fim'] >= 0;
+	$c['verificar'] = ! $c['vigente'] && empty( $c['editado'] ) && ( $c['fonte'] ?? '' ) !== 'Manual';
 	return $c;
 }
 function dv_ct_wa_link( $msg ) { return 'https://wa.me/' . DV_CT_WA . '?text=' . rawurlencode( $msg ); }
@@ -52,7 +53,7 @@ add_action( 'rest_api_init', function () {
 		foreach ( $l as $c ) { $chaves[ $c['chave'] ?? '' ] = 1; }
 		$add = 0; $venc = 0;
 		foreach ( $novos as $x ) {
-			if ( $x['fim'] && $x['fim'] < gmdate( 'Y-m-d', strtotime( $hoje . ' -30 days' ) ) ) { $venc++; continue; } // só vigentes (e encerrados há menos de 30 dias)
+			if ( $x['fim'] && $x['fim'] < gmdate( 'Y-m-d', strtotime( $hoje . ' -365 days' ) ) ) { $venc++; continue; } // vigentes e encerrados há menos de 1 ano (muitos foram prorrogados por aditivo e o PNCP não atualizou a data)
 			$k = md5( $cnpj . '|' . round( $x['valor'] ) . '|' . substr( $x['inicio'], 0, 7 ) . '|' . substr( dv_al_norm_ct( $x['orgao'] ), 0, 12 ) );
 			if ( isset( $chaves[ $k ] ) ) { continue; } $chaves[ $k ] = 1;
 			if ( count( $l ) >= DV_CT_MAX ) { break; }
@@ -69,7 +70,7 @@ add_action( 'rest_api_init', function () {
 			'valor' => (float) $r['valor'], 'inicio' => $d( 'inicio' ), 'fim' => $d( 'fim' ), 'data_base' => $d( 'data_base' ), 'indice' => $t( 'indice', 80 ),
 			'garantia_tipo' => $t( 'garantia_tipo', 40 ), 'garantia_valor' => (float) $r['garantia_valor'], 'garantia_vence' => $d( 'garantia_vence' ), 'link' => esc_url_raw( (string) $r['link'] ), 'notas' => mb_substr( sanitize_textarea_field( (string) $r['notas'] ), 0, 2000 ) );
 		if ( ! $c['orgao'] && ! $c['objeto'] ) { return new WP_Error( 'dv_ct', 'Informe ao menos o órgão ou o objeto.', array( 'status' => 400 ) ); }
-		$achou = false; foreach ( $l as &$x ) { if ( $x['id'] === $id ) { $x = array_merge( $x, $c ); $x['aviso'] = ''; $achou = true; } } unset( $x );
+		$achou = false; foreach ( $l as &$x ) { if ( $x['id'] === $id ) { $x = array_merge( $x, $c ); $x['aviso'] = ''; $x['editado'] = 1; $achou = true; } } unset( $x );
 		if ( ! $achou ) { if ( count( $l ) >= DV_CT_MAX ) { return new WP_Error( 'dv_ct', 'Limite de contratos atingido.', array( 'status' => 400 ) ); } $id = substr( md5( uniqid( '', true ) ), 0, 10 ); $l[] = $c + array( 'id' => $id, 'chave' => 'manual-' . $id, 'fonte' => 'Manual', 'aviso' => '' ); }
 		dv_ct_salvar_itens( $uid, $l ); return array( 'ok' => true, 'id' => $id );
 	} ) );
@@ -165,7 +166,7 @@ function moeda(v){return v?Number(v).toLocaleString('pt-BR',{style:'currency',cu
 function num(v){return String(v||'').replace(/\./g,'').replace(',','.')}
 function req(m,p,b){return fetch(api+p,{method:m,credentials:'same-origin',headers:{'X-WP-Nonce':nonce,'Content-Type':'application/json'},body:b?JSON.stringify(b):undefined}).then(function(r){return r.json().then(function(j){if(r.status>=400)throw j;return j})})}
 function wa(t){return'https://wa.me/'+S.wa+'?text='+encodeURIComponent(t)}
-function atencao(c){return c.vigente&&((c.dias_fim!==null&&c.dias_fim<=120)||(c.dias_reajuste!==null&&c.dias_reajuste<=60)||(c.dias_garantia!==null&&c.dias_garantia<=30))}
+function atencao(c){return c.verificar||c.vigente&&((c.dias_fim!==null&&c.dias_fim<=120)||(c.dias_reajuste!==null&&c.dias_reajuste<=60)||(c.dias_garantia!==null&&c.dias_garantia<=30))}
 function carregar(){return req('GET','contratos').then(function(j){S=j;if(!emp&&j.empresas.length)emp=j.empresas[0].cnpj;pintar()})}
 function pintar(){
  R.querySelector('.ct-emps').innerHTML=S.empresas.map(function(x){return'<span class="e'+(x.cnpj===emp?' on':'')+'" data-c="'+x.cnpj+'">'+e(x.nome.split(' ').slice(0,3).join(' ').replace(/[\s.,-]+$/,''))+'</span>'}).join('')+'<form class="ct-add"><input placeholder="CNPJ da sua empresa" inputmode="numeric"><button>Adicionar</button></form>';
@@ -180,7 +181,7 @@ function pintar(){
  if(!S.empresas.length){L.innerHTML='<div class="ct-vazio">Informe acima o CNPJ da sua empresa. Buscamos no PNCP e no Portal da Transparência todos os contratos públicos dela (matriz e filiais) e passamos a avisar vigência, reajuste e garantia.</div>';return}
  if(!ds.length){L.innerHTML='<div class="ct-vazio">Nenhum contrato ainda. Clique em <b>Buscar meus contratos no PNCP</b>: leva de 20 a 60 segundos.</div>';return}
  L.innerHTML=l.length?l.map(function(c){var ch=[];
-  if(c.dias_fim!==null)ch.push(c.dias_fim<0?['n','Encerrado em '+br(c.fim)]:[c.dias_fim<=30?'r':c.dias_fim<=120?'a':'v','Vigência até '+br(c.fim)+' · '+c.dias_fim+' dias']);else ch.push(['n','Sem data de fim']);
+  if(c.verificar)ch.push(['a','Fim registrado em '+br(c.fim)+': se foi prorrogado por aditivo, atualize a data']);else if(c.dias_fim!==null)ch.push(c.dias_fim<0?['n','Encerrado em '+br(c.fim)]:[c.dias_fim<=30?'r':c.dias_fim<=120?'a':'v','Vigência até '+br(c.fim)+' · '+c.dias_fim+' dias']);else ch.push(['n','Sem data de fim']);
   if(c.vigente&&c.prox_reajuste)ch.push([c.dias_reajuste<=30?'r':c.dias_reajuste<=60?'a':'','Reajuste/repactuação em '+br(c.prox_reajuste)+(c.data_base?'':' (estimado pelo início)')]);
   if(c.garantia_tipo)ch.push([c.dias_garantia!==null&&c.dias_garantia<=15?'r':c.dias_garantia!==null&&c.dias_garantia<=30?'a':'v',c.garantia_tipo+(c.garantia_vence?' até '+br(c.garantia_vence):'')]);else if(c.vigente)ch.push(['a','Garantia não cadastrada']);
   ch.push(['',c.fonte]);
@@ -194,7 +195,7 @@ R.addEventListener('click',function(ev){var t=ev.target,c;
  if(t.dataset.t){aba=t.dataset.t;pintar();return}
  if(t.matches('.ct-novo')){if(!emp){alert('Cadastre a empresa primeiro.');return}form(null);return}
  if(t.matches('.ct-imp')){if(!emp){alert('Cadastre a empresa primeiro.');return}t.disabled=true;M.className='ct-msg ct-h';M.textContent='Buscando no PNCP e no Portal da Transparência (matriz e filiais)… pode levar até 1 minuto.';
-  req('POST','contratos/importar',{cnpj:emp}).then(function(j){M.className='ct-msg ct-h o';M.textContent=j.encontrados+' contrato(s) encontrados, '+j.adicionados+' novo(s) na sua carteira'+(j.encerrados?' ('+j.encerrados+' já encerrados ficaram de fora)':'')+'. Complete a data-base e a garantia de cada um para receber os avisos certos.';aba='vigentes';t.disabled=false;return carregar()}).catch(function(j){t.disabled=false;M.className='ct-msg ct-h e';M.textContent=(j&&j.message)||'A busca demorou demais. Tente de novo.'});return}
+  req('POST','contratos/importar',{cnpj:emp}).then(function(j){M.className='ct-msg ct-h o';M.textContent=j.encontrados+' contrato(s) encontrados, '+j.adicionados+' novo(s) na sua carteira'+(j.encerrados?' ('+j.encerrados+' encerrados há mais de 1 ano ficaram de fora)':'')+'. Complete a data-base e a garantia de cada um para receber os avisos certos.';aba='vigentes';t.disabled=false;return carregar()}).catch(function(j){t.disabled=false;M.className='ct-msg ct-h e';M.textContent=(j&&j.message)||'A busca demorou demais. Tente de novo.'});return}
  if(t.dataset.ed){c=S.itens.filter(function(x){return x.id===t.dataset.ed})[0];form(c);return}
  if(t.dataset.x){if(confirm('Remover este contrato da carteira?'))req('POST','contratos/excluir',{ids:[t.dataset.x]}).then(carregar)}});
 carregar();

@@ -88,7 +88,8 @@ function dv_capt_buscar( $uid, &$t, $desde ) {
 	if ( $t['tipo'] === 'cnpj' ) {
 		$rot = dv_capt_fmt_cnpj( $t['valor'] );
 		if ( ! isset( $t['nome'] ) ) { $nm = dv_capt_nome_cnpj( $t['valor'] ); if ( $nm !== null ) { $t['nome'] = $nm; } }
-		$n = dv_capt_qd( $uid, $rot, '"' . $rot . '" | "' . $t['valor'] . '"', $desde ) + dv_capt_dou( $uid, $rot, $rot, $desde );
+		$raiz = substr( $rot, 0, 10 ); // 00.000.000 — pega a matriz e todas as filiais
+		$n = dv_capt_qd( $uid, $rot, '"' . $raiz . '" | "' . $t['valor'] . '"', $desde ) + dv_capt_dou( $uid, $rot, $raiz, $desde );
 		if ( ! empty( $t['nome'] ) ) { $n += dv_capt_qd( $uid, $rot, '"' . $t['nome'] . '"', $desde ) + dv_capt_dou( $uid, $rot, $t['nome'], $desde ); }
 		return $n;
 	}
@@ -241,7 +242,7 @@ add_shortcode( 'dv_captador', function () {
 	<form class="cp-add" autocomplete="off">
 		<label for="cp-v">CNPJ ou nome a monitorar</label>
 		<div class="cp-row"><input id="cp-v" placeholder="00.000.000/0000-00 ou NOME DA EMPRESA / PESSOA" maxlength="150"><button type="submit">Monitorar</button></div>
-		<p class="cp-h">Cada termo usa 1 crédito por mês. Ao cadastrar, buscamos os últimos 6 meses; depois, verificamos todo dia e avisamos por e-mail quando sair publicação nova.</p>
+		<p class="cp-h">Ao informar um CNPJ, monitoramos também todas as filiais e a razão social. Cada termo usa 1 crédito por mês. Ao cadastrar, buscamos os últimos 6 meses; depois, verificamos todo dia e avisamos por e-mail quando sair publicação nova.</p>
 		<p class="cp-msg"></p>
 	</form>
 	<details class="cp-pref"><summary>Onde receber o resumo diário</summary>
@@ -254,7 +255,7 @@ add_shortcode( 'dv_captador', function () {
 		<aside><h3>Termos monitorados <small class="cp-n"></small></h3><ul class="cp-t"></ul></aside>
 		<section><div class="cp-top"><h3>Publicações encontradas</h3><button type="button" class="cp-lido g">Marcar tudo como visto</button></div><div class="cp-p"><p class="cp-h">Carregando…</p></div></section>
 	</div>
-	<p class="cp-src">Fontes: Diário Oficial da União (Imprensa Nacional) e diários oficiais de municípios reunidos pelo Querido Diário (Open Knowledge Brasil). Para CNPJ, buscamos também pela razão social. A cobertura municipal depende dos municípios disponíveis na base; os diários estaduais estão sendo incluídos. Confira sempre a edição original.</p>
+	<p class="cp-src">Fontes: Diário Oficial da União (Imprensa Nacional) e diários oficiais de municípios reunidos pelo Querido Diário (Open Knowledge Brasil). Para CNPJ, buscamos a matriz, todas as filiais (mesma raiz de CNPJ) e a razão social. A cobertura municipal depende dos municípios disponíveis na base; os diários estaduais estão sendo incluídos. Confira sempre a edição original.</p>
 </div>
 <style>
 .cp{--ln:#E3DED2;--mu:#6E6A60;--gd:#A8843F;color:#16191E;font-family:"Hanken Grotesk",-apple-system,sans-serif;padding:28px}

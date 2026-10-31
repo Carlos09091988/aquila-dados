@@ -125,7 +125,7 @@ add_shortcode( 'dv_alertas', function () {
 		<div class="al-2"><label>Valor mínimo (R$)<input name="vmin" inputmode="decimal" placeholder="opcional"></label><label>Valor máximo (R$)<input name="vmax" inputmode="decimal" placeholder="opcional"></label></div>
 		<input type="hidden" name="id">
 		<div class="al-act"><button type="button" class="g al-test">Ver o que ele encontra</button><button type="submit">Salvar alerta</button><button type="button" class="g al-novo" hidden>Cancelar edição</button></div>
-		<p class="al-m al-h">Todo dia, por volta das 7h40, você recebe por e-mail as licitações abertas publicadas no PNCP desde a véspera. Os e-mails de destino são os mesmos do Captador e dos avisos de prazo.</p>
+		<p class="al-m al-h">Todo dia, por volta das 7h40, você recebe por e-mail as licitações abertas publicadas no PNCP desde a véspera. Os e-mails de destino são os mesmos do Radar do Diário Oficial e dos avisos de prazo.</p>
 	</form>
 	<h3>Meus alertas</h3><div class="al-lista"><p class="al-h">Carregando…</p></div>
 	<div class="al-res"></div>

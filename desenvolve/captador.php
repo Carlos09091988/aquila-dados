@@ -1,5 +1,5 @@
 /**
- * Desenvolve — Captador de publicações (diários oficiais por CNPJ e por nome)
+ * Desenvolve — Radar do Diário Oficial (antigo Captador de publicações) (diários oficiais por CNPJ e por nome)
  * Fonte: Querido Diário (Open Knowledge Brasil), diários oficiais municipais.
  * Cobrança: cada termo monitorado usa 1 crédito por mês (cobrado ao cadastrar e a cada renovação).
  * Depende do núcleo (dv_usar, dv_saldo) e do snippet de ferramentas (dv_tools_perm).
@@ -156,21 +156,21 @@ function dv_capt_enviar( $uid, $hoje ) {
 	$pubs = $wpdb->get_results( $wpdb->prepare( "SELECT termo,data,municipio,uf,url,trecho FROM {$wpdb->prefix}dv_capt WHERE user_id=%d AND criado >= %s ORDER BY termo, data DESC LIMIT 100", $uid, $hoje . ' 00:00:00' ), ARRAY_A );
 	$n = count( $pubs ); if ( ! $n && empty( $p['sempre'] ) ) { return; }
 	$link = home_url( '/plataforma/captador/' ); $dt = date_i18n( 'd/m/Y', strtotime( $hoje ) );
-	$h = '<div style="font-family:Arial,sans-serif;max-width:680px;margin:auto;color:#16191E"><div style="background:#0C0F13;padding:18px 24px;border-radius:12px 12px 0 0"><b style="color:#C9A45C;letter-spacing:.2em;font-family:Georgia,serif">DESENVOLVE</b><div style="color:#B9BDB8;font-size:13px;margin-top:4px">Captador de publicações · ' . $dt . '</div></div><div style="border:1px solid #E3DED2;border-top:0;padding:22px 24px;border-radius:0 0 12px 12px">';
+	$h = '<div style="font-family:Arial,sans-serif;max-width:680px;margin:auto;color:#16191E"><div style="background:#0C0F13;padding:18px 24px;border-radius:12px 12px 0 0"><b style="color:#C9A45C;letter-spacing:.2em;font-family:Georgia,serif">DESENVOLVE</b><div style="color:#B9BDB8;font-size:13px;margin-top:4px">Radar do Diário Oficial · ' . $dt . '</div></div><div style="border:1px solid #E3DED2;border-top:0;padding:22px 24px;border-radius:0 0 12px 12px">';
 	$h .= '<p>Olá, ' . esc_html( $u->display_name ) . '.</p><p>' . ( $n ? '<b>' . $n . ' nova(s) publicação(ões)</b> nos diários oficiais para os termos que você monitora:' : 'Hoje não saiu nenhuma publicação nova para os termos que você monitora.' ) . '</p>';
 	foreach ( $pubs as $x ) {
 		$h .= '<div style="border-left:4px solid #C9A45C;background:#FAF8F3;padding:12px 14px;margin:12px 0;border-radius:8px"><div style="font-size:13px;color:#6E6A60"><b style="color:#16191E">' . esc_html( $x['termo'] ) . '</b> · ' . esc_html( $x['municipio'] . ( $x['uf'] ? '/' . $x['uf'] : '' ) ) . ' · ' . esc_html( date_i18n( 'd/m/Y', strtotime( $x['data'] ) ) ) . '</div><p style="font-size:14px;line-height:1.5;margin:6px 0">' . esc_html( mb_substr( $x['trecho'], 0, 700 ) ) . '</p>' . ( $x['url'] ? '<a href="' . esc_url( $x['url'] ) . '" style="color:#8A6A2C;font-weight:bold">Abrir o diário</a>' : '' ) . '</div>';
 	}
-	$h .= '<p style="margin-top:20px"><a href="' . esc_url( $link ) . '" style="background:#C9A45C;color:#241A06;padding:12px 20px;border-radius:999px;text-decoration:none;font-weight:bold">Ver no painel</a></p><p style="font-size:12px;color:#6E6A60;margin-top:22px">Precisa de apoio sobre alguma publicação? Responda este e-mail ou acione um consultor pela plataforma. Fonte: Querido Diário (Open Knowledge Brasil). Para mudar quem recebe, acesse o Captador no seu painel.</p></div></div>';
+	$h .= '<p style="margin-top:20px"><a href="' . esc_url( $link ) . '" style="background:#C9A45C;color:#241A06;padding:12px 20px;border-radius:999px;text-decoration:none;font-weight:bold">Ver no painel</a></p><p style="font-size:12px;color:#6E6A60;margin-top:22px">Precisa de apoio sobre alguma publicação? Responda este e-mail ou acione um consultor pela plataforma. Fonte: Querido Diário (Open Knowledge Brasil). Para mudar quem recebe, acesse o Radar do Diário Oficial no seu painel.</p></div></div>';
 	$rem = dv_cfg( 'email_remetente' ) ?: 'contato@desenvolveestrategias.com.br';
 	$hd = array( 'Content-Type: text/html; charset=UTF-8', 'From: Desenvolve Estratégias <' . $rem . '>', 'Reply-To: ' . $rem );
-	foreach ( array_slice( (array) $p['emails'], 0, 5 ) as $em ) { if ( is_email( $em ) ) { wp_mail( $em, 'Captador Desenvolve · ' . $dt . ' · ' . ( $n ? $n . ' nova(s) publicação(ões)' : 'sem novidades' ), $h, $hd ); } }
+	foreach ( array_slice( (array) $p['emails'], 0, 5 ) as $em ) { if ( is_email( $em ) ) { wp_mail( $em, 'Radar do Diário Oficial · ' . $dt . ' · ' . ( $n ? $n . ' nova(s) publicação(ões)' : 'sem novidades' ), $h, $hd ); } }
 	if ( ! empty( $p['whats'] ) && $n ) { dv_whats( $p['tel'], array( $u->display_name, (string) $n, $link ) ); }
 }
 /**
  * WhatsApp pela API oficial da Meta (WhatsApp Cloud API), com modelo de mensagem aprovado.
  * Modelo sugerido (nome dv_publicacoes, pt_BR, categoria Utilidade):
- * "Olá, {{1}}! O Captador da Desenvolve encontrou {{2}} nova(s) publicação(ões) nos diários oficiais hoje. Veja: {{3}}"
+ * "Olá, {{1}}! O Radar do Diário Oficial da Desenvolve encontrou {{2}} nova(s) publicação(ões) nos diários oficiais hoje. Veja: {{3}}"
  * Configuração em Desenvolve > WhatsApp (ID do número, token e nome do modelo) — preenchida pelo administrador.
  */
 function dv_whats( $tel, $params ) {

@@ -512,6 +512,15 @@ add_action( 'wp_footer', function () {
 	echo '<script>document.querySelectorAll(\'a[href$="/painel/"]\').forEach(function(a){if(/^\s*Entrar\s*$/i.test(a.textContent))a.textContent="Meu painel"})</script>';
 }, 70 );
 
+/* Prévia de link (WhatsApp, LinkedIn etc.) com a marca nova */
+add_action( 'wp_head', function () {
+	if ( is_admin() ) { return; }
+	$img = 'https://desenvolveestrategias.com.br/wp-content/uploads/2026/10/desenvolve-og.png';
+	$t = is_front_page() ? 'Desenvolve Estratégias — plataforma para quem vende ao Poder Público' : wp_get_document_title();
+	$d = 'Raio-X de concorrentes e compradores, due diligence, banco de preços, captador de publicações e cálculos de contratos públicos, com dados oficiais.';
+	echo "\n" . '<meta property="og:type" content="website"><meta property="og:site_name" content="Desenvolve Estratégias"><meta property="og:title" content="' . esc_attr( $t ) . '"><meta property="og:description" content="' . esc_attr( $d ) . '"><meta name="description" content="' . esc_attr( $d ) . '"><meta property="og:url" content="' . esc_url( home_url( add_query_arg( array() ) ) ) . '"><meta property="og:image" content="' . $img . '"><meta property="og:image:width" content="1200"><meta property="og:image:height" content="630"><meta name="twitter:card" content="summary_large_image">' . "\n";
+}, 1 );
+
 /* Enquanto o Asaas não tem chave, "Assinar" e "Comprar créditos" levam ao WhatsApp da Desenvolve */
 function dv_wa_venda() { return 'https://wa.me/5511993500950?text=' . rawurlencode( 'Olá! Quero assinar a plataforma Desenvolve.' ); }
 add_action( 'template_redirect', function () {

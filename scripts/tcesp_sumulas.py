@@ -1,0 +1,50 @@
+# Sumulas do TCE-SP sobre licitacoes (repertorio da Resolucao 05/2019, www.tce.sp.gov.br/sumulas). Canceladas e temas alheios a licitacao ficam de fora.
+import json
+S = {
+10: "O preço final do produto ofertado pelos proponentes deve incluir os tributos e demais encargos a serem suportados pelo ofertante.",
+11: "Não basta o simples tabelamento de um produto para dispensar a administração pública de adquiri-lo mediante o competente certame licitatório.",
+12: "Depende de licitação a aquisição de combustíveis e derivados de petróleo pelos órgãos e entidades da administração pública estadual e municipal, direta e indireta, aí incluídas as fundações instituídas pelo poder público e empresas sob seu controle, não podendo eventual dispensa fundar-se no inciso VIII do artigo 24 da Lei nº 8.666, de 21 de junho de 1993.",
+15: "Em procedimento licitatório, é vedada a exigência de qualquer documento que configure compromisso de terceiro alheio à disputa.",
+16: "Em procedimento licitatório, é vedada a fixação de distância para usina de asfalto.",
+17: "Em procedimento licitatório, não é permitido exigir-se, para fins de habilitação, certificações de qualidade ou quaisquer outras não previstas em lei.",
+18: "Em procedimento licitatório, é vedada a exigência de comprovação de filiação a Sindicato ou a Associação de Classe, como condição de participação.",
+20: "As contratações que objetivem a monitoração eletrônica do sistema de trânsito devem ser precedidas de licitação do tipo menor preço, vedada a delegação ao particular de atividades inerentes ao poder de polícia da Administração, bem como a vinculação do pagamento ao evento multa.",
+21: "É vedada a utilização de licitação do tipo técnica e preço para coleta de lixo e implantação de aterro sanitário.",
+22: "Em licitações do tipo técnica e preço, é vedada a pontuação de atestados que comprovem experiência anterior, utilizados para fins de habilitação.",
+23: "Em procedimento licitatório, a comprovação da capacidade técnico-profissional, para obras e serviços de engenharia, se aperfeiçoará mediante a apresentação da CAT (Certidão de Acervo Técnico), devendo o edital fixar as parcelas de maior relevância, vedada a imposição de quantitativos mínimos ou prazos máximos.",
+24: "Em procedimento licitatório, é possível a exigência de comprovação da qualificação operacional, nos termos do inciso II, do artigo 30 da Lei Federal nº 8.666/93, a ser realizada mediante apresentação de atestados fornecidos por pessoas jurídicas de direito público ou privado, devidamente registrados nas entidades profissionais competentes, admitindo-se a imposição de quantitativos mínimos de prova de execução de serviços similares, desde que em quantidades razoáveis, assim consideradas 50% a 60% da execução pretendida, ou outro percentual que venha devida e tecnicamente justificado.",
+25: "Em procedimento licitatório, a comprovação de vínculo profissional pode se dar mediante contrato social, registro na carteira profissional, ficha de empregado ou contrato de trabalho, sendo possível a contratação de profissional autônomo que preencha os requisitos e se responsabilize tecnicamente pela execução dos serviços.",
+26: "É ilegal a exigência de recibo de recolhimento da taxa de retirada do edital, como condição para participação em procedimentos licitatórios.",
+27: "Em procedimento licitatório, a cumulação das exigências de caução de participação e de capital social mínimo insere-se no poder discricionário do administrador, respeitados os limites previstos na lei de regência.",
+28: "Em procedimento licitatório, é vedada a exigência de comprovação de quitação de anuidade junto a entidades de classe como condição de participação.",
+29: "Em procedimento licitatório, é vedada a exigência de certidão negativa de protesto como documento habilitatório.",
+30: "Em procedimento licitatório, para aferição da capacitação técnica poderão ser exigidos atestados de execução de obras e/ou serviços de forma genérica, vedado o estabelecimento de apresentação de prova de experiência anterior em atividade específica, como realização de rodovias, edificação de presídios, de escolas, de hospitais, e outros itens.",
+31: "Em procedimento licitatório, é vedada a utilização do sistema de registro de preços para contratação de serviços de natureza continuada.",
+32: "Em procedimento licitatório, é vedada a utilização do sistema de registro de preços para contratação de obras e de serviços de engenharia, exceto aqueles considerados como de pequenos reparos.",
+33: "No sistema de registro de preços, é vedada a adesão à ata por órgão ou entidade que não participou da licitação (“carona”), excetuadas as hipóteses admitidas em lei federal.",
+34: "A validade da ata de registro de preços, incluídas eventuais prorrogações, limita-se ao período máximo de 1 (um) ano.",
+35: "Em procedimento licitatório para aquisição de cartuchos de impressão e similares, é vedada a exigência de marca idêntica à dos equipamentos a que se destinam, exceto enquanto estes estiverem em período de garantia condicionada ao uso de insumos da mesma marca.",
+36: "Em procedimento licitatório, não se admite vedação a bens de fabricação estrangeira, salvo se decorrente de disposição legal.",
+37: "Em procedimento licitatório para contratação de serviços de caráter continuado, os percentuais referentes à garantia para participar e ao capital social ou patrimônio líquido devem ser calculados sobre o valor estimado correspondente ao período de 12 (doze) meses.",
+38: "Em procedimento licitatório, é vedada a exigência antecipada do comprovante de recolhimento da garantia prevista no artigo 31, inciso III, da Lei Federal nº 8.666/93, o qual deve ser apresentado somente com a documentação de habilitação.",
+39: "Em procedimento licitatório, é vedada a fixação de data única para realização de visita técnica.",
+42: "Nas aquisições de gêneros alimentícios, a apresentação de laudo bromatológico do produto, quando exigida, deve ser imposta apenas à licitante vencedora e mediante prazo suficiente para atendimento.",
+43: "Na licitação para concessão do serviço público de transporte coletivo de passageiros, os requisitos de qualificação econômico-financeira devem ter como base de cálculo o valor dos investimentos devidos pela concessionária.",
+47: "Em procedimento licitatório, é vedada a utilização do tipo técnica e preço ou melhor técnica para contratação de licença de uso de software dito “de prateleira”.",
+48: "Em procedimento licitatório, é possível a exigência de capital social mínimo na forma integralizada, como condição de demonstração da capacitação econômico-financeira.",
+49: "Em procedimento licitatório, o visto do Conselho Regional de Engenharia e Agronomia do Estado de São Paulo - CREA/SP deve ser dirigido apenas ao vencedor do certame, como condição de assinatura do contrato.",
+50: "Em procedimento licitatório, não pode a Administração impedir a participação de empresas que estejam em recuperação judicial, das quais poderá ser exigida a apresentação, durante a fase de habilitação, do Plano de Recuperação já homologado pelo juízo competente e em pleno vigor, sem prejuízo do atendimento a todos os requisitos de habilitação econômico-financeira estabelecidos no edital.",
+51: "A declaração de inidoneidade para licitar ou contratar (artigo 87, IV da Lei nº 8.666/93) tem seus efeitos jurídicos estendidos a todos os órgãos da Administração Pública, ao passo que, nos casos de impedimento e suspensão de licitar e contratar (artigo 87, III da Lei nº 8.666/93 e artigo 7º da Lei nº 10.520/02), a medida repressiva se restringe à esfera de governo do órgão sancionador.",
+}
+NOTA = {
+24: "Atenção: na Lei 14.133/2021, o art. 67, § 2º, admite exigir atestados com quantidades mínimas de até 50% das parcelas de maior relevância.",
+31: "Atenção: súmula editada sob a Lei 8.666/1993. A Lei 14.133/2021 disciplina o registro de preços nos arts. 82 a 86; confira a aplicação ao seu caso.",
+32: "Atenção: súmula editada sob a Lei 8.666/1993. A Lei 14.133/2021 admite registro de preços para obras e serviços de engenharia em determinadas condições (art. 85).",
+33: "Atenção: a Lei 14.133/2021 trata da adesão à ata (\"carona\") no art. 86, §§ 2º a 8º.",
+34: "Atenção: na Lei 14.133/2021, a ata vale 1 ano e pode ser prorrogada por igual período, se comprovado o preço vantajoso (art. 84).",
+51: "Na Lei 14.133/2021, o tema está no art. 156, §§ 4º e 5º: o impedimento vale no ente federativo que aplicou a sanção, e a inidoneidade, em todos os entes.",
+}
+out = [{'n': n, 'e': e, 'nota': NOTA.get(n, '')} for n, e in S.items()]
+json.dump({'fonte': 'Resolução TCE-SP nº 05/2019 (repertório de súmulas)', 'url': 'https://www.tce.sp.gov.br/sumulas', 'sumulas': out},
+          open('aquila/jur/tcesp-sumulas.json', 'w'), ensure_ascii=False, indent=1)
+print(len(out))

@@ -1,5 +1,5 @@
 /**
- * Desenvolve — Banco de teses (jurisprudência do TCU sobre licitações)
+ * Desenvolve — Banco de teses (jurisprudência do TCU e súmulas do TCE-SP sobre licitações)
  * Base: Jurisprudência Selecionada do TCU (dados abertos), filtrada e publicada no GitHub
  * (aquila-dados/aquila/jur) por uma tarefa mensal. O site guarda uma cópia em uploads e
  * renova a cada 7 dias. Incluso na assinatura (sem custo de crédito).
@@ -30,7 +30,12 @@ function dv_ts_base() {
 		$x['_n'] = dv_ts_norm( $x['e'] . ' ' . $x['t'] . ' ' . $x['s'] . ' ' . ( $x['idx'] ?? '' ) );
 		$b[] = $x;
 	}
-	usort( $b, function ( $a, $c ) { return array( (int) $c['a'], (int) $c['n'] ) <=> array( (int) $a['a'], (int) $a['n'] ); } );
+	$f2 = dv_ts_arquivo( 'tcesp-sumulas.json' ); $sp = $f2 ? json_decode( file_get_contents( $f2 ), true ) : array();
+	foreach ( (array) ( $sp['sumulas'] ?? array() ) as $x ) {
+		$b[] = array( 'k' => 'TCESP-S' . $x['n'], 'n' => (string) $x['n'], 'a' => '', 'c' => '', 'ar' => 'Licitação', 't' => 'Súmulas do TCE-SP', 's' => 'Súmula ' . $x['n'],
+			'e' => $x['e'], 'nota' => $x['nota'], 'src' => 'tcesp', 'd' => '', 'rel' => '', '_n' => dv_ts_norm( $x['e'] . ' sumula tce-sp tcesp sao paulo' ) );
+	}
+	usort( $b, function ( $a, $c ) { return array( isset( $c['src'] ) ? 1 : 0, (int) $c['a'], (int) $c['n'] ) <=> array( isset( $a['src'] ) ? 1 : 0, (int) $a['a'], (int) $a['n'] ); } );
 	return $b;
 }
 function dv_ts_norm( $s ) { return strtolower( remove_accents( (string) $s ) ); }
@@ -48,7 +53,7 @@ function dv_ts_sin() {
 		'diligencia' => array( 'diligencia' ), 'aditivo' => array( 'aditivo', 'acrescimo', 'supressao' ), 'prorrogacao' => array( 'prorroga' ),
 	);
 }
-function dv_ts_buscar( $q, $tema = '', $pag = 1, $por = 25 ) {
+function dv_ts_buscar( $q, $tema = '', $pag = 1, $por = 25, $fonte = '' ) {
 	$sin = dv_ts_sin(); $grupos = array();
 	foreach ( preg_split( '/\s+/', dv_ts_norm( $q ) ) as $w ) {
 		$w = trim( $w, ".,;:!?\"'()" ); if ( strlen( $w ) < 2 || in_array( $w, array( 'de', 'da', 'do', 'das', 'dos', 'e', 'a', 'o', 'em', 'na', 'no', 'por', 'para', 'com', 'que', 'meu', 'minha' ), true ) ) { continue; }
@@ -57,6 +62,7 @@ function dv_ts_buscar( $q, $tema = '', $pag = 1, $por = 25 ) {
 	$tema = dv_ts_norm( $tema ); $res = array(); $temas = array();
 	foreach ( dv_ts_base() as $x ) {
 		if ( $tema !== '' && dv_ts_norm( $x['ar'] . ' > ' . $x['t'] ) !== $tema ) { continue; }
+		if ( $fonte === 'tcesp' && empty( $x['src'] ) ) { continue; } if ( $fonte === 'tcu' && ! empty( $x['src'] ) ) { continue; }
 		$ok = true; foreach ( $grupos as $g ) { $um = false; foreach ( $g as $t ) { if ( strpos( $x['_n'], $t ) !== false ) { $um = true; break; } } if ( ! $um ) { $ok = false; break; } }
 		if ( ! $ok ) { continue; }
 		$res[] = $x; $k = $x['ar'] . ' > ' . $x['t']; $temas[ $k ] = ( $temas[ $k ] ?? 0 ) + 1;
@@ -71,13 +77,13 @@ add_action( 'rest_api_init', function () {
 	$ns = 'desenvolve/v1';
 	register_rest_route( $ns, '/teses', array( 'methods' => 'GET', 'permission_callback' => $perm, 'callback' => function ( WP_REST_Request $r ) {
 		$q = sanitize_text_field( (string) $r['q'] ); $tema = sanitize_text_field( (string) $r['tema'] );
-		if ( $q === '' && $tema === '' ) {
+		if ( $q === '' && $tema === '' && empty( $r['fonte'] ) ) {
 			$f = dv_ts_arquivo( 'situacoes.json' ); $sit = $f ? json_decode( file_get_contents( $f ), true ) : array();
 			$sit = array_values( array_filter( (array) $sit, function ( $x ) { return ! in_array( $x['slug'] ?? '', array( 'repactuacao-negada', 'multa-ou-penalidade' ), true ); } ) );
 			$temas = array(); foreach ( dv_ts_base() as $x ) { $k = $x['ar'] . ' > ' . $x['t']; $temas[ $k ] = ( $temas[ $k ] ?? 0 ) + 1; } arsort( $temas );
 			return array( 'situacoes' => $sit, 'temas' => array_slice( $temas, 0, 40, true ), 'total_base' => count( dv_ts_base() ) );
 		}
-		return dv_ts_buscar( $q, $tema, max( 1, (int) $r['pag'] ) );
+		return dv_ts_buscar( $q, $tema, max( 1, (int) $r['pag'] ), 25, sanitize_key( (string) $r['fonte'] ) );
 	} ) );
 } );
 
@@ -88,7 +94,7 @@ add_shortcode( 'dv_teses', function () {
 	<form class="ts-b" autocomplete="off"><input name="q" type="search" placeholder="Digite o tema da sua tese. Ex.: erro na planilha, atestado somatório, inexequível, vistoria, índice contábil"><button>Buscar</button></form>
 	<div class="ts-sel" hidden></div>
 	<div class="ts-r"><p class="ts-h">Carregando…</p></div>
-	<p class="ts-h ts-av">Fonte: Jurisprudência Selecionada do Tribunal de Contas da União (dados abertos), atualizada mensalmente. Os enunciados retratam o entendimento de cada decisão e não substituem a leitura do acórdão. Conteúdo informativo, que não constitui parecer jurídico.</p>
+	<p class="ts-h ts-av">Fontes: Jurisprudência Selecionada do Tribunal de Contas da União (dados abertos), atualizada mensalmente, e repertório de súmulas do Tribunal de Contas do Estado de São Paulo (Resolução nº 05/2019). Os enunciados retratam o entendimento de cada decisão e não substituem a leitura do acórdão. Conteúdo informativo, que não constitui parecer jurídico.</p>
 </div>
 <style>
 .ts{--ln:#E3DED2;--mu:#6E6A60;--gd:#A8843F;color:#16191E;font-family:"Hanken Grotesk",-apple-system,sans-serif;padding:28px}
@@ -108,27 +114,28 @@ add_shortcode( 'dv_teses', function () {
 @media(max-width:700px){.ts{padding:16px}.ts-b{flex-direction:column}}
 </style>
 <script>
-(function(){var R=document.getElementById('dv-ts');if(!R)return;var api=R.dataset.api,nonce=R.dataset.nonce,O=R.querySelector('.ts-r'),SEL={},Q='',TEMA='',PAG=1,BASE=null;
+(function(){var R=document.getElementById('dv-ts');if(!R)return;var api=R.dataset.api,nonce=R.dataset.nonce,O=R.querySelector('.ts-r'),SEL={},Q='',TEMA='',PAG=1,BASE=null,FONTE='';
 var IAS=[['ChatGPT','https://chatgpt.com/','chatgpt.com'],['Claude','https://claude.ai/new','claude.ai'],['Perplexity','https://www.perplexity.ai/','perplexity.ai'],['Grok','https://grok.com/','grok.com'],['DeepSeek','https://chat.deepseek.com/','deepseek.com']];
 var COL={'Plenário':'Plenário','Primeira Câmara':'1ª Câmara','Segunda Câmara':'2ª Câmara'};
 try{SEL=JSON.parse(localStorage.getItem('dv_teses_sel')||'{}')}catch(x){}
 function e(s){return String(s==null?'':s).replace(/[&<>"]/g,function(c){return{'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]})}
 function g(p){return fetch(api+p,{credentials:'same-origin',headers:{'X-WP-Nonce':nonce}}).then(function(r){return r.json()})}
 function tit(s){return String(s||'').toLowerCase().replace(/(^|\s)\S/g,function(c){return c.toUpperCase()})}
-function ac(x){return'Acórdão '+x.n+'/'+x.a+' – TCU – '+(COL[x.c]||x.c)}
-function url(x){return'https://pesquisa.apps.tcu.gov.br/documento/jurisprudencia-selecionada/*/KEY%253A'+x.k+'/score%2520desc/0'}
-function cit(x){return'"'+x.e+'" ('+ac(x)+', Rel. Min. '+tit(x.rel)+', sessão de '+x.d+').'}
+function ac(x){return x.src==='tcesp'?'Súmula nº '+x.n+' do TCE-SP':'Acórdão '+x.n+'/'+x.a+' – TCU – '+(COL[x.c]||x.c)}
+function url(x){if(x.src==='tcesp')return'https://www.tce.sp.gov.br/sumulas';return'https://pesquisa.apps.tcu.gov.br/documento/jurisprudencia-selecionada/*/KEY%253A'+x.k+'/score%2520desc/0'}
+function cit(x){if(x.src==='tcesp')return'"'+x.e+'" ('+ac(x)+').';return'"'+x.e+'" ('+ac(x)+', Rel. Min. '+tit(x.rel)+', sessão de '+x.d+').'}
 function guarda(){try{localStorage.setItem('dv_teses_sel',JSON.stringify(SEL))}catch(x){}barra()}
 function copiar(t){if(navigator.clipboard)navigator.clipboard.writeText(t);else{var a=document.createElement('textarea');a.value=t;document.body.appendChild(a);a.select();document.execCommand('copy');a.remove()}}
 function barra(){var n=Object.keys(SEL).length,B=R.querySelector('.ts-sel');B.hidden=!n;B.innerHTML='<b>'+n+' tese(s) selecionada(s)</b><button type="button" class="g" data-cpall="1">Copiar citações</button><button type="button" data-ia="1">Montar argumento com a sua IA</button><button type="button" class="g" data-lp="1">Limpar</button>'}
-function item(x){var s=SEL[x.k];return'<div class="ts-i'+(s?' sel':'')+'" data-k="'+e(x.k)+'"><div class="m"><a href="'+url(x)+'" target="_blank" rel="noopener">'+e(ac(x))+'</a> · '+e(x.d)+' · Rel. '+e(tit(x.rel))+' · '+e(x.t)+' › '+e(x.s)+'</div><p>'+e(x.e)+'</p><div class="k"><button type="button" class="g" data-cp="'+e(x.k)+'">Copiar citação</button><button type="button" class="g" data-sl="'+e(x.k)+'">'+(s?'✓ Selecionada':'+ Selecionar')+'</button></div></div>'}
+function item(x){var s=SEL[x.k];return'<div class="ts-i'+(s?' sel':'')+'" data-k="'+e(x.k)+'"><div class="m"><a href="'+url(x)+'" target="_blank" rel="noopener">'+e(ac(x))+'</a>'+(x.src?' · Tribunal de Contas do Estado de São Paulo':' · '+e(x.d)+' · Rel. '+e(tit(x.rel))+' · '+e(x.t)+' › '+e(x.s))+'</div><p>'+e(x.e)+'</p>'+(x.nota?'<p class="ts-h"><i>'+e(x.nota)+'</i></p>':'')+'<div class="k"><button type="button" class="g" data-cp="'+e(x.k)+'">Copiar citação</button><button type="button" class="g" data-sl="'+e(x.k)+'">'+(s?'✓ Selecionada':'+ Selecionar')+'</button></div></div>'}
 var ATUAIS={};
 function inicio(){O.innerHTML='<p class="ts-h">Carregando…</p>';g('teses').then(function(j){BASE=j;var h='<h3>Teses prontas para as situações mais comuns</h3><div class="ts-sg">'+(j.situacoes||[]).map(function(s,i){return'<button type="button" class="ts-s" data-sit="'+i+'"><span>'+e(s.tema)+'</span><b>'+e(s.titulo)+'</b></button>'}).join('')+'</div>';
- h+='<h3>Ou navegue pelos temas <small class="ts-h">('+(j.total_base||0).toLocaleString('pt-BR')+' enunciados sobre licitações)</small></h3><div class="ts-tm">'+Object.keys(j.temas||{}).map(function(k){return'<span data-tema="'+e(k)+'">'+e(k.split(' > ')[1])+' <small>'+j.temas[k]+'</small></span>'}).join('')+'</div>';O.innerHTML=h}).catch(function(){O.innerHTML='<p class="ts-h">Não foi possível carregar o banco agora. Tente de novo em instantes.</p>'})}
+ h+='<h3>Súmulas do TCE-SP</h3><p class="ts-h" style="margin-top:-4px">Os 34 enunciados vigentes do Tribunal de Contas do Estado de São Paulo sobre licitações, com aviso quando a Lei 14.133/2021 trata o tema de forma diferente.</p><div class="ts-tm"><span data-fonte="tcesp">Ver as súmulas do TCE-SP <small>34</small></span></div>';
+ h+='<h3>Ou navegue pelos temas do TCU <small class="ts-h">('+(j.total_base||0).toLocaleString('pt-BR')+' enunciados sobre licitações)</small></h3><div class="ts-tm">'+Object.keys(j.temas||{}).map(function(k){return'<span data-tema="'+e(k)+'">'+e(k.split(' > ')[1])+' <small>'+j.temas[k]+'</small></span>'}).join('')+'</div>';O.innerHTML=h}).catch(function(){O.innerHTML='<p class="ts-h">Não foi possível carregar o banco agora. Tente de novo em instantes.</p>'})}
 function situacao(i){var s=BASE.situacoes[i];var h='<p><a href="#" data-home="1">← Voltar</a></p><div class="ts-cx"><span class="ts-h">'+e(s.tema)+'</span><h4>'+e(s.titulo)+'</h4><p>'+e(s.resumo)+'</p><b>Na prática</b><ul>'+s.pratica.map(function(p){return'<li>'+e(p)+'</li>'}).join('')+'</ul><b>Prazo:</b> '+e(s.prazo)+(s.nota?'<p class="ts-h"><i>'+e(s.nota)+'</i></p>':'')+'</div><h3>Decisões do TCU</h3>';
  h+=s.dec.map(function(d){var m=d.url.match(/KEY%253A([^/]+)/),k=m?m[1]:d.ac,p=d.ac.match(/Acórdão (\d+)\/(\d+) – (.+)/)||[];var x={k:k,n:p[1],a:p[2],c:p[3],d:d.data,rel:d.rel,e:d.enunciado,t:s.tema,s:''};ATUAIS[k]=x;return item(x).replace('<p>','<p><b>'+e(d.txt)+'</b></p><p class="ts-h">')}).join('');
  h+='<p><a href="#" data-q="'+e(s.titulo)+'">Ver mais decisões sobre este assunto →</a></p>';O.innerHTML=h;window.scrollTo({top:R.getBoundingClientRect().top+scrollY-20})}
-function buscar(){O.innerHTML='<p class="ts-h">Buscando…</p>';g('teses?q='+encodeURIComponent(Q)+'&tema='+encodeURIComponent(TEMA)+'&pag='+PAG).then(function(j){j.itens.forEach(function(x){ATUAIS[x.k]=x});var h='<p><a href="#" data-home="1">← Início</a></p><h3>'+j.total+' enunciado(s)'+(Q?' para "'+e(Q)+'"':'')+(TEMA?' em '+e(TEMA.split(' > ')[1]):'')+'</h3>';
+function buscar(){O.innerHTML='<p class="ts-h">Buscando…</p>';g('teses?q='+encodeURIComponent(Q)+'&tema='+encodeURIComponent(TEMA)+'&pag='+PAG+'&fonte='+FONTE).then(function(j){j.itens.forEach(function(x){ATUAIS[x.k]=x});var h='<p><a href="#" data-home="1">← Início</a></p><div class="ts-tm" style="margin-bottom:6px">'+[['','Tudo'],['tcu','TCU'],['tcesp','Súmulas do TCE-SP']].map(function(f){return'<span data-fonte="'+f[0]+'" class="'+(FONTE===f[0]?'on':'')+'">'+f[1]+'</span>'}).join('')+'</div><h3>'+j.total+' resultado(s)'+(Q?' para "'+e(Q)+'"':'')+(TEMA?' em '+e(TEMA.split(' > ')[1]):'')+(FONTE==='tcesp'&&!Q&&!TEMA?' — Súmulas do TCE-SP':'')+'</h3>';
  if(Q&&!TEMA&&Object.keys(j.temas).length>1)h+='<div class="ts-tm" style="margin-bottom:12px">'+Object.keys(j.temas).map(function(k){return'<span data-tema="'+e(k)+'">'+e(k.split(' > ')[1])+' <small>'+j.temas[k]+'</small></span>'}).join('')+'</div>';
  h+=j.itens.length?j.itens.map(item).join(''):'<p class="ts-h">Nada encontrado. Tente palavras mais gerais (ex.: "planilha" em vez de "planilha de custos e formação de preços").</p>';
  var np=Math.ceil(j.total/j.por);if(np>1)h+='<div class="ts-pg">'+(PAG>1?'<button type="button" class="g" data-pg="'+(PAG-1)+'">← Anteriores</button>':'')+'<span class="ts-h">Página '+PAG+' de '+np+'</span>'+(PAG<np?'<button type="button" class="g" data-pg="'+(PAG+1)+'">Próximos →</button>':'')+'</div>';
@@ -137,10 +144,11 @@ function ia(){var L=Object.keys(SEL).map(function(k){return SEL[k]});var box=doc
  var old=R.querySelector('.ts-ia');if(old)old.remove();R.querySelector('.ts-sel').after(box);box.querySelector('textarea').focus();box._L=L}
 function prompt(box){var L=box._L,c=box.querySelector('textarea').value.trim();return'Você é um especialista em licitações públicas (Lei 14.133/2021). Com base no caso abaixo e usando como fundamento as teses do TCU listadas, monte a argumentação da peça indicada: (1) resumo dos fatos; (2) argumentos, um por tese, explicando por que ela se aplica ao caso; (3) pedido final. Cite as decisões exatamente como estão abaixo, sem inventar outros acórdãos ou números. Se alguma tese não se aplicar ao caso, diga isso.\n\nCASO:\n'+(c||'[descreva aqui]')+'\n\nTESES DO TCU:\n'+L.map(function(x,i){return(i+1)+'. '+cit(x)}).join('\n')+'\n\nAo final, lembre que o texto deve ser revisado antes do protocolo.'}
 R.addEventListener('submit',function(ev){ev.preventDefault();Q=R.querySelector('[name=q]').value.trim();TEMA='';PAG=1;if(Q)buscar();else inicio()});
-R.addEventListener('click',function(ev){var t=ev.target.closest('button,a,span[data-tema]');if(!t||!R.contains(t))return;var D=t.dataset,x;
- if(D.home){ev.preventDefault();Q='';TEMA='';inicio();return}
+R.addEventListener('click',function(ev){var t=ev.target.closest('button,a,span[data-tema],span[data-fonte]');if(!t||!R.contains(t))return;var D=t.dataset,x;
+ if(D.home){ev.preventDefault();Q='';TEMA='';FONTE='';inicio();return}
  if(D.sit!=null){situacao(+D.sit);return}
  if(D.q){ev.preventDefault();Q=D.q.replace(/^(Fui|Disseram que o meu|Pediram um)\s*/i,'').replace(/\(.*\)/,'').trim();R.querySelector('[name=q]').value=Q;TEMA='';PAG=1;buscar();return}
+ if(D.fonte!=null){FONTE=D.fonte;PAG=1;buscar();return}
  if(D.tema){TEMA=D.tema;PAG=1;buscar();return}
  if(D.pg){PAG=+D.pg;buscar();window.scrollTo({top:R.getBoundingClientRect().top+scrollY-20});return}
  if(D.cp){x=ATUAIS[D.cp];if(x){copiar(cit(x));t.textContent='Copiado ✓'}return}

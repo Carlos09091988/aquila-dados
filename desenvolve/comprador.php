@@ -113,10 +113,12 @@ function dv_cp_abertas( $cnpj ) {
 function dv_cp_precos( $cnpj, $compras, $toks ) {
 	$alvo = array_slice( $compras, 0, 12 );
 	$u = array(); foreach ( $alvo as $k => $e ) { $u[ $k ] = 'https://pncp.gov.br/api/pncp/v1/orgaos/' . $cnpj . '/compras/' . $e['ano'] . '/' . $e['seq'] . '/itens?pagina=1&tamanhoPagina=100'; }
-	$b = $u ? dv_ds_multi( $u, array(), 30 ) : array(); $itens = array(); $res = array();
+	$b = $u ? dv_ds_multi_lento( $u, 4, 40 ) : array(); unset( $b['__falhas'] ); $itens = array(); $res = array();
+	$algum = false; foreach ( $b as $body ) { foreach ( (array) ( $body ? json_decode( $body, true ) : array() ) as $i ) { if ( dv_cp_casa( $i['descricao'] ?? '', $toks ) ) { $algum = true; break 2; } } }
 	foreach ( $b as $k => $body ) {
+		$nk = 0;
 		foreach ( (array) ( $body ? json_decode( $body, true ) : array() ) as $i ) {
-			if ( ! dv_cp_casa( $i['descricao'] ?? '', $toks ) && ! dv_cp_casa( $alvo[ $k ]['objeto'], $toks ) ) { continue; }
+			if ( $algum ? ! dv_cp_casa( $i['descricao'] ?? '', $toks ) : ( ++$nk > 8 ) ) { continue; }
 			$x = array( 'descricao' => mb_substr( (string) ( $i['descricao'] ?? '' ), 0, 220 ), 'unidade' => $i['unidadeMedida'] ?? '', 'quantidade' => (float) ( $i['quantidade'] ?? 0 ),
 				'estimado' => (float) ( $i['valorUnitarioEstimado'] ?? 0 ), 'homologado' => null, 'vencedor' => '', 'data' => substr( (string) $alvo[ $k ]['data'], 0, 10 ),
 				'compra' => $alvo[ $k ]['titulo'], 'link' => $alvo[ $k ]['link'] );
@@ -125,7 +127,8 @@ function dv_cp_precos( $cnpj, $compras, $toks ) {
 		}
 	}
 	if ( $res ) {
-		foreach ( dv_ds_multi( $res, array(), 30 ) as $k => $body ) {
+		$rr = dv_ds_multi_lento( $res, 5, 30 ); unset( $rr['__falhas'] );
+		foreach ( $rr as $k => $body ) {
 			$r = $body ? json_decode( $body, true ) : null; $r = is_array( $r ) && isset( $r[0] ) ? $r[0] : $r;
 			if ( $r ) { $itens[ $k ]['homologado'] = isset( $r['valorUnitarioHomologado'] ) ? (float) $r['valorUnitarioHomologado'] : null; $itens[ $k ]['vencedor'] = $r['nomeRazaoSocialFornecedor'] ?? ''; }
 		}
@@ -134,7 +137,7 @@ function dv_cp_precos( $cnpj, $compras, $toks ) {
 }
 
 function dv_comprador( $cnpj, $item ) {
-	$ck = 'dv_cp3_' . $cnpj . '_' . md5( $item ); $c = get_transient( $ck ); if ( $c ) { return $c; }
+	$ck = 'dv_cp4_' . $cnpj . '_' . md5( $item ); $c = get_transient( $ck ); if ( $c ) { return $c; }
 	$x = wp_remote_get( 'https://brasilapi.com.br/api/cnpj/v1/' . $cnpj, array( 'timeout' => 20 ) );
 	$cad = is_wp_error( $x ) ? array() : (array) json_decode( wp_remote_retrieve_body( $x ), true );
 	if ( empty( $cad['razao_social'] ) ) { return new WP_Error( 'dv_cnpj', 'CNPJ não encontrado na Receita Federal.', array( 'status' => 404 ) ); }

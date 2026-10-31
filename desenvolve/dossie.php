@@ -53,25 +53,30 @@ function dv_ds_multi( $urls, $headers = array(), $timeout = 25 ) {
 }
 
 /* ---------- Contratos no PNCP (todas as esferas) ---------- */
-function dv_ds_pncp( $cnpj ) {
-	$base = 'https://pncp.gov.br/api/search/?q=' . $cnpj . '&tipos_documento=contrato&ordenacao=-data&tam_pagina=100&pagina=';
-	$b = array(); $total = null;
-	for ( $t = 0; $t < 3 && empty( $b[1] ); $t++ ) { $x = dv_ds_multi( array( 1 => $base . '1' ), array(), 30 ); $b[1] = $x[1]; }
-	$j1 = $b[1] ? json_decode( $b[1], true ) : null; $paginas = $j1 ? min( 5, (int) ceil( ( (int) ( $j1['total'] ?? 0 ) ) / 100 ) ) : 0;
-	for ( $pg = 2; $pg <= $paginas; $pg++ ) { $x = dv_ds_multi( array( $pg => $base . $pg ), array(), 30 ); $b[ $pg ] = $x[ $pg ]; }
-	$itens = array(); $vistos = array();
-	foreach ( $b as $body ) {
-		$j = $body ? json_decode( $body, true ) : null; if ( ! $j ) { continue; }
-		$total = $total ?? (int) ( $j['total'] ?? 0 );
-		foreach ( (array) ( $j['items'] ?? array() ) as $i ) {
-			$k = $i['numero_controle_pncp'] ?? $i['id'] ?? ''; if ( isset( $vistos[ $k ] ) || ! empty( $i['cancelado'] ) ) { continue; } $vistos[ $k ] = 1;
-			$itens[] = array( 'titulo' => $i['title'] ?? '', 'objeto' => mb_substr( trim( (string) ( $i['description'] ?? '' ) ), 0, 220 ), 'orgao' => $i['orgao_nome'] ?? '',
-				'esfera' => $i['esfera_nome'] ?? '', 'uf' => $i['uf'] ?? '', 'municipio' => $i['municipio_nome'] ?? '', 'modalidade' => $i['modalidade_licitacao_nome'] ?? '',
-				'valor' => (float) ( $i['valor_global'] ?? 0 ), 'assinatura' => $i['data_assinatura'] ?? '', 'inicio' => $i['data_inicio_vigencia'] ?? '', 'fim' => $i['data_fim_vigencia'] ?? '',
-				'link' => ! empty( $i['item_url'] ) ? 'https://pncp.gov.br/app' . $i['item_url'] : '' );
+function dv_ds_pncp( $cnpj, $nome = '', $filiais = array() ) {
+	$raiz = substr( $cnpj, 0, 8 ); $consultas = array( $cnpj ); if ( $nome ) { $consultas[] = '"' . $nome . '"'; }
+	foreach ( array_slice( $filiais, 0, 20 ) as $f ) { if ( $f !== $cnpj ) { $consultas[] = $f; } }
+	$itens = array(); $vistos = array(); $fil = array();
+	foreach ( $consultas as $q ) {
+		$base = 'https://pncp.gov.br/api/search/?q=' . rawurlencode( $q ) . '&tipos_documento=contrato&ordenacao=-data&tam_pagina=100&pagina=';
+		$body = null; for ( $t = 0; $t < 2 && ! $body; $t++ ) { $x = dv_ds_multi( array( 1 => $base . '1' ), array(), 30 ); $body = $x[1]; }
+		$j1 = $body ? json_decode( $body, true ) : null; if ( ! $j1 ) { continue; }
+		$pags = array( $j1 ); $n = min( 5, (int) ceil( (int) ( $j1['total'] ?? 0 ) / 100 ) );
+		for ( $pg = 2; $pg <= $n; $pg++ ) { $x = dv_ds_multi( array( $pg => $base . $pg ), array(), 30 ); if ( $x[ $pg ] ) { $pags[] = json_decode( $x[ $pg ], true ); } }
+		foreach ( $pags as $j ) {
+			foreach ( (array) ( $j['items'] ?? array() ) as $i ) {
+				$ni = preg_replace( '/\D/', '', (string) ( $i['fornecedor_ni'] ?? '' ) );
+				if ( $ni && substr( $ni, 0, 8 ) !== $raiz ) { continue; } // só contratos da empresa (matriz ou filial)
+				$k = $i['numero_controle_pncp'] ?? $i['id'] ?? ''; if ( isset( $vistos[ $k ] ) || ! empty( $i['cancelado'] ) ) { continue; } $vistos[ $k ] = 1;
+				if ( $ni ) { $fil[ $ni ] = ( $fil[ $ni ] ?? 0 ) + 1; }
+				$itens[] = array( 'titulo' => $i['title'] ?? '', 'objeto' => mb_substr( trim( (string) ( $i['description'] ?? '' ) ), 0, 220 ), 'orgao' => $i['orgao_nome'] ?? '',
+					'esfera' => $i['esfera_nome'] ?? '', 'uf' => $i['uf'] ?? '', 'municipio' => $i['municipio_nome'] ?? '', 'modalidade' => $i['modalidade_licitacao_nome'] ?? '',
+					'valor' => (float) ( $i['valor_global'] ?? 0 ), 'assinatura' => $i['data_assinatura'] ?? '', 'inicio' => $i['data_inicio_vigencia'] ?? '', 'fim' => $i['data_fim_vigencia'] ?? '',
+					'fornecedor' => $ni, 'link' => ! empty( $i['item_url'] ) ? 'https://pncp.gov.br/app' . $i['item_url'] : '' );
+			}
 		}
 	}
-	return array( 'total' => $total ?? 0, 'itens' => $itens );
+	return array( 'total' => count( $itens ), 'itens' => $itens, 'por_unidade' => $fil );
 }
 
 /* ---------- Processos judiciais (Diário de Justiça Eletrônico Nacional — CNJ) ---------- */
@@ -161,7 +166,7 @@ function dv_ds_diarios( $cnpj, $nome ) {
 }
 
 function dv_dossie_dados( $cnpj ) {
-	$ck = 'dv_ds3_' . $cnpj; $c = get_transient( $ck ); if ( $c ) { return $c; }
+	$ck = 'dv_ds4_' . $cnpj; $c = get_transient( $ck ); if ( $c ) { return $c; }
 	$t0 = microtime( true );
 	$r = wp_remote_get( 'https://brasilapi.com.br/api/cnpj/v1/' . $cnpj, array( 'timeout' => 25 ) );
 	$cad = is_wp_error( $r ) ? array() : (array) json_decode( wp_remote_retrieve_body( $r ), true );
@@ -228,7 +233,10 @@ function dv_dossie_dados( $cnpj ) {
 	$D['diarios'] = dv_ds_interno( '/dvtools/v1/fornecedor/diarios', array( 'cnpj' => $cnpj ) );
 
 	/* Contratos públicos (PNCP, todas as esferas) */
-	$D['pncp'] = dv_ds_pncp( $cnpj );
+	$nucleoC = function_exists( 'dv_nt_nucleo' ) ? dv_nt_nucleo( $cad['razao_social'] ) : '';
+	$filiais = function_exists( 'dv_capt_filiais' ) ? dv_capt_filiais( $cnpj ) : array();
+	$D['pncp'] = dv_ds_pncp( $cnpj, ( $nucleoC && count( explode( ' ', $nucleoC ) ) >= 2 ) ? $nucleoC : '', $filiais );
+	$D['filiais'] = count( $filiais );
 
 	/* Processos judiciais: empresa (todos os tipos) e sócios pessoa física (só criminais) */
 	$nomeEmp = dv_ds_nrm( $cad['razao_social'] ); $nomeEmp = trim( preg_replace( '/\s+(EM RECUPERACAO JUDICIAL)$/', '', $nomeEmp ) );

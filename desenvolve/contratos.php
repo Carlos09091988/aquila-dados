@@ -56,6 +56,7 @@ add_action( 'rest_api_init', function () {
 			if ( $x['fim'] && $x['fim'] < gmdate( 'Y-m-d', strtotime( $hoje . ' -365 days' ) ) ) { $venc++; continue; } // vigentes e encerrados há menos de 1 ano (muitos foram prorrogados por aditivo e o PNCP não atualizou a data)
 			$k = md5( $cnpj . '|' . round( $x['valor'] ) . '|' . substr( $x['inicio'], 0, 7 ) . '|' . substr( dv_al_norm_ct( $x['orgao'] ), 0, 12 ) );
 			if ( isset( $chaves[ $k ] ) ) { continue; } $chaves[ $k ] = 1;
+			$dup = false; foreach ( $l as $y ) { if ( ( $y['cnpj'] ?? '' ) === $cnpj && $x['valor'] > 0 && abs( (float) $y['valor'] - $x['valor'] ) < 1 && $y['inicio'] && $x['inicio'] && abs( strtotime( $y['inicio'] ) - strtotime( $x['inicio'] ) ) <= 45 * 86400 ) { $dup = true; break; } } if ( $dup ) { continue; } // mesmo contrato no PNCP e na CGU
 			if ( count( $l ) >= DV_CT_MAX ) { break; }
 			$l[] = $x + array( 'id' => substr( md5( uniqid( $k, true ) ), 0, 10 ), 'chave' => $k, 'cnpj' => $cnpj, 'data_base' => '', 'indice' => '', 'garantia_tipo' => '', 'garantia_valor' => 0, 'garantia_vence' => '', 'notas' => '', 'aviso' => '' ); $add++;
 		}

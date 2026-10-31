@@ -59,7 +59,7 @@ function dv_capt_filiais( $cnpj ) {
 		foreach ( (array) ( $o[ $raiz ] ?? array() ) as $x ) { $l[] = explode( '|', $x )[0]; }
 		unset( $o );
 	}
-	set_transient( $ck, $l, 7 * DAY_IN_SECONDS );
+	set_transient( $ck, $l, $l ? 7 * DAY_IN_SECONDS : HOUR_IN_SECONDS );
 	return $l;
 }
 /** Querido Diário (diários municipais). */

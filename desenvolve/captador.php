@@ -83,13 +83,66 @@ add_action( 'dv_capt_diario', function () {
 			$t['ult'] = $hoje; $tot += $n; if ( $n ) { $novos[] = ( $t['tipo'] === 'cnpj' ? dv_capt_fmt_cnpj( $t['valor'] ) : $t['valor'] ) . ': ' . $n; }
 		}
 		unset( $t ); dv_capt_salvar( $uid, $ts );
-		if ( $tot ) {
-			$u = get_userdata( $uid );
-			wp_mail( $u->user_email, 'Desenvolve: ' . $tot . ' nova(s) publicação(ões) nos diários oficiais',
-				"Olá, {$u->display_name}.\n\nO Captador de publicações encontrou novidades:\n\n- " . implode( "\n- ", $novos ) . "\n\nVeja tudo em " . home_url( '/plataforma/captador/' ) . "\n\nDesenvolve Estratégias" );
-		}
+		dv_capt_enviar( $uid, $hoje );
 	}
 } );
+
+/* ---------- Entrega diária: e-mail (da Desenvolve, para até 5 endereços) e WhatsApp ---------- */
+function dv_capt_pref( $uid ) {
+	$p = json_decode( get_user_meta( $uid, 'dv_capt_pref', true ) ?: '{}', true ) ?: array();
+	$u = get_userdata( $uid );
+	return $p + array( 'emails' => array( $u->user_email ), 'whats' => 0, 'tel' => (string) get_user_meta( $uid, 'dv_tel', true ), 'sempre' => 0 );
+}
+/** Envia o resumo do dia com as publicações gravadas hoje. Com "sempre", avisa também quando não houve novidade. */
+function dv_capt_enviar( $uid, $hoje ) {
+	global $wpdb; $p = dv_capt_pref( $uid ); $u = get_userdata( $uid );
+	$pubs = $wpdb->get_results( $wpdb->prepare( "SELECT termo,data,municipio,uf,url,trecho FROM {$wpdb->prefix}dv_capt WHERE user_id=%d AND criado >= %s ORDER BY termo, data DESC LIMIT 100", $uid, $hoje . ' 00:00:00' ), ARRAY_A );
+	$n = count( $pubs ); if ( ! $n && empty( $p['sempre'] ) ) { return; }
+	$link = home_url( '/plataforma/captador/' ); $dt = date_i18n( 'd/m/Y', strtotime( $hoje ) );
+	$h = '<div style="font-family:Arial,sans-serif;max-width:680px;margin:auto;color:#16191E"><div style="background:#0C0F13;padding:18px 24px;border-radius:12px 12px 0 0"><b style="color:#C9A45C;letter-spacing:.2em;font-family:Georgia,serif">DESENVOLVE</b><div style="color:#B9BDB8;font-size:13px;margin-top:4px">Captador de publicações · ' . $dt . '</div></div><div style="border:1px solid #E3DED2;border-top:0;padding:22px 24px;border-radius:0 0 12px 12px">';
+	$h .= '<p>Olá, ' . esc_html( $u->display_name ) . '.</p><p>' . ( $n ? '<b>' . $n . ' nova(s) publicação(ões)</b> nos diários oficiais para os termos que você monitora:' : 'Hoje não saiu nenhuma publicação nova para os termos que você monitora.' ) . '</p>';
+	foreach ( $pubs as $x ) {
+		$h .= '<div style="border-left:4px solid #C9A45C;background:#FAF8F3;padding:12px 14px;margin:12px 0;border-radius:8px"><div style="font-size:13px;color:#6E6A60"><b style="color:#16191E">' . esc_html( $x['termo'] ) . '</b> · ' . esc_html( $x['municipio'] . ( $x['uf'] ? '/' . $x['uf'] : '' ) ) . ' · ' . esc_html( date_i18n( 'd/m/Y', strtotime( $x['data'] ) ) ) . '</div><p style="font-size:14px;line-height:1.5;margin:6px 0">' . esc_html( mb_substr( $x['trecho'], 0, 700 ) ) . '</p>' . ( $x['url'] ? '<a href="' . esc_url( $x['url'] ) . '" style="color:#8A6A2C;font-weight:bold">Abrir o diário</a>' : '' ) . '</div>';
+	}
+	$h .= '<p style="margin-top:20px"><a href="' . esc_url( $link ) . '" style="background:#C9A45C;color:#241A06;padding:12px 20px;border-radius:999px;text-decoration:none;font-weight:bold">Ver no painel</a></p><p style="font-size:12px;color:#6E6A60;margin-top:22px">Precisa de apoio sobre alguma publicação? Responda este e-mail ou acione um consultor pela plataforma. Fonte: Querido Diário (Open Knowledge Brasil). Para mudar quem recebe, acesse o Captador no seu painel.</p></div></div>';
+	$rem = dv_cfg( 'email_remetente' ) ?: 'contato@desenvolveestrategias.com.br';
+	$hd = array( 'Content-Type: text/html; charset=UTF-8', 'From: Desenvolve Estratégias <' . $rem . '>', 'Reply-To: ' . $rem );
+	foreach ( array_slice( (array) $p['emails'], 0, 5 ) as $em ) { if ( is_email( $em ) ) { wp_mail( $em, 'Captador Desenvolve · ' . $dt . ' · ' . ( $n ? $n . ' nova(s) publicação(ões)' : 'sem novidades' ), $h, $hd ); } }
+	if ( ! empty( $p['whats'] ) && $n ) { dv_whats( $p['tel'], array( $u->display_name, (string) $n, $link ) ); }
+}
+/**
+ * WhatsApp pela API oficial da Meta (WhatsApp Cloud API), com modelo de mensagem aprovado.
+ * Modelo sugerido (nome dv_publicacoes, pt_BR, categoria Utilidade):
+ * "Olá, {{1}}! O Captador da Desenvolve encontrou {{2}} nova(s) publicação(ões) nos diários oficiais hoje. Veja: {{3}}"
+ * Configuração em Desenvolve > WhatsApp (ID do número, token e nome do modelo) — preenchida pelo administrador.
+ */
+function dv_whats( $tel, $params ) {
+	$id = get_option( 'dv_wa_phone_id' ); $tk = get_option( 'dv_wa_token' ); $tpl = get_option( 'dv_wa_template', 'dv_publicacoes' );
+	$tel = preg_replace( '/\D/', '', (string) $tel ); if ( ! $id || ! $tk || strlen( $tel ) < 10 ) { return false; }
+	if ( strlen( $tel ) <= 11 ) { $tel = '55' . $tel; }
+	$r = wp_remote_post( 'https://graph.facebook.com/v20.0/' . rawurlencode( $id ) . '/messages', array( 'timeout' => 20,
+		'headers' => array( 'Authorization' => 'Bearer ' . $tk, 'Content-Type' => 'application/json' ),
+		'body' => wp_json_encode( array( 'messaging_product' => 'whatsapp', 'to' => $tel, 'type' => 'template', 'template' => array(
+			'name' => $tpl, 'language' => array( 'code' => 'pt_BR' ),
+			'components' => array( array( 'type' => 'body', 'parameters' => array_map( function ( $v ) { return array( 'type' => 'text', 'text' => mb_substr( (string) $v, 0, 200 ) ); }, $params ) ) ) ) ) ) ) );
+	return ! is_wp_error( $r ) && wp_remote_retrieve_response_code( $r ) < 300;
+}
+add_action( 'admin_menu', function () {
+	add_submenu_page( 'dv-painel', 'WhatsApp', 'WhatsApp', 'manage_options', 'dv-whats', function () {
+		if ( 'POST' === $_SERVER['REQUEST_METHOD'] && check_admin_referer( 'dv_wa' ) ) {
+			update_option( 'dv_wa_phone_id', sanitize_text_field( wp_unslash( $_POST['id'] ?? '' ) ), false );
+			update_option( 'dv_wa_template', sanitize_key( wp_unslash( $_POST['tpl'] ?? 'dv_publicacoes' ) ), false );
+			if ( ! empty( $_POST['tk'] ) ) { update_option( 'dv_wa_token', trim( wp_unslash( $_POST['tk'] ) ), false ); }
+			echo '<div class="updated"><p>Salvo.</p></div>';
+		}
+		echo '<div class="wrap"><h1>WhatsApp (API oficial da Meta)</h1><p>Usado para avisar os assinantes das publicações do dia. É preciso uma conta WhatsApp Business na Meta, um número dedicado e o modelo de mensagem aprovado.</p><form method="post">';
+		wp_nonce_field( 'dv_wa' );
+		echo '<table class="form-table"><tr><th>ID do número de telefone</th><td><input name="id" class="regular-text" value="' . esc_attr( get_option( 'dv_wa_phone_id' ) ) . '"></td></tr>';
+		echo '<tr><th>Token de acesso</th><td><input type="password" name="tk" class="regular-text" autocomplete="new-password" placeholder="' . ( get_option( 'dv_wa_token' ) ? 'Token salvo. Cole outro só para trocar.' : 'Cole o token permanente' ) . '"></td></tr>';
+		echo '<tr><th>Nome do modelo</th><td><input name="tpl" class="regular-text" value="' . esc_attr( get_option( 'dv_wa_template', 'dv_publicacoes' ) ) . '"></td></tr></table>';
+		submit_button( 'Salvar' ); echo '</form></div>';
+	} );
+}, 20 );
 
 add_action( 'rest_api_init', function () {
 	$perm = function () { return function_exists( 'dv_tools_perm' ) && dv_tools_perm(); };
@@ -100,7 +153,7 @@ add_action( 'rest_api_init', function () {
 		if ( $f !== '' ) { $w = $wpdb->prepare( ' AND termo=%s', $f ); }
 		$pubs = $wpdb->get_results( $wpdb->prepare( "SELECT id,termo,data,municipio,uf,url,txt,trecho,visto FROM {$wpdb->prefix}dv_capt WHERE user_id=%d$w ORDER BY data DESC, id DESC LIMIT 200", $uid ), ARRAY_A );
 		$nv = (int) $wpdb->get_var( $wpdb->prepare( "SELECT COUNT(*) FROM {$wpdb->prefix}dv_capt WHERE user_id=%d AND visto=0", $uid ) );
-		return array( 'termos' => $ts, 'pubs' => $pubs, 'nao_vistas' => $nv, 'max' => DV_CAPT_MAX, 'saldo' => dv_saldo( $uid ) );
+		return array( 'termos' => $ts, 'pubs' => $pubs, 'nao_vistas' => $nv, 'max' => DV_CAPT_MAX, 'saldo' => dv_saldo( $uid ), 'pref' => dv_capt_pref( $uid ), 'wa' => (bool) get_option( 'dv_wa_token' ) );
 	} ) );
 	register_rest_route( 'desenvolve/v1', '/captador/termo', array( 'methods' => 'POST', 'permission_callback' => $perm, 'callback' => function ( WP_REST_Request $r ) {
 		$uid = get_current_user_id(); $v = trim( (string) $r['valor'] ); $d = preg_replace( '/\D/', '', $v );
@@ -125,6 +178,14 @@ add_action( 'rest_api_init', function () {
 		dv_capt_salvar( $uid, array_filter( dv_capt_termos( $uid ), function ( $t ) use ( $id ) { return $t['id'] !== $id; } ) );
 		return array( 'ok' => true );
 	} ) );
+	register_rest_route( 'desenvolve/v1', '/captador/pref', array( 'methods' => 'POST', 'permission_callback' => $perm, 'callback' => function ( WP_REST_Request $r ) {
+		$uid = get_current_user_id();
+		$em = array_values( array_filter( array_map( 'sanitize_email', preg_split( '/[\s,;]+/', (string) $r['emails'] ) ), 'is_email' ) );
+		if ( ! $em ) { return new WP_Error( 'dv_email', 'Informe pelo menos um e-mail válido.', array( 'status' => 400 ) ); }
+		$p = array( 'emails' => array_slice( array_unique( $em ), 0, 5 ), 'whats' => $r['whats'] ? 1 : 0, 'tel' => preg_replace( '/\D/', '', (string) $r['tel'] ), 'sempre' => $r['sempre'] ? 1 : 0 );
+		update_user_meta( $uid, 'dv_capt_pref', wp_json_encode( $p ) );
+		return array( 'ok' => true, 'pref' => $p );
+	} ) );
 	register_rest_route( 'desenvolve/v1', '/captador/visto', array( 'methods' => 'POST', 'permission_callback' => $perm, 'callback' => function () {
 		global $wpdb; $wpdb->update( $wpdb->prefix . 'dv_capt', array( 'visto' => 1 ), array( 'user_id' => get_current_user_id() ) );
 		return array( 'ok' => true );
@@ -141,6 +202,12 @@ add_shortcode( 'dv_captador', function () {
 		<p class="cp-h">Cada termo usa 1 crédito por mês. Ao cadastrar, buscamos os últimos 6 meses; depois, verificamos todo dia e avisamos por e-mail quando sair publicação nova.</p>
 		<p class="cp-msg"></p>
 	</form>
+	<details class="cp-pref"><summary>Onde receber o resumo diário</summary>
+		<label>E-mails (até 5, separados por vírgula)<input class="cp-em" placeholder="voce@empresa.com.br, licitacoes@empresa.com.br"></label>
+		<label class="cp-ck"><input type="checkbox" class="cp-wa"> Receber aviso também por WhatsApp no número <input class="cp-tel" inputmode="tel" placeholder="(11) 99999-9999" style="max-width:180px"></label>
+		<label class="cp-ck"><input type="checkbox" class="cp-sem"> Mandar o e-mail todo dia, mesmo sem publicação nova</label>
+		<button type="button" class="cp-sv g">Salvar preferências</button> <span class="cp-pm cp-h"></span>
+	</details>
 	<div class="cp-grid">
 		<aside><h3>Termos monitorados <small class="cp-n"></small></h3><ul class="cp-t"></ul></aside>
 		<section><div class="cp-top"><h3>Publicações encontradas</h3><button type="button" class="cp-lido g">Marcar tudo como visto</button></div><div class="cp-p"><p class="cp-h">Carregando…</p></div></section>
@@ -164,6 +231,7 @@ add_shortcode( 'dv_captador', function () {
 .cp-i.nv{border-left:4px solid var(--gd)}.cp-i .m{font-size:.82rem;color:var(--mu);margin-bottom:6px}.cp-i .m b{color:#16191E}
 .cp-i p{margin:0;font-size:.92rem;line-height:1.5;white-space:pre-line}.cp-i mark{background:#F4E3B8;padding:0 2px}
 .cp-i .a{margin-top:8px;font-size:.85rem}.cp-i .a a{color:#8A6A2C;font-weight:700;margin-right:14px}
+.cp-pref{margin-top:18px;border:1px solid var(--ln);border-radius:12px;padding:12px 16px;background:#fff}.cp-pref summary{font-weight:700;cursor:pointer}.cp-pref label{font-weight:600;margin:12px 0 0}.cp-pref .cp-em{width:100%;border:1px solid #CFC8B8;border-radius:10px;padding:10px 12px;font:inherit;margin-top:6px}.cp-ck{display:flex!important;gap:8px;align-items:center;font-weight:500!important;flex-wrap:wrap}.cp-ck .cp-tel{border:1px solid #CFC8B8;border-radius:8px;padding:6px 10px;font:inherit}.cp-sv{margin-top:12px}
 .cp-src{color:var(--mu);font-size:.8rem;margin-top:22px}
 @media(max-width:800px){.cp{padding:18px}.cp-grid{grid-template-columns:1fr}.cp-row{flex-direction:column}}
 </style>
@@ -178,11 +246,13 @@ function carregar(){req('GET','captador'+(filtro?'?termo='+encodeURIComponent(fi
 R.querySelector('.cp-n').textContent=j.termos.length+' de '+j.max;
 R.querySelector('.cp-t').innerHTML=j.termos.length?j.termos.map(function(t){return'<li data-r="'+e(t.rotulo)+'" class="'+(filtro===t.rotulo?'on':'')+'"><a href="#" data-x="'+e(t.id)+'">remover</a><b>'+e(t.rotulo)+'</b><span>'+(t.tipo==='cnpj'?'CNPJ':'Nome')+' · '+(+t.pausado?'pausado: sem créditos':'ativo até '+br(t.ate))+'</span></li>'}).join(''):'<li style="cursor:default"><span>Nenhum termo ainda. Cadastre um CNPJ ou nome acima.</span></li>';
 R.querySelector('.cp-p').innerHTML=j.pubs.length?j.pubs.map(function(p){var ver=p.txt&&/^\d{2}\.\d{3}\.\d{3}\/\d{4}-\d{2}$/.test(p.termo)?'<a target="_blank" rel="noopener" href="/?aq_pub=1&txt='+encodeURIComponent(p.txt)+'&cnpj='+encodeURIComponent(p.termo.replace(/\D/g,''))+'&orig='+encodeURIComponent(p.url)+'&t='+encodeURIComponent((p.municipio||'')+' - '+br(p.data))+'">Ver o ato</a>':'';return'<div class="cp-i'+(+p.visto?'':' nv')+'"><div class="m"><b>'+e(p.municipio)+(p.uf?'/'+e(p.uf):'')+'</b> · '+br(p.data)+' · '+e(p.termo)+'</div><p>'+hl(p.trecho||'Trecho não disponível.',p.termo)+'</p><div class="a">'+ver+(p.url?'<a target="_blank" rel="noopener" href="'+e(p.url)+'">Abrir o diário</a>':'')+'</div></div>'}).join(''):'<p class="cp-h">'+(j.termos.length?'Nenhuma publicação encontrada até agora. Verificamos todos os dias.':'As publicações aparecem aqui.')+'</p>';
+var pf=j.pref||{};if(!R.dataset.pf){R.dataset.pf=1;R.querySelector('.cp-em').value=(pf.emails||[]).join(', ');R.querySelector('.cp-wa').checked=!!+pf.whats;R.querySelector('.cp-tel').value=pf.tel||'';R.querySelector('.cp-sem').checked=!!+pf.sempre;if(!j.wa)R.querySelector('.cp-wa').closest('label').insertAdjacentHTML('beforeend','<small>(o envio por WhatsApp está sendo ativado pela Desenvolve)</small>')}
 saldo(j.saldo);if(j.pubs.length&&window.DV){var c=document.querySelector('.dv-cons');if(c)c.classList.add('on')}
 }).catch(function(x){R.querySelector('.cp-p').innerHTML='<p class="cp-h">'+e((x&&x.message)||'Não foi possível carregar.')+'</p>'})}
 R.querySelector('.cp-add').addEventListener('submit',function(ev){ev.preventDefault();var i=R.querySelector('#cp-v'),b=R.querySelector('.cp-add button');if(!i.value.trim())return;b.disabled=true;b.textContent='Buscando…';msg.className='cp-msg';msg.textContent='';
 req('POST','captador/termo',{valor:i.value}).then(function(j){msg.className='cp-msg o';msg.textContent='Monitorando. '+(j.encontradas?j.encontradas+' publicação(ões) dos últimos 6 meses encontradas.':'Nenhuma publicação nos últimos 6 meses; seguimos verificando todo dia.');i.value='';filtro='';carregar()}).catch(function(x){msg.className='cp-msg e';msg.textContent=(x&&x.message)||'Erro.';if(x&&x.data&&x.data.status===402&&window.DV)msg.innerHTML=e(x.message)+' <a href="'+(DV.acesso?'/creditos/':'/assinar/')+'">'+(DV.acesso?'Comprar créditos':'Assinar')+'</a>'}).then(function(){b.disabled=false;b.textContent='Monitorar'})},true);
 R.querySelector('.cp-t').addEventListener('click',function(ev){var x=ev.target.closest('[data-x]');if(x){ev.preventDefault();if(window.confirm&&!confirm('Parar de monitorar este termo? O crédito do mês não é devolvido.'))return;req('POST','captador/remover',{id:x.dataset.x}).then(carregar);return}var li=ev.target.closest('li[data-r]');if(li){filtro=filtro===li.dataset.r?'':li.dataset.r;carregar()}});
+R.querySelector('.cp-sv').addEventListener('click',function(){var m=R.querySelector('.cp-pm');m.textContent='Salvando…';req('POST','captador/pref',{emails:R.querySelector('.cp-em').value,whats:R.querySelector('.cp-wa').checked,tel:R.querySelector('.cp-tel').value,sempre:R.querySelector('.cp-sem').checked}).then(function(){m.textContent='Preferências salvas.'}).catch(function(x){m.textContent=(x&&x.message)||'Erro.'})});
 R.querySelector('.cp-lido').addEventListener('click',function(){req('POST','captador/visto').then(carregar)});
 carregar()})();
 </script>

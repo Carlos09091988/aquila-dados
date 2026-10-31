@@ -30,8 +30,8 @@ function dv_nt_riscos() {
 		'Investigação e polícia' => '/\b(OPERACAO|POLICIA FEDERAL|PF |DEFLAGR|MANDADOS? DE BUSCA|BUSCA E APREENSAO|PRESO|PRISAO|INQUERITO|INVESTIGA)/',
 		'Ministério Público e improbidade' => '/\b(MINISTERIO PUBLICO|MPF|MPE|MP DENUNCIA|DENUNCIA|IMPROBIDADE|ACAO CIVIL PUBLICA|GAECO)/',
 		'Fraude, cartel e corrupção' => '/\b(FRAUDE|FRAUDA|CARTEL|CONLUIO|CORRUPCAO|PROPINA|DIRECIONAMENTO|SUPERFATURA|SOBREPRECO|DESVIO|LAVAGEM)/',
-		'Tribunal de Contas e sanções' => '/\b(TRIBUNAL DE CONTAS|TCU|TCE|IRREGULARIDADE|INIDONE|IMPEDIDA DE LICITAR|SUSPENSA DE LICITAR|MULTA|SANCAO|CONDENA)/',
-		'Problemas na execução do contrato' => '/\b(RESCIS|ROMPE CONTRATO|SUSPENDE CONTRATO|PARALISA|ABANDON|ATRASO|SALARIOS? ATRASADOS?|GREVE|CALOTE|DEMISS|TRABALHADORES SEM)/',
+		'Tribunal de Contas e sanções' => '/\b(TRIBUNAL DE CONTAS|TCU|TCE|IRREGULAR|INIDONE|IMPEDIDA DE LICITAR|SUSPENSA DE LICITAR|MULTA|MULTAD|SANCAO|PUNI|CONDENA|FAVORECIMENTO|SUSPENDE LICITACAO|SUSPENSAO DA LICITACAO)/',
+		'Problemas na execução do contrato' => '/\b(RESCIS|ROMPE CONTRATO|SUSPEND|SUSPENS|PARALISA|ABANDON|ATRAS|SALARIOS? ATRASADOS?|SEM PAGAMENTO|SEM SALARIO|GREVE|CALOTE|DEMISS|TRABALHADORES SEM|RECLAMAC|DENUNCI|PROBLEMAS? NA|PRECARI|FALTA DE|INTERROMP)/',
 		'Recuperação judicial e dívidas' => '/\b(RECUPERACAO JUDICIAL|FALENCIA|FALIU|DIVIDA|PENHORA|BLOQUEIO DE BENS|BLOQUEIA BENS)/',
 		'Trabalho e segurança' => '/\b(TRABALHO ESCRAVO|ANALOGA A ESCRAVIDAO|LISTA SUJA|ACIDENTE DE TRABALHO|MPT|JUSTICA DO TRABALHO)/',
 	);
@@ -60,7 +60,7 @@ function dv_nt_buscar( $termo ) {
 function dv_noticias( $cnpj ) {
 	$cnpj = preg_replace( '/\D/', '', (string) $cnpj );
 	if ( strlen( $cnpj ) !== 14 ) { return new WP_Error( 'dv_cnpj', 'CNPJ inválido.', array( 'status' => 400 ) ); }
-	$ck = 'dv_nt4_' . $cnpj; $c = empty( $_GET['debug'] ) ? get_transient( $ck ) : false; if ( $c ) { return $c; }
+	$ck = 'dv_nt5_' . $cnpj; $c = empty( $_GET['debug'] ) ? get_transient( $ck ) : false; if ( $c ) { return $c; }
 	$r = wp_remote_get( 'https://brasilapi.com.br/api/cnpj/v1/' . $cnpj, array( 'timeout' => 20 ) );
 	$j = is_wp_error( $r ) ? array() : (array) json_decode( wp_remote_retrieve_body( $r ), true );
 	if ( empty( $j['razao_social'] ) ) { return array( 'cnpj' => $cnpj, 'termos' => array(), 'itens' => array(), 'aviso' => 'Não foi possível consultar o cadastro da empresa agora. Tente de novo em alguns minutos.' ); }
@@ -80,7 +80,7 @@ function dv_noticias( $cnpj ) {
 		if ( current_user_can( 'manage_options' ) && ! empty( $_GET['debug'] ) ) { foreach ( $lista as $it ) { $res['debug'][] = $it['data'] . ' | ' . $it['fonte'] . ' | ' . $it['titulo']; } }
 		foreach ( $lista as $it ) {
 			$txt = dv_nt_norm( $it['titulo'] . ' ' . $it['resumo'] );
-			if ( strpos( ' ' . $txt . ' ', ' ' . $n . ' ' ) === false ) { continue; } // o nome tem que aparecer
+			// a busca é por frase exata (entre aspas): o Google só traz matérias que citam o nome no texto
 			$cats = array();
 			foreach ( dv_nt_riscos() as $cat => $re ) { if ( preg_match( $re, ' ' . $txt ) ) { $cats[] = $cat; } }
 			$h = md5( dv_nt_norm( $it['titulo'] ) ); if ( isset( $vistos[ $h ] ) ) { continue; } $vistos[ $h ] = 1;

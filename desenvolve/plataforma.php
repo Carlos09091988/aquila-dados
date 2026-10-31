@@ -291,7 +291,7 @@ function dv_admin_assinantes() {
 		$url = admin_url( 'admin-post.php' );
 		$n = wp_nonce_field( 'dv_acao_' . $u->ID, '_dvn', true, false );
 		echo '<tr><td><b>' . esc_html( $u->display_name ) . '</b><br>' . esc_html( $u->user_email ) . '<br><small>' . esc_html( get_user_meta( $u->ID, 'dv_doc', true ) ) . ' ' . esc_html( get_user_meta( $u->ID, 'dv_tel', true ) ) . '</small></td>';
-		echo '<td>' . ( $m ? dv_tag( 'master' ) . ' ' : '' ) . dv_tag( $s ) . '</td>';
+		echo '<td>' . ( $m ? dv_tag( 'master' ) . ( $s === 'bloqueado' ? ' ' . dv_tag( $s ) : '' ) : dv_tag( $s ) ) . '</td>';
 		echo '<td>' . ( $m ? 'Ilimitado' : (int) $sd['total'] . ' <small>(mês ' . $sd['mes'] . ', extra ' . $sd['extra'] . ', cortesia ' . $sd['cortesia'] . ')</small>' ) . '</td>';
 		echo '<td>' . esc_html( get_user_meta( $u->ID, 'dv_vence', true ) ) . '</td><td>';
 		echo '<form class="dv-inline" method="post" action="' . esc_url( $url ) . '">' . $n . '<input type="hidden" name="action" value="dv_acao"><input type="hidden" name="uid" value="' . $u->ID . '"><input type="hidden" name="op" value="creditos">';

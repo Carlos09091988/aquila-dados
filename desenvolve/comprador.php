@@ -75,40 +75,53 @@ function dv_cp_siconfi( $id_ente, $esfera ) {
 	return $o;
 }
 
-/* ---------- Contratos e licitações do órgão no PNCP ---------- */
-function dv_cp_pncp( $cnpj, $tipo, $paginas = 5 ) {
-	$base = 'https://pncp.gov.br/api/search/?q=' . $cnpj . '&tipos_documento=' . $tipo . '&ordenacao=-data&tam_pagina=100&pagina=';
-	$x = dv_ds_multi( array( 1 => $base . '1' ), array(), 30 ); $j = $x[1] ? json_decode( $x[1], true ) : null; if ( ! $j ) { return array( 'total' => 0, 'itens' => array(), 'erro' => 1 ); }
-	$pags = array( $j ); $n = min( $paginas, (int) ceil( (int) ( $j['total'] ?? 0 ) / 100 ) );
-	$u = array(); for ( $p = 2; $p <= $n; $p++ ) { $u[ $p ] = $base . $p; }
-	if ( $u ) { foreach ( dv_ds_multi( $u, array(), 30 ) as $b ) { if ( $b ) { $pags[] = json_decode( $b, true ); } } }
-	$o = array(); $v = array();
-	foreach ( $pags as $pg ) {
-		foreach ( (array) ( $pg['items'] ?? array() ) as $i ) {
-			if ( preg_replace( '/\D/', '', (string) ( $i['orgao_cnpj'] ?? '' ) ) !== $cnpj || ! empty( $i['cancelado'] ) ) { continue; }
-			$k = $i['numero_controle_pncp'] ?? $i['id']; if ( isset( $v[ $k ] ) ) { continue; } $v[ $k ] = 1;
-			$o[] = array( 'titulo' => $i['title'] ?? '', 'objeto' => mb_substr( trim( (string) ( $i['description'] ?? '' ) ), 0, 260 ), 'fornecedor' => $i['fornecedor_nome'] ?? '',
-				'fornecedor_ni' => $i['fornecedor_ni'] ?? '', 'valor' => (float) ( $i['valor_global'] ?? 0 ), 'modalidade' => $i['modalidade_licitacao_nome'] ?? '',
-				'unidade' => $i['unidade_nome'] ?? '', 'assinatura' => $i['data_assinatura'] ?? '', 'inicio' => substr( (string) ( $i['data_inicio_vigencia'] ?? '' ), 0, 16 ),
-				'fim' => substr( (string) ( $i['data_fim_vigencia'] ?? '' ), 0, 16 ), 'ano' => $i['ano'] ?? '', 'seq' => $i['numero_sequencial'] ?? '', 'situacao' => $i['situacao_nome'] ?? '',
-				'link' => ! empty( $i['item_url'] ) ? 'https://pncp.gov.br/app' . $i['item_url'] : '' );
+/* ---------- Contratos e licitações do órgão no PNCP (API de consulta) ---------- */
+function dv_cp_contratos( $cnpj ) {
+	$B = 'https://pncp.gov.br/api/consulta/v1/contratos?cnpjOrgao=' . $cnpj . '&tamanhoPagina=500';
+	$ano = (int) current_time( 'Y' ); $u = array();
+	for ( $a = $ano; $a >= $ano - 4; $a-- ) { $u[ $a . '_1' ] = $B . '&dataInicial=' . $a . '0101&dataFinal=' . ( $a === $ano ? current_time( 'Ymd' ) : $a . '1231' ) . '&pagina=1'; }
+	$b = dv_ds_multi( $u, array(), 40 ); $mais = array();
+	foreach ( $b as $k => $body ) { $j = $body ? json_decode( $body, true ) : null; $tp = (int) ( $j['totalPaginas'] ?? 1 ); for ( $p = 2; $p <= min( $tp, 4 ); $p++ ) { $mais[ str_replace( '_1', '_' . $p, $k ) ] = str_replace( '&pagina=1', '&pagina=' . $p, $u[ $k ] ); } }
+	if ( $mais ) { $b += dv_ds_multi( $mais, array(), 40 ); }
+	$o = array(); $v = array(); $erro = 0;
+	foreach ( $b as $body ) {
+		$j = $body ? json_decode( $body, true ) : null; if ( ! $j ) { $erro++; continue; }
+		foreach ( (array) ( $j['data'] ?? array() ) as $i ) {
+			$k = $i['numeroControlePNCP'] ?? ''; if ( isset( $v[ $k ] ) ) { continue; } $v[ $k ] = 1;
+			$ac = (string) ( $i['anoContrato'] ?? '' ); $sc = (string) ( $i['sequencialContrato'] ?? '' );
+			$o[] = array( 'titulo' => 'Contrato ' . ( $i['numeroContratoEmpenho'] ?? '' ), 'objeto' => mb_substr( trim( (string) ( $i['objetoContrato'] ?? '' ) ), 0, 260 ),
+				'fornecedor' => $i['nomeRazaoSocialFornecedor'] ?? '', 'fornecedor_ni' => $i['niFornecedor'] ?? '', 'valor' => (float) ( $i['valorGlobal'] ?? $i['valorInicial'] ?? 0 ),
+				'unidade' => $i['unidadeOrgao']['nomeUnidade'] ?? '', 'assinatura' => $i['dataAssinatura'] ?? '', 'inicio' => (string) ( $i['dataVigenciaInicio'] ?? '' ), 'fim' => (string) ( $i['dataVigenciaFim'] ?? '' ),
+				'compra' => $i['numeroControlePncpCompra'] ?? '', 'link' => ( $ac && $sc ) ? 'https://pncp.gov.br/app/contratos/' . $cnpj . '/' . $ac . '/' . $sc : '' );
 		}
 	}
-	return array( 'total' => (int) ( $j['total'] ?? 0 ), 'itens' => $o );
+	return array( 'total' => count( $o ), 'itens' => $o, 'falhas' => $erro );
 }
-/* itens e preços (estimado e homologado) das licitações do órgão que tratam do produto */
-function dv_cp_precos( $cnpj, $editais, $toks ) {
-	$alvo = array_slice( array_values( array_filter( $editais, function ( $e ) use ( $toks ) { return $e['ano'] && $e['seq'] && dv_cp_casa( $e['objeto'], $toks ); } ) ), 0, 10 );
+function dv_cp_abertas( $cnpj ) {
+	$u = 'https://pncp.gov.br/api/consulta/v1/contratacoes/proposta?cnpj=' . $cnpj . '&dataFinal=' . gmdate( 'Ymd', strtotime( '+1 year' ) ) . '&pagina=1&tamanhoPagina=50';
+	$b = dv_ds_multi( array( 1 => $u ), array(), 40 ); $j = $b[1] ? json_decode( $b[1], true ) : null; $o = array();
+	foreach ( (array) ( $j['data'] ?? array() ) as $i ) {
+		$a = $i['anoCompra'] ?? ''; $s = $i['sequencialCompra'] ?? '';
+		$o[] = array( 'titulo' => trim( ( $i['modalidadeNome'] ?? '' ) . ' ' . ( $i['numeroCompra'] ?? '' ) ), 'objeto' => mb_substr( trim( (string) ( $i['objetoCompra'] ?? '' ) ), 0, 300 ),
+			'valor' => (float) ( $i['valorTotalEstimado'] ?? 0 ), 'modalidade' => $i['modalidadeNome'] ?? '', 'unidade' => $i['unidadeOrgao']['nomeUnidade'] ?? '',
+			'inicio' => (string) ( $i['dataAberturaProposta'] ?? '' ), 'fim' => (string) ( $i['dataEncerramentoProposta'] ?? '' ), 'ano' => $a, 'seq' => $s, 'situacao' => $i['situacaoCompraNome'] ?? '',
+			'link' => ( $a && $s ) ? 'https://pncp.gov.br/app/editais/' . $cnpj . '/' . $a . '/' . $s : ( $i['linkSistemaOrigem'] ?? '' ) );
+	}
+	return array( 'total' => (int) ( $j['totalRegistros'] ?? count( $o ) ), 'itens' => $o );
+}
+/* itens e preços (estimado e homologado) das compras do órgão que tratam do produto */
+function dv_cp_precos( $cnpj, $compras, $toks ) {
+	$alvo = array_slice( $compras, 0, 12 );
 	$u = array(); foreach ( $alvo as $k => $e ) { $u[ $k ] = 'https://pncp.gov.br/api/pncp/v1/orgaos/' . $cnpj . '/compras/' . $e['ano'] . '/' . $e['seq'] . '/itens?pagina=1&tamanhoPagina=100'; }
 	$b = $u ? dv_ds_multi( $u, array(), 30 ) : array(); $itens = array(); $res = array();
 	foreach ( $b as $k => $body ) {
 		foreach ( (array) ( $body ? json_decode( $body, true ) : array() ) as $i ) {
-			if ( ! dv_cp_casa( $i['descricao'] ?? '', $toks ) ) { continue; }
+			if ( ! dv_cp_casa( $i['descricao'] ?? '', $toks ) && ! dv_cp_casa( $alvo[ $k ]['objeto'], $toks ) ) { continue; }
 			$x = array( 'descricao' => mb_substr( (string) ( $i['descricao'] ?? '' ), 0, 220 ), 'unidade' => $i['unidadeMedida'] ?? '', 'quantidade' => (float) ( $i['quantidade'] ?? 0 ),
-				'estimado' => (float) ( $i['valorUnitarioEstimado'] ?? 0 ), 'homologado' => null, 'vencedor' => '', 'data' => substr( (string) ( $alvo[ $k ]['inicio'] ?? '' ), 0, 10 ),
+				'estimado' => (float) ( $i['valorUnitarioEstimado'] ?? 0 ), 'homologado' => null, 'vencedor' => '', 'data' => substr( (string) $alvo[ $k ]['data'], 0, 10 ),
 				'compra' => $alvo[ $k ]['titulo'], 'link' => $alvo[ $k ]['link'] );
-			if ( ! empty( $i['temResultado'] ) && count( $res ) < 25 ) { $res[ count( $itens ) ] = 'https://pncp.gov.br/api/pncp/v1/orgaos/' . $cnpj . '/compras/' . $alvo[ $k ]['ano'] . '/' . $alvo[ $k ]['seq'] . '/itens/' . (int) $i['numeroItem'] . '/resultados'; }
-			$itens[] = $x; if ( count( $itens ) >= 60 ) { break 2; }
+			if ( ! empty( $i['temResultado'] ) && count( $res ) < 30 ) { $res[ count( $itens ) ] = 'https://pncp.gov.br/api/pncp/v1/orgaos/' . $cnpj . '/compras/' . $alvo[ $k ]['ano'] . '/' . $alvo[ $k ]['seq'] . '/itens/' . (int) $i['numeroItem'] . '/resultados'; }
+			$itens[] = $x; if ( count( $itens ) >= 80 ) { break 2; }
 		}
 	}
 	if ( $res ) {
@@ -121,7 +134,7 @@ function dv_cp_precos( $cnpj, $editais, $toks ) {
 }
 
 function dv_comprador( $cnpj, $item ) {
-	$ck = 'dv_cp_' . $cnpj . '_' . md5( $item ); $c = get_transient( $ck ); if ( $c ) { return $c; }
+	$ck = 'dv_cp2_' . $cnpj . '_' . md5( $item ); $c = get_transient( $ck ); if ( $c ) { return $c; }
 	$x = wp_remote_get( 'https://brasilapi.com.br/api/cnpj/v1/' . $cnpj, array( 'timeout' => 20 ) );
 	$cad = is_wp_error( $x ) ? array() : (array) json_decode( wp_remote_retrieve_body( $x ), true );
 	if ( empty( $cad['razao_social'] ) ) { return new WP_Error( 'dv_cnpj', 'CNPJ não encontrado na Receita Federal.', array( 'status' => 404 ) ); }
@@ -133,9 +146,18 @@ function dv_comprador( $cnpj, $item ) {
 	$toks = dv_cp_tok( $item );
 	$D = array( 'cnpj' => $cnpj, 'item' => $item, 'tokens' => $toks, 'gerado_em' => current_time( 'mysql' ), 'cadastro' => $cad, 'publico' => (bool) $publico, 'esfera' => $esfera, 'id_ente' => $id_ente );
 	$D['fiscal'] = $id_ente ? dv_cp_siconfi( $id_ente, $esfera ) : null;
-	$ct = dv_cp_pncp( $cnpj, 'contrato' ); $ed = dv_cp_pncp( $cnpj, 'edital', 3 );
+	$ct = dv_cp_contratos( $cnpj ); $ed = dv_cp_abertas( $cnpj );
 	$D['contratos'] = $ct; $D['editais'] = $ed;
-	$D['precos'] = $toks ? dv_cp_precos( $cnpj, $ed['itens'], $toks ) : array();
+	$compras = array(); $vis = array();
+	if ( $toks ) {
+		foreach ( $ed['itens'] as $x ) { if ( $x['ano'] && $x['seq'] && dv_cp_casa( $x['objeto'], $toks ) ) { $k = $x['ano'] . '/' . $x['seq']; if ( ! isset( $vis[ $k ] ) ) { $vis[ $k ] = 1; $compras[] = array( 'ano' => $x['ano'], 'seq' => $x['seq'], 'objeto' => $x['objeto'], 'titulo' => $x['titulo'], 'link' => $x['link'], 'data' => $x['inicio'] ); } } }
+		foreach ( $ct['itens'] as $x ) {
+			if ( ! dv_cp_casa( $x['objeto'], $toks ) || ! preg_match( '#-(\d+)/(\d{4})$#', (string) $x['compra'], $m ) ) { continue; }
+			$k = $m[2] . '/' . (int) $m[1]; if ( isset( $vis[ $k ] ) ) { continue; } $vis[ $k ] = 1;
+			$compras[] = array( 'ano' => $m[2], 'seq' => (int) $m[1], 'objeto' => $x['objeto'], 'titulo' => 'Compra ' . (int) $m[1] . '/' . $m[2] . ' (' . $x['fornecedor'] . ')', 'link' => 'https://pncp.gov.br/app/editais/' . $cnpj . '/' . $m[2] . '/' . (int) $m[1], 'data' => $x['assinatura'] );
+		}
+	}
+	$D['precos'] = $toks ? dv_cp_precos( $cnpj, $compras, $toks ) : array();
 	/* cobranças na Justiça contra o órgão (12 meses) */
 	$nome = dv_ds_nrm( $cad['razao_social'] ); $ini = gmdate( 'Y-m-d', strtotime( '-12 months' ) ); $fim = current_time( 'Y-m-d' );
 	$bj = 'https://comunicaapi.pje.jus.br/api/v1/comunicacao?nomeParte=' . rawurlencode( $nome ) . '&dataDisponibilizacaoInicio=' . $ini . '&dataDisponibilizacaoFim=' . $fim . '&itensPorPagina=1&pagina=1';

@@ -79,6 +79,23 @@ function dv_ds_pncp( $cnpj, $nome = '', $filiais = array() ) {
 	return array( 'total' => count( $itens ), 'itens' => $itens, 'por_unidade' => $fil );
 }
 
+/* ---------- Contratos federais completos (Portal da Transparência / CGU) ---------- */
+function dv_ds_cgu_contratos( $cnpj ) {
+	if ( ! defined( 'AQ_TRANSP_KEY' ) || ! AQ_TRANSP_KEY ) { return array(); }
+	$urls = array(); for ( $pg = 1; $pg <= 10; $pg++ ) { $urls[ $pg ] = 'https://api.portaldatransparencia.gov.br/api-de-dados/contratos/cpf-cnpj?cpfCnpj=' . $cnpj . '&pagina=' . $pg; }
+	$b = dv_ds_multi( $urls, array( 'chave-api-dados' => AQ_TRANSP_KEY ), 30 ); $o = array(); $vistos = array();
+	foreach ( $b as $body ) {
+		foreach ( (array) ( $body ? json_decode( $body, true ) : array() ) as $c ) {
+			$id = $c['id'] ?? md5( wp_json_encode( $c ) ); if ( isset( $vistos[ $id ] ) ) { continue; } $vistos[ $id ] = 1;
+			$ug = $c['unidadeGestora'] ?? array();
+			$o[] = array( 'orgao' => $ug['orgaoVinculado']['nome'] ?? $ug['orgaoMaximo']['nome'] ?? '', 'unidade' => $ug['nome'] ?? '', 'objeto' => mb_substr( (string) ( $c['objeto'] ?? '' ), 0, 220 ),
+				'numero' => $c['numero'] ?? '', 'valor' => (float) ( $c['valorFinalCompra'] ?? $c['valorInicialCompra'] ?? 0 ), 'assinatura' => $c['dataAssinatura'] ?? '',
+				'inicio' => $c['dataInicioVigencia'] ?? '', 'fim' => $c['dataFimVigencia'] ?? '', 'link' => ! empty( $c['id'] ) ? 'https://portaldatransparencia.gov.br/contratos/' . $c['id'] : '' );
+		}
+	}
+	return $o;
+}
+
 /* ---------- Processos judiciais (Diário de Justiça Eletrônico Nacional — CNJ) ---------- */
 function dv_ds_classe( $c, $trib, $dest ) {
 	$c = dv_ds_nrm( $c );
@@ -166,7 +183,7 @@ function dv_ds_diarios( $cnpj, $nome ) {
 }
 
 function dv_dossie_dados( $cnpj ) {
-	$ck = 'dv_ds4_' . $cnpj; $c = get_transient( $ck ); if ( $c ) { return $c; }
+	$ck = 'dv_ds5_' . $cnpj; $c = get_transient( $ck ); if ( $c ) { return $c; }
 	$t0 = microtime( true );
 	$r = wp_remote_get( 'https://brasilapi.com.br/api/cnpj/v1/' . $cnpj, array( 'timeout' => 25 ) );
 	$cad = is_wp_error( $r ) ? array() : (array) json_decode( wp_remote_retrieve_body( $r ), true );
@@ -237,6 +254,7 @@ function dv_dossie_dados( $cnpj ) {
 	$filiais = function_exists( 'dv_capt_filiais' ) ? dv_capt_filiais( $cnpj ) : array();
 	$D['pncp'] = dv_ds_pncp( $cnpj, ( $nucleoC && count( explode( ' ', $nucleoC ) ) >= 2 ) ? $nucleoC : '', $filiais );
 	$D['filiais'] = count( $filiais );
+	$D['cgu_contratos'] = dv_ds_cgu_contratos( $cnpj );
 
 	/* Processos judiciais: empresa (todos os tipos) e sócios pessoa física (só criminais) */
 	$nomeEmp = dv_ds_nrm( $cad['razao_social'] ); $nomeEmp = trim( preg_replace( '/\s+(EM RECUPERACAO JUDICIAL)$/', '', $nomeEmp ) );

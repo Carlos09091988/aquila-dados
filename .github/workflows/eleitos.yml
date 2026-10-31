@@ -1,0 +1,34 @@
+name: Eleitos (TSE)
+
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: '40 7 1 */3 *'   # a cada 3 meses
+
+permissions:
+  contents: write
+
+jobs:
+  eleitos:
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - run: pip install requests==2.32.3
+      - name: Gerar eleitos
+        env:
+          OUT: out/eleitos
+        run: python eleitos.py
+      - name: Publicar no ramo eleitos
+        uses: peaceiris/actions-gh-pages@v4
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          publish_dir: ./out
+          publish_branch: eleitos
+          force_orphan: true
+          user_name: robo-aquila
+          user_email: robo@aquilaadvocacia.com.br
+          commit_message: Eleitos (TSE)

@@ -59,7 +59,7 @@ function dv_plano_info( $k ) {
 	return $ps[ $k ] ?? reset( $ps );
 }
 function dv_fundador_restantes() { return max( 0, (int) dv_cfg( 'fundador_vagas' ) - (int) get_option( 'dv_fundadores', 0 ) ); }
-function dv_preco_fundador( $preco ) { return round( $preco * ( 1 - (int) dv_cfg( 'fundador_desc' ) / 100 ) ); }
+function dv_preco_fundador( $preco ) { $v = $preco * ( 1 - (int) dv_cfg( 'fundador_desc' ) / 100 ); return max( 9, ceil( ( $v + 1 ) / 10 ) * 10 - 1 ); } // termina em 9: 69, 139, 349
 /** Preço que este assinante paga pelo plano: fundador (30% por 12 meses) enquanto houver vaga ou se ele já é fundador. */
 function dv_preco_plano( $uid, $k ) {
 	$p = dv_plano_info( $k ); $ate = (string) get_user_meta( $uid, 'dv_fundador_ate', true );

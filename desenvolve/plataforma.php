@@ -23,10 +23,10 @@ function dv_cfg( $k = null ) {
 		'creditos_dossie'  => 10,
 		'email_remetente'  => 'contato@desenvolveestrategias.com.br',
 		// chave:Nome:preço:créditos por mês:termos no Radar do Diário Oficial
-		'planos'           => 'essencial:Essencial:97:20:1|profissional:Profissional:197:60:5|empresarial:Empresarial:497:200:20',
+		'planos'           => 'essencial:Essencial:79:20:1|profissional:Profissional:149:60:5|empresarial:Empresarial:349:200:20',
 		'custos'           => 'raiox:2,comprador:2',
 		'fundador_desc'    => 30,
-		'fundador_vagas'   => 50,
+		'fundador_vagas'   => 0,
 		'fundador_meses'   => 12,
 		'trial_dias'       => 7,
 		'trial_creditos'   => 5,
@@ -35,9 +35,16 @@ function dv_cfg( $k = null ) {
 	return $k ? ( $c[ $k ] ?? null ) : $c;
 }
 
+/* Tabela de preços 3 (out/2026): foco 100% em licitações, R$ 79 / 149 / 349, sem preço de fundador */
+add_action( 'init', function () {
+	if ( get_option( 'dv_cfg_ver' ) === '3' ) { return; }
+	$c = (array) get_option( 'dv_cfg', array() );
+	$c['planos'] = 'essencial:Essencial:79:20:1|profissional:Profissional:149:60:5|empresarial:Empresarial:349:200:20'; $c['fundador_vagas'] = 0; $c['preco_assinatura'] = '79';
+	update_option( 'dv_cfg', $c, false ); update_option( 'dv_cfg_ver', '3', false );
+}, 5 );
 /* Tabela de preços 2 (nov/2026): três planos, pacotes com preço próprio, Due Diligence 10 créditos */
 add_action( 'init', function () {
-	if ( get_option( 'dv_cfg_ver' ) === '2' ) { return; }
+	if ( in_array( get_option( 'dv_cfg_ver' ), array( '2', '3' ), true ) ) { return; }
 	$c = (array) get_option( 'dv_cfg', array() );
 	$c['pacotes'] = '10:39,30:99,100:290'; $c['creditos_dossie'] = 10; $c['preco_assinatura'] = '97'; $c['creditos_mes'] = 20;
 	update_option( 'dv_cfg', $c, false ); update_option( 'dv_cfg_ver', '2', false );

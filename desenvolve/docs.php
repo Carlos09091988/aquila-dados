@@ -210,7 +210,7 @@ add_action( 'rest_api_init', function () {
 			header( 'Content-Disposition: attachment; filename="' . rawurlencode( $rows[0]['nome_arq'] ?: 'documento.' . $ft['ext'] ) . '"' ); header( 'Content-Length: ' . filesize( $p ) ); readfile( $p ); exit;
 		}
 		if ( ! class_exists( 'ZipArchive' ) ) { return new WP_Error( 'dv_docs', 'O servidor não gera ZIP.', array( 'status' => 500 ) ); }
-		$T = dv_docs_tipos(); $tmp = wp_tempnam( 'dvpasta' ); $z = new ZipArchive(); $z->open( $tmp, ZipArchive::OVERWRITE );
+		require_once ABSPATH . 'wp-admin/includes/file.php'; $T = dv_docs_tipos(); $tmp = wp_tempnam( 'dvpasta' ); $z = new ZipArchive(); $z->open( $tmp, ZipArchive::OVERWRITE );
 		$idx = "PASTA DE HABILITAÇÃO — gerada em " . date_i18n( 'd/m/Y H:i' ) . " pela plataforma Desenvolve\r\n\r\n"; $n = 0;
 		foreach ( $rows as $d ) {
 			$p = $dir . '/' . basename( $d['arquivo'] ); if ( ! is_file( $p ) ) { continue; } $n++;
@@ -319,7 +319,7 @@ var SN={ok:'Em dia',vencendo:'Vence logo',vencido:'Vencido',sem_validade:'Sem va
 function carregar(){return req('GET','docs').then(function(j){S=j;if(!emp&&j.empresas.length)emp=j.empresas[0].cnpj;if(emp&&!j.empresas.some(function(x){return x.cnpj===emp}))emp=j.empresas.length?j.empresas[0].cnpj:'';pintar();if(emp&&!radar[emp])buscarRadar(emp)})}
 function buscarRadar(c){radar[c]={carregando:1};req('GET','docs/radar?cnpj='+c).then(function(j){radar[c]=j;if(emp===c)pintar()}).catch(function(){radar[c]={erro:1};if(emp===c)pintar()})}
 function pintar(){
- var E=R.querySelector('.dc-emps');E.innerHTML=S.empresas.map(function(x){return'<span class="e'+(x.cnpj===emp?' on':'')+'" data-c="'+x.cnpj+'">'+e(x.nome.split(' ').slice(0,3).join(' '))+'</span>'}).join('')+'<form class="dc-add"><input placeholder="CNPJ de outra empresa" inputmode="numeric"><button>Adicionar</button></form>';
+ var E=R.querySelector('.dc-emps');E.innerHTML=S.empresas.map(function(x){return'<span class="e'+(x.cnpj===emp?' on':'')+'" data-c="'+x.cnpj+'">'+e(x.nome.split(' ').slice(0,3).join(' ').replace(/[\s.,-]+$/,''))+'</span>'}).join('')+'<form class="dc-add"><input placeholder="CNPJ de outra empresa" inputmode="numeric"><button>Adicionar</button></form>';
  var B=R.querySelector('.dc-body');
  if(!S.empresas.length){B.innerHTML='<div class="dc-rad ok"><b>Comece pela empresa.</b><p class="dc-h">Informe o CNPJ acima. Montamos o checklist de habilitação da Lei 14.133/2021, e você envia os PDFs: a validade, o tipo de certidão e o resultado são lidos automaticamente. Avisamos por e-mail antes de cada vencimento.</p></div>';return}
  var ds=S.docs.filter(function(d){return d.cnpj===emp}),por={};ds.forEach(function(d){(por[d.tipo]=por[d.tipo]||[]).push(d)});

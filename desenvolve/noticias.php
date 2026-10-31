@@ -72,13 +72,23 @@ function dv_nt_buscar( $termo ) {
 function dv_noticias( $cnpj ) {
 	$cnpj = preg_replace( '/\D/', '', (string) $cnpj );
 	if ( strlen( $cnpj ) !== 14 ) { return new WP_Error( 'dv_cnpj', 'CNPJ inválido.', array( 'status' => 400 ) ); }
-	$ck = 'dv_nt6_' . $cnpj; $c = empty( $_GET['debug'] ) ? get_transient( $ck ) : false; if ( $c ) { return $c; }
+	$ck = 'dv_nt7_' . $cnpj; $c = empty( $_GET['debug'] ) ? get_transient( $ck ) : false; if ( $c ) { return $c; }
 	$r = wp_remote_get( 'https://brasilapi.com.br/api/cnpj/v1/' . $cnpj, array( 'timeout' => 20 ) );
 	$j = is_wp_error( $r ) ? array() : (array) json_decode( wp_remote_retrieve_body( $r ), true );
 	if ( empty( $j['razao_social'] ) ) { return array( 'cnpj' => $cnpj, 'termos' => array(), 'itens' => array(), 'aviso' => 'Não foi possível consultar o cadastro da empresa agora. Tente de novo em alguns minutos.' ); }
 	$nomes = array();
+	$nat = dv_nt_norm( $j['natureza_juridica'] ?? '' ); $mun = dv_nt_norm( $j['municipio'] ?? '' ); $uf = strtoupper( (string) ( $j['uf'] ?? '' ) );
+	$publico = preg_match( '/MUNICIP|ESTAD|FEDERAL|UNIAO|AUTARQUIA|FUNDACAO PUBLICA|ORGAO PUBLICO|CONSORCIO PUBLICO|FUNDO PUBLICO|DISTRITO FEDERAL|PODER|MINISTERIO PUBLICO|TRIBUNAL|CAMARA|ASSEMBLEIA/', $nat );
+	$UFN = array( 'AC' => 'ACRE', 'AL' => 'ALAGOAS', 'AP' => 'AMAPA', 'AM' => 'AMAZONAS', 'BA' => 'BAHIA', 'CE' => 'CEARA', 'DF' => 'DISTRITO FEDERAL', 'ES' => 'ESPIRITO SANTO', 'GO' => 'GOIAS', 'MA' => 'MARANHAO', 'MT' => 'MATO GROSSO', 'MS' => 'MATO GROSSO DO SUL', 'MG' => 'MINAS GERAIS', 'PA' => 'PARA', 'PB' => 'PARAIBA', 'PR' => 'PARANA', 'PE' => 'PERNAMBUCO', 'PI' => 'PIAUI', 'RJ' => 'RIO DE JANEIRO', 'RN' => 'RIO GRANDE DO NORTE', 'RS' => 'RIO GRANDE DO SUL', 'RO' => 'RONDONIA', 'RR' => 'RORAIMA', 'SC' => 'SANTA CATARINA', 'SP' => 'SAO PAULO', 'SE' => 'SERGIPE', 'TO' => 'TOCANTINS' );
 	foreach ( array( $j['razao_social'] ?? '', $j['nome_fantasia'] ?? '' ) as $n ) {
-		$k = dv_nt_nucleo( $n ); if ( $k && dv_nt_util( $k ) && ! in_array( $k, $nomes, true ) ) { $nomes[] = $k; }
+		$k = dv_nt_nucleo( $n ); if ( ! $k ) { continue; }
+		/* órgão público com nome genérico (ex.: "Secretaria Municipal da Fazenda"): busca com a cidade ou o estado junto, para não trazer órgãos homônimos de outros lugares */
+		if ( $publico ) {
+			if ( preg_match( '/MUNICIP/', $nat ) && $mun && strpos( $k, $mun ) === false ) { $k .= ' DE ' . $mun; }
+			elseif ( preg_match( '/ESTAD/', $nat ) && isset( $UFN[ $uf ] ) && strpos( $k, $UFN[ $uf ] ) === false ) { $k .= ' DO ESTADO DE ' . $UFN[ $uf ]; }
+			if ( ! in_array( $k, $nomes, true ) ) { $nomes[] = $k; } continue;
+		}
+		if ( dv_nt_util( $k ) && ! in_array( $k, $nomes, true ) ) { $nomes[] = $k; }
 	}
 	$res = array( 'cnpj' => $cnpj, 'termos' => $nomes, 'cidade' => trim( ( $j['municipio'] ?? '' ) . '/' . ( $j['uf'] ?? '' ), '/' ), 'itens' => array(), 'aviso' => '' );
 	if ( ! $nomes ) {

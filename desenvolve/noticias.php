@@ -60,7 +60,7 @@ function dv_nt_buscar( $termo ) {
 function dv_noticias( $cnpj ) {
 	$cnpj = preg_replace( '/\D/', '', (string) $cnpj );
 	if ( strlen( $cnpj ) !== 14 ) { return new WP_Error( 'dv_cnpj', 'CNPJ inválido.', array( 'status' => 400 ) ); }
-	$ck = 'dv_nt3_' . $cnpj; $c = get_transient( $ck ); if ( $c ) { return $c; }
+	$ck = 'dv_nt4_' . $cnpj; $c = get_transient( $ck ); if ( $c ) { return $c; }
 	$r = wp_remote_get( 'https://brasilapi.com.br/api/cnpj/v1/' . $cnpj, array( 'timeout' => 20 ) );
 	$j = is_wp_error( $r ) ? array() : (array) json_decode( wp_remote_retrieve_body( $r ), true );
 	if ( empty( $j['razao_social'] ) ) { return array( 'cnpj' => $cnpj, 'termos' => array(), 'itens' => array(), 'aviso' => 'Não foi possível consultar o cadastro da empresa agora. Tente de novo em alguns minutos.' ); }
@@ -73,7 +73,7 @@ function dv_noticias( $cnpj ) {
 		$res['aviso'] = 'O nome da empresa é muito genérico para uma busca confiável na imprensa (traria notícias de outras empresas). Pesquise manualmente se precisar.';
 		set_transient( $ck, $res, DAY_IN_SECONDS ); return $res;
 	}
-	$vistos = array(); $falhou = false; $res['brutos'] = 0;
+	$vistos = array(); $falhou = false; $res['brutos'] = 0; $res['mencoes'] = array();
 	foreach ( $nomes as $n ) {
 		$lista = dv_nt_buscar( $n ); if ( $lista === null ) { $falhou = true; continue; }
 		$res['brutos'] += count( $lista );
@@ -82,13 +82,15 @@ function dv_noticias( $cnpj ) {
 			if ( strpos( ' ' . $txt . ' ', ' ' . $n . ' ' ) === false ) { continue; } // o nome tem que aparecer
 			$cats = array();
 			foreach ( dv_nt_riscos() as $cat => $re ) { if ( preg_match( $re, ' ' . $txt ) ) { $cats[] = $cat; } }
-			if ( ! $cats ) { continue; }
 			$h = md5( dv_nt_norm( $it['titulo'] ) ); if ( isset( $vistos[ $h ] ) ) { continue; } $vistos[ $h ] = 1;
+			if ( ! $cats ) { $res['mencoes'][] = array( 'titulo' => $it['titulo'], 'fonte' => $it['fonte'], 'url' => esc_url_raw( $it['url'] ), 'data' => $it['data'], 'riscos' => array(), 'termo' => $n ); continue; }
 			$res['itens'][] = array( 'titulo' => $it['titulo'], 'fonte' => $it['fonte'], 'url' => esc_url_raw( $it['url'] ), 'data' => $it['data'], 'riscos' => $cats, 'termo' => $n );
 		}
 	}
 	usort( $res['itens'], function ( $a, $b ) { return strcmp( $b['data'], $a['data'] ); } );
 	$res['itens'] = array_slice( $res['itens'], 0, 30 );
+	usort( $res['mencoes'], function ( $a, $b ) { return strcmp( $b['data'], $a['data'] ); } );
+	$res['mencoes'] = array_slice( $res['mencoes'], 0, 20 );
 	if ( $falhou && ! $res['itens'] ) { $res['aviso'] = 'A busca na imprensa não respondeu agora. Tente consultar de novo em alguns minutos.'; return $res; }
 	set_transient( $ck, $res, 12 * HOUR_IN_SECONDS );
 	return $res;

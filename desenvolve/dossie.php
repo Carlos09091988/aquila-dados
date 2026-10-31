@@ -37,8 +37,127 @@ function dv_ds_interno( $rota, $params ) {
 	return $r->is_error() ? null : $r->get_data();
 }
 
+
+/* ---------- Requisições em paralelo ---------- */
+function dv_ds_multi( $urls, $headers = array(), $timeout = 25 ) {
+	$out = array_fill_keys( array_keys( $urls ), null );
+	if ( class_exists( '\WpOrg\Requests\Requests' ) ) {
+		$reqs = array();
+		foreach ( $urls as $k => $u ) { $reqs[ $k ] = array( 'url' => $u, 'type' => 'GET', 'headers' => $headers + array( 'User-Agent' => 'Mozilla/5.0 (compatible; Desenvolve/1.0)', 'Accept' => 'application/json' ), 'options' => array( 'timeout' => $timeout, 'connect_timeout' => 10 ) ); }
+		try { $res = \WpOrg\Requests\Requests::request_multiple( $reqs, array( 'timeout' => $timeout ) ); } catch ( \Throwable $e ) { $res = array(); }
+		foreach ( $res as $k => $r ) { if ( is_object( $r ) && isset( $r->status_code ) && $r->status_code === 200 ) { $out[ $k ] = $r->body; } }
+		return $out;
+	}
+	foreach ( $urls as $k => $u ) { $r = wp_remote_get( $u, array( 'timeout' => $timeout, 'headers' => $headers ) ); if ( ! is_wp_error( $r ) && wp_remote_retrieve_response_code( $r ) === 200 ) { $out[ $k ] = wp_remote_retrieve_body( $r ); } }
+	return $out;
+}
+
+/* ---------- Contratos no PNCP (todas as esferas) ---------- */
+function dv_ds_pncp( $cnpj ) {
+	$urls = array(); for ( $p = 1; $p <= 5; $p++ ) { $urls[ $p ] = 'https://pncp.gov.br/api/search/?q=' . $cnpj . '&tipos_documento=contrato&ordenacao=-data&pagina=' . $p . '&tam_pagina=100'; }
+	$b = dv_ds_multi( $urls ); $itens = array(); $total = null; $vistos = array();
+	foreach ( $b as $body ) {
+		$j = $body ? json_decode( $body, true ) : null; if ( ! $j ) { continue; }
+		$total = $total ?? (int) ( $j['total'] ?? 0 );
+		foreach ( (array) ( $j['items'] ?? array() ) as $i ) {
+			$k = $i['numero_controle_pncp'] ?? $i['id'] ?? ''; if ( isset( $vistos[ $k ] ) || ! empty( $i['cancelado'] ) ) { continue; } $vistos[ $k ] = 1;
+			$itens[] = array( 'titulo' => $i['title'] ?? '', 'objeto' => mb_substr( trim( (string) ( $i['description'] ?? '' ) ), 0, 220 ), 'orgao' => $i['orgao_nome'] ?? '',
+				'esfera' => $i['esfera_nome'] ?? '', 'uf' => $i['uf'] ?? '', 'municipio' => $i['municipio_nome'] ?? '', 'modalidade' => $i['modalidade_licitacao_nome'] ?? '',
+				'valor' => (float) ( $i['valor_global'] ?? 0 ), 'assinatura' => $i['data_assinatura'] ?? '', 'inicio' => $i['data_inicio_vigencia'] ?? '', 'fim' => $i['data_fim_vigencia'] ?? '',
+				'link' => ! empty( $i['item_url'] ) ? 'https://pncp.gov.br/app' . $i['item_url'] : '' );
+		}
+	}
+	return array( 'total' => $total ?? 0, 'itens' => $itens );
+}
+
+/* ---------- Processos judiciais (Diário de Justiça Eletrônico Nacional — CNJ) ---------- */
+function dv_ds_classe( $c, $trib, $dest ) {
+	$c = dv_ds_nrm( $c );
+	if ( preg_match( '/PENAL|CRIMINAL|CRIME|INQUERITO|PRISAO|HABEAS|DENUNCIA|TERMO CIRCUNSTANCIADO|MEDIDAS? CAUTELAR(ES)? (CRIMINA|PENA)|BUSCA E APREENSAO CRIMINAL|EXECUCAO DA PENA|RESTITUICAO DE COISAS APREENDIDAS|SEQUESTRO/', $c ) ) { return 'criminal'; }
+	if ( preg_match( '/MINISTERIO PUBLICO DO TRABALHO/', $dest ) || preg_match( '/ACAO CIVIL (PUBLICA|COLETIVA)/', $c ) ) { return 'coletiva'; }
+	if ( preg_match( '/IMPROBIDADE/', $c ) ) { return 'improbidade'; }
+	if ( preg_match( '/FALENCIA|RECUPERACAO JUDICIAL|INSOLVENCIA/', $c ) ) { return 'falencia'; }
+	if ( preg_match( '/^TRT|^TST/', $trib ) || preg_match( '/TRABALHIST/', $c ) ) { return preg_match( '/EXECUCAO|CUMPRIMENTO/', $c ) ? 'trab_execucao' : 'trabalhista'; }
+	if ( preg_match( '/EXECUCAO FISCAL/', $c ) ) { return 'execucao_fiscal'; }
+	if ( preg_match( '/EXECUCAO|CUMPRIMENTO DE SENTENCA|MONITORIA|COBRANCA/', $c ) ) { return 'execucao'; }
+	return 'outros';
+}
+function dv_ds_djen( $nome, $paginas = 3, $so_criminal = false ) {
+	$base = 'https://comunicaapi.pje.jus.br/api/v1/comunicacao?nomeParte=' . rawurlencode( $nome ) . '&itensPorPagina=100&pagina=';
+	$urls = array(); for ( $p = 1; $p <= $paginas; $p++ ) { $urls[ $p ] = $base . $p; }
+	$b = dv_ds_multi( $urls ); $alvo = dv_ds_nrm( $nome ); $itens = array(); $vistos = array(); $count = null;
+	foreach ( $b as $body ) {
+		$j = $body ? json_decode( $body, true ) : null; if ( ! $j ) { continue; } $count = $count ?? (int) ( $j['count'] ?? 0 );
+		foreach ( (array) ( $j['items'] ?? array() ) as $i ) {
+			$dest = implode( ' ; ', array_map( function ( $d ) { return dv_ds_nrm( $d['nome'] ?? '' ); }, (array) ( $i['destinatarios'] ?? array() ) ) );
+			if ( strpos( $dest, $alvo ) === false ) { continue; }
+			$proc = $i['numeroprocessocommascara'] ?? $i['numero_processo'] ?? ''; $tipo = dv_ds_classe( $i['nomeClasse'] ?? '', (string) ( $i['siglaTribunal'] ?? '' ), $dest );
+			if ( $so_criminal && $tipo !== 'criminal' ) { continue; }
+			if ( isset( $vistos[ $proc ] ) ) { continue; } $vistos[ $proc ] = 1;
+			$itens[] = array( 'tipo' => $tipo, 'processo' => $proc, 'classe' => $i['nomeClasse'] ?? '', 'tribunal' => $i['siglaTribunal'] ?? '', 'orgao' => $i['nomeOrgao'] ?? '',
+				'data' => substr( (string) ( $i['data_disponibilizacao'] ?? '' ), 0, 10 ), 'link' => $i['link'] ?? '',
+				'trecho' => mb_substr( trim( preg_replace( '/\s+/', ' ', wp_strip_all_tags( (string) ( $i['texto'] ?? '' ) ) ) ), 0, 400 ) );
+		}
+	}
+	return array( 'publicacoes' => $count, 'processos' => $itens );
+}
+/* volume de publicações por mês nos últimos 12 meses (tendência) */
+function dv_ds_djen_mensal( $nome ) {
+	$urls = array(); $hoje = current_time( 'Y-m-01' );
+	for ( $m = 11; $m >= 0; $m-- ) {
+		$ini = gmdate( 'Y-m-01', strtotime( "$hoje -$m months" ) ); $fim = gmdate( 'Y-m-t', strtotime( $ini ) );
+		$urls[ substr( $ini, 0, 7 ) ] = 'https://comunicaapi.pje.jus.br/api/v1/comunicacao?nomeParte=' . rawurlencode( $nome ) . '&dataDisponibilizacaoInicio=' . $ini . '&dataDisponibilizacaoFim=' . $fim . '&itensPorPagina=1&pagina=1';
+	}
+	$b = dv_ds_multi( $urls ); $o = array();
+	foreach ( $b as $k => $body ) { $j = $body ? json_decode( $body, true ) : null; $o[ $k ] = $j ? (int) ( $j['count'] ?? 0 ) : null; }
+	return $o;
+}
+
+/* ---------- Pessoas politicamente expostas (CGU) ---------- */
+function dv_ds_pep( $nome ) {
+	if ( ! defined( 'AQ_TRANSP_KEY' ) || ! AQ_TRANSP_KEY ) { return null; }
+	$r = wp_remote_get( 'https://api.portaldatransparencia.gov.br/api-de-dados/peps?nome=' . rawurlencode( $nome ) . '&pagina=1', array( 'timeout' => 20, 'headers' => array( 'chave-api-dados' => AQ_TRANSP_KEY, 'Accept' => 'application/json' ) ) );
+	if ( is_wp_error( $r ) || wp_remote_retrieve_response_code( $r ) !== 200 ) { return null; }
+	$alvo = dv_ds_nrm( $nome ); $o = array();
+	foreach ( (array) json_decode( wp_remote_retrieve_body( $r ), true ) as $p ) {
+		if ( dv_ds_nrm( $p['nome'] ?? '' ) !== $alvo ) { continue; }
+		$o[] = array( 'funcao' => $p['descricao_funcao'] ?? $p['descricaoFuncao'] ?? '', 'orgao' => $p['nome_orgao'] ?? $p['nomeOrgao'] ?? '', 'inicio' => $p['dt_inicio_exercicio'] ?? $p['dataInicioExercicio'] ?? '', 'fim' => $p['dt_fim_exercicio'] ?? $p['dataFimExercicio'] ?? '', 'cpf' => $p['cpf'] ?? '' );
+	}
+	return $o;
+}
+
+/* ---------- Diários oficiais: DOU + municipais, e processos administrativos/sanções em andamento ---------- */
+function dv_ds_diarios( $cnpj, $nome ) {
+	$fmt = preg_replace( '/^(\d{2})(\d{3})(\d{3})(\d{4})(\d{2})$/', '$1.$2.$3/$4-$5', $cnpj ); $desde = gmdate( 'Y-m-d', strtotime( '-24 months' ) );
+	$urls = array(
+		'qd' => add_query_arg( array( 'querystring' => rawurlencode( '"' . $fmt . '" | "' . $cnpj . '"' . ( $nome ? ' | "' . $nome . '"' : '' ) ), 'published_since' => $desde, 'size' => 50, 'excerpt_size' => 500, 'number_of_excerpts' => 2, 'sort_by' => 'descending_date' ), 'https://queridodiario.ok.org.br/api/gazettes' ),
+		'dou1' => 'https://www.in.gov.br/consulta/-/buscar/dou?q=' . rawurlencode( '"' . $fmt . '"' ) . '&s=todos&exactDate=personalizado&sortType=0&delta=75&publishFrom=' . gmdate( 'd-m-Y', strtotime( $desde ) ) . '&publishTo=' . current_time( 'd-m-Y' ),
+	);
+	if ( $nome ) { $urls['dou2'] = 'https://www.in.gov.br/consulta/-/buscar/dou?q=' . rawurlencode( '"' . $nome . '"' ) . '&s=todos&exactDate=personalizado&sortType=0&delta=75&publishFrom=' . gmdate( 'd-m-Y', strtotime( $desde ) ) . '&publishTo=' . current_time( 'd-m-Y' ); }
+	$b = dv_ds_multi( $urls, array( 'Accept' => 'text/html,application/json' ) ); $itens = array(); $vistos = array();
+	$j = $b['qd'] ? json_decode( $b['qd'], true ) : null;
+	foreach ( (array) ( $j['gazettes'] ?? array() ) as $g ) {
+		$tr = implode( ' … ', array_map( function ( $e ) { return trim( preg_replace( '/\s+/', ' ', wp_strip_all_tags( $e ) ) ); }, (array) ( $g['excerpts'] ?? array() ) ) );
+		$itens[] = array( 'data' => $g['date'] ?? '', 'fonte' => trim( ( $g['territory_name'] ?? '' ) . '/' . ( $g['state_code'] ?? '' ), '/' ), 'tipo' => 'Municipal', 'trecho' => mb_substr( $tr, 0, 700 ), 'link' => $g['url'] ?? '' );
+	}
+	foreach ( array( 'dou1', 'dou2' ) as $k ) {
+		if ( empty( $b[ $k ] ) || ! preg_match( '#<script[^>]*id="_br_com_seatecnologia_in_buscadou_BuscaDouPortlet_params"[^>]*>(.*?)</script>#s', $b[ $k ], $m ) ) { continue; }
+		$jj = json_decode( trim( $m[1] ), true );
+		foreach ( (array) ( $jj['jsonArray'] ?? array() ) as $it ) {
+			$u = ! empty( $it['urlTitle'] ) ? 'https://www.in.gov.br/web/dou/-/' . $it['urlTitle'] : ''; if ( isset( $vistos[ $u ] ) ) { continue; } $vistos[ $u ] = 1;
+			$d = (string) ( $it['pubDate'] ?? '' ); $data = preg_match( '#^(\d{2})/(\d{2})/(\d{4})#', $d, $x ) ? "$x[3]-$x[2]-$x[1]" : '';
+			$itens[] = array( 'data' => $data, 'fonte' => 'Diário Oficial da União' . ( ! empty( $it['pubName'] ) ? ' (' . $it['pubName'] . ')' : '' ), 'tipo' => 'União',
+				'trecho' => mb_substr( trim( preg_replace( '/\s+/', ' ', wp_strip_all_tags( html_entity_decode( ( $it['title'] ?? '' ) . ' — ' . ( $it['content'] ?? '' ), ENT_QUOTES, 'UTF-8' ) ) ) ), 0, 700 ), 'link' => $u );
+		}
+	}
+	usort( $itens, function ( $a, $b ) { return strcmp( $b['data'], $a['data'] ); } );
+	$re = '/PENALIDADE|PROCESSO ADMINISTRATIVO|PROCESSO DE RESPONSABILIZACAO|\bPAR\b|DEFESA PREVIA|APURACAO DE RESPONSABILIDADE|APURAR|IMPEDIMENTO DE LICITAR|IMPEDIDA DE LICITAR|INIDONE|SUSPENSAO TEMPORARIA|MULTA|RESCISAO|RESCINDIR|ADVERTENCIA|SANCAO|SANCIONATORIO|INADIMPLEMENTO|NOTIFICA|INTIMA/';
+	foreach ( $itens as &$i ) { $t = dv_ds_nrm( $i['trecho'] ); $i['alerta'] = (bool) preg_match( $re, $t ); } unset( $i );
+	return $itens;
+}
+
 function dv_dossie_dados( $cnpj ) {
-	$ck = 'dv_ds_' . $cnpj; $c = get_transient( $ck ); if ( $c ) { return $c; }
+	$ck = 'dv_ds2_' . $cnpj; $c = get_transient( $ck ); if ( $c ) { return $c; }
 	$t0 = microtime( true );
 	$r = wp_remote_get( 'https://brasilapi.com.br/api/cnpj/v1/' . $cnpj, array( 'timeout' => 25 ) );
 	$cad = is_wp_error( $r ) ? array() : (array) json_decode( wp_remote_retrieve_body( $r ), true );
@@ -81,7 +200,17 @@ function dv_dossie_dados( $cnpj ) {
 		}
 	}
 	/* Risco de cada empresa do grupo (dívida ativa da União) — até 25 */
-	foreach ( array_slice( array_keys( $emp ), 0, 25 ) as $b ) { $p = dv_ds_pgfn( $emp[ $b ]['cnpj'] ); $emp[ $b ]['pgfn'] = $p ? $p['total'] : 0; }
+	$alvo = array_slice( array_keys( $emp ), 0, 30 ); $sh = array();
+	foreach ( $alvo as $b ) { $sh[ substr( $emp[ $b ]['cnpj'], 0, 3 ) ] = DV_DADOS . 'pgfn/' . substr( $emp[ $b ]['cnpj'], 0, 3 ) . '.json.gz'; }
+	$bodies = dv_ds_multi( $sh, array(), 30 );
+	foreach ( $alvo as $b ) { $emp[ $b ]['pgfn'] = 0; }
+	foreach ( array_keys( $bodies ) as $k3 ) {
+		if ( empty( $bodies[ $k3 ] ) ) { continue; }
+		$o = json_decode( (string) @gzdecode( $bodies[ $k3 ] ), true ); $bodies[ $k3 ] = null;
+		foreach ( $alvo as $b ) { if ( substr( $emp[ $b ]['cnpj'], 0, 3 ) === $k3 && isset( $o[ $emp[ $b ]['cnpj'] ] ) ) { $emp[ $b ]['pgfn'] = (float) $o[ $emp[ $b ]['cnpj'] ][0]; } }
+		unset( $o );
+	}
+	unset( $bodies );
 	uasort( $emp, function ( $a, $b ) { return count( $b['vias'] ) <=> count( $a['vias'] ) ?: ( $b['pgfn'] ?? 0 ) <=> ( $a['pgfn'] ?? 0 ); } );
 	$D['grupo'] = array_values( $emp ); $D['parentes'] = $parentes;
 
@@ -93,6 +222,24 @@ function dv_dossie_dados( $cnpj ) {
 	$D['federal'] = dv_ds_interno( '/dvtools/v1/fornecedor/federal', array( 'cnpj' => $cnpj ) );
 	$D['extras'] = dv_ds_interno( '/dvtools/v1/fornecedor/extras', array( 'cnpj' => $cnpj ) );
 	$D['diarios'] = dv_ds_interno( '/dvtools/v1/fornecedor/diarios', array( 'cnpj' => $cnpj ) );
+
+	/* Contratos públicos (PNCP, todas as esferas) */
+	$D['pncp'] = dv_ds_pncp( $cnpj );
+
+	/* Processos judiciais: empresa (todos os tipos) e sócios pessoa física (só criminais) */
+	$nomeEmp = dv_ds_nrm( $cad['razao_social'] ); $nomeEmp = trim( preg_replace( '/\s+(EM RECUPERACAO JUDICIAL)$/', '', $nomeEmp ) );
+	$D['judicial'] = array( 'empresa' => dv_ds_djen( $nomeEmp, 3 ), 'mensal' => dv_ds_djen_mensal( $nomeEmp ), 'socios' => array() );
+	$D['pep'] = array();
+	foreach ( array_slice( (array) ( $cad['qsa'] ?? array() ), 0, 8 ) as $s ) {
+		$doc = preg_replace( '/\D/', '', (string) ( $s['cnpj_cpf_do_socio'] ?? '' ) ); if ( strlen( $doc ) === 14 ) { continue; }
+		$nm = dv_ds_nrm( $s['nome_socio'] ?? '' ); if ( count( explode( ' ', $nm ) ) < 3 ) { continue; }
+		$cr = dv_ds_djen( $nm, 2, true ); $D['judicial']['socios'][] = array( 'nome' => $s['nome_socio'], 'processos' => $cr['processos'] );
+		$pep = dv_ds_pep( $nm ); if ( $pep ) { $D['pep'][] = array( 'nome' => $s['nome_socio'], 'cargos' => $pep ); }
+	}
+
+	/* Diários oficiais (DOU e municipais, 24 meses) */
+	$nucleo = function_exists( 'dv_nt_nucleo' ) ? dv_nt_nucleo( $cad['razao_social'] ) : ''; if ( $nucleo && function_exists( 'dv_nt_util' ) && ! dv_nt_util( $nucleo ) ) { $nucleo = ''; }
+	$D['publicacoes'] = dv_ds_diarios( $cnpj, $nucleo );
 
 	/* Notícias negativas */
 	$D['noticias'] = function_exists( 'dv_noticias' ) ? dv_noticias( $cnpj ) : null;

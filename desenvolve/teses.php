@@ -102,6 +102,9 @@ add_shortcode( 'dv_teses', function () {
 .ts-sel{position:sticky;top:10px;z-index:5;background:#16191E;color:#F4F2EC;border-radius:12px;padding:10px 14px;margin:14px 0;display:flex;gap:10px;align-items:center;flex-wrap:wrap}.ts-sel[hidden]{display:none}.ts-sel b{margin-right:auto}
 .ts-ia{border:1px solid var(--ln);border-radius:14px;background:#fff;padding:16px;margin:10px 0}.ts-ia textarea{width:100%;box-sizing:border-box;min-height:80px;border:1px solid #CFC8B8;border-radius:10px;padding:10px;font:inherit}.ts-ia .ias{display:flex;gap:6px;flex-wrap:wrap;margin-top:8px}.ts-ia img{width:16px;height:16px;vertical-align:-3px;margin-right:5px}
 .ts-pg{display:flex;gap:8px;align-items:center;margin-top:10px}
+#dv-ts button.ts-s{background:#fff!important;color:#16191E!important;border:1px solid var(--ln)!important;border-radius:14px!important;padding:14px 16px!important;font:inherit!important;text-transform:none!important;letter-spacing:0!important;box-shadow:none!important;width:100%!important;display:block!important;text-align:left!important;line-height:1.35!important}
+#dv-ts button.ts-s:hover{border-color:var(--gd)!important}#dv-ts button.ts-s span{font-size:.72rem!important}#dv-ts button.ts-s b{font-weight:700!important;font-size:1rem!important}
+#dv-ts button.g{background:#fff!important;color:#16191E!important;border:1px solid var(--ln)!important;text-transform:none!important;letter-spacing:0!important;box-shadow:none!important}
 @media(max-width:700px){.ts{padding:16px}.ts-b{flex-direction:column}}
 </style>
 <script>

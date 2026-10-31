@@ -119,6 +119,12 @@ function dv_capt_buscar( $uid, &$t, $desde ) {
 
 /** Cobra o mês do termo (1 crédito). Devolve true ou WP_Error. */
 function dv_capt_cobrar( $uid, $t ) {
+	// os primeiros termos (quantidade do plano) estão incluídos; os demais usam 1 crédito por mês
+	if ( function_exists( 'dv_plano_info' ) ) {
+		$lim = (int) dv_plano_info( dv_plano( $uid ) )['radar']; $pos = 0; $i = 0;
+		foreach ( dv_capt_termos( $uid ) as $x ) { if ( $x['tipo'] === $t['tipo'] && $x['valor'] === $t['valor'] ) { $pos = $i; break; } $i++; $pos = $i; }
+		if ( $pos < $lim ) { return true; }
+	}
 	$r = dv_usar( $uid, 'captador', 'termo|' . $t['tipo'] . '|' . $t['valor'] . '|' . current_time( 'Y-m' ), 'Monitorar: ' . ( $t['tipo'] === 'cnpj' ? dv_capt_fmt_cnpj( $t['valor'] ) : $t['valor'] ) );
 	return is_wp_error( $r ) ? $r : true;
 }
@@ -262,7 +268,7 @@ add_shortcode( 'dv_captador', function () {
 	<form class="cp-add" autocomplete="off">
 		<label for="cp-v">CNPJ ou nome a monitorar</label>
 		<div class="cp-row"><input id="cp-v" placeholder="00.000.000/0000-00 ou NOME DA EMPRESA / PESSOA" maxlength="150"><button type="submit">Monitorar</button></div>
-		<p class="cp-h">Ao informar um CNPJ, monitoramos também todas as filiais e a razão social. Cada termo usa 1 crédito por mês. Ao cadastrar, buscamos os últimos 6 meses; depois, verificamos todo dia e avisamos por e-mail quando sair publicação nova.</p>
+		<p class="cp-h">Ao informar um CNPJ, monitoramos também todas as filiais e a razão social. O seu plano inclui termos sem custo (Essencial 1, Profissional 5, Empresarial 20); os demais usam 1 crédito por mês. Ao cadastrar, buscamos os últimos 6 meses; depois, verificamos todo dia e avisamos por e-mail quando sair publicação nova.</p>
 		<p class="cp-msg"></p>
 	</form>
 	<details class="cp-pref"><summary>Onde receber o resumo diário</summary>

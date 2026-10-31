@@ -37,19 +37,30 @@ function dv_asaas_cliente( $uid ) {
 	return $j['id'];
 }
 /** Gera a cobrança e devolve o link de pagamento do Asaas (Pix, boleto ou cartão). */
-function dv_checkout( $uid, $tipo, $qtd = 0 ) {
+function dv_checkout( $uid, $tipo, $qtd = 0, $plano = '' ) {
 	$cli = dv_asaas_cliente( $uid ); if ( is_wp_error( $cli ) ) { return $cli; }
 	$hoje = current_time( 'Y-m-d' );
 	if ( $tipo === 'assinatura' ) {
+		$ps = dv_planos(); $plano = isset( $ps[ $plano ] ) ? $plano : ( isset( $ps[ dv_plano( $uid ) ] ) ? dv_plano( $uid ) : array_key_first( $ps ) );
+		$p = $ps[ $plano ]; $pr = dv_preco_plano( $uid, $plano );
+		$desc = 'Desenvolve — plano ' . $p['nome'] . ' (' . $p['creditos'] . ' créditos por mês)' . ( $pr['fundador'] ? ' — preço de fundador' : '' );
 		$sub = get_user_meta( $uid, 'dv_asaas_assinatura', true );
 		if ( ! $sub ) {
 			$j = dv_asaas( 'POST', '/subscriptions', array(
-				'customer' => $cli, 'billingType' => 'UNDEFINED', 'value' => (float) dv_cfg( 'preco_assinatura' ),
-				'nextDueDate' => $hoje, 'cycle' => 'MONTHLY', 'description' => 'Assinatura Desenvolve — ' . (int) dv_cfg( 'creditos_mes' ) . ' créditos por mês',
+				'customer' => $cli, 'billingType' => 'UNDEFINED', 'value' => (float) $pr['valor'],
+				'nextDueDate' => $hoje, 'cycle' => 'MONTHLY', 'description' => $desc,
 				'externalReference' => 'dv:' . $uid . ':assinatura',
 			) );
 			if ( is_wp_error( $j ) ) { return $j; }
 			$sub = $j['id']; update_user_meta( $uid, 'dv_asaas_assinatura', $sub ); delete_user_meta( $uid, 'dv_cancelado' );
+		} elseif ( (string) get_user_meta( $uid, 'dv_plano_pedido', true ) !== $plano || (float) get_user_meta( $uid, 'dv_preco_contratado', true ) !== (float) $pr['valor'] ) {
+			$j = dv_asaas( 'POST', '/subscriptions/' . rawurlencode( $sub ), array( 'value' => (float) $pr['valor'], 'description' => $desc, 'updatePendingPayments' => true ) );
+			if ( is_wp_error( $j ) ) { return $j; }
+		}
+		update_user_meta( $uid, 'dv_plano_pedido', $plano ); update_user_meta( $uid, 'dv_preco_contratado', (float) $pr['valor'] );
+		update_user_meta( $uid, 'dv_fundador_pedido', $pr['fundador'] ? 1 : 0 );
+		if ( get_user_meta( $uid, 'dv_plano', true ) && dv_status( $uid ) === 'ativo' && get_user_meta( $uid, 'dv_plano', true ) !== $plano ) {
+			return array( 'url' => home_url( '/painel/?plano=alterado' ), 'alterado' => true ); // troca de plano: vale na próxima cobrança
 		}
 		$p = dv_asaas( 'GET', '/subscriptions/' . rawurlencode( $sub ) . '/payments?status=PENDING' );
 		if ( is_wp_error( $p ) ) { return $p; }
@@ -59,10 +70,10 @@ function dv_checkout( $uid, $tipo, $qtd = 0 ) {
 	}
 	if ( $tipo === 'creditos' ) {
 		if ( dv_status( $uid ) !== 'ativo' && ! dv_is_master( $uid ) ) { return new WP_Error( 'dv_so_assinante', 'Créditos extras são exclusivos para assinantes ativos.', array( 'status' => 403 ) ); }
-		$pac = array_map( 'intval', explode( ',', (string) dv_cfg( 'pacotes' ) ) );
-		$qtd = (int) $qtd; if ( ! in_array( $qtd, $pac, true ) ) { return new WP_Error( 'dv_pacote', 'Pacote inválido.', array( 'status' => 400 ) ); }
+		$pac = dv_pacotes();
+		$qtd = (int) $qtd; if ( ! isset( $pac[ $qtd ] ) ) { return new WP_Error( 'dv_pacote', 'Pacote inválido.', array( 'status' => 400 ) ); }
 		$j = dv_asaas( 'POST', '/payments', array(
-			'customer' => $cli, 'billingType' => 'UNDEFINED', 'value' => round( $qtd * (float) dv_cfg( 'preco_extra' ), 2 ),
+			'customer' => $cli, 'billingType' => 'UNDEFINED', 'value' => (float) $pac[ $qtd ],
 			'dueDate' => gmdate( 'Y-m-d', strtotime( $hoje . ' +2 days' ) ), 'description' => 'Desenvolve — pacote de ' . $qtd . ' créditos',
 			'externalReference' => 'dv:' . $uid . ':creditos:' . $qtd,
 		) );
@@ -86,7 +97,7 @@ function dv_asaas_uid( $pg ) {
 add_action( 'rest_api_init', function () {
 	$logado = function () { return is_user_logged_in(); };
 	register_rest_route( 'desenvolve/v1', '/checkout', array( 'methods' => 'POST', 'permission_callback' => $logado, 'callback' => function ( WP_REST_Request $r ) {
-		return dv_checkout( get_current_user_id(), sanitize_key( $r['tipo'] ), (int) $r['qtd'] );
+		return dv_checkout( get_current_user_id(), sanitize_key( $r['tipo'] ), (int) $r['qtd'], sanitize_key( (string) $r['plano'] ) );
 	} ) );
 	register_rest_route( 'desenvolve/v1', '/cancelar', array( 'methods' => 'POST', 'permission_callback' => $logado, 'callback' => function () {
 		$uid = get_current_user_id(); $sub = get_user_meta( $uid, 'dv_asaas_assinatura', true );
@@ -111,6 +122,19 @@ add_action( 'rest_api_init', function () {
 			if ( preg_match( '/:creditos:(\d+)$/', $ref, $m ) ) {
 				dv_dar_creditos( $uid, (int) $m[1], 'Pacote comprado (Asaas ' . $pid . ')' );
 			} else {
+				// plano escolhido passa a valer; fundador ocupa a vaga no primeiro pagamento
+				$pp = (string) get_user_meta( $uid, 'dv_plano_pedido', true ); if ( $pp && isset( dv_planos()[ $pp ] ) ) { update_user_meta( $uid, 'dv_plano', $pp ); }
+				elseif ( ! get_user_meta( $uid, 'dv_plano', true ) ) { update_user_meta( $uid, 'dv_plano', array_key_first( dv_planos() ) ); }
+				if ( get_user_meta( $uid, 'dv_fundador_pedido', true ) && ! get_user_meta( $uid, 'dv_fundador_ate', true ) ) {
+					update_option( 'dv_fundadores', (int) get_option( 'dv_fundadores', 0 ) + 1, false );
+					update_user_meta( $uid, 'dv_fundador_ate', gmdate( 'Y-m-d', strtotime( current_time( 'Y-m-d' ) . ' +' . (int) dv_cfg( 'fundador_meses' ) . ' months' ) ) );
+				}
+				$fa = (string) get_user_meta( $uid, 'dv_fundador_ate', true ); $sub = get_user_meta( $uid, 'dv_asaas_assinatura', true );
+				if ( $fa && $fa < current_time( 'Y-m-d' ) && $sub ) { // acabou o período de fundador: próximas cobranças pelo preço cheio
+					$cheio = dv_plano_info( dv_plano( $uid ) )['preco'];
+					if ( (float) get_user_meta( $uid, 'dv_preco_contratado', true ) < $cheio ) { $x = dv_asaas( 'POST', '/subscriptions/' . rawurlencode( $sub ), array( 'value' => $cheio, 'updatePendingPayments' => true ) ); if ( ! is_wp_error( $x ) ) { update_user_meta( $uid, 'dv_preco_contratado', $cheio ); } }
+				}
+				delete_user_meta( $uid, 'dv_trial' );
 				$due = $pg['dueDate'] ?? current_time( 'Y-m-d' );
 				$dias = max( 1, (int) round( ( strtotime( $due . ' +1 month' ) - strtotime( current_time( 'Y-m-d' ) ) ) / DAY_IN_SECONDS ) + 3 );
 				dv_renovar( $uid, 'Mensalidade paga (Asaas ' . $pid . ')', $dias );
@@ -129,13 +153,13 @@ add_action( 'rest_api_init', function () {
 add_shortcode( 'dv_creditos', function () {
 	if ( ! is_user_logged_in() ) { return '<div class="dvp"><h2>Entre na sua conta</h2><p><a class="dv-btn" href="/painel/">Entrar</a></p></div>'; }
 	$uid = get_current_user_id(); $s = dv_saldo( $uid ); $ativo = dv_status( $uid ) === 'ativo' || dv_is_master( $uid );
-	$pe = (float) dv_cfg( 'preco_extra' );
+	$pac = dv_pacotes();
 	$h = '<div class="dvp" id="dv-cred" data-api="' . esc_attr( rest_url( 'desenvolve/v1/' ) ) . '" data-nonce="' . esc_attr( wp_create_nonce( 'wp_rest' ) ) . '"><h2>Créditos extras</h2>';
-	$h .= '<p>Saldo atual: <b>' . ( dv_is_master( $uid ) ? 'ilimitado' : (int) $s['total'] ) . '</b>. Cada crédito extra custa R$ ' . number_format( $pe, 2, ',', '.' ) . ' e vale por ' . (int) dv_cfg( 'validade_extra' ) . ' meses.</p>';
+	$h .= '<p>Saldo atual: <b>' . ( dv_is_master( $uid ) ? 'ilimitado' : (int) $s['total'] ) . '</b>. Os créditos extras valem por ' . (int) dv_cfg( 'validade_extra' ) . ' meses e são usados depois dos créditos do mês.</p>';
 	if ( ! $ativo ) { return $h . '<p class="dv-err">Créditos extras são exclusivos para assinantes ativos.</p><p><a class="dv-btn" href="/painel/">Ativar assinatura</a></p></div>'; }
 	$h .= '<div class="dv-g">';
-	foreach ( array_map( 'intval', explode( ',', (string) dv_cfg( 'pacotes' ) ) ) as $q ) {
-		$h .= '<div class="dv-c"><span>Pacote</span><b>' . $q . ' créditos</b><p>R$ ' . number_format( $q * $pe, 2, ',', '.' ) . '</p><button type="button" data-q="' . $q . '">Comprar</button></div>';
+	foreach ( $pac as $q => $v ) {
+		$h .= '<div class="dv-c"><span>Pacote</span><b>' . $q . ' créditos</b><p>R$ ' . number_format( $v, 2, ',', '.' ) . ' <small style="color:#8E938F">(R$ ' . number_format( $v / $q, 2, ',', '.' ) . ' por crédito)</small></p><button type="button" data-q="' . $q . '">Comprar</button></div>';
 	}
 	return $h . '</div><p class="dv-msg"></p></div>';
 } );

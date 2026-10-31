@@ -20,11 +20,62 @@ function dv_cfg( $k = null ) {
 		'alerta_hora'      => 30,
 		'email_alertas'    => get_option( 'admin_email' ),
 		'asaas_ambiente'   => 'sandbox',
-		'creditos_dossie'  => 3,
+		'creditos_dossie'  => 10,
 		'email_remetente'  => 'contato@desenvolveestrategias.com.br',
+		// chave:Nome:preço:créditos por mês:termos no Radar do Diário Oficial
+		'planos'           => 'essencial:Essencial:97:20:1|profissional:Profissional:197:60:5|empresarial:Empresarial:497:200:20',
+		'custos'           => 'raiox:2,comprador:2',
+		'fundador_desc'    => 30,
+		'fundador_vagas'   => 50,
+		'fundador_meses'   => 12,
+		'trial_dias'       => 7,
+		'trial_creditos'   => 5,
 	);
 	$c = wp_parse_args( (array) get_option( 'dv_cfg', array() ), $d );
 	return $k ? ( $c[ $k ] ?? null ) : $c;
+}
+
+/* Tabela de preços 2 (nov/2026): três planos, pacotes com preço próprio, Due Diligence 10 créditos */
+add_action( 'init', function () {
+	if ( get_option( 'dv_cfg_ver' ) === '2' ) { return; }
+	$c = (array) get_option( 'dv_cfg', array() );
+	$c['pacotes'] = '10:39,30:99,100:290'; $c['creditos_dossie'] = 10; $c['preco_assinatura'] = '97'; $c['creditos_mes'] = 20;
+	update_option( 'dv_cfg', $c, false ); update_option( 'dv_cfg_ver', '2', false );
+} );
+
+/* ---------------- Planos, preços e custos ---------------- */
+function dv_planos() {
+	$o = array();
+	foreach ( explode( '|', (string) dv_cfg( 'planos' ) ) as $l ) {
+		$x = array_map( 'trim', explode( ':', $l ) ); if ( count( $x ) < 5 ) { continue; }
+		$o[ sanitize_key( $x[0] ) ] = array( 'k' => sanitize_key( $x[0] ), 'nome' => $x[1], 'preco' => (float) $x[2], 'creditos' => (int) $x[3], 'radar' => (int) $x[4] );
+	}
+	return $o;
+}
+function dv_plano( $uid ) { $p = (string) get_user_meta( $uid, 'dv_plano', true ); $ps = dv_planos(); return isset( $ps[ $p ] ) ? $p : ( get_user_meta( $uid, 'dv_trial', true ) ? 'teste' : array_key_first( $ps ) ); }
+function dv_plano_info( $k ) {
+	$ps = dv_planos();
+	if ( $k === 'teste' ) { return array( 'k' => 'teste', 'nome' => 'Teste grátis', 'preco' => 0, 'creditos' => (int) dv_cfg( 'trial_creditos' ), 'radar' => 1 ); }
+	return $ps[ $k ] ?? reset( $ps );
+}
+function dv_fundador_restantes() { return max( 0, (int) dv_cfg( 'fundador_vagas' ) - (int) get_option( 'dv_fundadores', 0 ) ); }
+function dv_preco_fundador( $preco ) { return round( $preco * ( 1 - (int) dv_cfg( 'fundador_desc' ) / 100 ) ); }
+/** Preço que este assinante paga pelo plano: fundador (30% por 12 meses) enquanto houver vaga ou se ele já é fundador. */
+function dv_preco_plano( $uid, $k ) {
+	$p = dv_plano_info( $k ); $ate = (string) get_user_meta( $uid, 'dv_fundador_ate', true );
+	$fund = $ate ? $ate >= current_time( 'Y-m-d' ) : dv_fundador_restantes() > 0;
+	return array( 'valor' => $fund ? dv_preco_fundador( $p['preco'] ) : $p['preco'], 'fundador' => $fund, 'cheio' => $p['preco'] );
+}
+function dv_custo( $f ) {
+	if ( $f === 'dossie' ) { return max( 1, (int) dv_cfg( 'creditos_dossie' ) ); }
+	foreach ( explode( ',', (string) dv_cfg( 'custos' ) ) as $x ) { $y = explode( ':', trim( $x ) ); if ( count( $y ) === 2 && sanitize_key( $y[0] ) === $f ) { return max( 1, (int) $y[1] ); } }
+	return 1;
+}
+/** Pacotes de créditos: quantidade => preço */
+function dv_pacotes() {
+	$o = array();
+	foreach ( explode( ',', (string) dv_cfg( 'pacotes' ) ) as $x ) { $y = explode( ':', trim( $x ) ); $q = (int) $y[0]; if ( $q > 0 ) { $o[ $q ] = isset( $y[1] ) ? (float) $y[1] : round( $q * (float) dv_cfg( 'preco_extra' ), 2 ); } }
+	return $o;
 }
 
 /* ---------------- Tabelas ---------------- */
@@ -132,9 +183,10 @@ function dv_dar_creditos( $uid, $qtd, $motivo, $livre = false, $meses = null ) {
 /** Renova o ciclo mensal (chamado na confirmação do pagamento ou pelo administrador). */
 function dv_renovar( $uid, $motivo = 'Assinatura renovada', $dias = 31 ) {
 	update_user_meta( $uid, 'dv_status', 'ativo' );
-	update_user_meta( $uid, 'dv_mes_saldo', (int) dv_cfg( 'creditos_mes' ) );
+	$cr = (int) dv_plano_info( dv_plano( $uid ) )['creditos'];
+	update_user_meta( $uid, 'dv_mes_saldo', $cr );
 	update_user_meta( $uid, 'dv_vence', gmdate( 'Y-m-d', strtotime( current_time( 'Y-m-d' ) . " +$dias days" ) ) );
-	dv_extrato( $uid, (int) dv_cfg( 'creditos_mes' ), 'mensal', $motivo );
+	dv_extrato( $uid, $cr, 'mensal', $motivo );
 }
 
 /** Registra um uso e desconta um crédito. Retorna array ou WP_Error. */
@@ -215,12 +267,23 @@ add_action( 'rest_api_init', function () {
 		$u = wp_get_current_user();
 		return array( 'logado' => true, 'nome' => $u->display_name, 'email' => $u->user_email,
 			'doc' => get_user_meta( $u->ID, 'dv_doc', true ), 'master' => dv_is_master( $u->ID ),
-			'situacao' => dv_status( $u->ID ), 'vence' => get_user_meta( $u->ID, 'dv_vence', true ), 'saldo' => dv_saldo( $u->ID ) );
+			'situacao' => dv_status( $u->ID ), 'vence' => get_user_meta( $u->ID, 'dv_vence', true ), 'saldo' => dv_saldo( $u->ID ),
+			'plano' => dv_plano_info( dv_plano( $u->ID ) ), 'teste' => (bool) get_user_meta( $u->ID, 'dv_trial', true ) && ! get_user_meta( $u->ID, 'dv_plano', true ), 'fundador_ate' => get_user_meta( $u->ID, 'dv_fundador_ate', true ) );
 	} ) );
 	register_rest_route( 'desenvolve/v1', '/usar', array( 'methods' => 'POST', 'permission_callback' => $logado, 'callback' => function ( WP_REST_Request $r ) {
 		$f = sanitize_key( $r['ferramenta'] ); $c = (string) $r['chave'];
 		if ( ! $f || $c === '' ) { return new WP_Error( 'dv_param', 'Informe a ferramenta e a consulta.', array( 'status' => 400 ) ); }
-		return dv_usar( get_current_user_id(), $f, $c, sanitize_text_field( (string) $r['rotulo'] ) );
+		$uid = get_current_user_id(); $n = dv_custo( $f ); $rot = sanitize_text_field( (string) $r['rotulo'] );
+		$u = dv_usar( $uid, $f, $c, $rot ); if ( is_wp_error( $u ) || $n <= 1 || empty( $u['cobrado'] ) ) { return $u; }
+		if ( dv_saldo( $uid )['total'] < $n - 1 ) { return new WP_Error( 'dv_sem_credito', 'Esta consulta usa ' . $n . ' créditos e o seu saldo não é suficiente.', array( 'status' => 402 ) ); }
+		for ( $i = 2; $i <= $n; $i++ ) { $u = dv_usar( $uid, $f, $c . '|' . $i, '' ); if ( is_wp_error( $u ) ) { return $u; } }
+		$u['creditos'] = $n; return $u;
+	} ) );
+	/* Planos e preços (público: usado pela home e pela tela de assinatura) */
+	register_rest_route( 'desenvolve/v1', '/planos', array( 'methods' => 'GET', 'permission_callback' => '__return_true', 'callback' => function () {
+		$uid = get_current_user_id(); $o = array();
+		foreach ( dv_planos() as $k => $p ) { $pr = $uid ? dv_preco_plano( $uid, $k ) : array( 'valor' => dv_fundador_restantes() ? dv_preco_fundador( $p['preco'] ) : $p['preco'], 'fundador' => dv_fundador_restantes() > 0, 'cheio' => $p['preco'] ); $o[] = $p + $pr; }
+		return array( 'planos' => $o, 'fundador_restantes' => dv_fundador_restantes(), 'fundador_meses' => (int) dv_cfg( 'fundador_meses' ), 'trial_dias' => (int) dv_cfg( 'trial_dias' ), 'trial_creditos' => (int) dv_cfg( 'trial_creditos' ), 'pacotes' => dv_pacotes(), 'pagamento' => (bool) get_option( 'dv_asaas_key' ) );
 	} ) );
 	register_rest_route( 'desenvolve/v1', '/historico', array( 'methods' => 'GET', 'permission_callback' => $logado, 'callback' => function () {
 		global $wpdb;
@@ -360,8 +423,8 @@ function dv_admin_config() {
 	dv_admin_css();
 	if ( isset( $_POST['dv_cfg'] ) && check_admin_referer( 'dv_cfg' ) ) {
 		$in = wp_unslash( $_POST['dv_cfg'] ); $c = dv_cfg();
-		foreach ( array( 'preco_assinatura', 'preco_extra', 'pacotes', 'email_alertas', 'asaas_ambiente', 'email_remetente' ) as $k ) { $c[ $k ] = sanitize_text_field( $in[ $k ] ?? $c[ $k ] ); }
-		foreach ( array( 'creditos_mes', 'dedupe_dias', 'validade_extra', 'alerta_hora', 'creditos_dossie' ) as $k ) { $c[ $k ] = max( 0, (int) ( $in[ $k ] ?? $c[ $k ] ) ); }
+		foreach ( array( 'preco_assinatura', 'preco_extra', 'pacotes', 'email_alertas', 'asaas_ambiente', 'email_remetente', 'planos', 'custos' ) as $k ) { $c[ $k ] = sanitize_text_field( $in[ $k ] ?? $c[ $k ] ); }
+		foreach ( array( 'creditos_mes', 'dedupe_dias', 'validade_extra', 'alerta_hora', 'creditos_dossie', 'fundador_desc', 'fundador_vagas', 'fundador_meses', 'trial_dias', 'trial_creditos' ) as $k ) { $c[ $k ] = max( 0, (int) ( $in[ $k ] ?? $c[ $k ] ) ); }
 		update_option( 'dv_cfg', $c, false );
 		if ( ! empty( $_POST['dv_asaas_key'] ) ) { update_option( 'dv_asaas_key', trim( wp_unslash( $_POST['dv_asaas_key'] ) ), false ); }
 		if ( ! get_option( 'dv_webhook_token' ) ) { update_option( 'dv_webhook_token', wp_generate_password( 32, false ), false ); }
@@ -370,11 +433,15 @@ function dv_admin_config() {
 	$c = dv_cfg(); $tem = (bool) get_option( 'dv_asaas_key' );
 	$f = function ( $k, $l, $tipo = 'text', $ajuda = '' ) use ( $c ) { echo '<tr><th><label>' . esc_html( $l ) . '</label></th><td><input type="' . $tipo . '" name="dv_cfg[' . $k . ']" value="' . esc_attr( $c[ $k ] ) . '" class="regular-text"' . ( $tipo === 'number' ? ' step="1"' : '' ) . '>' . ( $ajuda ? '<p class="description">' . esc_html( $ajuda ) . '</p>' : '' ) . '</td></tr>'; };
 	echo '<div class="wrap dv-w"><h1>Configurações da plataforma</h1><form method="post">' . wp_nonce_field( 'dv_cfg', '_wpnonce', true, false ) . '<input type="hidden" name="dv_cfg[_]" value="1"><table class="form-table">';
-	$f( 'preco_assinatura', 'Preço da assinatura (R$/mês)', 'text', 'Use ponto nos centavos. Ex.: 79.90' );
-	$f( 'creditos_mes', 'Créditos por mês na assinatura', 'number' );
-	$f( 'preco_extra', 'Preço do crédito extra (R$)', 'text', 'Ex.: 2.50' );
-	$f( 'pacotes', 'Pacotes de créditos à venda', 'text', 'Quantidades separadas por vírgula. Ex.: 10,20,50' );
-	$f( 'creditos_dossie', 'Créditos cobrados pelo dossiê completo', 'number' );
+	$f( 'planos', 'Planos', 'text', 'chave:Nome:preço:créditos por mês:termos no Radar, separados por |. Ex.: essencial:Essencial:97:20:1|profissional:Profissional:197:60:5' );
+	$f( 'pacotes', 'Pacotes de créditos extras', 'text', 'quantidade:preço, separados por vírgula. Ex.: 10:39,30:99,100:290' );
+	$f( 'creditos_dossie', 'Créditos da Due Diligence completa', 'number' );
+	$f( 'custos', 'Outras ferramentas que usam mais de 1 crédito', 'text', 'ferramenta:créditos. Ex.: raiox:2,comprador:2. As ferramentas de gestão não usam créditos.' );
+	$f( 'fundador_desc', 'Desconto de fundador (%)', 'number' );
+	$f( 'fundador_vagas', 'Vagas de fundador', 'number', 'Já usadas: ' . (int) get_option( 'dv_fundadores', 0 ) );
+	$f( 'fundador_meses', 'Meses com preço de fundador', 'number' );
+	$f( 'trial_dias', 'Dias de teste grátis (0 desliga)', 'number' );
+	$f( 'trial_creditos', 'Créditos no teste grátis', 'number' );
 	$f( 'email_remetente', 'E-mail que envia os avisos aos assinantes', 'email' );
 	$f( 'validade_extra', 'Validade dos créditos extras (meses)', 'number' );
 	$f( 'dedupe_dias', 'Dias em que repetir a mesma consulta não gasta crédito', 'number' );
@@ -396,7 +463,7 @@ add_shortcode( 'dv_painel', function () {
 } );
 
 add_shortcode( 'dv_cadastro', function () {
-	if ( is_user_logged_in() ) { return '<p>Você já está conectado. <a href="' . esc_url( home_url( '/painel/' ) ) . '">Ir para o painel</a></p>'; }
+	if ( is_user_logged_in() ) { return dv_planos_html( get_current_user_id() ); }
 	$err = '';
 	if ( 'POST' === $_SERVER['REQUEST_METHOD'] && isset( $_POST['dv_cad'] ) && wp_verify_nonce( $_POST['_dvc'] ?? '', 'dv_cad' ) ) {
 		$nome = sanitize_text_field( wp_unslash( $_POST['nome'] ?? '' ) );
@@ -415,6 +482,14 @@ add_shortcode( 'dv_cadastro', function () {
 			else {
 				update_user_meta( $uid, 'dv_doc', $doc ); update_user_meta( $uid, 'dv_tel', $tel ); update_user_meta( $uid, 'dv_status', 'pendente' );
 				update_user_meta( $uid, 'dv_termos', current_time( 'mysql' ) );
+				$td = (int) dv_cfg( 'trial_dias' ); $usados = (array) get_option( 'dv_trial_docs', array() ); $hd = md5( $doc );
+				if ( $td > 0 && ! in_array( $hd, $usados, true ) ) { // teste grátis: uma vez por CPF/CNPJ
+					update_user_meta( $uid, 'dv_trial', current_time( 'Y-m-d' ) ); update_user_meta( $uid, 'dv_status', 'ativo' );
+					update_user_meta( $uid, 'dv_mes_saldo', (int) dv_cfg( 'trial_creditos' ) );
+					update_user_meta( $uid, 'dv_vence', gmdate( 'Y-m-d', strtotime( current_time( 'Y-m-d' ) . ' +' . ( $td - 1 ) . ' days' ) ) );
+					dv_extrato( $uid, (int) dv_cfg( 'trial_creditos' ), 'teste', 'Teste grátis de ' . $td . ' dias' );
+					$usados[] = $hd; update_option( 'dv_trial_docs', array_slice( $usados, -20000 ), false );
+				}
 				wp_set_current_user( $uid ); wp_set_auth_cookie( $uid, true );
 				wp_safe_redirect( home_url( '/painel/?bem-vindo=1' ) ); exit;
 			}
@@ -424,18 +499,46 @@ add_shortcode( 'dv_cadastro', function () {
 	<form class="dvp dv-cad" method="post">
 		<?php wp_nonce_field( 'dv_cad', '_dvc' ); ?><input type="hidden" name="dv_cad" value="1">
 		<h2>Crie sua conta</h2>
+		<?php if ( (int) dv_cfg( 'trial_dias' ) ) { echo '<p class="dv-ok">Teste grátis por ' . (int) dv_cfg( 'trial_dias' ) . ' dias, com ' . (int) dv_cfg( 'trial_creditos' ) . ' créditos e todas as ferramentas de gestão. Sem cartão: você só escolhe um plano se quiser continuar.</p>'; } ?>
 		<?php if ( $err ) { echo '<p class="dv-err">' . esc_html( $err ) . '</p>'; } ?>
 		<label>Nome completo<input name="nome" required value="<?php echo esc_attr( $_POST['nome'] ?? '' ); ?>"></label>
 		<label>E-mail<input type="email" name="email" required value="<?php echo esc_attr( $_POST['email'] ?? '' ); ?>"></label>
 		<label>CPF ou CNPJ<input name="doc" inputmode="numeric" required value="<?php echo esc_attr( $_POST['doc'] ?? '' ); ?>"></label>
 		<label>WhatsApp<input name="tel" inputmode="tel" value="<?php echo esc_attr( $_POST['tel'] ?? '' ); ?>"></label>
 		<label>Crie uma senha<input type="password" name="senha" minlength="8" required autocomplete="new-password"></label>
-		<label class="dv-chk"><input type="checkbox" name="termos" value="1" required> Li e aceito os <a href="/termos-de-uso/" target="_blank">Termos de uso</a> e a <a href="/politica-de-privacidade/" target="_blank">Política de privacidade</a>.</label>
-		<button type="submit">Criar conta e continuar</button>
+		<label class="dv-chk"><input type="checkbox" name="termos" value="1" required> Li e aceito os <a href="/termos-de-uso-plataforma/" target="_blank">Termos de uso</a> e a <a href="/politica-de-privacidade/" target="_blank">Política de privacidade</a>.</label>
+		<button type="submit"><?php echo (int) dv_cfg( 'trial_dias' ) ? 'Criar conta e começar o teste' : 'Criar conta e continuar'; ?></button>
 		<p>Já tem conta? <a href="<?php echo esc_url( home_url( '/painel/' ) ); ?>">Entrar</a></p>
 	</form>
 	<?php return ob_get_clean();
 } );
+
+/** Tela de planos (assinante conectado): escolha do plano e pagamento pelo Asaas */
+function dv_planos_html( $uid ) {
+	$atual = dv_plano( $uid ); $st = dv_status( $uid ); $pago = (bool) get_user_meta( $uid, 'dv_plano', true ) && $st === 'ativo'; $tem = (bool) get_option( 'dv_asaas_key' );
+	$rest = dv_fundador_restantes(); $fa = (string) get_user_meta( $uid, 'dv_fundador_ate', true );
+	$h = '<div class="dvp" id="dv-planos" data-api="' . esc_attr( rest_url( 'desenvolve/v1/' ) ) . '" data-nonce="' . esc_attr( wp_create_nonce( 'wp_rest' ) ) . '"><h2>' . ( $pago ? 'Seu plano' : 'Escolha seu plano' ) . '</h2>';
+	if ( get_user_meta( $uid, 'dv_trial', true ) && ! get_user_meta( $uid, 'dv_plano', true ) ) {
+		$h .= $st === 'ativo' ? '<p class="dv-ok">Seu teste grátis vai até ' . esc_html( date_i18n( 'd/m/Y', strtotime( get_user_meta( $uid, 'dv_vence', true ) ) ) ) . '. Assine quando quiser: os créditos do plano entram na hora.</p>' : '<p class="dv-err">Seu teste grátis terminou. Escolha um plano para continuar usando as ferramentas.</p>';
+	}
+	if ( $fa ) { $h .= '<p class="dv-ok">Você é assinante fundador: preço com ' . (int) dv_cfg( 'fundador_desc' ) . '% de desconto até ' . esc_html( date_i18n( 'd/m/Y', strtotime( $fa ) ) ) . '.</p>'; }
+	elseif ( $rest > 0 ) { $h .= '<p class="dv-ok"><b>Preço de fundador:</b> ' . (int) dv_cfg( 'fundador_desc' ) . '% de desconto por ' . (int) dv_cfg( 'fundador_meses' ) . ' meses para os primeiros assinantes. Restam <b>' . $rest . '</b> vagas.</p>'; }
+	$h .= '<div class="dv-g">';
+	foreach ( dv_planos() as $k => $p ) {
+		$pr = dv_preco_plano( $uid, $k ); $eh = $pago && $atual === $k;
+		$h .= '<div class="dv-c"' . ( $k === 'profissional' ? ' style="border-color:var(--gd)"' : '' ) . '><span>' . ( $k === 'profissional' ? 'Mais escolhido' : 'Plano' ) . '</span><b style="font-size:1.4rem">' . esc_html( $p['nome'] ) . '</b>';
+		$h .= '<p style="margin:10px 0 4px">' . ( $pr['fundador'] ? '<s style="color:var(--mu)">R$ ' . number_format( $pr['cheio'], 0, ',', '.' ) . '</s> ' : '' ) . '<b style="display:inline;font-size:1.9rem">R$ ' . number_format( $pr['valor'], 0, ',', '.' ) . '</b>/mês</p>';
+		$h .= '<ul style="padding-left:18px;color:var(--mu);font-size:.9rem;line-height:1.6;margin:10px 0 16px"><li><b style="display:inline;font-size:inherit;color:var(--fg)">' . $p['creditos'] . ' créditos por mês</b> para consultas</li><li>Ferramentas de gestão sem limite</li><li>' . $p['radar'] . ' CNPJ' . ( $p['radar'] > 1 ? 's ou nomes' : ' ou nome' ) . ' no Radar do Diário Oficial</li>' . ( $k === 'empresarial' ? '<li>Prioridade no consultor</li>' : '' ) . '</ul>';
+		if ( $eh ) { $h .= '<p style="color:var(--gd);font-weight:700">Seu plano atual</p>'; }
+		elseif ( $tem ) { $h .= '<button type="button" data-plano="' . esc_attr( $k ) . '">' . ( $pago ? 'Mudar para ' : 'Assinar ' ) . esc_html( $p['nome'] ) . '</button>'; }
+		else { $h .= '<a class="dv-btn" target="_blank" rel="noopener" href="' . esc_url( 'https://wa.me/5511993500950?text=' . rawurlencode( 'Olá! Quero assinar o plano ' . $p['nome'] . ' da plataforma Desenvolve.' ) ) . '">Assinar ' . esc_html( $p['nome'] ) . '</a>'; }
+		$h .= '</div>';
+	}
+	$h .= '</div><p class="dv-msg"></p><p style="color:var(--mu);font-size:.85rem">Pix, boleto ou cartão. Cancele quando quiser: o acesso continua até o fim do período pago. Créditos extras: ';
+	$pk = array(); foreach ( dv_pacotes() as $q => $v ) { $pk[] = $q . ' por R$ ' . number_format( $v, 0, ',', '.' ); } $h .= esc_html( implode( ' · ', $pk ) ) . '.</p></div>';
+	$h .= '<script>(function(){var R=document.getElementById("dv-planos");if(!R)return;R.addEventListener("click",function(e){var b=e.target.closest("[data-plano]");if(!b)return;var m=R.querySelector(".dv-msg");b.disabled=true;m.className="dv-msg";m.textContent="Gerando a cobrança…";fetch(R.dataset.api+"checkout",{method:"POST",credentials:"same-origin",headers:{"X-WP-Nonce":R.dataset.nonce,"Content-Type":"application/json"},body:JSON.stringify({tipo:"assinatura",plano:b.dataset.plano})}).then(function(r){return r.json()}).then(function(j){if(j.url){location.href=j.url}else{b.disabled=false;m.className="dv-err";m.textContent=j.message||"Não foi possível gerar a cobrança."}}).catch(function(){b.disabled=false;m.className="dv-err";m.textContent="Não foi possível gerar a cobrança agora."})})})()</script>';
+	return $h;
+}
 
 /* ---------------- Ferramentas: contexto, portão de créditos, marca d'água e consultor ---------------- */
 add_shortcode( 'dv_ctx', function ( $a ) {
@@ -453,9 +556,10 @@ add_shortcode( 'dv_ctx', function ( $a ) {
 	$h = '<script>window.DV=' . wp_json_encode( $ctx ) . ';window.DVWM="";</script>';
 	$h .= '<div class="dv-tbar"><a href="/painel/">&larr; Meu painel</a><span id="dv-saldo">' . ( $uid ? ( $ctx['master'] ? 'Créditos: ilimitado' : 'Créditos: ' . (int) $ctx['saldo'] ) : '' ) . '</span></div>';
 	if ( ! $uid ) {
-		$h .= '<div class="dv-pw"><h2>Ferramenta exclusiva para assinantes</h2><p>Assine por R$ 79,90/mês e receba 20 créditos. Cada consulta, busca, cálculo ou relatório usa 1 crédito.</p><p><a class="dv-btn" href="/assinar/">Assinar agora</a> <a class="dv-btn g" href="/painel/">Já sou assinante</a></p></div><style>.dv-tool{display:none!important}</style>';
+		$td = (int) dv_cfg( 'trial_dias' );
+		$h .= '<div class="dv-pw"><h2>Ferramenta exclusiva para assinantes</h2><p>' . ( $td ? 'Teste ' . $td . ' dias grátis, com ' . (int) dv_cfg( 'trial_creditos' ) . ' créditos, sem cartão. Depois, planos a partir de R$ ' . number_format( dv_preco_plano( 0, 'essencial' )['valor'], 0, ',', '.' ) . '/mês.' : 'Planos a partir de R$ ' . number_format( dv_preco_plano( 0, 'essencial' )['valor'], 0, ',', '.' ) . '/mês.' ) . '</p><p><a class="dv-btn" href="/assinar/">' . ( $td ? 'Começar o teste grátis' : 'Assinar agora' ) . '</a> <a class="dv-btn g" href="/painel/">Já tenho conta</a></p></div><style>.dv-tool{display:none!important}</style>';
 	} elseif ( ! $acesso ) {
-		$h .= '<div class="dv-pw"><h2>Ative sua assinatura para usar</h2><p>Sua conta está criada. Ative a assinatura de R$ 79,90/mês para liberar 20 créditos.</p><p><a class="dv-btn" href="/assinar/">Ativar assinatura</a></p></div><style>.dv-tool{display:none!important}</style>';
+		$h .= '<div class="dv-pw"><h2>Escolha um plano para continuar</h2><p>' . ( get_user_meta( $uid, 'dv_trial', true ) ? 'O seu teste grátis terminou. ' : '' ) . 'Os planos começam em R$ ' . number_format( dv_preco_plano( $uid, 'essencial' )['valor'], 0, ',', '.' ) . '/mês, com créditos todo mês e as ferramentas de gestão sem limite.</p><p><a class="dv-btn" href="/assinar/">Ver os planos</a></p></div><style>.dv-tool{display:none!important}</style>';
 	}
 	return $h;
 } );
@@ -534,11 +638,11 @@ add_action( 'template_redirect', function () {
 function dv_wa_venda() { return 'https://wa.me/5511993500950?text=' . rawurlencode( 'Olá! Quero assinar a plataforma Desenvolve.' ); }
 add_action( 'template_redirect', function () {
 	if ( get_option( 'dv_asaas_key' ) || current_user_can( 'manage_options' ) ) { return; }
-	if ( is_page( array( 'assinar', 'creditos' ) ) ) { wp_redirect( dv_wa_venda() ); exit; }
+	if ( is_page( 'creditos' ) ) { wp_redirect( dv_wa_venda() ); exit; }
 } );
 add_action( 'wp_footer', function () {
 	if ( get_option( 'dv_asaas_key' ) ) { return; }
-	echo '<script>(function(){var u=' . wp_json_encode( dv_wa_venda() ) . ';function f(){document.querySelectorAll(\'a[href*="/assinar/"],a[href*="/creditos/"]\').forEach(function(a){a.href=u;a.target="_blank";a.rel="noopener"})}f();new MutationObserver(f).observe(document.body,{childList:true,subtree:true})})()</script>';
+	echo '<script>(function(){var u=' . wp_json_encode( dv_wa_venda() ) . ';function f(){document.querySelectorAll(\'a[href*="/creditos/"]\').forEach(function(a){a.href=u;a.target="_blank";a.rel="noopener"})}f();new MutationObserver(f).observe(document.body,{childList:true,subtree:true})})()</script>';
 }, 71 );
 
 /* ---------------- Aparência das telas do assinante ---------------- */
@@ -574,12 +678,12 @@ function e(s){return String(s==null?'':s).replace(/[&<>"]/g,function(c){return{'
 var nomes={raiox:'Raio-X de concorrentes',comprador:'Raio-X do comprador',comparador:'Comparador de licitantes',precos:'Banco de preços',buscador:'Buscador de licitações',prazos:'Calculadora de prazos',reajuste:'Calculadora de reajuste',repactuacao:'Repactuação e reequilíbrio',captador:'Radar do Diário Oficial',documentos:'Documentos e certidões',licitacoes:'Gestão de licitações',alertas:'Alertas de oportunidades',contratos:'Meus contratos',recursos:'Recursos e defesas',dossie:'Due Diligence completa'};
 var links=[['dossie','/plataforma/dossie/'],['raiox','/plataforma/raio-x/'],['comprador','/plataforma/raio-x-comprador/'],['comparador','/plataforma/comparador/'],['precos','/plataforma/banco-de-precos/'],['buscador','/plataforma/buscador/'],['prazos','/plataforma/prazos/'],['reajuste','/plataforma/reajuste/'],['repactuacao','/plataforma/repactuacao/'],['captador','/plataforma/captador/'],['documentos','/plataforma/documentos/'],['licitacoes','/plataforma/licitacoes/'],['alertas','/plataforma/alertas/'],['contratos','/plataforma/contratos/'],['recursos','/plataforma/recursos/']];
 Promise.all([g('me'),g('historico')]).then(function(a){var m=a[0],h=a[1]||[];var s=m.saldo||{};
-var sit={ativo:'Assinatura ativa',pendente:'Assinatura pendente',atrasado:'Pagamento em atraso',cancelado:'Assinatura cancelada',bloqueado:'Acesso bloqueado'}[m.situacao]||m.situacao;
+var sit={ativo:m.teste?'Teste grátis':'Plano '+((m.plano&&m.plano.nome)||''),pendente:'Assinatura pendente',atrasado:'Pagamento em atraso',cancelado:'Assinatura cancelada',bloqueado:'Acesso bloqueado'}[m.situacao]||m.situacao;
 var H='<h2>Olá, '+e((m.nome||'').split(' ')[0])+'</h2>';
-if(/bem-vindo/.test(location.search))H+='<p class="dv-ok">Conta criada. Falta só ativar a assinatura para liberar seus 20 créditos do mês.</p>';
+if(/bem-vindo/.test(location.search))H+=m.teste&&m.situacao==='ativo'?'<p class="dv-ok">Conta criada. Seu teste grátis já está ativo, com '+(s.total||0)+' créditos e todas as ferramentas de gestão. Aproveite!</p>':'<p class="dv-ok">Conta criada. Escolha um plano para liberar as ferramentas.</p>';
 H+='<div class="dv-g"><div class="dv-c"><span>Créditos disponíveis</span><b>'+(m.master?'Ilimitado':(s.total||0))+'</b></div><div class="dv-c"><span>Situação</span><b style="font-size:1.25rem">'+(m.master?'Conta Master':e(sit))+'</b></div><div class="dv-c"><span>'+(m.vence?'Renova em':'Detalhe do saldo')+'</span><b style="font-size:1.25rem">'+(m.vence?e(m.vence.split('-').reverse().join('/')):('Mês '+(s.mes||0)+' · extra '+(s.extra||0)))+'</b></div></div>';
-if(!m.master&&m.situacao!=='ativo')H+='<p><a class="dv-btn" href="/assinar/">Ativar assinatura</a></p>';
-else if(!m.master)H+='<p><a class="dv-btn g" href="/creditos/">Comprar créditos extras</a></p>';
+if(!m.master&&(m.situacao!=='ativo'||m.teste))H+='<p><a class="dv-btn" href="/assinar/">'+(m.teste&&m.situacao==='ativo'?'Ver planos e assinar':'Escolher um plano')+'</a></p>';
+else if(!m.master)H+='<p><a class="dv-btn g" href="/creditos/">Comprar créditos extras</a> <a class="dv-btn g" href="/assinar/">Mudar de plano</a></p>';
 H+='<h3 style="color:#F4F2EC;margin-top:28px">Ferramentas</h3><div class="dv-tools">'+links.map(function(l){return'<a href="'+l[1]+'">'+nomes[l[0]]+'</a>'}).join('')+'</div>';
 H+='<h3 style="color:#F4F2EC;margin-top:28px">Últimos usos</h3><table class="dv-h"><tbody>'+(h.length?h.map(function(x){return'<tr><td>'+e(nomes[x.ferramenta]||x.ferramenta)+(x.rotulo?' · '+e(x.rotulo):'')+'</td><td>'+(x.cobrado==1?'1 crédito':'sem custo')+'</td><td>'+e(x.criado.slice(0,16).replace(/(\d+)-(\d+)-(\d+)/,'$3/$2/$1'))+'</td></tr>'}).join(''):'<tr><td>Nenhum uso ainda.</td></tr>')+'</tbody></table>';
 H+='<p style="margin-top:28px"><a href="'+el.dataset.sair+'">Sair</a></p>';el.innerHTML=H;});

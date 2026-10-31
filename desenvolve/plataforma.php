@@ -280,34 +280,34 @@ add_action( 'rest_api_init', function () {
 		$u['creditos'] = $n; return $u;
 	} ) );
 	/* Agenda do painel: licitações, contratos, notificações e documentos */
-	register_rest_route( 'desenvolve/v1', '/agenda', array( 'methods' => 'GET', 'permission_callback' => $logado, 'callback' => function () {
-		$uid = get_current_user_id(); $hoje = current_time( 'Y-m-d' ); $A = array( 'licitacoes' => array(), 'contratos' => array(), 'notificacoes' => array(), 'documentos' => array() );
+	register_rest_route( 'desenvolve/v1', '/agenda', array( 'methods' => 'GET', 'permission_callback' => $logado, 'callback' => function ( $r ) {
+		$tod = ! empty( $r['todos'] ); $uid = get_current_user_id(); $hoje = current_time( 'Y-m-d' ); $A = array( 'licitacoes' => array(), 'contratos' => array(), 'notificacoes' => array(), 'documentos' => array() );
 		$dd = function ( $d ) use ( $hoje ) { return $d ? (int) floor( ( strtotime( substr( $d, 0, 10 ) ) - strtotime( $hoje ) ) / 86400 ) : null; };
 		if ( function_exists( 'dv_lic_itens' ) ) { foreach ( dv_lic_itens( $uid ) as $x ) {
 			if ( ! in_array( $x['status'] ?? '', array( 'analise', 'participar', 'proposta', 'disputa', 'recurso' ), true ) || empty( $x['abertura'] ) ) { continue; }
 			$c = dv_lic_calc( $x, $hoje ); $t = trim( ( $x['orgao'] ?? '' ) . ( ! empty( $x['numero'] ) ? ' · ' . $x['numero'] : '' ) );
-			if ( $c['dias_imp'] !== null && $c['dias_imp'] >= 0 && in_array( $x['status'], array( 'analise', 'participar', 'proposta' ), true ) ) { $A['licitacoes'][] = array( 'o' => 'Último dia para impugnar', 't' => $t, 'd' => $c['prazo_imp'], 'n' => $c['dias_imp'], 'u' => '/plataforma/licitacoes/?ver=' . $x['id'] ); }
-			if ( $c['dias_sessao'] !== null && $c['dias_sessao'] >= 0 ) { $A['licitacoes'][] = array( 'o' => 'Sessão' . ( strlen( $x['abertura'] ) > 10 ? ' às ' . substr( $x['abertura'], 11, 5 ) : '' ), 't' => $t, 'd' => substr( $x['abertura'], 0, 10 ), 'n' => $c['dias_sessao'], 'u' => '/plataforma/licitacoes/?ver=' . $x['id'] ); }
+			if ( $c['dias_imp'] !== null && ( $tod || $c['dias_imp'] >= 0 ) && in_array( $x['status'], array( 'analise', 'participar', 'proposta' ), true ) ) { $A['licitacoes'][] = array( 'o' => 'Último dia para impugnar', 't' => $t, 'd' => $c['prazo_imp'], 'n' => $c['dias_imp'], 'u' => '/plataforma/licitacoes/?ver=' . $x['id'] ); }
+			if ( $c['dias_sessao'] !== null && ( $tod || $c['dias_sessao'] >= 0 ) ) { $A['licitacoes'][] = array( 'o' => 'Sessão' . ( strlen( $x['abertura'] ) > 10 ? ' às ' . substr( $x['abertura'], 11, 5 ) : '' ), 't' => $t, 'd' => substr( $x['abertura'], 0, 10 ), 'n' => $c['dias_sessao'], 'u' => '/plataforma/licitacoes/?ver=' . $x['id'] ); }
 		} }
 		if ( function_exists( 'dv_ct_itens' ) ) { foreach ( dv_ct_itens( $uid ) as $x ) {
 			$c = dv_ct_calc( $x, $hoje ); $t = trim( ( $x['orgao'] ?? '' ) . ( ! empty( $x['numero'] ) ? ' · ' . $x['numero'] : '' ) );
 			if ( ! empty( $c['verificar'] ) ) { $A['contratos'][] = array( 'o' => 'Confirmar se foi prorrogado', 't' => $t, 'd' => $x['fim'], 'n' => $c['dias_fim'], 'id' => $x['id'], 'u' => '/plataforma/contratos/?ficha=' . $x['id'] ); continue; }
 			if ( ! $c['vigente'] ) { continue; }
-			if ( $c['dias_fim'] !== null && $c['dias_fim'] <= 180 ) { $A['contratos'][] = array( 'o' => 'Fim da vigência', 't' => $t, 'd' => $x['fim'], 'n' => $c['dias_fim'], 'id' => $x['id'], 'u' => '/plataforma/contratos/?ficha=' . $x['id'] ); }
-			if ( $c['dias_reajuste'] !== null && $c['dias_reajuste'] <= 90 ) { $A['contratos'][] = array( 'o' => 'Reajuste / repactuação', 't' => $t, 'd' => $c['prox_reajuste'], 'n' => $c['dias_reajuste'], 'id' => $x['id'], 'u' => '/plataforma/contratos/?ficha=' . $x['id'] ); }
+			if ( $c['dias_fim'] !== null && ( $tod || $c['dias_fim'] <= 180 ) ) { $A['contratos'][] = array( 'o' => 'Fim da vigência', 't' => $t, 'd' => $x['fim'], 'n' => $c['dias_fim'], 'id' => $x['id'], 'u' => '/plataforma/contratos/?ficha=' . $x['id'] ); }
+			if ( $c['dias_reajuste'] !== null && ( $tod || $c['dias_reajuste'] <= 90 ) ) { $A['contratos'][] = array( 'o' => 'Reajuste / repactuação', 't' => $t, 'd' => $c['prox_reajuste'], 'n' => $c['dias_reajuste'], 'id' => $x['id'], 'u' => '/plataforma/contratos/?ficha=' . $x['id'] ); }
 			$u = '/plataforma/contratos/?ficha=' . $x['id'];
 			foreach ( (array) ( $x['pleitos'] ?? array() ) as $pp ) { if ( ( $pp['status'] ?? '' ) === 'a_fazer' && ! empty( $pp['prazo'] ) ) { $A['contratos'][] = array( 'o' => 'Pedido a fazer: ' . ( array( 'reajuste' => 'reajuste', 'repactuacao' => 'repactuação', 'reequilibrio' => 'reequilíbrio', 'prorrogacao' => 'prorrogação', 'aditivo' => 'aditivo' )[ $pp['tipo'] ] ?? 'pedido' ), 't' => $t, 'd' => $pp['prazo'], 'n' => $dd( $pp['prazo'] ), 'u' => $u ); } }
 			$ck = (array) ( $x['checklist'] ?? array() ); $chk = (array) ( $x['checks'] ?? array() ); $pend = 0;
 			foreach ( $ck as $it ) { if ( ( $it['per'] ?? 'mensal' ) === 'mensal' && ! isset( $chk[ $it['id'] . '|' . substr( $hoje, 0, 7 ) ] ) ) { $pend++; } }
 			if ( $pend ) { $fm = gmdate( 'Y-m-t', strtotime( $hoje ) ); $A['contratos'][] = array( 'o' => 'Checklist do mês: ' . $pend . ' pendente(s)', 't' => $t, 'd' => $fm, 'n' => $dd( $fm ), 'u' => $u ); }
-			if ( $c['dias_garantia'] !== null && $c['dias_garantia'] <= 60 ) { $A['contratos'][] = array( 'o' => 'Vencimento da garantia', 't' => $t, 'd' => $x['garantia_vence'], 'n' => $c['dias_garantia'], 'id' => $x['id'], 'u' => '/plataforma/contratos/?ficha=' . $x['id'] ); }
+			if ( $c['dias_garantia'] !== null && ( $tod || $c['dias_garantia'] <= 60 ) ) { $A['contratos'][] = array( 'o' => 'Vencimento da garantia', 't' => $t, 'd' => $x['garantia_vence'], 'n' => $c['dias_garantia'], 'id' => $x['id'], 'u' => '/plataforma/contratos/?ficha=' . $x['id'] ); }
 		} }
 		if ( function_exists( 'dv_rc_itens' ) ) { $T = dv_rc_tipos(); foreach ( dv_rc_itens( $uid ) as $x ) {
 			if ( ( $x['status'] ?? 'aberto' ) !== 'aberto' ) { continue; } $c = dv_rc_calc( $x, $hoje );
 			$A['notificacoes'][] = array( 'o' => $T[ $x['tipo'] ][0] ?? 'Prazo', 't' => trim( ( $x['titulo'] ?: $x['orgao'] ) . ( ! empty( $x['numero_doc'] ) ? ' · ' . $x['numero_doc'] : '' ) ), 'd' => $c['prazo'], 'h' => $c['prazo_hora'] ?? '', 'ts' => $c['prazo_ts'] ?? null, 'n' => $c['dias'], 'u' => '/plataforma/recursos/?ver=' . $x['id'] );
 		} }
 		if ( function_exists( 'dv_docs_lista' ) ) { $emp = array(); foreach ( dv_docs_emps( $uid ) as $e ) { $emp[ $e['cnpj'] ] = $e['nome']; }
-			foreach ( dv_docs_lista( $uid ) as $x ) { $n = $dd( $x['validade'] ); if ( $n === null || $n > 45 ) { continue; }
+			foreach ( dv_docs_lista( $uid ) as $x ) { $n = $dd( $x['validade'] ); if ( $n === null || ( ! $tod && $n > 45 ) ) { continue; }
 				$A['documentos'][] = array( 'o' => $n < 0 ? 'Vencido' : 'Vence', 't' => $x['titulo'] . ' · ' . ( $emp[ $x['cnpj'] ] ?? $x['cnpj'] ), 'd' => $x['validade'], 'n' => $n, 'u' => '/plataforma/documentos/' );
 		} }
 		foreach ( $A as &$l ) { usort( $l, function ( $a, $b ) { return ( $a['n'] ?? 9999 ) <=> ( $b['n'] ?? 9999 ); } ); } unset( $l );
@@ -703,6 +703,13 @@ add_action( 'wp_footer', function () {
 .dv-agg{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin:14px 0}.dv-agc{background:var(--sf);border:1px solid var(--ln);border-radius:16px;padding:16px 18px}.dv-agh{display:flex;justify-content:space-between;align-items:center;margin-bottom:8px}.dv-agh b{color:var(--fg)}.dv-agh a{font-size:.85rem}
 .dv-agi{text-decoration:none;display:grid;grid-template-columns:96px 1fr;gap:12px;padding:9px 0;border-top:1px solid var(--ln);font-size:.88rem;color:var(--mu)}.dv-agi b{color:var(--fg);font-weight:600}a.dv-agi:hover b{color:var(--gd)}.dv-agd{font-weight:700;font-size:.85rem}.dv-agd small{font-weight:600;font-size:.75rem}.dv-agm{color:var(--mu);font-size:.85rem;margin:6px 0 0}
 @media(max-width:700px){.dv-agg{grid-template-columns:1fr}}
+.dv-agt{display:flex;gap:6px}.dv-agt button,.dv-calh button,.dv-calf button{background:var(--sf);border:1px solid var(--ln);color:var(--mu);border-radius:99px;padding:6px 12px;font:inherit;font-size:.85rem;cursor:pointer}.dv-agt button.on,.dv-calf button.on{border-color:var(--gd);color:var(--fg)}
+.dv-cal{background:var(--sf);border:1px solid var(--ln);border-radius:16px;padding:16px 18px;margin:14px 0}.dv-calh{display:flex;align-items:center;gap:10px;margin-bottom:10px}.dv-calh b{color:var(--fg);text-transform:capitalize;min-width:150px;text-align:center}.dv-calh .hj{margin-left:auto}
+.dv-calf{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:12px}.dv-calf i,.dv-dd i{display:inline-block;width:8px;height:8px;border-radius:50%;margin-right:5px}
+.dv-calg{display:grid;grid-template-columns:repeat(7,1fr);gap:4px}.dv-calg .dw{text-align:center;color:var(--mu);font-size:.75rem;padding:4px 0}
+.dv-dd{background:transparent;border:1px solid var(--ln);border-radius:10px;min-height:62px;padding:6px;text-align:left;color:var(--mu);font:inherit;cursor:pointer;display:flex;flex-direction:column;gap:4px}.dv-dd em{font-style:normal;font-size:.85rem}.dv-dd.tem{color:var(--fg)}.dv-dd.hoje{border-color:var(--gd)}.dv-dd.hoje em{color:var(--gd);font-weight:700}.dv-dd.sel{background:rgba(201,162,90,.12);border-color:var(--gd)}.dv-dd small{font-size:.7rem;color:var(--mu)}.dv-dd i{margin-right:2px}
+.dv-cald{margin-top:14px}.dv-cald>b{color:var(--fg)}
+@media(max-width:700px){.dv-dd{min-height:46px;padding:4px}.dv-dd small{display:none}}
 .dv-tools a{background:var(--sf);border:1px solid var(--ln);border-radius:14px;padding:16px;color:var(--fg);text-decoration:none;font-weight:700}
 .dv-tools a:hover{border-color:var(--gd)}
 .dv-h{width:100%;border-collapse:collapse;font-size:.92rem}.dv-h td{padding:10px 8px;border-bottom:1px solid var(--ln);color:var(--mu)}.dv-h td:first-child{color:var(--fg)}
@@ -728,7 +735,32 @@ H+='<p style="margin-top:28px"><a href="'+el.dataset.sair+'">Sair</a></p>';el.in
  if(m.master||m.situacao==='ativo')g('agenda').then(function(A){var B=[['licitacoes','Agenda de licitações','/plataforma/licitacoes/','Cadastre uma licitação ou crie um alerta de oportunidades.'],['contratos','Agenda de contratos','/plataforma/contratos/','Busque seus contratos no PNCP para acompanhar vigência, reajuste e garantia.'],['notificacoes','Agenda de notificações e recursos','/plataforma/recursos/','Nenhum prazo em aberto.'],['documentos','Agenda de documentos','/plataforma/documentos/','Nenhuma certidão vencendo nos próximos 45 dias.']];
   function q(x){if(x.ts){var d=x.ts-Date.now();if(d<0)return'encerrado';var mi=Math.floor(d/60000),dd=Math.floor(mi/1440),h=Math.floor(mi%1440/60);return dd?'em '+dd+'d '+h+'h':'em '+h+'h '+(mi%60)+'min'}return x.n===null||x.n===undefined?'':x.n<0?'há '+(-x.n)+' dia(s)':x.n===0?'HOJE':x.n===1?'amanhã':'em '+x.n+' dias'}
   function cor(n){return n===null||n===undefined?'#8E938F':n<=1?'#E59A8A':n<=7?'#E6C27A':'#8FBDA3'}
-  document.getElementById('dv-ag').innerHTML='<h3 style="color:#F4F2EC;margin-top:28px">Minha agenda</h3><div class="dv-agg">'+B.map(function(b){var l=A[b[0]]||[];return'<div class="dv-agc"><div class="dv-agh"><b>'+b[1]+'</b><a href="'+b[2]+'">Ver tudo</a></div>'+(l.length?l.slice(0,6).map(function(x){return'<a class="dv-agi" href="'+e(x.u||b[2])+'"><span class="dv-agd" style="color:'+cor(x.n)+'">'+(x.d?e(x.d.slice(0,10).split('-').reverse().join('/')):'')+(x.h&&x.h!=='23:59'?' '+e(x.h):'')+'<br><small>'+q(x)+'</small></span><span><b>'+e(x.o)+'</b><br>'+e(x.t)+'</span></a>'}).join('')+(l.length>6?'<p class="dv-agm">+ '+(l.length-6)+' outro(s)</p>':''):'<p class="dv-agm">'+b[3]+'</p>')+'</div>'}).join('')+'</div>'});
+  var CAT={licitacoes:['Licitações','#E6C27A'],contratos:['Contratos','#8FBDA3'],notificacoes:['Notificações e recursos','#E59A8A'],documentos:['Documentos','#9DB4E0']};
+  var box=document.getElementById('dv-ag'),AT=null,mes=null,dsel=null,filt=null,MS=['janeiro','fevereiro','março','abril','maio','junho','julho','agosto','setembro','outubro','novembro','dezembro'];
+  function br(d){return d?e(d.slice(0,10).split('-').reverse().join('/')):''}
+  function z(v){return(v<10?'0':'')+v}
+  function hdr(v){return'<div style="display:flex;justify-content:space-between;align-items:center;margin-top:28px;flex-wrap:wrap;gap:8px"><h3 style="color:#F4F2EC;margin:0">Minha agenda</h3><div class="dv-agt"><button type="button" data-v="l" class="'+(v==='l'?'on':'')+'">☰ Lista</button><button type="button" data-v="c" class="'+(v==='c'?'on':'')+'">📅 Calendário</button></div></div>'}
+  function guarda(v){try{localStorage.setItem('dv_agv',v)}catch(x){}}
+  function lista(){guarda('l');box.innerHTML=hdr('l')+'<div class="dv-agg">'+B.map(function(b){var l=A[b[0]]||[];return'<div class="dv-agc"><div class="dv-agh"><b>'+b[1]+'</b><span><a href="#" data-cal="'+b[0]+'">📅 Calendário</a> · <a href="'+b[2]+'">Ver tudo</a></span></div>'+(l.length?l.slice(0,6).map(function(x){return'<a class="dv-agi" href="'+e(x.u||b[2])+'"><span class="dv-agd" style="color:'+cor(x.n)+'">'+br(x.d)+(x.h&&x.h!=='23:59'?' '+e(x.h):'')+'<br><small>'+q(x)+'</small></span><span><b>'+e(x.o)+'</b><br>'+e(x.t)+'</span></a>'}).join('')+(l.length>6?'<p class="dv-agm">+ '+(l.length-6)+' outro(s)</p>':''):'<p class="dv-agm">'+b[3]+'</p>')+'</div>'}).join('')+'</div>'}
+  function cal(){guarda('c');if(!AT){box.innerHTML=hdr('c')+'<div class="dv-cal"><p class="dv-agm">Carregando o calendário…</p></div>';g('agenda?todos=1').then(function(r){AT=r;cal()});return}
+   var H0=new Date(),th=H0.getFullYear()+'-'+z(H0.getMonth()+1)+'-'+z(H0.getDate());if(!mes)mes=new Date(H0.getFullYear(),H0.getMonth(),1);
+   var y=mes.getFullYear(),m=mes.getMonth(),pm=y+'-'+z(m+1),ini=new Date(y,m,1).getDay(),nd=new Date(y,m+1,0).getDate(),ev={};
+   Object.keys(CAT).forEach(function(k){if(filt&&filt!==k)return;(AT[k]||[]).forEach(function(x){if(!x.d)return;var d=x.d.slice(0,10);(ev[d]=ev[d]||[]).push([k,x])})});
+   var h=hdr('c')+'<div class="dv-cal"><div class="dv-calh"><button type="button" data-m="-1" aria-label="Mês anterior">‹</button><b>'+MS[m]+' de '+y+'</b><button type="button" data-m="1" aria-label="Próximo mês">›</button><button type="button" data-m="0" class="hj">Hoje</button></div>';
+   h+='<div class="dv-calf"><button type="button" data-f="" class="'+(!filt?'on':'')+'">Tudo</button>'+Object.keys(CAT).map(function(k){return'<button type="button" data-f="'+k+'" class="'+(filt===k?'on':'')+'"><i style="background:'+CAT[k][1]+'"></i>'+CAT[k][0]+'</button>'}).join('')+'</div>';
+   h+='<div class="dv-calg">'+['Dom','Seg','Ter','Qua','Qui','Sex','Sáb'].map(function(s){return'<span class="dw">'+s+'</span>'}).join('');
+   for(var i=0;i<ini;i++)h+='<span></span>';
+   for(var d=1;d<=nd;d++){var k=pm+'-'+z(d),l=ev[k]||[],cs={};l.forEach(function(p){cs[p[0]]=1});
+    h+='<button type="button" class="dv-dd'+(k===th?' hoje':'')+(k===dsel?' sel':'')+(l.length?' tem':'')+'" data-d="'+k+'"><em>'+d+'</em><span>'+Object.keys(cs).map(function(c){return'<i style="background:'+CAT[c][1]+'"></i>'}).join('')+'</span>'+(l.length?'<small>'+l.length+' item'+(l.length>1?'s':'')+'</small>':'')+'</button>'}
+   h+='</div>';
+   var sel=dsel&&dsel.slice(0,7)===pm?dsel:null,it=sel?(ev[sel]||[]):Object.keys(ev).filter(function(k){return k.slice(0,7)===pm}).sort().reduce(function(a,k){return a.concat(ev[k])},[]);
+   h+='<div class="dv-cald"><b>'+(sel?'Dia '+br(sel):'Tudo em '+MS[m])+'</b>'+(it.length?it.map(function(p){var x=p[1];return'<a class="dv-agi" href="'+e(x.u||'#')+'"><span class="dv-agd" style="color:'+CAT[p[0]][1]+'">'+br(x.d)+(x.h&&x.h!=='23:59'?' '+e(x.h):'')+'<br><small>'+q(x)+'</small></span><span><b>'+e(x.o)+'</b><br>'+e(x.t)+'</span></a>'}).join(''):'<p class="dv-agm">'+(sel?'Nada marcado neste dia.':'Nada marcado neste mês.')+'</p>')+'</div></div>';
+   box.innerHTML=h}
+  box.addEventListener('click',function(v){var t=v.target.closest('button,[data-cal]');if(!t||!box.contains(t))return;var D=t.dataset;
+   if(D.v){D.v==='c'?cal():lista()}else if(D.cal!==undefined){v.preventDefault();filt=D.cal;mes=null;dsel=null;cal()}
+   else if(D.m!==undefined){var sm=+D.m;if(!sm){mes=null;dsel=null}else{mes=new Date(mes.getFullYear(),mes.getMonth()+sm,1);dsel=null}cal()}
+   else if(D.f!==undefined){filt=D.f||null;cal()}else if(D.d){dsel=dsel===D.d?null:D.d;cal()}});
+  var vw='l';try{vw=localStorage.getItem('dv_agv')||'l'}catch(x){}vw==='c'?cal():lista();});
 });
 })();
 </script>

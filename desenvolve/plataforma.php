@@ -450,7 +450,7 @@ add_shortcode( 'dv_ctx', function ( $a ) {
 	$ctx = array( 'api' => rest_url( 'desenvolve/v1/' ), 'nonce' => $uid ? wp_create_nonce( 'wp_rest' ) : '', 'tool' => $tool,
 		'logado' => (bool) $uid, 'acesso' => (bool) $acesso, 'master' => $uid ? dv_is_master( $uid ) : false,
 		'nome' => $u ? $u->display_name : '', 'doc' => $doc, 'saldo' => $uid ? dv_saldo( $uid )['total'] : 0, 'cr_dossie' => (int) dv_cfg( 'creditos_dossie' ) );
-	$h = '<script>window.DV=' . wp_json_encode( $ctx ) . ';window.DVWM=' . wp_json_encode( $u ? $u->display_name . ( $doc ? ' · ' . $doc : '' ) : '' ) . ';</script>';
+	$h = '<script>window.DV=' . wp_json_encode( $ctx ) . ';window.DVWM="";</script>';
 	$h .= '<div class="dv-tbar"><a href="/painel/">&larr; Meu painel</a><span id="dv-saldo">' . ( $uid ? ( $ctx['master'] ? 'Créditos: ilimitado' : 'Créditos: ' . (int) $ctx['saldo'] ) : '' ) . '</span></div>';
 	if ( ! $uid ) {
 		$h .= '<div class="dv-pw"><h2>Ferramenta exclusiva para assinantes</h2><p>Assine por R$ 79,90/mês e receba 20 créditos. Cada consulta, busca, cálculo ou relatório usa 1 crédito.</p><p><a class="dv-btn" href="/assinar/">Assinar agora</a> <a class="dv-btn g" href="/painel/">Já sou assinante</a></p></div><style>.dv-tool{display:none!important}</style>';
@@ -484,7 +484,6 @@ add_action( 'wp_footer', function () {
 <script>
 (function(){var D=window.DV;if(!D||!D.logado)return;
 var tool=document.querySelector('.dv-tool');if(!tool)return;
-if(window.DVWM){var w=document.createElement('div');w.className='dv-wm';w.textContent='Uso exclusivo de '+window.DVWM;document.body.appendChild(w);}
 var ok={},ACT=/consult|buscar|pesquis|calcul|compar|gerar|analis|simul|verific|estimar/i;
 function chave(){var v=[];tool.querySelectorAll('input,select,textarea').forEach(function(i){if(i.type==='button'||i.type==='submit'||i.type==='hidden')return;if((i.type==='checkbox'||i.type==='radio')&&!i.checked)return;if(i.value!=='')v.push((i.name||i.id||'')+'='+i.value)});return v.join('|')}
 function rot(){var i=tool.querySelector('input[type=text],input:not([type]),textarea');return i?String(i.value).slice(0,80):''}

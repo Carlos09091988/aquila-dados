@@ -1,0 +1,17 @@
+name: Aquila - jurisprudencia do TCU
+on:
+  schedule:
+    - cron: '23 9 3 * *'   # todo dia 3, 06:23 em Brasilia
+  workflow_dispatch:
+permissions:
+  contents: write
+jobs:
+  atualizar:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - run: python3 scripts/tcu_jur.py
+      - run: |
+          git config user.name "github-actions"; git config user.email "actions@github.com"
+          git add aquila/jur && (git diff --cached --quiet || (git commit -m "Jurisprudencia TCU: atualizacao" && git push))

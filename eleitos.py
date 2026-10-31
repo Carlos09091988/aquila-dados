@@ -15,7 +15,17 @@ def norm(s):
 def linhas(ano):
     path = f'/tmp/cand_{ano}.zip'
     if not os.path.exists(path):
-        with requests.get(BASE.format(ano), stream=True, timeout=600) as r:
+        url = BASE.format(ano)
+        try:
+            pk = requests.get('https://dadosabertos.tse.jus.br/api/3/action/package_show', params={'id': f'candidatos-{ano}'}, timeout=60).json()
+            for res in pk['result']['resources']:
+                u = res.get('url', '')
+                if re.search(r'consulta_cand_%d\.zip$' % ano, u):
+                    url = u; break
+            print('url', url)
+        except Exception as e:
+            print('ckan falhou', e)
+        with requests.get(url, stream=True, timeout=600) as r:
             r.raise_for_status()
             with open(path, 'wb') as f:
                 for ch in r.iter_content(1 << 20): f.write(ch)

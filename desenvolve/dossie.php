@@ -52,6 +52,15 @@ function dv_ds_multi( $urls, $headers = array(), $timeout = 25 ) {
 	return $out;
 }
 
+/* lotes pequenos com nova tentativa (a API do CNJ limita acessos simultâneos) */
+function dv_ds_multi_lento( $urls, $lote = 6, $timeout = 40 ) {
+	$out = array(); $falhas = array();
+	foreach ( array_chunk( $urls, $lote, true ) as $ch ) { foreach ( dv_ds_multi( $ch, array(), $timeout ) as $k => $b ) { $out[ $k ] = $b; if ( ! $b ) { $falhas[ $k ] = $urls[ $k ]; } } usleep( 300000 ); }
+	if ( $falhas ) { sleep( 2 ); foreach ( array_chunk( $falhas, 3, true ) as $ch ) { foreach ( dv_ds_multi( $ch, array(), $timeout ) as $k => $b ) { if ( $b ) { $out[ $k ] = $b; unset( $falhas[ $k ] ); } } usleep( 500000 ); } }
+	$out['__falhas'] = count( $falhas );
+	return $out;
+}
+
 /* ---------- Contratos no PNCP (todas as esferas) ---------- */
 function dv_ds_pncp( $cnpj, $nome = '', $filiais = array() ) {
 	$raiz = substr( $cnpj, 0, 8 ); $consultas = array( $cnpj ); if ( $nome ) { $consultas[] = '"' . $nome . '"'; }
@@ -129,15 +138,14 @@ function dv_ds_djen( $nome, $paginas = 3, $so_criminal = false ) {
 }
 /* Varredura completa: todas as publicações (até $max páginas de 100), processos distintos por tipo */
 function dv_ds_djen_full( $nome, $max = 60 ) {
-	$ck = 'dv_dj2_' . md5( $nome ); $c = get_transient( $ck ); if ( $c ) { return $c; }
+	$ck = 'dv_dj3_' . md5( $nome ); $c = get_transient( $ck ); if ( $c ) { return $c; }
 	$base = 'https://comunicaapi.pje.jus.br/api/v1/comunicacao?nomeParte=' . rawurlencode( $nome ) . '&itensPorPagina=100&pagina=';
 	$x = dv_ds_multi( array( 1 => $base . '1' ), array(), 30 ); $j = $x[1] ? json_decode( $x[1], true ) : null;
 	if ( ! $j ) { return array( 'erro' => 1, 'processos' => array() ); }
 	$count = (int) ( $j['count'] ?? 0 ); $pags = min( $max, (int) ceil( $count / 100 ) ); $bodies = array( 1 => $x[1] );
-	for ( $ini = 2; $ini <= $pags; $ini += 12 ) {
-		$u = array(); for ( $pg = $ini; $pg < $ini + 12 && $pg <= $pags; $pg++ ) { $u[ $pg ] = $base . $pg; }
-		foreach ( dv_ds_multi( $u, array(), 40 ) as $k => $b ) { $bodies[ $k ] = $b; }
-	}
+	$u = array(); for ( $pg = 2; $pg <= $pags; $pg++ ) { $u[ $pg ] = $base . $pg; }
+	$rr = dv_ds_multi_lento( $u ); $falhas = $rr['__falhas']; unset( $rr['__falhas'] );
+	foreach ( $rr as $k => $b ) { $bodies[ $k ] = $b; }
 	$alvo = dv_ds_nrm( $nome ); $proc = array(); $lidas = 0;
 	foreach ( $bodies as $b ) {
 		$jj = $b ? json_decode( $b, true ) : null; if ( ! $jj ) { continue; }
@@ -160,7 +168,8 @@ function dv_ds_djen_full( $nome, $max = 60 ) {
 	/* buscas dirigidas: processos graves costumam ficar escondidos no volume trabalhista */
 	$u = array();
 	foreach ( array( 'improbidade', 'ação civil pública', 'penal', 'criminal', 'inquérito', 'falência', 'recuperação judicial', 'Ministério Público' ) as $k => $t ) { for ( $pg = 1; $pg <= 2; $pg++ ) { $u[ $k . '_' . $pg ] = $base . $pg . '&texto=' . rawurlencode( $t ); } }
-	foreach ( dv_ds_multi( $u, array(), 40 ) as $b ) {
+	$rr = dv_ds_multi_lento( $u ); $falhas += $rr['__falhas']; unset( $rr['__falhas'] );
+	foreach ( $rr as $b ) {
 		$jj = $b ? json_decode( $b, true ) : null; if ( ! $jj ) { continue; }
 		foreach ( (array) ( $jj['items'] ?? array() ) as $i ) {
 			$dest = implode( ' ; ', array_map( function ( $d ) { return dv_ds_nrm( $d['nome'] ?? '' ); }, (array) ( $i['destinatarios'] ?? array() ) ) );
@@ -177,10 +186,10 @@ function dv_ds_djen_full( $nome, $max = 60 ) {
 	arsort( $trib );
 	$dest = array_values( array_filter( $proc, function ( $p ) { return in_array( $p['tipo'], array( 'criminal', 'improbidade', 'coletiva', 'falencia' ), true ); } ) );
 	usort( $dest, function ( $a, $b ) { return strcmp( $b['data'], $a['data'] ); } );
-	$o = array( 'publicacoes' => $count, 'lidas' => $lidas, 'parcial' => $count > $pags * 100, 'distintos' => count( $proc ), 'por_tipo' => $por,
+	$o = array( 'falhas' => $falhas, 'publicacoes' => $count, 'lidas' => $lidas, 'parcial' => $count > $pags * 100, 'distintos' => count( $proc ), 'por_tipo' => $por,
 		'por_tribunal' => array_slice( $trib, 0, 12, true ), 'destaques' => array_slice( $dest, 0, 80 ),
 		'processos' => array_slice( array_values( $proc ), 0, 150 ) );
-	set_transient( $ck, $o, DAY_IN_SECONDS );
+	set_transient( $ck, $o, $falhas ? 30 * MINUTE_IN_SECONDS : DAY_IN_SECONDS );
 	return $o;
 }
 
@@ -240,7 +249,7 @@ function dv_ds_diarios( $cnpj, $nome ) {
 }
 
 function dv_dossie_dados( $cnpj ) {
-	$ck = 'dv_ds8_' . $cnpj; $c = get_transient( $ck ); if ( $c ) { return $c; }
+	$ck = 'dv_ds9_' . $cnpj; $c = get_transient( $ck ); if ( $c ) { return $c; }
 	$t0 = microtime( true );
 	$r = wp_remote_get( 'https://brasilapi.com.br/api/cnpj/v1/' . $cnpj, array( 'timeout' => 25 ) );
 	$cad = is_wp_error( $r ) ? array() : (array) json_decode( wp_remote_retrieve_body( $r ), true );

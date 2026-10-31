@@ -360,7 +360,7 @@ function ler(file){var L=F.querySelector('.dc-lido');F.querySelector('.dc-fn').t
   if(tk){F.querySelector('[name=tipo]').value=tk;if(!F.querySelector('[name=titulo]').value)F.querySelector('[name=titulo]').value=tipo(tk).nome;achou.push(tipo(tk).nome)}
   var v=t.match(/(?:v[aá]lid[ao]\s*(?:at[eé]|por)?|validade\s*(?::|at[eé])?|vencimento\s*:?)\s*(?:de\s*\d{2}\/\d{2}\/\d{4}\s*a\s*)?(\d{2}\/\d{2}\/\d{4})/i)||t.match(/Validade:?\s*\d{2}\/\d{2}\/\d{4}\s*a\s*(\d{2}\/\d{2}\/\d{4})/i);
   if(v){F.querySelector('[name=validade]').value=dataBR(v[1]);achou.push('validade '+v[1])}
-  var em=t.match(/(?:emitid[ao]|expedid[ao]|emiss[aã]o|gerad[ao])[^0-9]{0,40}(\d{2}\/\d{2}\/\d{4})/i);
+  var em=t.match(/(?:emitid[ao]|expedid[ao]|expedi[cç][aã]o|emiss[aã]o|gerad[ao]|data da consulta)[^0-9]{0,40}(\d{2}\/\d{2}\/\d{4})/i);
   if(em){F.querySelector('[name=emissao]').value=dataBR(em[1]);achou.push('emissão '+em[1])}
   if(!v&&em&&tk&&tipo(tk).dias){var d=new Date(dataBR(em[1])+'T12:00:00');d.setDate(d.getDate()+tipo(tk).dias);F.querySelector('[name=validade]').value=d.toISOString().slice(0,10);achou.push('validade estimada em '+tipo(tk).dias+' dias')}
   var res='';if(/positiva com efeitos? de negativa/i.test(t))res='pcen';else if(/certid[aã]o positiva/i.test(t))res='positiva';else if(/negativa|regular|nada consta|n[aã]o constam?/i.test(t))res='negativa';

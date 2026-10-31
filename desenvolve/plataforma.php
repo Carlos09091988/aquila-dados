@@ -474,8 +474,8 @@ add_action( 'wp_footer', function () {
 .dv-md>div{background:#151A20;color:#F4F2EC;border-radius:18px;padding:28px;max-width:480px;width:calc(100% - 32px);border:1px solid rgba(255,255,255,.1)}
 .dv-md h3{margin:0 0 8px;color:#F4F2EC}.dv-md p{color:#B9BDB8}.dv-md textarea{width:100%;min-height:110px;background:#0C0F13;color:#F4F2EC;border:1px solid rgba(255,255,255,.15);border-radius:10px;padding:10px;font:inherit}
 .dv-md .x{display:flex;gap:8px;justify-content:flex-end;margin-top:14px}.dv-md button{border:0;border-radius:999px;padding:11px 20px;font-weight:700;cursor:pointer;background:#CBA55C;color:#241A06}.dv-md button.g{background:transparent;color:#F4F2EC;border:1px solid rgba(255,255,255,.2)}
-.dv-wm{position:fixed;right:14px;bottom:12px;z-index:9998;font:600 11px "Hanken Grotesk",sans-serif;color:rgba(20,24,30,.45);background:rgba(255,255,255,.7);padding:4px 10px;border-radius:999px;pointer-events:none}
-@media print{.dv-wm{position:fixed;bottom:0;right:0;color:#555}.dv-tbar,.dv-cons{display:none!important}}
+.dv-wm{position:fixed;left:14px;bottom:12px;z-index:9998;font:600 11px "Hanken Grotesk",sans-serif;color:rgba(20,24,30,.45);background:rgba(255,255,255,.7);padding:4px 10px;border-radius:999px;pointer-events:none}
+@media print{.dv-wm{position:fixed;bottom:0;left:0;color:#555}.dv-tbar,.dv-cons{display:none!important}}
 </style>
 <script>
 (function(){var D=window.DV;if(!D||!D.logado)return;

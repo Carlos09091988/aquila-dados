@@ -294,7 +294,7 @@ R.addEventListener('click',function(ev){var t=ev.target,x;
  if(t.dataset.ed){x=S.itens.filter(function(y){return y.id===t.dataset.ed})[0];form(x);return}
  if(t.dataset.ia){x=S.itens.filter(function(y){return y.id===t.dataset.ia})[0];abrirIA(x);return}
  if(t.dataset.x){if(confirm('Excluir esta licitação da lista?'))req('POST','lic/excluir',{id:t.dataset.x}).then(carregar)}});
-carregar().then(function(){var m=location.search.match(/[?&]importar=([0-9]{14}\/[0-9]{4}\/[0-9]+)/);if(!m)return;history.replaceState(null,'',location.pathname);var f=R.querySelector('.lc-imp');f.querySelector('input').value=m[1];f.requestSubmit()});
+carregar().then(function(){var v=location.search.match(/[?&]ver=([a-z0-9]+)/);if(v){history.replaceState(null,'',location.pathname);var x=S.itens.filter(function(y){return y.id===v[1]})[0];if(x){aba='todas';pintar();form(x)}return}var m=location.search.match(/[?&]importar=([0-9]{14}\/[0-9]{4}\/[0-9]+)/);if(!m)return;history.replaceState(null,'',location.pathname);var f=R.querySelector('.lc-imp');f.querySelector('input').value=m[1];f.requestSubmit()});
 })();
 </script>
 	<?php return ob_get_clean();

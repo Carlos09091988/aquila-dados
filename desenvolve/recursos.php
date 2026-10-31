@@ -219,7 +219,8 @@ R.addEventListener('click',function(ev){var t=ev.target,x;
  if(t.dataset.ia){x=S.itens.filter(function(y){return y.id===t.dataset.ia})[0];abrirIA(x);return}
  if(t.dataset.x){if(confirm('Excluir este caso?'))req('POST','recursos/excluir',{id:t.dataset.x}).then(carregar)}});
 R.querySelector('.rc-fc').addEventListener('change',function(){FC=this.value;pintar()});
-carregar().then(function(){if(PRE)form(null)});setInterval(function(){if(S&&!document.querySelector('.rc-dlg[open]'))pintar()},60000);
+var VER=(location.search.match(/[?&]ver=([a-z0-9]+)/)||[])[1];if(VER)history.replaceState(null,'',location.pathname);
+carregar().then(function(){if(VER){var x=S.itens.filter(function(y){return y.id===VER})[0];if(x){form(x);return}}if(PRE)form(null)});setInterval(function(){if(S&&!document.querySelector('.rc-dlg[open]'))pintar()},60000);
 })();
 </script>
 	<?php return ob_get_clean();

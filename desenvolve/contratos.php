@@ -132,9 +132,84 @@ add_action( 'rest_api_init', function () {
 		$num = dv_ct_num( $c['numero'] ); $radar = array();
 		if ( $num ) { $radar = $wpdb->get_results( $wpdb->prepare( "SELECT data,municipio,uf,url,trecho FROM {$wpdb->prefix}dv_capt WHERE user_id=%d AND trecho LIKE %s ORDER BY data DESC LIMIT 30", $uid, '%' . $wpdb->esc_like( $num ) . '%' ), ARRAY_A ); }
 		$pub = $r['diarios'] ? dv_ct_diarios( $c, $nome ) : null;
-		$o = array( 'contrato' => $c, 'notificacoes' => $not, 'radar' => $radar, 'diarios' => $pub, 'numero_busca' => $num );
+		$lics = array(); $ltodas = array();
+		if ( function_exists( 'dv_lic_itens' ) ) { foreach ( dv_lic_itens( $uid ) as $x ) { $xx = function_exists( 'dv_lic_calc' ) ? dv_lic_calc( $x, $hoje ) : $x; $it = array( 'id' => $x['id'], 'rot' => trim( $x['orgao'] . ' · ' . $x['numero'], ' ·' ), 'objeto' => mb_substr( (string) $x['objeto'], 0, 200 ), 'status' => $x['status'], 'abertura' => $x['abertura'], 'prazo_imp' => $xx['prazo_imp'] ?? null ); if ( ( $x['contrato'] ?? '' ) === $id ) { $lics[] = $it; } else { $ltodas[] = $it; } } }
+		$o = array( 'contrato' => $c, 'notificacoes' => $not, 'radar' => $radar, 'diarios' => $pub, 'numero_busca' => $num, 'licitacoes' => $lics, 'lic_outras' => $ltodas, 'competencia' => dv_ct_comp( 'mensal', $hoje ), 'hoje' => $hoje );
 		if ( $r['debug'] && current_user_can( 'manage_options' ) ) { delete_transient( 'dv_ctd3_' . md5( $num . $nome . ( $c['municipio'] ?? '' ) ) ); $o['diarios'] = dv_ct_diarios( $c, $nome ); $o['dbg'] = $GLOBALS['dv_ct_dbg'] ?? null; $o['nome'] = $nome; }
 		return $o;
+	} ) );
+} );
+/* Competência do checklist: mensal 2026-10, trimestral 2026-T4, anual 2026, única */
+function dv_ct_comp( $per, $hoje ) {
+	if ( $per === 'trimestral' ) { return substr( $hoje, 0, 4 ) . '-T' . ceil( (int) substr( $hoje, 5, 2 ) / 3 ); }
+	if ( $per === 'anual' ) { return substr( $hoje, 0, 4 ); }
+	if ( $per === 'unica' ) { return 'unica'; }
+	return substr( $hoje, 0, 7 );
+}
+function dv_ct_padrao( $tipo ) {
+	$mo = array( array( 'Folha de pagamento dos empregados do contrato', 'mensal' ), array( 'Comprovante de pagamento dos salários', 'mensal' ), array( 'Guias e comprovantes de FGTS (FGTS Digital)', 'mensal' ), array( 'Guias e comprovantes de INSS (DCTFWeb)', 'mensal' ), array( 'Vale-transporte e vale-alimentação entregues', 'mensal' ), array( 'Controle de ponto / frequência', 'mensal' ), array( 'Nota fiscal emitida e enviada', 'mensal' ), array( 'Relatório de execução / medição aprovado pelo fiscal', 'mensal' ), array( 'Certidões de regularidade (CND federal, CRF, CNDT) válidas', 'mensal' ), array( 'Entrega de uniformes e EPIs registrada', 'trimestral' ), array( 'Férias e 13º provisionados / pagos', 'trimestral' ), array( 'Exames ocupacionais (ASO) em dia', 'anual' ), array( 'Garantia contratual vigente', 'anual' ), array( 'Pedido de repactuação (nova convenção coletiva)', 'anual' ), array( 'Ordem de serviço e preposto designado', 'unica' ), array( 'Garantia contratual apresentada no início', 'unica' ) );
+	$bens = array( array( 'Pedido / empenho recebido', 'mensal' ), array( 'Entrega realizada e recebimento provisório assinado', 'mensal' ), array( 'Nota fiscal emitida e enviada', 'mensal' ), array( 'Recebimento definitivo', 'mensal' ), array( 'Pagamento recebido no prazo', 'mensal' ), array( 'Certidões de regularidade válidas', 'mensal' ), array( 'Garantia contratual vigente', 'anual' ) );
+	$obra = array( array( 'Diário de obra atualizado', 'mensal' ), array( 'Medição apresentada e aprovada', 'mensal' ), array( 'Nota fiscal emitida e enviada', 'mensal' ), array( 'ART/RRT e responsável técnico em dia', 'anual' ), array( 'Cronograma físico-financeiro conferido', 'mensal' ), array( 'Folha, FGTS e INSS da equipe da obra', 'mensal' ), array( 'Seguro garantia e seguro de riscos de engenharia vigentes', 'anual' ), array( 'Licenças da obra válidas', 'anual' ) );
+	return $tipo === 'bens' ? $bens : ( $tipo === 'obra' ? $obra : $mo );
+}
+add_action( 'rest_api_init', function () {
+	$perm = function () { return function_exists( 'dv_tools_perm' ) && dv_tools_perm(); };
+	/* Pleitos, checklist de auditoria do contrato e vínculo com licitações */
+	register_rest_route( 'desenvolve/v1', '/contratos/extra', array( 'methods' => 'POST', 'permission_callback' => $perm, 'callback' => function ( WP_REST_Request $r ) {
+		$uid = get_current_user_id(); $id = sanitize_key( (string) $r['id'] ); $ac = sanitize_key( (string) $r['acao'] ); $hoje = current_time( 'Y-m-d' );
+		$l = dv_ct_itens( $uid ); $k = null; foreach ( $l as $i => $x ) { if ( $x['id'] === $id ) { $k = $i; } }
+		if ( $k === null ) { return new WP_Error( 'dv_ct', 'Contrato não encontrado.', array( 'status' => 404 ) ); }
+		$c = &$l[ $k ]; $c += array( 'pleitos' => array(), 'checklist' => array(), 'checks' => array() );
+		$t = function ( $f, $n = 300 ) use ( $r ) { return mb_substr( sanitize_text_field( (string) $r[ $f ] ), 0, $n ); };
+		$d = function ( $f ) use ( $r ) { $v = (string) $r[ $f ]; return preg_match( '/^\d{4}-\d{2}-\d{2}$/', $v ) ? $v : ''; };
+		$pers = array( 'mensal', 'trimestral', 'anual', 'unica' );
+		switch ( $ac ) {
+			case 'pleito_salvar':
+				$p = array( 'tipo' => in_array( $r['tipo'], array( 'reajuste', 'repactuacao', 'reequilibrio', 'prorrogacao', 'aditivo', 'outro' ), true ) ? $r['tipo'] : 'outro', 'status' => in_array( $r['status'], array( 'a_fazer', 'protocolado', 'deferido', 'parcial', 'indeferido' ), true ) ? $r['status'] : 'a_fazer',
+					'data' => $d( 'data' ), 'prazo' => $d( 'prazo' ), 'valor' => (float) $r['valor'], 'processo' => $t( 'processo', 80 ), 'obs' => $t( 'obs', 500 ) );
+				$pid = sanitize_key( (string) $r['pid'] ); $ach = false; foreach ( $c['pleitos'] as &$y ) { if ( $y['id'] === $pid ) { $y = array_merge( $y, $p ); $ach = true; } } unset( $y );
+				if ( ! $ach ) { $c['pleitos'][] = $p + array( 'id' => substr( md5( uniqid( '', true ) ), 0, 8 ) ); } break;
+			case 'pleito_excluir': $pid = sanitize_key( (string) $r['pid'] ); $c['pleitos'] = array_values( array_filter( $c['pleitos'], function ( $y ) use ( $pid ) { return $y['id'] !== $pid; } ) ); break;
+			case 'check_item':
+				$it = array( 'nome' => $t( 'nome', 160 ), 'per' => in_array( $r['per'], $pers, true ) ? $r['per'] : 'mensal', 'resp' => $t( 'resp', 80 ) ); if ( ! $it['nome'] ) { return new WP_Error( 'dv_ct', 'Dê um nome ao item.', array( 'status' => 400 ) ); }
+				$iid = sanitize_key( (string) $r['iid'] ); $ach = false; foreach ( $c['checklist'] as &$y ) { if ( $y['id'] === $iid ) { $y = array_merge( $y, $it ); $ach = true; } } unset( $y );
+				if ( ! $ach ) { if ( count( $c['checklist'] ) >= 60 ) { return new WP_Error( 'dv_ct', 'Limite de 60 itens.', array( 'status' => 400 ) ); } $c['checklist'][] = $it + array( 'id' => substr( md5( uniqid( '', true ) ), 0, 8 ) ); } break;
+			case 'check_item_excluir': $iid = sanitize_key( (string) $r['iid'] ); $c['checklist'] = array_values( array_filter( $c['checklist'], function ( $y ) use ( $iid ) { return $y['id'] !== $iid; } ) ); break;
+			case 'check_padrao':
+				$ja = array_map( function ( $y ) { return mb_strtolower( $y['nome'] ); }, $c['checklist'] );
+				foreach ( dv_ct_padrao( sanitize_key( (string) $r['modelo'] ) ) as $y ) { if ( ! in_array( mb_strtolower( $y[0] ), $ja, true ) ) { $c['checklist'][] = array( 'id' => substr( md5( uniqid( $y[0], true ) ), 0, 8 ), 'nome' => $y[0], 'per' => $y[1], 'resp' => '' ); } } break;
+			case 'check_marcar':
+				$iid = sanitize_key( (string) $r['iid'] ); $per = 'mensal'; foreach ( $c['checklist'] as $y ) { if ( $y['id'] === $iid ) { $per = $y['per']; } }
+				$comp = preg_match( '/^(\d{4}(-\d{2}|-T[1-4])?|unica)$/', (string) $r['comp'] ) ? (string) $r['comp'] : dv_ct_comp( $per, $hoje );
+				$c['checks'][ $iid . '|' . $comp ] = array( 'em' => $d( 'em' ) ?: $hoje, 'por' => $t( 'por', 80 ), 'local' => $t( 'local', 300 ), 'obs' => $t( 'obs', 300 ) ); break;
+			case 'check_desmarcar': unset( $c['checks'][ sanitize_key( (string) $r['iid'] ) . '|' . preg_replace( '/[^0-9T\-a-z]/', '', (string) $r['comp'] ) ] ); break;
+			case 'lic_vincular':
+				if ( function_exists( 'dv_lic_itens' ) ) { $li = dv_lic_itens( $uid ); $lid = sanitize_key( (string) $r['lic'] ); foreach ( $li as &$y ) { if ( $y['id'] === $lid ) { $y['contrato'] = $r['desvincular'] ? '' : $id; } } unset( $y ); dv_lic_salvar_itens( $uid, $li ); } break;
+			default: return new WP_Error( 'dv_ct', 'Ação inválida.', array( 'status' => 400 ) );
+		}
+		if ( count( $c['checks'] ) > 1500 ) { $c['checks'] = array_slice( $c['checks'], -1500, null, true ); }
+		unset( $c ); dv_ct_salvar_itens( $uid, $l );
+		return array( 'ok' => true );
+	} ) );
+	/* Processos judiciais que citam o número do contrato e a empresa (Diário de Justiça Eletrônico Nacional) */
+	register_rest_route( 'desenvolve/v1', '/contratos/processos', array( 'methods' => 'GET', 'permission_callback' => $perm, 'callback' => function ( WP_REST_Request $r ) {
+		$uid = get_current_user_id(); $id = sanitize_key( (string) $r['id'] ); $c = null; foreach ( dv_ct_itens( $uid ) as $x ) { if ( $x['id'] === $id ) { $c = $x; } }
+		if ( ! $c ) { return new WP_Error( 'dv_ct', 'Contrato não encontrado.', array( 'status' => 404 ) ); }
+		$num = dv_ct_num( $c['numero'] ?? '' ); if ( ! $num ) { return array( 'itens' => array(), 'aviso' => 'Cadastre o número do contrato (ex.: 26/2025).' ); }
+		$nome = ''; foreach ( ( function_exists( 'dv_docs_emps' ) ? dv_docs_emps( $uid ) : array() ) as $e ) { if ( $e['cnpj'] === $c['cnpj'] ) { $nome = $e['nome']; } }
+		$ck = 'dv_ctp1_' . md5( $num . $nome ); $x = get_transient( $ck ); if ( is_array( $x ) ) { return $x; }
+		$u = add_query_arg( array( 'nomeParte' => rawurlencode( preg_replace( '/\s+(LTDA|S\.?A\.?|EIRELI|ME|EPP)\.?$/i', '', trim( $nome ) ) ), 'texto' => rawurlencode( $num ), 'itensPorPagina' => 100, 'pagina' => 1 ), 'https://comunicaapi.pje.jus.br/api/v1/comunicacao' );
+		$g = wp_remote_get( $u, array( 'timeout' => 40 ) ); $out = array(); $vistos = array();
+		if ( is_wp_error( $g ) || wp_remote_retrieve_response_code( $g ) !== 200 ) { return array( 'itens' => array(), 'aviso' => 'O Diário de Justiça não respondeu agora. Tente de novo em instantes.' ); }
+		$orgw = array_slice( array_filter( explode( ' ', strtoupper( remove_accents( (string) $c['orgao'] ) ) ), function ( $w ) { return strlen( $w ) > 4; } ), 0, 3 );
+		foreach ( (array) ( json_decode( wp_remote_retrieve_body( $g ), true )['items'] ?? array() ) as $it ) {
+			$tx = wp_strip_all_tags( (string) ( $it['texto'] ?? '' ) ); $pr = (string) ( $it['numeroprocessocommascara'] ?? $it['numero_processo'] ?? '' );
+			if ( strpos( $tx, $num ) === false && strpos( $tx, str_pad( explode( '/', $num )[0], 5, '0', STR_PAD_LEFT ) . '/' . explode( '/', $num )[1] ) === false ) { continue; }
+			$U = strtoupper( remove_accents( $tx ) ); $hit = 0; foreach ( $orgw as $w ) { if ( strpos( $U, $w ) !== false ) { $hit++; } } if ( $orgw && ! $hit ) { continue; }
+			if ( isset( $vistos[ $pr ] ) ) { continue; } $vistos[ $pr ] = 1;
+			$out[] = array( 'processo' => $pr, 'tribunal' => $it['siglaTribunal'] ?? '', 'classe' => $it['nomeClasse'] ?? '', 'data' => substr( (string) ( $it['data_disponibilizacao'] ?? '' ), 0, 10 ), 'link' => $it['link'] ?? '', 'trecho' => mb_substr( trim( preg_replace( '/\s+/', ' ', $tx ) ), 0, 400 ) );
+		}
+		$o = array( 'itens' => $out ); set_transient( $ck, $o, 12 * HOUR_IN_SECONDS ); return $o;
 	} ) );
 } );
 function dv_al_norm_ct( $s ) { return strtoupper( preg_replace( '/[^A-Z0-9]/i', '', remove_accents( (string) $s ) ) ); }
@@ -215,7 +290,7 @@ add_shortcode( 'dv_contratos', function () {
 .ct-c .ac{display:flex;flex-direction:column;gap:6px;min-width:170px}.ct-c .ac button,.ct-c .ac a{font-size:.8rem;padding:7px 12px;text-align:center;text-decoration:none;border-radius:10px;font-weight:700}.ct-c .ac a{border:1px solid var(--ln);color:#8A6A2C}.ct-c .ac a.s{background:#0C0F13;color:#F4F2EC;border-color:#0C0F13}
 .ct-dlg{border:0;border-radius:16px;padding:0;max-width:680px;width:calc(100% - 32px)}.ct-dlg::backdrop{background:rgba(12,15,19,.55)}
 .ct-f{padding:22px;display:grid;gap:10px}.ct-f h3{margin:0}.ct-f label{font-weight:600;font-size:.86rem;display:grid;gap:4px}.ct-3{display:grid;grid-template-columns:repeat(3,1fr);gap:10px}.ct-act{display:flex;justify-content:flex-end;gap:8px}.ct-fm.e{color:var(--rd)}
-.ct-fi{max-width:820px}.ct-fb h3{margin:0 0 4px}.ct-fb h4{margin:18px 0 8px;font-size:.8rem;letter-spacing:.12em;text-transform:uppercase;color:var(--gd)}.ct-fb .gr{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}.ct-fb .gr div{border:1px solid rgba(201,164,92,.45);border-radius:12px;padding:10px 12px;background:rgba(201,164,92,.06);color:inherit}.ct-fb .gr b{display:block;font-size:1.05rem;color:inherit}.ct-fb .gr span{display:block}.ct-fb .gr span{color:var(--mu);font-size:.78rem;font-weight:600}.ct-fb .it{border-top:1px solid #EEE9DE;padding:8px 0;font-size:.88rem}.ct-fb .it .m{color:var(--mu);font-size:.78rem}.ct-fb a{color:#8A6A2C;font-weight:700}
+.ct-fi{max-width:900px}.ct-tb{display:flex;gap:6px;flex-wrap:wrap;margin:16px 0 10px}.ct-tb span{border:1px solid rgba(201,164,92,.45);border-radius:999px;padding:6px 12px;font-size:.82rem;font-weight:600;cursor:pointer}.ct-tb span.on{background:#C9A45C;color:#241A06}.ct-bt{border:1px solid rgba(201,164,92,.45);border-radius:10px;padding:8px 12px;text-decoration:none;font-size:.85rem;font-weight:700;margin-right:6px}.ct-tc label{font-size:.82rem;font-weight:600;display:grid;gap:4px}.ct-tc input,.ct-tc select{font-size:.88rem;padding:8px 10px}.ct-fb .it a.m{color:#8E938F;font-weight:500;font-size:.78rem}.ct-fb h3{margin:0 0 4px}.ct-fb h4{margin:18px 0 8px;font-size:.8rem;letter-spacing:.12em;text-transform:uppercase;color:var(--gd)}.ct-fb .gr{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}.ct-fb .gr div{border:1px solid rgba(201,164,92,.45);border-radius:12px;padding:10px 12px;background:rgba(201,164,92,.06);color:inherit}.ct-fb .gr b{display:block;font-size:1.05rem;color:inherit}.ct-fb .gr span{display:block}.ct-fb .gr span{color:var(--mu);font-size:.78rem;font-weight:600}.ct-fb .it{border-top:1px solid #EEE9DE;padding:8px 0;font-size:.88rem}.ct-fb .it .m{color:var(--mu);font-size:.78rem}.ct-fb a{color:#8A6A2C;font-weight:700}
 @media(max-width:700px){.ct-fb .gr{grid-template-columns:1fr}}
 .ct-vazio{border:1px dashed var(--ln);border-radius:14px;padding:22px;text-align:center;color:var(--mu);margin-top:10px}
 @media(max-width:700px){.ct{padding:16px}.ct-3{grid-template-columns:1fr}.ct-c{grid-template-columns:1fr}.ct-c .ac{flex-direction:row;flex-wrap:wrap;min-width:0}.ct-emps input{width:100%}}
@@ -266,15 +341,69 @@ R.addEventListener('click',function(ev){var t=ev.target,c;
  if(t.dataset.x){if(confirm('Remover este contrato da carteira?'))req('POST','contratos/excluir',{ids:[t.dataset.x]}).then(carregar)}});
 var FI=R.querySelector('.ct-fi');
 function pubs(l,vazio){return l&&l.length?l.map(function(p){return'<div class="it"><div class="m">'+br(p.data)+' · '+e(p.fonte||((p.municipio||'')+(p.uf?'/'+p.uf:'')))+'</div>'+e(String(p.trecho||'').slice(0,500))+(p.url?' <a href="'+e(p.url)+'" target="_blank" rel="noopener">abrir</a>':'')+'</div>'}).join(''):'<p class="ct-h">'+vazio+'</p>'}
-function ficha(id){var B=FI.querySelector('.ct-fb');B.innerHTML='<p class="ct-h">Carregando a ficha…</p>';FI.showModal();
- req('GET','contratos/ficha?id='+id).then(function(j){var c=j.contrato,H='';
-  H+='<h3>'+e(c.orgao||'')+'</h3><p class="ct-h">'+e(c.numero||'')+(c.valor?' · '+moeda(c.valor):'')+' · '+e(c.fonte||'')+'</p><p style="font-size:.92rem">'+e(c.objeto||'')+'</p>';
-  var vg=c.dias_fim===null?'Sem data':(c.dias_fim<0?'Encerrado em '+br(c.fim):br(c.fim)+' ('+c.dias_fim+' dias)');
-  H+='<div class="gr"><div><span>Vigência</span><b>'+vg+'</b>'+(c.verificar?'<span style="color:var(--am)">Confirme se foi prorrogado</span>':'')+'</div><div><span>Próximo reajuste / repactuação</span><b>'+(c.vigente&&c.prox_reajuste?br(c.prox_reajuste)+' ('+c.dias_reajuste+' dias)':'—')+'</b>'+(c.indice?'<span>'+e(c.indice)+'</span>':'')+'</div><div><span>Garantia</span><b>'+(c.garantia_tipo?e(c.garantia_tipo):'Não cadastrada')+'</b>'+(c.garantia_vence?'<span>vence '+br(c.garantia_vence)+(c.dias_garantia!==null?' ('+c.dias_garantia+' dias)':'')+'</span>':'')+(c.garantia_valor>0?'<span> · '+moeda(c.garantia_valor)+'</span>':'')+'</div></div>';
-  H+='<h4>Notificações, ofícios e recursos ('+j.notificacoes.length+')</h4>'+(j.notificacoes.length?j.notificacoes.map(function(n){return'<div class="it"><b>'+e(n.titulo||n.tipo_nome)+'</b>'+(n.numero_doc?' · '+e(n.numero_doc):'')+'<div class="m">'+e(n.tipo_nome)+(n.intimacao?' · recebida em '+br(n.intimacao):'')+(n.prazo?' · prazo '+br(n.prazo)+(n.prazo_hora&&n.prazo_hora!=='23:59'?' '+n.prazo_hora:''):'')+' · '+({aberto:'a responder',respondido:'respondido',protocolado:'protocolado',deferido:'deferido',indeferido:'indeferido'}[n.status]||n.status)+'</div></div>'}).join(''):'<p class="ct-h">Nenhuma registrada.</p>')+'<p><a href="/plataforma/recursos/?contrato='+c.id+'&tipo=notificacao">+ Registrar notificação deste contrato</a></p>';
-  H+='<h4>No Diário Oficial</h4>'+(j.numero_busca?(j.radar.length?'<p class="ct-h">Já encontradas pelo seu Radar do Diário Oficial:</p>'+pubs(j.radar,''):'')+'<button class="g ct-dio" data-id="'+c.id+'">Buscar publicações deste contrato (nº '+e(j.numero_busca)+') nos diários</button>':'<p class="ct-h">Cadastre o número do contrato (ex.: 26/2025) para buscarmos as publicações.</p>');
-  H+='<div class="ct-act" style="justify-content:flex-start;margin-top:14px">'+(c.vigente?'<a class="g" style="border:1px solid var(--ln);border-radius:10px;padding:8px 12px;text-decoration:none" target="_blank" rel="noopener" href="'+e(wa('Olá! Quero cotar seguro garantia para o contrato '+(c.numero||'')+' com '+(c.orgao||'')+' (valor '+moeda(c.valor)+', vigência até '+br(c.fim)+').'))+'">Cotar seguro garantia</a> <a class="g" style="border:1px solid var(--ln);border-radius:10px;padding:8px 12px;text-decoration:none" href="/plataforma/repactuacao/">Calcular repactuação</a>':'')+(c.link?' <a style="padding:8px 12px" href="'+e(c.link)+'" target="_blank" rel="noopener">Ver na fonte</a>':'')+'</div>';
-  B.innerHTML=H}).catch(function(j){B.innerHTML='<p class="ct-h">'+e((j&&j.message)||'Não foi possível abrir a ficha.')+'</p>'})}
+var FID=null,FJ=null,FT='resumo';
+var PL={reajuste:'Reajuste',repactuacao:'Repactuação',reequilibrio:'Reequilíbrio econômico-financeiro',prorrogacao:'Prorrogação',aditivo:'Aditivo',outro:'Outro pedido'},PS={a_fazer:'A fazer',protocolado:'Protocolado',deferido:'Deferido',parcial:'Deferido em parte',indeferido:'Indeferido'},PERN={mensal:'Mensal',trimestral:'Trimestral',anual:'Anual',unica:'Uma vez'};
+function comp(per,h){h=h||FJ.hoje;if(per==='trimestral')return h.slice(0,4)+'-T'+Math.ceil(+h.slice(5,7)/3);if(per==='anual')return h.slice(0,4);if(per==='unica')return'unica';return h.slice(0,7)}
+function compNome(cp){if(cp==='unica')return'Uma vez';if(/T\d$/.test(cp))return cp.slice(-1)+'º trimestre de '+cp.slice(0,4);if(cp.length===4)return'Ano de '+cp;var M=['jan','fev','mar','abr','mai','jun','jul','ago','set','out','nov','dez'];return M[+cp.slice(5,7)-1]+'/'+cp.slice(0,4)}
+function ext(o){o.id=FID;return req('POST','contratos/extra',o).then(function(){return ficha(FID,true)}).catch(function(j){alert((j&&j.message)||'Não foi possível salvar.')})}
+function ficha(id,manter){FID=id;if(!manter)FT='resumo';var B=FI.querySelector('.ct-fb');if(!manter)B.innerHTML='<p class="ct-h">Carregando a ficha…</p>';if(!FI.open)FI.showModal();
+ return req('GET','contratos/ficha?id='+id).then(function(j){FJ=j;desenha()}).catch(function(j){B.innerHTML='<p class="ct-h">'+e((j&&j.message)||'Não foi possível abrir a ficha.')+'</p>'})}
+function desenha(){var j=FJ,c=j.contrato,B=FI.querySelector('.ct-fb'),H='',ck=c.checklist||[],chk=c.checks||{},pl=c.pleitos||[];
+ var pend=ck.filter(function(x){return!chk[x.id+'|'+comp(x.per)]}).length;
+ H+='<h3>'+e(c.orgao||'')+'</h3><p class="ct-h">'+e(c.numero||'')+(c.valor?' · '+moeda(c.valor):'')+' · '+e(c.fonte||'')+'</p><p style="font-size:.92rem;margin:6px 0 10px">'+e(c.objeto||'')+'</p>';
+ var vg=c.dias_fim===null?'Sem data':(c.dias_fim<0?'Encerrado em '+br(c.fim):br(c.fim)+' ('+c.dias_fim+' dias)');
+ H+='<div class="gr"><div><span>Vigência</span><b>'+vg+'</b>'+(c.verificar?'<span style="color:#E6C27A">Confirme se foi prorrogado</span>':'')+'</div><div><span>Próximo reajuste / repactuação</span><b>'+(c.vigente&&c.prox_reajuste?br(c.prox_reajuste)+' ('+c.dias_reajuste+' dias)':'—')+'</b>'+(c.indice?'<span>'+e(c.indice)+'</span>':'')+'</div><div><span>Garantia</span><b>'+(c.garantia_tipo?e(c.garantia_tipo):'Não cadastrada')+'</b>'+(c.garantia_vence?'<span>vence '+br(c.garantia_vence)+(c.dias_garantia!==null?' ('+c.dias_garantia+' dias)':'')+'</span>':'')+'</div></div>';
+ var T=[['resumo','Resumo'],['checklist','Checklist'+(ck.length?' ('+pend+' pendente'+(pend===1?'':'s')+')':'')],['pleitos','Reajuste e pedidos ('+pl.length+')'],['notif','Notificações ('+j.notificacoes.length+')'],['lic','Licitações ('+j.licitacoes.length+')'],['diario','Diário Oficial'],['proc','Processos']];
+ H+='<div class="ct-tb">'+T.map(function(t){return'<span data-tab="'+t[0]+'" class="'+(t[0]===FT?'on':'')+'">'+e(t[1])+'</span>'}).join('')+'</div><div class="ct-tc">';
+ if(FT==='resumo'){
+  H+='<div class="it"><b>Checklist do contrato:</b> '+(ck.length?(ck.length-pend)+' de '+ck.length+' itens em dia no período atual':'ainda não montado')+'</div>';
+  H+='<div class="it"><b>Pedidos:</b> '+(pl.length?pl.map(function(p){return PL[p.tipo]+' ('+PS[p.status]+')'}).join(' · '):'nenhum registrado')+'</div>';
+  H+='<div class="it"><b>Notificações a responder:</b> '+j.notificacoes.filter(function(n){return n.status==='aberto'}).length+' · <b>Licitações ligadas:</b> '+j.licitacoes.length+'</div>';
+  if(c.notas)H+='<div class="it">📝 '+e(c.notas)+'</div>';
+  H+='<div class="ct-act" style="justify-content:flex-start;margin-top:12px">'+(c.vigente?'<a class="ct-bt" target="_blank" rel="noopener" href="'+e(wa('Olá! Quero cotar seguro garantia para o contrato '+(c.numero||'')+' com '+(c.orgao||'')+' (valor '+moeda(c.valor)+', vigência até '+br(c.fim)+').'))+'">Cotar seguro garantia</a><a class="ct-bt" href="/plataforma/repactuacao/">Calcular repactuação</a>':'')+'<button class="g" data-ed="'+c.id+'">Editar datas e garantia</button>'+(c.link?'<a class="ct-bt" href="'+e(c.link)+'" target="_blank" rel="noopener">Ver na fonte</a>':'')+'</div>';
+ }
+ if(FT==='checklist'){
+  H+='<p class="ct-h">Monte a auditoria do contrato: o que precisa ser feito e conferido em cada período. Quem marcar informa a data, o responsável e onde o documento está salvo na rede da empresa (nada é enviado para cá).</p>';
+  if(!ck.length)H+='<p style="margin:10px 0"><b>Começar com um modelo:</b> <button class="g" data-mod="mo">Serviços com mão de obra</button> <button class="g" data-mod="bens">Fornecimento de bens</button> <button class="g" data-mod="obra">Obras e engenharia</button></p>';
+  var grupos=['mensal','trimestral','anual','unica'];grupos.forEach(function(pg){var its=ck.filter(function(x){return x.per===pg});if(!its.length)return;var cp=comp(pg);H+='<h4>'+PERN[pg]+(pg!=='unica'?' · '+compNome(cp):'')+'</h4>';
+   its.forEach(function(x){var f=chk[x.id+'|'+cp];H+='<div class="it ck"><label style="display:flex;gap:10px;align-items:flex-start"><input type="checkbox" data-ck="'+x.id+'" data-cp="'+cp+'"'+(f?' checked':'')+'><span><b>'+e(x.nome)+'</b>'+(x.resp?' <span class="m">· responsável: '+e(x.resp)+'</span>':'')+(f?'<br><span class="m">Feito em '+br(f.em)+(f.por?' por '+e(f.por):'')+(f.local?' · salvo em '+e(f.local):'')+(f.obs?' · '+e(f.obs):'')+'</span>':'')+'</span></label><a href="#" data-ckx="'+x.id+'" class="m" style="float:right">remover</a></div>'})});
+  H+='<form class="ct-ckf" style="display:grid;grid-template-columns:2fr 1fr 1fr auto;gap:8px;margin-top:12px"><input name="nome" placeholder="Novo item (ex.: Relatório mensal ao fiscal)"><select name="per"><option value="mensal">Mensal</option><option value="trimestral">Trimestral</option><option value="anual">Anual</option><option value="unica">Uma vez</option></select><input name="resp" placeholder="Responsável"><button>Adicionar</button></form>';
+  H+='<div class="ct-ckm" hidden style="margin-top:12px;border:1px solid rgba(201,164,92,.45);border-radius:12px;padding:12px"><b>Marcar como feito</b><div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:8px"><label>Data<input type="date" name="em"></label><label>Feito por<input name="por" placeholder="Nome do gerente / gestor"></label><label style="grid-column:span 2">Onde está salvo (pasta da rede)<input name="local" placeholder="Ex.: \\\\servidor\\contratos\\UFES\\2026-10\\FGTS.pdf"></label><label style="grid-column:span 2">Observação<input name="obs"></label></div><p><button class="ct-ckok">Confirmar</button> <button class="g ct-ckno">Cancelar</button></p></div>';
+ }
+ if(FT==='pleitos'){
+  H+='<p class="ct-h">Reajuste, repactuação, reequilíbrio, prorrogação e aditivos: o que já foi pedido e o que falta pedir. O prazo vira lembrete na agenda.</p>';
+  H+=pl.length?pl.map(function(p){return'<div class="it"><b>'+PL[p.tipo]+'</b> · '+PS[p.status]+(p.valor?' · '+moeda(p.valor):'')+'<br><span class="m">'+(p.data?'Pedido em '+br(p.data):'')+(p.prazo?' · fazer até '+br(p.prazo):'')+(p.processo?' · processo '+e(p.processo):'')+(p.obs?' · '+e(p.obs):'')+'</span> <a href="#" data-ple="'+p.id+'" class="m">editar</a> · <a href="#" data-plx="'+p.id+'" class="m">excluir</a></div>'}).join(''):'<p class="ct-h">Nenhum pedido registrado.</p>';
+  H+='<form class="ct-plf" style="display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-top:12px"><input type="hidden" name="pid"><label>Tipo<select name="tipo">'+Object.keys(PL).map(function(k){return'<option value="'+k+'">'+PL[k]+'</option>'}).join('')+'</select></label><label>Situação<select name="status">'+Object.keys(PS).map(function(k){return'<option value="'+k+'">'+PS[k]+'</option>'}).join('')+'</select></label><label>Valor pedido (R$)<input name="valor" inputmode="decimal"></label><label>Data do pedido<input type="date" name="data"></label><label>Fazer até<input type="date" name="prazo"></label><label>Nº do processo<input name="processo"></label><label style="grid-column:span 3">Observação<input name="obs"></label><button style="grid-column:span 3">Salvar pedido</button></form>';
+ }
+ if(FT==='notif'){
+  H+=j.notificacoes.length?j.notificacoes.map(function(n){return'<div class="it"><a href="/plataforma/recursos/?ver='+n.id+'"><b>'+e(n.titulo||n.tipo_nome)+'</b></a>'+(n.numero_doc?' · '+e(n.numero_doc):'')+'<br><span class="m">'+e(n.tipo_nome)+(n.intimacao?' · recebida em '+br(n.intimacao):'')+(n.prazo?' · prazo '+br(n.prazo)+(n.prazo_hora&&n.prazo_hora!=='23:59'?' '+n.prazo_hora:''):'')+' · '+({aberto:'a responder',respondido:'respondido',protocolado:'protocolado',deferido:'deferido',indeferido:'indeferido'}[n.status]||n.status)+'</span></div>'}).join(''):'<p class="ct-h">Nenhuma notificação registrada.</p>';
+  H+='<p><a href="/plataforma/recursos/?contrato='+c.id+'&tipo=notificacao">+ Registrar notificação deste contrato</a></p>';
+ }
+ if(FT==='lic'){
+  H+='<p class="ct-h">Licitações ligadas a este contrato: a nova licitação do mesmo objeto, uma ampliação ou a licitação que deu origem a ele.</p>';
+  H+=j.licitacoes.length?j.licitacoes.map(function(l){return'<div class="it"><a href="/plataforma/licitacoes/?ver='+l.id+'"><b>'+e(l.rot)+'</b></a><br><span class="m">'+e(l.objeto)+(l.abertura?' · sessão '+br(l.abertura):'')+(l.prazo_imp?' · impugnação até '+br(l.prazo_imp):'')+'</span> <a href="#" data-lux="'+l.id+'" class="m">desvincular</a></div>'}).join(''):'<p class="ct-h">Nenhuma licitação ligada.</p>';
+  if(j.lic_outras.length)H+='<p style="display:flex;gap:8px;margin-top:10px"><select class="ct-lsel"><option value="">Ligar uma licitação da sua gestão…</option>'+j.lic_outras.map(function(l){return'<option value="'+l.id+'">'+e(l.rot.slice(0,90))+'</option>'}).join('')+'</select><button class="g ct-lok">Ligar</button></p>';
+  H+='<p><a href="/plataforma/alertas/">Criar alerta para a próxima licitação deste objeto</a></p>';
+ }
+ if(FT==='diario')H+=(j.numero_busca?(j.radar.length?'<p class="ct-h">Já encontradas pelo seu Radar do Diário Oficial:</p>'+pubs(j.radar,''):'')+'<button class="g ct-dio" data-id="'+c.id+'">Buscar publicações deste contrato (nº '+e(j.numero_busca)+') no DOU e no diário da cidade</button>':'<p class="ct-h">Cadastre o número do contrato (ex.: 26/2025) para buscarmos as publicações.</p>');
+ if(FT==='proc')H+='<p class="ct-h">Processos judiciais publicados no Diário de Justiça Eletrônico Nacional (CNJ) que citam o número deste contrato, a sua empresa e o órgão.</p><button class="g ct-pro">Buscar processos deste contrato</button><div class="ct-prl"></div>';
+ H+='</div>';B.innerHTML=H}
+FI.addEventListener('click',function(ev){var t=ev.target;
+ if(t.dataset.tab){FT=t.dataset.tab;desenha();return}
+ if(t.dataset.mod){ext({acao:'check_padrao',modelo:t.dataset.mod});return}
+ if(t.dataset.ckx){ev.preventDefault();if(confirm('Remover este item do checklist?'))ext({acao:'check_item_excluir',iid:t.dataset.ckx});return}
+ if(t.dataset.plx){ev.preventDefault();if(confirm('Excluir este pedido?'))ext({acao:'pleito_excluir',pid:t.dataset.plx});return}
+ if(t.dataset.ple){ev.preventDefault();var p=(FJ.contrato.pleitos||[]).filter(function(x){return x.id===t.dataset.ple})[0],f=FI.querySelector('.ct-plf');['tipo','status','valor','data','prazo','processo','obs'].forEach(function(k){f.querySelector('[name='+k+']').value=p[k]||''});f.querySelector('[name=pid]').value=p.id;f.scrollIntoView({block:'center'});return}
+ if(t.dataset.lux){ev.preventDefault();ext({acao:'lic_vincular',lic:t.dataset.lux,desvincular:1});return}
+ if(t.matches('.ct-lok')){var v=FI.querySelector('.ct-lsel').value;if(v)ext({acao:'lic_vincular',lic:v});return}
+ if(t.matches('.ct-ckno')){ev.preventDefault();FI.querySelector('.ct-ckm').hidden=true;desenha();return}
+ if(t.matches('.ct-ckok')){ev.preventDefault();var M=FI.querySelector('.ct-ckm');ext({acao:'check_marcar',iid:M.dataset.iid,comp:M.dataset.cp,em:M.querySelector('[name=em]').value,por:M.querySelector('[name=por]').value,local:M.querySelector('[name=local]').value,obs:M.querySelector('[name=obs]').value});return}
+ if(t.matches('.ct-pro')){t.disabled=true;t.textContent='Buscando no Diário de Justiça…';req('GET','contratos/processos?id='+FID).then(function(r){t.remove();FI.querySelector('.ct-prl').innerHTML=r.itens.length?r.itens.map(function(p){return'<div class="it"><b>'+e(p.processo)+'</b> · '+e(p.tribunal)+' · '+e(p.classe)+'<br><span class="m">'+br(p.data)+'</span> '+e(p.trecho)+(p.link?' <a href="'+e(p.link)+'" target="_blank" rel="noopener">abrir</a>':'')+'</div>'}).join(''):'<p class="ct-h">'+e(r.aviso||'Nenhum processo encontrado com o número deste contrato.')+'</p>'}).catch(function(){t.disabled=false;t.textContent='Tentar de novo'});return}});
+FI.addEventListener('change',function(ev){var t=ev.target;if(!t.dataset.ck)return;
+ if(!t.checked){if(confirm('Desmarcar este item?'))ext({acao:'check_desmarcar',iid:t.dataset.ck,comp:t.dataset.cp});else t.checked=true;return}
+ t.checked=false;var M=FI.querySelector('.ct-ckm');M.dataset.iid=t.dataset.ck;M.dataset.cp=t.dataset.cp;M.querySelector('[name=em]').value=FJ.hoje;M.hidden=false;M.scrollIntoView({block:'center'})});
+FI.addEventListener('submit',function(ev){ev.preventDefault();var f=ev.target,o={};new FormData(f).forEach(function(v,k){o[k]=v});
+ if(f.matches('.ct-ckf')){o.acao='check_item';ext(o)}else if(f.matches('.ct-plf')){o.acao='pleito_salvar';o.valor=num(o.valor);ext(o)}});
 R.querySelector('.ct-busca').addEventListener('input',function(){pintar()});
 carregar().then(function(){var m=location.search.match(/[?&]ficha=([a-z0-9]+)/);if(m)ficha(m[1])});
 })();

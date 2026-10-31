@@ -433,6 +433,82 @@ add_shortcode( 'dv_cadastro', function () {
 	<?php return ob_get_clean();
 } );
 
+/* ---------------- Ferramentas: contexto, portão de créditos, marca d'água e consultor ---------------- */
+add_shortcode( 'dv_ctx', function ( $a ) {
+	$a = shortcode_atts( array( 'tool' => '' ), $a );
+	$tool = sanitize_key( $a['tool'] );
+	$uid = get_current_user_id();
+	$u = $uid ? wp_get_current_user() : null;
+	$acesso = $uid && function_exists( 'dv_tools_perm' ) && dv_tools_perm();
+	$doc = $uid ? (string) get_user_meta( $uid, 'dv_doc', true ) : '';
+	if ( strlen( $doc ) === 14 ) { $doc = preg_replace( '/^(\d{2})(\d{3})(\d{3})(\d{4})(\d{2})$/', '$1.$2.$3/$4-$5', $doc ); }
+	elseif ( strlen( $doc ) === 11 ) { $doc = preg_replace( '/^(\d{3})\d{6}(\d{2})$/', '$1.***.***-$2', $doc ); }
+	$ctx = array( 'api' => rest_url( 'desenvolve/v1/' ), 'nonce' => $uid ? wp_create_nonce( 'wp_rest' ) : '', 'tool' => $tool,
+		'logado' => (bool) $uid, 'acesso' => (bool) $acesso, 'master' => $uid ? dv_is_master( $uid ) : false,
+		'nome' => $u ? $u->display_name : '', 'doc' => $doc, 'saldo' => $uid ? dv_saldo( $uid )['total'] : 0 );
+	$h = '<script>window.DV=' . wp_json_encode( $ctx ) . ';window.DVWM=' . wp_json_encode( $u ? $u->display_name . ( $doc ? ' · ' . $doc : '' ) : '' ) . ';</script>';
+	$h .= '<div class="dv-tbar"><a href="/painel/">&larr; Meu painel</a><span id="dv-saldo">' . ( $uid ? ( $ctx['master'] ? 'Créditos: ilimitado' : 'Créditos: ' . (int) $ctx['saldo'] ) : '' ) . '</span></div>';
+	if ( ! $uid ) {
+		$h .= '<div class="dv-pw"><h2>Ferramenta exclusiva para assinantes</h2><p>Assine por R$ 79,90/mês e receba 20 créditos. Cada consulta, busca, cálculo ou relatório usa 1 crédito.</p><p><a class="dv-btn" href="/assinar/">Assinar agora</a> <a class="dv-btn g" href="/painel/">Já sou assinante</a></p></div><style>.dv-tool{display:none!important}</style>';
+	} elseif ( ! $acesso ) {
+		$h .= '<div class="dv-pw"><h2>Ative sua assinatura para usar</h2><p>Sua conta está criada. Ative a assinatura de R$ 79,90/mês para liberar 20 créditos.</p><p><a class="dv-btn" href="/assinar/">Ativar assinatura</a></p></div><style>.dv-tool{display:none!important}</style>';
+	}
+	return $h;
+} );
+
+add_action( 'wp_footer', function () {
+	global $post;
+	if ( ! $post || ! has_shortcode( $post->post_content, 'dv_ctx' ) ) { return; }
+	?>
+<style>
+.dv-tbar{max-width:1180px;margin:18px auto 0;padding:0 20px;display:flex;justify-content:space-between;font:600 .9rem "Hanken Grotesk",sans-serif}
+.dv-tbar a{color:#CBA55C;text-decoration:none}.dv-tbar span{color:#8E938F}
+.dv-pw{max-width:720px;margin:60px auto;padding:36px;border:1px solid rgba(203,165,92,.35);border-radius:20px;background:#151A20;color:#F4F2EC;font-family:"Hanken Grotesk",sans-serif;text-align:center}
+.dv-pw h2{color:#F4F2EC;margin:0 0 10px}.dv-pw p{color:#B9BDB8}
+.dv-btn{background:#CBA55C;color:#241A06!important;border-radius:999px;padding:12px 22px;font-weight:700;text-decoration:none;display:inline-block;margin:4px}
+.dv-btn.g{background:transparent;color:#F4F2EC!important;border:1px solid rgba(255,255,255,.2)}
+.dv-cons{max-width:1180px;margin:24px auto;padding:22px 26px;border-radius:18px;background:#0C0F13;color:#F4F2EC;display:none;gap:18px;align-items:center;justify-content:space-between;flex-wrap:wrap;font-family:"Hanken Grotesk",sans-serif;border:1px solid rgba(203,165,92,.35)}
+.dv-cons.on{display:flex}.dv-cons b{font-size:1.1rem}.dv-cons p{margin:4px 0 0;color:#B9BDB8}
+.dv-cons button{background:#CBA55C;color:#241A06;border:0;border-radius:999px;padding:12px 22px;font-weight:700;cursor:pointer}
+.dv-md{position:fixed;inset:0;background:rgba(5,7,10,.7);display:flex;align-items:center;justify-content:center;z-index:99999;font-family:"Hanken Grotesk",sans-serif}
+.dv-md>div{background:#151A20;color:#F4F2EC;border-radius:18px;padding:28px;max-width:480px;width:calc(100% - 32px);border:1px solid rgba(255,255,255,.1)}
+.dv-md h3{margin:0 0 8px;color:#F4F2EC}.dv-md p{color:#B9BDB8}.dv-md textarea{width:100%;min-height:110px;background:#0C0F13;color:#F4F2EC;border:1px solid rgba(255,255,255,.15);border-radius:10px;padding:10px;font:inherit}
+.dv-md .x{display:flex;gap:8px;justify-content:flex-end;margin-top:14px}.dv-md button{border:0;border-radius:999px;padding:11px 20px;font-weight:700;cursor:pointer;background:#CBA55C;color:#241A06}.dv-md button.g{background:transparent;color:#F4F2EC;border:1px solid rgba(255,255,255,.2)}
+.dv-wm{position:fixed;right:14px;bottom:12px;z-index:9998;font:600 11px "Hanken Grotesk",sans-serif;color:rgba(20,24,30,.45);background:rgba(255,255,255,.7);padding:4px 10px;border-radius:999px;pointer-events:none}
+@media print{.dv-wm{position:fixed;bottom:0;right:0;color:#555}.dv-tbar,.dv-cons{display:none!important}}
+</style>
+<script>
+(function(){var D=window.DV;if(!D||!D.logado)return;
+var tool=document.querySelector('.dv-tool');if(!tool)return;
+if(window.DVWM){var w=document.createElement('div');w.className='dv-wm';w.textContent='Uso exclusivo de '+window.DVWM;document.body.appendChild(w);}
+var ok={},ACT=/consult|buscar|pesquis|calcul|compar|gerar|analis|simul|verific|estimar/i;
+function chave(){var v=[];tool.querySelectorAll('input,select,textarea').forEach(function(i){if(i.type==='button'||i.type==='submit'||i.type==='hidden')return;if((i.type==='checkbox'||i.type==='radio')&&!i.checked)return;if(i.value!=='')v.push((i.name||i.id||'')+'='+i.value)});return v.join('|')}
+function rot(){var i=tool.querySelector('input[type=text],input:not([type]),textarea');return i?String(i.value).slice(0,80):''}
+function md(h){var m=document.createElement('div');m.className='dv-md';m.innerHTML='<div>'+h+'</div>';document.body.appendChild(m);m.addEventListener('click',function(e){if(e.target===m||e.target.hasAttribute('data-f'))m.remove()});return m}
+function semCredito(msg){md('<h3>Créditos insuficientes</h3><p>'+(msg||'Seus créditos acabaram.')+'</p><div class="x"><button class="g" data-f>Fechar</button><a class="dv-btn" href="'+(D.acesso?'/creditos/':'/assinar/')+'">'+(D.acesso?'Comprar créditos':'Assinar')+'</a></div>')}
+function saldo(s){var e=document.getElementById('dv-saldo');if(e&&s&&!D.master)e.textContent='Créditos: '+s.total}
+var cons=document.createElement('div');cons.className='dv-cons';cons.innerHTML='<div><b>Quer apoio para decidir?</b><p>Um consultor da Desenvolve analisa este resultado com você. Serviço à parte, com proposta antes de qualquer cobrança.</p></div><button type="button">Acionar um consultor</button>';
+tool.parentNode.insertBefore(cons,tool.nextSibling);
+cons.querySelector('button').onclick=function(){var m=md('<h3>Acionar um consultor</h3><p>Conte o que você precisa. Enviamos junto a prévia desta ferramenta.</p><textarea placeholder="Ex.: quero avaliar se vale impugnar / pedir reequilíbrio"></textarea><div class="x"><button class="g" data-f>Cancelar</button><button data-s>Enviar pedido</button></div>');
+m.querySelector('[data-s]').onclick=function(){var b=this;b.disabled=true;b.textContent='Enviando…';fetch(D.api+'consultor',{method:'POST',credentials:'same-origin',headers:{'X-WP-Nonce':D.nonce,'Content-Type':'application/json'},body:JSON.stringify({ferramenta:D.tool,mensagem:m.querySelector('textarea').value,previa:tool.innerHTML.slice(0,60000)})}).then(function(r){return r.json()}).then(function(j){m.firstChild.innerHTML=j&&j.ok?'<h3>Pedido enviado</h3><p>Um consultor da Desenvolve vai falar com você em breve pelo e-mail ou WhatsApp do cadastro.</p><div class="x"><button data-f>Fechar</button></div>':'<h3>Não foi possível enviar</h3><p>Tente de novo em instantes.</p><div class="x"><button data-f>Fechar</button></div>'})}};
+function cobrar(depois){var k=chave();if(!k){depois();return}if(ok[k]){depois();return}
+fetch(D.api+'usar',{method:'POST',credentials:'same-origin',headers:{'X-WP-Nonce':D.nonce,'Content-Type':'application/json'},body:JSON.stringify({ferramenta:D.tool,chave:k,rotulo:rot()})}).then(function(r){return r.json().then(function(j){return{s:r.status,j:j}})}).then(function(x){if(x.s>=400){semCredito(x.j&&x.j.message);return}ok[k]=1;saldo(x.j.saldo);cons.classList.add('on');depois()}).catch(function(){semCredito('Não foi possível validar seus créditos agora. Tente de novo.')})}
+var passe=false;
+function acao(b){if(!b||b.disabled)return false;if(b.closest('.dv-md,.dv-cons'))return false;var t=(b.textContent||b.value||'')+' '+(b.getAttribute('aria-label')||'');return b.type==='submit'||ACT.test(t)}
+document.addEventListener('click',function(e){if(passe)return;var b=e.target.closest('button,input[type=submit],input[type=button],a.btn,.btn');if(!b||!tool.contains(b)||!acao(b))return;var k=chave();if(!k||ok[k])return;e.preventDefault();e.stopImmediatePropagation();cobrar(function(){passe=true;b.click();passe=false})},true);
+document.addEventListener('submit',function(e){if(passe||!tool.contains(e.target))return;var k=chave();if(!k||ok[k])return;e.preventDefault();e.stopImmediatePropagation();var f=e.target;cobrar(function(){passe=true;if(f.requestSubmit)f.requestSubmit();else f.submit();passe=false})},true);
+document.addEventListener('keydown',function(e){if(passe||e.key!=='Enter'||!tool.contains(e.target)||e.target.tagName==='TEXTAREA')return;var k=chave();if(!k||ok[k])return;e.preventDefault();e.stopImmediatePropagation();var b=[].slice.call(tool.querySelectorAll('button,input[type=submit]')).filter(acao)[0];cobrar(function(){if(b){passe=true;b.click();passe=false}})},true);
+})();
+</script>
+	<?php
+}, 60 );
+
+/* "Entrar" vira "Meu painel" para quem está conectado */
+add_action( 'wp_footer', function () {
+	if ( ! is_user_logged_in() ) { return; }
+	echo '<script>document.querySelectorAll(\'a[href$="/painel/"]\').forEach(function(a){if(/^\s*Entrar\s*$/i.test(a.textContent))a.textContent="Meu painel"})</script>';
+}, 70 );
+
 /* ---------------- Aparência das telas do assinante ---------------- */
 add_action( 'wp_footer', function () {
 	global $post;

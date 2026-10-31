@@ -60,9 +60,10 @@ function dv_nt_buscar( $termo ) {
 function dv_noticias( $cnpj ) {
 	$cnpj = preg_replace( '/\D/', '', (string) $cnpj );
 	if ( strlen( $cnpj ) !== 14 ) { return new WP_Error( 'dv_cnpj', 'CNPJ inválido.', array( 'status' => 400 ) ); }
-	$ck = 'dv_nt_' . $cnpj; $c = get_transient( $ck ); if ( $c ) { return $c; }
+	$ck = 'dv_nt2_' . $cnpj; $c = get_transient( $ck ); if ( $c ) { return $c; }
 	$r = wp_remote_get( 'https://brasilapi.com.br/api/cnpj/v1/' . $cnpj, array( 'timeout' => 20 ) );
 	$j = is_wp_error( $r ) ? array() : (array) json_decode( wp_remote_retrieve_body( $r ), true );
+	if ( empty( $j['razao_social'] ) ) { return array( 'cnpj' => $cnpj, 'termos' => array(), 'itens' => array(), 'aviso' => 'Não foi possível consultar o cadastro da empresa agora. Tente de novo em alguns minutos.' ); }
 	$nomes = array();
 	foreach ( array( $j['razao_social'] ?? '', $j['nome_fantasia'] ?? '' ) as $n ) {
 		$k = dv_nt_nucleo( $n ); if ( $k && dv_nt_util( $k ) && ! in_array( $k, $nomes, true ) ) { $nomes[] = $k; }
@@ -72,9 +73,10 @@ function dv_noticias( $cnpj ) {
 		$res['aviso'] = 'O nome da empresa é muito genérico para uma busca confiável na imprensa (traria notícias de outras empresas). Pesquise manualmente se precisar.';
 		set_transient( $ck, $res, DAY_IN_SECONDS ); return $res;
 	}
-	$vistos = array(); $falhou = false;
+	$vistos = array(); $falhou = false; $res['brutos'] = 0;
 	foreach ( $nomes as $n ) {
 		$lista = dv_nt_buscar( $n ); if ( $lista === null ) { $falhou = true; continue; }
+		$res['brutos'] += count( $lista );
 		foreach ( $lista as $it ) {
 			$txt = dv_nt_norm( $it['titulo'] . ' ' . $it['resumo'] );
 			if ( strpos( ' ' . $txt . ' ', ' ' . $n . ' ' ) === false ) { continue; } // o nome tem que aparecer

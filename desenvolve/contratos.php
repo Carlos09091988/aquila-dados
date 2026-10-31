@@ -108,6 +108,8 @@ function dv_ct_diarios( $c, $nome ) {
 	if ( $pal ) {
 		$u = 'https://www.in.gov.br/consulta/-/buscar/dou?q=' . rawurlencode( '"' . $num . '" "' . implode( ' ', $pal ) . '"' ) . '&s=todos&exactDate=personalizado&sortType=0&delta=30&publishFrom=' . gmdate( 'd-m-Y', strtotime( $desde ) ) . '&publishTo=' . current_time( 'd-m-Y' );
 		$r = wp_remote_get( $u, array( 'timeout' => 30, 'user-agent' => 'Mozilla/5.0 (compatible; Desenvolve/1.0)' ) );
+		$GLOBALS['dv_ct_dbg'] = array( 'dou_q' => '"' . $num . '" "' . implode( ' ', $pal ) . '"', 'dou_http' => is_wp_error( $r ) ? $r->get_error_message() : wp_remote_retrieve_response_code( $r ) );
+		if ( ! is_wp_error( $r ) && preg_match( '#<script[^>]*id="_br_com_seatecnologia_in_buscadou_BuscaDouPortlet_params"[^>]*>(.*?)</script>#s', wp_remote_retrieve_body( $r ), $mm ) ) { $GLOBALS['dv_ct_dbg']['dou_n'] = count( (array) ( json_decode( trim( $mm[1] ), true )['jsonArray'] ?? array() ) ); }
 		if ( ! is_wp_error( $r ) && wp_remote_retrieve_response_code( $r ) === 200 && preg_match( '#<script[^>]*id="_br_com_seatecnologia_in_buscadou_BuscaDouPortlet_params"[^>]*>(.*?)</script>#s', wp_remote_retrieve_body( $r ), $m ) ) {
 			foreach ( (array) ( json_decode( trim( $m[1] ), true )['jsonArray'] ?? array() ) as $it ) {
 				$tx = trim( preg_replace( '/\s+/', ' ', wp_strip_all_tags( html_entity_decode( ( $it['title'] ?? '' ) . ' — ' . ( $it['content'] ?? '' ), ENT_QUOTES, 'UTF-8' ) ) ) );
@@ -131,7 +133,9 @@ add_action( 'rest_api_init', function () {
 		$num = dv_ct_num( $c['numero'] ); $radar = array();
 		if ( $num ) { $radar = $wpdb->get_results( $wpdb->prepare( "SELECT data,municipio,uf,url,trecho FROM {$wpdb->prefix}dv_capt WHERE user_id=%d AND trecho LIKE %s ORDER BY data DESC LIMIT 30", $uid, '%' . $wpdb->esc_like( $num ) . '%' ), ARRAY_A ); }
 		$pub = $r['diarios'] ? dv_ct_diarios( $c, $nome ) : null;
-		return array( 'contrato' => $c, 'notificacoes' => $not, 'radar' => $radar, 'diarios' => $pub, 'numero_busca' => $num );
+		$o = array( 'contrato' => $c, 'notificacoes' => $not, 'radar' => $radar, 'diarios' => $pub, 'numero_busca' => $num );
+		if ( $r['debug'] && current_user_can( 'manage_options' ) ) { delete_transient( 'dv_ctd2_' . md5( $num . $nome . ( $c['municipio'] ?? '' ) ) ); $o['diarios'] = dv_ct_diarios( $c, $nome ); $o['dbg'] = $GLOBALS['dv_ct_dbg'] ?? null; $o['nome'] = $nome; }
+		return $o;
 	} ) );
 } );
 function dv_al_norm_ct( $s ) { return strtoupper( preg_replace( '/[^A-Z0-9]/i', '', remove_accents( (string) $s ) ) ); }

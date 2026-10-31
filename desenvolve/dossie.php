@@ -100,7 +100,7 @@ function dv_ds_cgu_contratos( $cnpj ) {
 function dv_ds_classe( $c, $trib, $dest ) {
 	$c = dv_ds_nrm( $c );
 	if ( preg_match( '/PENAL|CRIMINAL|CRIME|INQUERITO|PRISAO|HABEAS|DENUNCIA|TERMO CIRCUNSTANCIADO|MEDIDAS? CAUTELAR(ES)? (CRIMINA|PENA)|BUSCA E APREENSAO CRIMINAL|EXECUCAO DA PENA|RESTITUICAO DE COISAS APREENDIDAS|SEQUESTRO/', $c ) ) { return 'criminal'; }
-	if ( preg_match( '/MINISTERIO PUBLICO DO TRABALHO/', $dest ) || preg_match( '/ACAO CIVIL (PUBLICA|COLETIVA)/', $c ) ) { return 'coletiva'; }
+	if ( preg_match( '/ACAO CIVIL (PUBLICA|COLETIVA)|ACOES COLETIVAS|ACAO COLETIVA/', $c ) ) { return 'coletiva'; }
 	if ( preg_match( '/IMPROBIDADE/', $c ) ) { return 'improbidade'; }
 	if ( preg_match( '/FALENCIA|RECUPERACAO JUDICIAL|INSOLVENCIA/', $c ) ) { return 'falencia'; }
 	if ( preg_match( '/^TRT|^TST/', $trib ) || preg_match( '/TRABALHIST/', $c ) ) { return preg_match( '/EXECUCAO|CUMPRIMENTO/', $c ) ? 'trab_execucao' : 'trabalhista'; }
@@ -129,7 +129,7 @@ function dv_ds_djen( $nome, $paginas = 3, $so_criminal = false ) {
 }
 /* Varredura completa: todas as publicações (até $max páginas de 100), processos distintos por tipo */
 function dv_ds_djen_full( $nome, $max = 60 ) {
-	$ck = 'dv_dj_' . md5( $nome ); $c = get_transient( $ck ); if ( $c ) { return $c; }
+	$ck = 'dv_dj2_' . md5( $nome ); $c = get_transient( $ck ); if ( $c ) { return $c; }
 	$base = 'https://comunicaapi.pje.jus.br/api/v1/comunicacao?nomeParte=' . rawurlencode( $nome ) . '&itensPorPagina=100&pagina=';
 	$x = dv_ds_multi( array( 1 => $base . '1' ), array(), 30 ); $j = $x[1] ? json_decode( $x[1], true ) : null;
 	if ( ! $j ) { return array( 'erro' => 1, 'processos' => array() ); }
@@ -157,6 +157,21 @@ function dv_ds_djen_full( $nome, $max = 60 ) {
 		}
 	}
 	unset( $bodies );
+	/* buscas dirigidas: processos graves costumam ficar escondidos no volume trabalhista */
+	$u = array();
+	foreach ( array( 'improbidade', 'ação civil pública', 'penal', 'criminal', 'inquérito', 'falência', 'recuperação judicial', 'Ministério Público' ) as $k => $t ) { for ( $pg = 1; $pg <= 2; $pg++ ) { $u[ $k . '_' . $pg ] = $base . $pg . '&texto=' . rawurlencode( $t ); } }
+	foreach ( dv_ds_multi( $u, array(), 40 ) as $b ) {
+		$jj = $b ? json_decode( $b, true ) : null; if ( ! $jj ) { continue; }
+		foreach ( (array) ( $jj['items'] ?? array() ) as $i ) {
+			$dest = implode( ' ; ', array_map( function ( $d ) { return dv_ds_nrm( $d['nome'] ?? '' ); }, (array) ( $i['destinatarios'] ?? array() ) ) );
+			if ( strpos( $dest, $alvo ) === false ) { continue; }
+			$n = $i['numeroprocessocommascara'] ?? $i['numero_processo'] ?? ''; if ( ! $n ) { continue; }
+			$tipo = dv_ds_classe( $i['nomeClasse'] ?? '', (string) ( $i['siglaTribunal'] ?? '' ), $dest );
+			if ( ! in_array( $tipo, array( 'criminal', 'improbidade', 'coletiva', 'falencia' ), true ) ) { if ( ! isset( $proc[ $n ] ) ) { $proc[ $n ] = array( 'tipo' => $tipo, 'processo' => $n, 'classe' => $i['nomeClasse'] ?? '', 'tribunal' => $i['siglaTribunal'] ?? '', 'orgao' => $i['nomeOrgao'] ?? '', 'data' => substr( (string) ( $i['data_disponibilizacao'] ?? '' ), 0, 10 ), 'link' => $i['link'] ?? '', 'trecho' => '' ); } continue; }
+			$proc[ $n ] = array( 'tipo' => $tipo, 'processo' => $n, 'classe' => $i['nomeClasse'] ?? '', 'tribunal' => $i['siglaTribunal'] ?? '', 'orgao' => $i['nomeOrgao'] ?? '',
+				'data' => substr( (string) ( $i['data_disponibilizacao'] ?? '' ), 0, 10 ), 'link' => $i['link'] ?? '', 'trecho' => mb_substr( trim( preg_replace( '/\s+/', ' ', wp_strip_all_tags( (string) ( $i['texto'] ?? '' ) ) ) ), 0, 400 ) );
+		}
+	}
 	$por = array(); $trib = array();
 	foreach ( $proc as $p ) { $por[ $p['tipo'] ] = ( $por[ $p['tipo'] ] ?? 0 ) + 1; $trib[ $p['tribunal'] ] = ( $trib[ $p['tribunal'] ] ?? 0 ) + 1; }
 	arsort( $trib );
@@ -225,7 +240,7 @@ function dv_ds_diarios( $cnpj, $nome ) {
 }
 
 function dv_dossie_dados( $cnpj ) {
-	$ck = 'dv_ds7_' . $cnpj; $c = get_transient( $ck ); if ( $c ) { return $c; }
+	$ck = 'dv_ds8_' . $cnpj; $c = get_transient( $ck ); if ( $c ) { return $c; }
 	$t0 = microtime( true );
 	$r = wp_remote_get( 'https://brasilapi.com.br/api/cnpj/v1/' . $cnpj, array( 'timeout' => 25 ) );
 	$cad = is_wp_error( $r ) ? array() : (array) json_decode( wp_remote_retrieve_body( $r ), true );

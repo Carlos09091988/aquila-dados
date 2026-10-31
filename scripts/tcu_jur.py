@@ -9,6 +9,7 @@ def baixar(p):
 AREAS = {'Licitação', 'Contrato Administrativo'}
 def ler(txt):
     return csv.DictReader(io.StringIO(txt), delimiter='|', quotechar='"')
+import os; os.makedirs('aquila/jur', exist_ok=True)
 out = []
 for r in ler(baixar('jurisprudencia-selecionada/jurisprudencia-selecionada.csv')):
     if r.get('AREA') not in AREAS: continue

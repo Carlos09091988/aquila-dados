@@ -136,8 +136,76 @@ function dv_cp_precos( $cnpj, $compras, $toks ) {
 	return $itens;
 }
 
+
+/* ---------- Quem governa: prefeito, vice e vereadores eleitos (TSE) / governador ---------- */
+function dv_cp_politicos( $cad, $esfera ) {
+	$uf = strtoupper( (string) ( $cad['uf'] ?? '' ) ); $mun = dv_ds_nrm( $cad['municipio'] ?? '' );
+	$ck = 'dv_cp_pol_' . md5( $esfera . $uf . $mun ); $c = get_transient( $ck ); if ( $c ) { return $c; }
+	$T = 'https://divulgacandcontas.tse.jus.br/divulga/rest/v1/'; $o = array( 'cargo' => '', 'titular' => null, 'vice' => null, 'legislativo' => array() );
+	$pega = function ( $u ) { $r = dv_ds_multi( array( 1 => $u ), array(), 30 ); return $r[1] ? json_decode( $r[1], true ) : null; };
+	if ( $esfera === 'M' && $uf ) {
+		$l = $pega( $T . 'eleicao/buscar/' . $uf . '/2045202024/municipios' ); $cod = '';
+		foreach ( (array) ( $l['municipios'] ?? array() ) as $m ) { if ( dv_ds_nrm( $m['nome'] ?? '' ) === $mun ) { $cod = $m['codigo']; break; } }
+		if ( $cod ) {
+			$b = dv_ds_multi( array( 'p' => $T . 'candidatura/listar/2024/' . $cod . '/2045202024/11/candidatos', 'v' => $T . 'candidatura/listar/2024/' . $cod . '/2045202024/13/candidatos' ), array(), 40 );
+			$pj = ! empty( $b['p'] ) ? json_decode( $b['p'], true ) : array(); $vj = ! empty( $b['v'] ) ? json_decode( $b['v'], true ) : array();
+			foreach ( (array) ( $pj['candidatos'] ?? array() ) as $x ) {
+				if ( stripos( (string) ( $x['descricaoTotalizacao'] ?? '' ), 'Eleito' ) === 0 ) {
+					$o['titular'] = array( 'nome' => $x['nomeCompleto'] ?? '', 'urna' => $x['nomeUrna'] ?? '', 'partido' => $x['partido']['sigla'] ?? '', 'ocupacao' => $x['ocupacao'] ?? '' );
+					$vc = (array) ( $x['vices'] ?? array() ); if ( $vc ) { $o['vice'] = array( 'nome' => $vc[0]['nm_CANDIDATO'] ?? $vc[0]['nomeCompleto'] ?? '', 'urna' => $vc[0]['nm_URNA'] ?? $vc[0]['nomeUrna'] ?? '', 'partido' => $vc[0]['sg_PARTIDO'] ?? '' ); }
+				}
+			}
+			foreach ( (array) ( $vj['candidatos'] ?? array() ) as $x ) { if ( stripos( (string) ( $x['descricaoTotalizacao'] ?? '' ), 'Eleito' ) === 0 ) { $o['legislativo'][] = array( 'nome' => $x['nomeCompleto'] ?? '', 'urna' => $x['nomeUrna'] ?? '', 'partido' => $x['partido']['sigla'] ?? '' ); } }
+			$o['cargo'] = 'Prefeito(a)'; $o['eleicao'] = 2024;
+		}
+	} elseif ( $esfera === 'E' && $uf ) {
+		$j = $pega( $T . 'candidatura/listar/2022/' . $uf . '/2040602022/3/candidatos' );
+		foreach ( (array) ( $j['candidatos'] ?? array() ) as $x ) { if ( stripos( (string) ( $x['descricaoTotalizacao'] ?? '' ), 'Eleito' ) === 0 ) { $o['titular'] = array( 'nome' => $x['nomeCompleto'] ?? '', 'urna' => $x['nomeUrna'] ?? '', 'partido' => $x['partido']['sigla'] ?? '', 'ocupacao' => $x['ocupacao'] ?? '' ); } }
+		$o['cargo'] = 'Governador(a)'; $o['eleicao'] = 2022;
+	}
+	usort( $o['legislativo'], function ( $a, $b ) { return strcmp( $a['urna'], $b['urna'] ); } );
+	set_transient( $ck, $o, $o['titular'] ? 30 * DAY_IN_SECONDS : HOUR_IN_SECONDS );
+	return $o;
+}
+
+/* ---------- Processos judiciais do órgão ligados a licitações / ao objeto ---------- */
+function dv_cp_proc_lic( $nome, $termos ) {
+	$base = 'https://comunicaapi.pje.jus.br/api/v1/comunicacao?nomeParte=' . rawurlencode( $nome ) . '&itensPorPagina=100&pagina=1&texto=';
+	$u = array(); foreach ( $termos as $k => $t ) { $u[ $k ] = $base . rawurlencode( $t ); }
+	$b = dv_ds_multi_lento( $u, 4, 40 ); unset( $b['__falhas'] ); $alvo = dv_ds_nrm( $nome ); $o = array();
+	foreach ( $b as $k => $body ) {
+		$j = $body ? json_decode( $body, true ) : null; if ( ! $j ) { continue; }
+		foreach ( (array) ( $j['items'] ?? array() ) as $i ) {
+			$dest = implode( ' ; ', array_map( function ( $d ) { return dv_ds_nrm( $d['nome'] ?? '' ); }, (array) ( $i['destinatarios'] ?? array() ) ) );
+			if ( strpos( $dest, $alvo ) === false ) { continue; }
+			$n = $i['numeroprocessocommascara'] ?? $i['numero_processo'] ?? ''; if ( ! $n || isset( $o[ $n ] ) ) { continue; }
+			$cl = dv_ds_nrm( $i['nomeClasse'] ?? '' );
+			if ( preg_match( '/TRABALHIST|RECLAMACAO|EXECUCAO FISCAL|PRECATORIO|REQUISICAO DE PEQUENO/', $cl ) ) { continue; }
+			$o[ $n ] = array( 'processo' => $n, 'classe' => $i['nomeClasse'] ?? '', 'tribunal' => $i['siglaTribunal'] ?? '', 'orgao' => $i['nomeOrgao'] ?? '', 'termo' => $termos[ $k ],
+				'data' => substr( (string) ( $i['data_disponibilizacao'] ?? '' ), 0, 10 ), 'link' => $i['link'] ?? '',
+				'grave' => (bool) preg_match( '/IMPROBIDADE|ACAO CIVIL PUBLICA|ACAO POPULAR|MANDADO DE SEGURANCA|PENAL|CRIMINAL|INQUERITO/', $cl ),
+				'trecho' => mb_substr( trim( preg_replace( '/\s+/', ' ', wp_strip_all_tags( (string) ( $i['texto'] ?? '' ) ) ) ), 0, 360 ) );
+		}
+	}
+	$o = array_values( $o ); usort( $o, function ( $a, $b ) { return ( $b['grave'] <=> $a['grave'] ) ?: strcmp( $b['data'], $a['data'] ); } );
+	return array_slice( $o, 0, 60 );
+}
+
+/* ---------- Imprensa: várias buscas temáticas em paralelo ---------- */
+function dv_cp_news( $consultas ) {
+	$g = function ( $q ) { return 'https://news.google.com/rss/search?q=' . rawurlencode( $q ) . '&hl=pt-BR&gl=BR&ceid=BR:pt-419'; };
+	$u = array(); foreach ( $consultas as $k => $q ) { $u[ $k ] = $g( $q ); }
+	$b = dv_ds_multi( $u, array( 'User-Agent' => 'Mozilla/5.0' ), 20 ); $o = array();
+	foreach ( $b as $k => $body ) {
+		$o[ $k ] = array(); $vis = array(); if ( ! $body || ! function_exists( 'dv_nt_rss' ) ) { continue; }
+		foreach ( dv_nt_rss( $body ) as $i ) { $h = md5( $i['url'] ); if ( isset( $vis[ $h ] ) ) { continue; } $vis[ $h ] = 1; $o[ $k ][] = array( 'titulo' => $i['titulo'], 'fonte' => $i['fonte'], 'url' => $i['url'], 'data' => $i['data'] ); }
+		usort( $o[ $k ], function ( $a, $b ) { return strcmp( $b['data'], $a['data'] ); } ); $o[ $k ] = array_slice( $o[ $k ], 0, 20 );
+	}
+	return $o;
+}
+
 function dv_comprador( $cnpj, $item ) {
-	$ck = 'dv_cp4_' . $cnpj . '_' . md5( $item ); $c = get_transient( $ck ); if ( $c ) { return $c; }
+	$ck = 'dv_cp5_' . $cnpj . '_' . md5( $item ); $c = get_transient( $ck ); if ( $c ) { return $c; }
 	$x = wp_remote_get( 'https://brasilapi.com.br/api/cnpj/v1/' . $cnpj, array( 'timeout' => 20 ) );
 	$cad = is_wp_error( $x ) ? array() : (array) json_decode( wp_remote_retrieve_body( $x ), true );
 	if ( empty( $cad['razao_social'] ) ) { return new WP_Error( 'dv_cnpj', 'CNPJ não encontrado na Receita Federal.', array( 'status' => 404 ) ); }
@@ -169,14 +237,31 @@ function dv_comprador( $cnpj, $item ) {
 	$rj = dv_ds_multi( $q, array(), 30 ); $J = array();
 	foreach ( $rj as $k => $b ) { $j = $b ? json_decode( $b, true ) : null; $J[ $k ] = $j ? (int) ( $j['count'] ?? 0 ) : null; }
 	$D['justica'] = $J; $D['justica_nome'] = $nome;
-	/* notícias sobre pagamento a fornecedores */
-	$mun = trim( (string) ( $cad['municipio'] ?? '' ) ); $alvoN = $esfera === 'M' && $mun ? 'Prefeitura de ' . ucwords( mb_strtolower( $mun ) ) : $cad['razao_social'];
-	$g = function ( $q ) { return 'https://news.google.com/rss/search?q=' . rawurlencode( $q ) . '&hl=pt-BR&gl=BR&ceid=BR:pt-419'; };
-	$nb = dv_ds_multi( array( 'pag' => $g( '"' . $alvoN . '" (atraso OR atrasa OR calote OR "sem pagamento" OR "não paga" OR dívida OR débito) fornecedores' ), 'emp' => $g( '"' . $alvoN . '" (empresa OR terceirizada) (paralisação OR "falta de pagamento" OR "salários atrasados")' ) ), array( 'User-Agent' => 'Mozilla/5.0' ), 20 );
-	$nt = array(); $vis = array();
-	foreach ( $nb as $b ) { if ( ! $b || ! function_exists( 'dv_nt_rss' ) ) { continue; } foreach ( dv_nt_rss( $b ) as $i ) { $h = md5( $i['url'] ); if ( isset( $vis[ $h ] ) ) { continue; } $vis[ $h ] = 1; $nt[] = $i; } }
-	usort( $nt, function ( $a, $b ) { return strcmp( $b['data'], $a['data'] ); } );
-	$D['noticias'] = array_slice( $nt, 0, 25 ); $D['noticias_termo'] = $alvoN;
+	/* quem governa */
+	$D['politicos'] = dv_cp_politicos( $cad, $esfera );
+	$tit = $D['politicos']['titular'] ?? null;
+	/* imprensa (pagamentos, licitações, gestor, greves) */
+	$mun = trim( (string) ( $cad['municipio'] ?? '' ) ); $munT = ucwords( mb_strtolower( $mun ) );
+	$alvoN = $esfera === 'M' && $mun ? 'Prefeitura de ' . $munT : ( $esfera === 'E' ? 'Governo do Estado' : $cad['razao_social'] );
+	$loc = $esfera === 'M' ? $munT : ( $cad['uf'] ?? '' );
+	$it1 = $toks ? ' ' . $item : '';
+	$cons = array(
+		'pagamento' => '"' . $alvoN . '" (atraso OR atrasa OR calote OR "sem pagamento" OR "não paga" OR dívida OR débito) fornecedores',
+		'licitacoes' => '"' . $alvoN . '" (licitação OR pregão OR contrato OR contratação) (irregular OR irregularidade OR suspensa OR suspende OR fraude OR investigação OR TCE OR "Ministério Público" OR superfaturamento OR direcionamento OR cartel OR denúncia)',
+		'sindical' => '"' . $alvoN . '" (greve OR paralisação OR sindicato OR protesto) (servidores OR professores OR terceirizados OR trabalhadores)',
+	);
+	if ( $toks ) { $cons['objeto'] = '"' . $alvoN . '"' . $it1 . ' (licitação OR contrato OR empresa)'; }
+	if ( $tit && $esfera === 'M' ) { $cons['gestor'] = '"' . $tit['urna'] . '" ' . $loc . ' (investigação OR operação OR denúncia OR improbidade OR cassação OR "Ministério Público" OR polêmica OR condenado OR processo)'; }
+	elseif ( $tit ) { $cons['gestor'] = '"' . $tit['urna'] . '" governador (investigação OR operação OR denúncia OR improbidade OR polêmica OR processo)'; }
+	$N = dv_cp_news( $cons );
+	$D['noticias'] = $N['pagamento'] ?? array(); $D['noticias_termo'] = $alvoN;
+	$D['news'] = array( 'licitacoes' => $N['licitacoes'] ?? array(), 'sindical' => $N['sindical'] ?? array(), 'objeto' => $N['objeto'] ?? array(), 'gestor' => $N['gestor'] ?? array() );
+	/* processos ligados a licitações e ao objeto */
+	$termos = array( 'licitação', 'pregão', 'improbidade', 'ação popular' ); if ( $toks ) { $termos[] = $item; }
+	$D['proc_lic'] = dv_cp_proc_lic( $nome, $termos );
+	/* processos do gestor (criminal / improbidade) */
+	$D['gestor_proc'] = array();
+	if ( $tit && count( explode( ' ', dv_ds_nrm( $tit['nome'] ) ) ) >= 3 ) { $g = dv_ds_djen( dv_ds_nrm( $tit['nome'] ), 2, false ); $D['gestor_proc'] = array_values( array_filter( $g['processos'], function ( $x ) { return in_array( $x['tipo'], array( 'criminal', 'improbidade', 'coletiva' ), true ) || preg_match( '/ELEITORAL|CASSACAO|INVESTIGACAO JUDICIAL/', dv_ds_nrm( $x['classe'] ) ); } ) ); }
 	set_transient( $ck, $D, 6 * HOUR_IN_SECONDS );
 	return $D;
 }

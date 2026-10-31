@@ -81,7 +81,7 @@ function dv_docs_dir( $uid = 0 ) {
 }
 
 function dv_docs_emps( $uid ) { $e = json_decode( get_user_meta( $uid, 'dv_docs_emp', true ) ?: '[]', true ); return is_array( $e ) ? $e : array(); }
-function dv_docs_emps_salvar( $uid, $e ) { update_user_meta( $uid, 'dv_docs_emp', wp_json_encode( array_values( $e ) ) ); }
+function dv_docs_emps_salvar( $uid, $e ) { update_user_meta( $uid, 'dv_docs_emp', wp_slash( wp_json_encode( array_values( $e ), JSON_UNESCAPED_UNICODE ) ) ); }
 
 function dv_docs_situacao( $d, $hoje ) {
 	if ( empty( $d['validade'] ) ) { return array( 'sem_validade', null ); }

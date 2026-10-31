@@ -118,7 +118,7 @@ function dv_dar_creditos( $uid, $qtd, $motivo, $livre = false, $meses = null ) {
 		$l = json_decode( get_user_meta( $uid, 'dv_lotes', true ) ?: '[]', true );
 		foreach ( $l as &$x ) { if ( $falta <= 0 ) { break; } $t = min( $x['restante'], $falta ); $x['restante'] -= $t; $falta -= $t; }
 		unset( $x );
-		update_user_meta( $uid, 'dv_lotes', wp_json_encode( $l ) );
+		update_user_meta( $uid, 'dv_lotes', wp_slash( wp_json_encode( $l, JSON_UNESCAPED_UNICODE ) ) );
 		dv_extrato( $uid, $qtd, 'ajuste', $motivo );
 		return;
 	}
@@ -126,7 +126,7 @@ function dv_dar_creditos( $uid, $qtd, $motivo, $livre = false, $meses = null ) {
 	$l = json_decode( get_user_meta( $uid, 'dv_lotes', true ) ?: '[]', true );
 	$l[] = array( 'qtd' => $qtd, 'restante' => $qtd, 'livre' => $livre ? 1 : 0,
 		'expira' => gmdate( 'Y-m-d', strtotime( current_time( 'Y-m-d' ) . " +$meses months" ) ), 'motivo' => $motivo );
-	update_user_meta( $uid, 'dv_lotes', wp_json_encode( $l ) );
+	update_user_meta( $uid, 'dv_lotes', wp_slash( wp_json_encode( $l, JSON_UNESCAPED_UNICODE ) ) );
 	dv_extrato( $uid, $qtd, $livre ? 'cortesia' : 'extra', $motivo );
 }
 /** Renova o ciclo mensal (chamado na confirmação do pagamento ou pelo administrador). */
@@ -170,7 +170,7 @@ function dv_usar( $uid, $ferramenta, $chave, $rotulo = '' ) {
 		if ( ! $origem ) {
 			return new WP_Error( 'dv_sem_credito', $st === 'ativo' ? 'Seus créditos acabaram. Compre créditos extras para continuar.' : 'É preciso ter uma assinatura ativa para usar as ferramentas.', array( 'status' => 402, 'situacao' => $st ) );
 		}
-		update_user_meta( $uid, 'dv_lotes', wp_json_encode( $l ) );
+		update_user_meta( $uid, 'dv_lotes', wp_slash( wp_json_encode( $l, JSON_UNESCAPED_UNICODE ) ) );
 	}
 	$wpdb->insert( $t, $base + array( 'cobrado' => 1, 'origem' => $origem ) );
 	dv_alerta_uso( $uid );

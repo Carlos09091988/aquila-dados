@@ -33,7 +33,7 @@ add_action( 'init', function () {
 
 function dv_capt_fmt_cnpj( $d ) { return preg_replace( '/^(\d{2})(\d{3})(\d{3})(\d{4})(\d{2})$/', '$1.$2.$3/$4-$5', $d ); }
 function dv_capt_termos( $uid ) { $t = json_decode( get_user_meta( $uid, 'dv_capt_termos', true ) ?: '[]', true ); return is_array( $t ) ? $t : array(); }
-function dv_capt_salvar( $uid, $t ) { update_user_meta( $uid, 'dv_capt_termos', wp_json_encode( array_values( $t ) ) ); }
+function dv_capt_salvar( $uid, $t ) { update_user_meta( $uid, 'dv_capt_termos', wp_slash( wp_json_encode( array_values( $t ), JSON_UNESCAPED_UNICODE ) ) ); }
 
 function dv_capt_gravar( $uid, $rot, $data, $local, $uf, $url, $txt, $trecho ) {
 	global $wpdb;
@@ -240,7 +240,7 @@ add_action( 'rest_api_init', function () {
 		$em = array_values( array_filter( array_map( 'sanitize_email', preg_split( '/[\s,;]+/', (string) $r['emails'] ) ), 'is_email' ) );
 		if ( ! $em ) { return new WP_Error( 'dv_email', 'Informe pelo menos um e-mail válido.', array( 'status' => 400 ) ); }
 		$p = array( 'emails' => array_slice( array_unique( $em ), 0, 5 ), 'whats' => $r['whats'] ? 1 : 0, 'tel' => preg_replace( '/\D/', '', (string) $r['tel'] ), 'sempre' => $r['sempre'] ? 1 : 0 );
-		update_user_meta( $uid, 'dv_capt_pref', wp_json_encode( $p ) );
+		update_user_meta( $uid, 'dv_capt_pref', wp_slash( wp_json_encode( $p, JSON_UNESCAPED_UNICODE ) ) );
 		return array( 'ok' => true, 'pref' => $p );
 	} ) );
 	register_rest_route( 'desenvolve/v1', '/captador/rebuscar', array( 'methods' => 'POST', 'permission_callback' => $perm, 'callback' => function ( WP_REST_Request $r ) {

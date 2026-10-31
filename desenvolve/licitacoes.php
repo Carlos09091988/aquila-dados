@@ -10,7 +10,7 @@
 define( 'DV_LIC_MAX', 300 );
 
 function dv_lic_itens( $uid ) { $l = json_decode( get_user_meta( $uid, 'dv_lic', true ) ?: '[]', true ); return is_array( $l ) ? $l : array(); }
-function dv_lic_salvar_itens( $uid, $l ) { update_user_meta( $uid, 'dv_lic', wp_json_encode( array_values( $l ) ) ); }
+function dv_lic_salvar_itens( $uid, $l ) { update_user_meta( $uid, 'dv_lic', wp_slash( wp_json_encode( array_values( $l ), JSON_UNESCAPED_UNICODE ) ) ); }
 
 /* Feriados nacionais (confira feriados locais do órgão) */
 function dv_lic_feriados() {
@@ -35,6 +35,7 @@ function dv_lic_categorias() {
 }
 function dv_lic_detectar_cat( $obj ) {
 	$o = strtoupper( remove_accents( (string) $obj ) );
+	if ( preg_match( '/(AQUISICAO|FORNECIMENTO|COMPRA).{0,60}GENEROS|GENEROS ALIMENTICIOS E MATERIA/', $o ) ) { return 'bens'; }
 	if ( preg_match( '/ALIMENTA|MERENDA|REFEIC|NUTRI|COZINHA|GENEROS ALIMENT/', $o ) ) { return 'alimentacao'; }
 	if ( preg_match( '/OBRA|ENGENHARIA|REFORMA|CONSTRU|PAVIMENT|DRENAGEM|EDIFICA/', $o ) ) { return 'engenharia'; }
 	if ( preg_match( '/LIMPEZA|CONSERVACAO|VIGILANCIA|PORTARIA|RECEPCAO|MAO DE OBRA|DEDICACAO EXCLUSIVA|TERCEIRIZ|COPEIRAG|JARDINAG|MOTORISTA/', $o ) ) { return 'mao_obra'; }

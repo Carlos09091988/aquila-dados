@@ -79,10 +79,10 @@ function dv_cp_siconfi( $id_ente, $esfera ) {
 function dv_cp_contratos( $cnpj ) {
 	$B = 'https://pncp.gov.br/api/consulta/v1/contratos?cnpjOrgao=' . $cnpj . '&tamanhoPagina=500';
 	$ano = (int) current_time( 'Y' ); $u = array();
-	for ( $a = $ano; $a >= $ano - 4; $a-- ) { $u[ $a . '_1' ] = $B . '&dataInicial=' . $a . '0101&dataFinal=' . ( $a === $ano ? current_time( 'Ymd' ) : $a . '1231' ) . '&pagina=1'; }
-	$b = dv_ds_multi( $u, array(), 40 ); $mais = array();
+	for ( $a = $ano; $a >= $ano - 3; $a-- ) { $u[ $a . '_1' ] = $B . '&dataInicial=' . $a . '0101&dataFinal=' . ( $a === $ano ? current_time( 'Ymd' ) : $a . '1231' ) . '&pagina=1'; }
+	$b = dv_ds_multi_lento( $u, 2, 50 ); unset( $b['__falhas'] ); $mais = array();
 	foreach ( $b as $k => $body ) { $j = $body ? json_decode( $body, true ) : null; $tp = (int) ( $j['totalPaginas'] ?? 1 ); for ( $p = 2; $p <= min( $tp, 4 ); $p++ ) { $mais[ str_replace( '_1', '_' . $p, $k ) ] = str_replace( '&pagina=1', '&pagina=' . $p, $u[ $k ] ); } }
-	if ( $mais ) { $b += dv_ds_multi( $mais, array(), 40 ); }
+	if ( $mais ) { $mm = dv_ds_multi_lento( $mais, 2, 50 ); unset( $mm['__falhas'] ); $b += $mm; }
 	$o = array(); $v = array(); $erro = 0;
 	foreach ( $b as $body ) {
 		$j = $body ? json_decode( $body, true ) : null; if ( ! $j ) { $erro++; continue; }
@@ -134,7 +134,7 @@ function dv_cp_precos( $cnpj, $compras, $toks ) {
 }
 
 function dv_comprador( $cnpj, $item ) {
-	$ck = 'dv_cp2_' . $cnpj . '_' . md5( $item ); $c = get_transient( $ck ); if ( $c ) { return $c; }
+	$ck = 'dv_cp3_' . $cnpj . '_' . md5( $item ); $c = get_transient( $ck ); if ( $c ) { return $c; }
 	$x = wp_remote_get( 'https://brasilapi.com.br/api/cnpj/v1/' . $cnpj, array( 'timeout' => 20 ) );
 	$cad = is_wp_error( $x ) ? array() : (array) json_decode( wp_remote_retrieve_body( $x ), true );
 	if ( empty( $cad['razao_social'] ) ) { return new WP_Error( 'dv_cnpj', 'CNPJ não encontrado na Receita Federal.', array( 'status' => 404 ) ); }

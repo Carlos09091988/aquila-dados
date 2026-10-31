@@ -752,7 +752,7 @@ H+='<p style="margin-top:28px"><a href="'+el.dataset.sair+'">Sair</a></p>';el.in
    var H0=new Date(),th=H0.getFullYear()+'-'+z(H0.getMonth()+1)+'-'+z(H0.getDate());if(!mes)mes=new Date(H0.getFullYear(),H0.getMonth(),1);
    var y=mes.getFullYear(),m=mes.getMonth(),pm=y+'-'+z(m+1),ini=new Date(y,m,1).getDay(),nd=new Date(y,m+1,0).getDate(),ev={};
    Object.keys(CAT).forEach(function(k){if(filt&&filt!==k)return;(AT[k]||[]).forEach(function(x){if(!x.d)return;var d=x.d.slice(0,10);(ev[d]=ev[d]||[]).push([k,x])})});
-   var h=hdr('c')+'<div class="dv-cal"><div class="dv-calh"><button type="button" data-m="-1" aria-label="Mês anterior">‹</button><b>'+MS[m]+' de '+y+'</b><button type="button" data-m="1" aria-label="Próximo mês">›</button><button type="button" data-m="0" class="hj">Hoje</button></div>';
+   var h=hdr('c')+'<div class="dv-cal"><div class="dv-calh"><button type="button" data-m="-1" aria-label="Mês anterior">‹</button><b>'+MS[m].charAt(0).toUpperCase()+MS[m].slice(1)+' de '+y+'</b><button type="button" data-m="1" aria-label="Próximo mês">›</button><button type="button" data-m="0" class="hj">Hoje</button></div>';
    h+='<div class="dv-calf"><button type="button" data-f="" class="'+(!filt?'on':'')+'">Tudo</button>'+Object.keys(CAT).map(function(k){return'<button type="button" data-f="'+k+'" class="'+(filt===k?'on':'')+'"><i style="background:'+CAT[k][1]+'"></i>'+CAT[k][0]+'</button>'}).join('')+'</div>';
    h+='<div class="dv-calg">'+['Dom','Seg','Ter','Qua','Qui','Sex','Sáb'].map(function(s){return'<span class="dw">'+s+'</span>'}).join('');
    for(var i=0;i<ini;i++)h+='<span></span>';

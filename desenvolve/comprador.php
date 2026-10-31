@@ -139,32 +139,22 @@ function dv_cp_precos( $cnpj, $compras, $toks ) {
 
 /* ---------- Quem governa: prefeito, vice e vereadores eleitos (TSE) / governador ---------- */
 function dv_cp_politicos( $cad, $esfera ) {
-	$uf = strtoupper( (string) ( $cad['uf'] ?? '' ) ); $mun = dv_ds_nrm( $cad['municipio'] ?? '' );
-	$ck = 'dv_cp_pol_' . md5( $esfera . $uf . $mun ); $c = get_transient( $ck ); if ( $c ) { return $c; }
-	$T = 'https://divulgacandcontas.tse.jus.br/divulga/rest/v1/'; $o = array( 'cargo' => '', 'titular' => null, 'vice' => null, 'legislativo' => array() );
-	$pega = function ( $u ) { $r = dv_ds_multi( array( 1 => $u ), array(), 30 ); return $r[1] ? json_decode( $r[1], true ) : null; };
-	if ( $esfera === 'M' && $uf ) {
-		$l = $pega( $T . 'eleicao/buscar/' . $uf . '/2045202024/municipios' ); $cod = '';
-		foreach ( (array) ( $l['municipios'] ?? array() ) as $m ) { if ( dv_ds_nrm( $m['nome'] ?? '' ) === $mun ) { $cod = $m['codigo']; break; } }
-		if ( $cod ) {
-			$b = dv_ds_multi( array( 'p' => $T . 'candidatura/listar/2024/' . $cod . '/2045202024/11/candidatos', 'v' => $T . 'candidatura/listar/2024/' . $cod . '/2045202024/13/candidatos' ), array(), 40 );
-			$pj = ! empty( $b['p'] ) ? json_decode( $b['p'], true ) : array(); $vj = ! empty( $b['v'] ) ? json_decode( $b['v'], true ) : array();
-			foreach ( (array) ( $pj['candidatos'] ?? array() ) as $x ) {
-				if ( stripos( (string) ( $x['descricaoTotalizacao'] ?? '' ), 'Eleito' ) === 0 ) {
-					$o['titular'] = array( 'nome' => $x['nomeCompleto'] ?? '', 'urna' => $x['nomeUrna'] ?? '', 'partido' => $x['partido']['sigla'] ?? '', 'ocupacao' => $x['ocupacao'] ?? '' );
-					$vc = (array) ( $x['vices'] ?? array() ); if ( $vc ) { $o['vice'] = array( 'nome' => $vc[0]['nm_CANDIDATO'] ?? $vc[0]['nomeCompleto'] ?? '', 'urna' => $vc[0]['nm_URNA'] ?? $vc[0]['nomeUrna'] ?? '', 'partido' => $vc[0]['sg_PARTIDO'] ?? '' ); }
-				}
-			}
-			foreach ( (array) ( $vj['candidatos'] ?? array() ) as $x ) { if ( stripos( (string) ( $x['descricaoTotalizacao'] ?? '' ), 'Eleito' ) === 0 ) { $o['legislativo'][] = array( 'nome' => $x['nomeCompleto'] ?? '', 'urna' => $x['nomeUrna'] ?? '', 'partido' => $x['partido']['sigla'] ?? '' ); } }
-			$o['cargo'] = 'Prefeito(a)'; $o['eleicao'] = 2024;
-		}
-	} elseif ( $esfera === 'E' && $uf ) {
-		$j = $pega( $T . 'candidatura/listar/2022/' . $uf . '/2040602022/3/candidatos' );
-		foreach ( (array) ( $j['candidatos'] ?? array() ) as $x ) { if ( stripos( (string) ( $x['descricaoTotalizacao'] ?? '' ), 'Eleito' ) === 0 ) { $o['titular'] = array( 'nome' => $x['nomeCompleto'] ?? '', 'urna' => $x['nomeUrna'] ?? '', 'partido' => $x['partido']['sigla'] ?? '', 'ocupacao' => $x['ocupacao'] ?? '' ); } }
-		$o['cargo'] = 'Governador(a)'; $o['eleicao'] = 2022;
+	$uf = strtoupper( (string) ( $cad['uf'] ?? '' ) ); $mun = trim( preg_replace( '/[^A-Z0-9 ]+/', ' ', dv_ds_nrm( $cad['municipio'] ?? '' ) ) );
+	$o = array( 'cargo' => '', 'titular' => null, 'vice' => null, 'legislativo' => array() );
+	if ( ! $uf || ! in_array( $esfera, array( 'M', 'E' ), true ) ) { return $o; }
+	$ck = 'dv_cp_el_' . $uf; $m = get_transient( $ck );
+	if ( ! is_array( $m ) ) {
+		$r = wp_remote_get( 'https://raw.githubusercontent.com/Carlos09091988/aquila-dados/eleitos/eleitos/' . $uf . '.json', array( 'timeout' => 25 ) );
+		$m = ( ! is_wp_error( $r ) && wp_remote_retrieve_response_code( $r ) === 200 ) ? (array) json_decode( wp_remote_retrieve_body( $r ), true ) : array();
+		set_transient( $ck, $m, $m ? 7 * DAY_IN_SECONDS : 10 * MINUTE_IN_SECONDS );
 	}
-	usort( $o['legislativo'], function ( $a, $b ) { return strcmp( $a['urna'], $b['urna'] ); } );
-	set_transient( $ck, $o, $o['titular'] ? 30 * DAY_IN_SECONDS : HOUR_IN_SECONDS );
+	$pp = function ( $x ) { return $x ? array( 'nome' => $x[0], 'urna' => $x[1], 'partido' => $x[2] ) : null; };
+	if ( $esfera === 'M' && isset( $m[ $mun ] ) ) {
+		$d = $m[ $mun ]; $o['cargo'] = 'Prefeito(a)'; $o['eleicao'] = 2024; $o['titular'] = $pp( $d['p'] ?? null ); $o['vice'] = $pp( $d['v'] ?? null );
+		$o['legislativo'] = array_map( function ( $c ) { return array( 'urna' => $c[0], 'partido' => $c[1] ); }, (array) ( $d['c'] ?? array() ) );
+	} elseif ( $esfera === 'E' && isset( $m['_GOV'] ) ) {
+		$o['cargo'] = 'Governador(a)'; $o['eleicao'] = 2022; $o['titular'] = $pp( $m['_GOV']['p'] ?? null ); $o['vice'] = $pp( $m['_GOV']['v'] ?? null );
+	}
 	return $o;
 }
 
@@ -205,7 +195,7 @@ function dv_cp_news( $consultas ) {
 }
 
 function dv_comprador( $cnpj, $item ) {
-	$ck = 'dv_cp5_' . $cnpj . '_' . md5( $item ); $c = get_transient( $ck ); if ( $c ) { return $c; }
+	$ck = 'dv_cp6_' . $cnpj . '_' . md5( $item ); $c = get_transient( $ck ); if ( $c ) { return $c; }
 	$x = wp_remote_get( 'https://brasilapi.com.br/api/cnpj/v1/' . $cnpj, array( 'timeout' => 20 ) );
 	$cad = is_wp_error( $x ) ? array() : (array) json_decode( wp_remote_retrieve_body( $x ), true );
 	if ( empty( $cad['razao_social'] ) ) { return new WP_Error( 'dv_cnpj', 'CNPJ não encontrado na Receita Federal.', array( 'status' => 404 ) ); }

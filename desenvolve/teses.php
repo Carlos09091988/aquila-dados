@@ -35,7 +35,7 @@ function dv_ts_base() {
 		$b[] = array( 'k' => 'TCESP-S' . $x['n'], 'n' => (string) $x['n'], 'a' => '', 'c' => '', 'ar' => 'Licitação', 't' => 'Súmulas do TCE-SP', 's' => 'Súmula ' . $x['n'],
 			'e' => $x['e'], 'nota' => $x['nota'], 'src' => 'tcesp', 'd' => '', 'rel' => '', '_n' => dv_ts_norm( $x['e'] . ' sumula tce-sp tcesp sao paulo' ) );
 	}
-	usort( $b, function ( $a, $c ) { return array( isset( $c['src'] ) ? 1 : 0, (int) $c['a'], (int) $c['n'] ) <=> array( isset( $a['src'] ) ? 1 : 0, (int) $a['a'], (int) $a['n'] ); } );
+	usort( $b, function ( $a, $c ) { return array( isset( $c['src'] ) ? 1 : 0, (int) $c['a'], isset( $c['src'] ) ? -(int) $c['n'] : (int) $c['n'] ) <=> array( isset( $a['src'] ) ? 1 : 0, (int) $a['a'], isset( $a['src'] ) ? -(int) $a['n'] : (int) $a['n'] ); } );
 	return $b;
 }
 function dv_ts_norm( $s ) { return strtolower( remove_accents( (string) $s ) ); }

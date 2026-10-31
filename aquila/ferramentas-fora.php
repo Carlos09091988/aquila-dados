@@ -6,9 +6,9 @@ function aq_fora_limpar( $h ) {
 	$in = '(?:[^<]|<(?!/?div\b))*';
 	$re = array(
 		'~<section[^>]*id="ferramentas-destaque"[^>]*>.*?</section>~s',
-		'~<div class="news">\s*<div>' . $in . '(?:Ferramentas gratuitas|Free tool)' . $in . '</div>\s*<div class="side">' . $in . '</div>\s*</div>~',
-		'~<li[^>]*>\s*<a href="' . $t . '"[^>]*>(?:[^<]|<(?!/a>))*</a>\s*</li>~',
-		'~<a href="' . $t . '"[^>]*>(?:[^<]|<(?!/a>))*</a>~',
+		'~<div class="news"[^>]*>\s*<div>' . $in . '(?:Ferramentas gratuitas|Free tool)' . $in . '</div>\s*<div class="side">' . $in . '</div>\s*</div>~',
+		'~<li[^>]*>\s*<a\b[^>]*\bhref="' . $t . '"[^>]*>(?:[^<]|<(?!/a>))*</a>\s*</li>~',
+		'~<a\b[^>]*\bhref="' . $t . '"[^>]*>(?:[^<]|<(?!/a>))*</a>~',
 	);
 	foreach ( $re as $r ) { $x = preg_replace( $r, '', $h ); if ( is_string( $x ) ) { $h = $x; } }
 	return $h;

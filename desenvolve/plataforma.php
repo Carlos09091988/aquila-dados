@@ -289,7 +289,7 @@ add_action( 'rest_api_init', function () {
 			if ( $c['dias_imp'] !== null && ( $tod || $c['dias_imp'] >= 0 ) && in_array( $x['status'], array( 'analise', 'participar', 'proposta' ), true ) ) { $A['licitacoes'][] = array( 'o' => 'Último dia para impugnar', 't' => $t, 'd' => $c['prazo_imp'], 'n' => $c['dias_imp'], 'u' => '/plataforma/licitacoes/?ver=' . $x['id'] ); }
 			if ( $c['dias_sessao'] !== null && ( $tod || $c['dias_sessao'] >= 0 ) ) { $A['licitacoes'][] = array( 'o' => 'Sessão' . ( strlen( $x['abertura'] ) > 10 ? ' às ' . substr( $x['abertura'], 11, 5 ) : '' ), 't' => $t, 'd' => substr( $x['abertura'], 0, 10 ), 'n' => $c['dias_sessao'], 'u' => '/plataforma/licitacoes/?ver=' . $x['id'] ); }
 		} }
-		if ( function_exists( 'dv_ct_itens' ) ) { foreach ( dv_ct_itens( $uid ) as $x ) {
+		if ( false && function_exists( 'dv_ct_itens' ) ) { foreach ( dv_ct_itens( $uid ) as $x ) {
 			$c = dv_ct_calc( $x, $hoje ); $t = trim( ( $x['orgao'] ?? '' ) . ( ! empty( $x['numero'] ) ? ' · ' . $x['numero'] : '' ) );
 			if ( ! empty( $c['verificar'] ) ) { $A['contratos'][] = array( 'o' => 'Confirmar se foi prorrogado', 't' => $t, 'd' => $x['fim'], 'n' => $c['dias_fim'], 'id' => $x['id'], 'u' => '/plataforma/contratos/?ficha=' . $x['id'] ); continue; }
 			if ( ! $c['vigente'] ) { continue; }
@@ -668,6 +668,12 @@ add_action( 'template_redirect', function () {
 	wp_safe_redirect( home_url( $m[ $o->post_name ] ), 301 ); exit;
 }, 1 );
 
+/* Foco em licitações (out/2026): ferramentas de contratos fora do ar. Código e dados guardados. */
+add_action( 'template_redirect', function () {
+	$p = trim( (string) parse_url( $_SERVER['REQUEST_URI'], PHP_URL_PATH ), '/' );
+	if ( in_array( $p, array( 'plataforma/contratos', 'plataforma/reajuste', 'plataforma/repactuacao' ), true ) ) { wp_safe_redirect( home_url( '/plataforma/' ), 301 ); exit; }
+}, 0 );
+
 /* Enquanto o Asaas não tem chave, "Assinar" e "Comprar créditos" levam ao WhatsApp da Desenvolve */
 function dv_wa_venda() { return 'https://wa.me/5511993500950?text=' . rawurlencode( 'Olá! Quero assinar a plataforma Desenvolve.' ); }
 add_action( 'template_redirect', function () {
@@ -725,8 +731,8 @@ add_action( 'wp_footer', function () {
 (function(){var el=document.getElementById('dv-painel');if(!el)return;var api=el.dataset.api,n=el.dataset.nonce;
 function g(p){return fetch(api+p,{headers:{'X-WP-Nonce':n},credentials:'same-origin'}).then(function(r){return r.json()})}
 function e(s){return String(s==null?'':s).replace(/[&<>"]/g,function(c){return{'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]})}
-var nomes={raiox:'Raio-X de concorrentes',comprador:'Raio-X do comprador',comparador:'Comparador de licitantes',precos:'Banco de preços',buscador:'Buscador de licitações',prazos:'Calculadora de prazos',reajuste:'Calculadora de reajuste',repactuacao:'Repactuação e reequilíbrio',captador:'Radar do Diário Oficial',documentos:'Documentos e certidões',licitacoes:'Gestão de licitações',alertas:'Alertas de oportunidades',contratos:'Meus contratos',recursos:'Notificações e recursos',teses:'Banco de teses do TCU',dossie:'Due Diligence completa'};
-var links=[['dossie','/plataforma/dossie/'],['raiox','/plataforma/raio-x/'],['comprador','/plataforma/raio-x-comprador/'],['comparador','/plataforma/comparador/'],['precos','/plataforma/banco-de-precos/'],['buscador','/plataforma/buscador/'],['prazos','/plataforma/prazos/'],['reajuste','/plataforma/reajuste/'],['repactuacao','/plataforma/repactuacao/'],['captador','/plataforma/captador/'],['documentos','/plataforma/documentos/'],['licitacoes','/plataforma/licitacoes/'],['alertas','/plataforma/alertas/'],['contratos','/plataforma/contratos/'],['recursos','/plataforma/recursos/'],['teses','/plataforma/banco-de-teses/']];
+var nomes={raiox:'Raio-X de concorrentes',comprador:'Raio-X do comprador',comparador:'Comparador de licitantes',precos:'Banco de preços',buscador:'Buscador de licitações',prazos:'Calculadora de prazos',captador:'Radar do Diário Oficial',documentos:'Documentos e certidões',licitacoes:'Gestão de licitações',alertas:'Alertas de oportunidades',recursos:'Impugnações e recursos',teses:'Banco de teses do TCU',dossie:'Due Diligence completa'};
+var links=[['dossie','/plataforma/dossie/'],['raiox','/plataforma/raio-x/'],['comprador','/plataforma/raio-x-comprador/'],['comparador','/plataforma/comparador/'],['precos','/plataforma/banco-de-precos/'],['buscador','/plataforma/buscador/'],['prazos','/plataforma/prazos/'],['captador','/plataforma/captador/'],['documentos','/plataforma/documentos/'],['licitacoes','/plataforma/licitacoes/'],['alertas','/plataforma/alertas/'],['recursos','/plataforma/recursos/'],['teses','/plataforma/banco-de-teses/']];
 Promise.all([g('me'),g('historico')]).then(function(a){var m=a[0],h=a[1]||[];var s=m.saldo||{};
 var sit={ativo:m.teste?'Teste grátis':'Plano '+((m.plano&&m.plano.nome)||''),pendente:'Assinatura pendente',atrasado:'Pagamento em atraso',cancelado:'Assinatura cancelada',bloqueado:'Acesso bloqueado'}[m.situacao]||m.situacao;
 var H='<h2>Olá, '+e((m.nome||'').split(' ')[0])+'</h2>';
@@ -738,10 +744,10 @@ H+='<div class="dv-ag" id="dv-ag"><p style="color:#8E938F">Carregando a agenda�
 H+='<h3 style="color:#F4F2EC;margin-top:28px">Ferramentas</h3><div class="dv-tools">'+links.map(function(l){return'<a href="'+l[1]+'">'+nomes[l[0]]+'</a>'}).join('')+'</div>';
 H+='<h3 style="color:#F4F2EC;margin-top:28px">Últimos usos</h3><table class="dv-h"><tbody>'+(h.length?h.map(function(x){return'<tr><td>'+e(nomes[x.ferramenta]||x.ferramenta)+(x.rotulo?' · '+e(x.rotulo):'')+'</td><td>'+(x.cobrado==1?'1 crédito':'sem custo')+'</td><td>'+e(x.criado.slice(0,16).replace(/(\d+)-(\d+)-(\d+)/,'$3/$2/$1'))+'</td></tr>'}).join(''):'<tr><td>Nenhum uso ainda.</td></tr>')+'</tbody></table>';
 H+='<p style="margin-top:28px"><a href="'+el.dataset.sair+'">Sair</a></p>';el.innerHTML=H;
- if(m.master||m.situacao==='ativo')g('agenda').then(function(A){var B=[['licitacoes','Agenda de licitações','/plataforma/licitacoes/','Cadastre uma licitação ou crie um alerta de oportunidades.'],['contratos','Agenda de contratos','/plataforma/contratos/','Busque seus contratos no PNCP para acompanhar vigência, reajuste e garantia.'],['notificacoes','Agenda de notificações e recursos','/plataforma/recursos/','Nenhum prazo em aberto.'],['documentos','Agenda de documentos','/plataforma/documentos/','Nenhuma certidão vencendo nos próximos 45 dias.']];
+ if(m.master||m.situacao==='ativo')g('agenda').then(function(A){var B=[['licitacoes','Agenda de licitações','/plataforma/licitacoes/','Cadastre uma licitação ou crie um alerta de oportunidades.'],['notificacoes','Agenda de impugnações e recursos','/plataforma/recursos/','Nenhum prazo em aberto.'],['documentos','Agenda de documentos','/plataforma/documentos/','Nenhuma certidão vencendo nos próximos 45 dias.']];
   function q(x){if(x.ts){var d=x.ts-Date.now();if(d<0)return'encerrado';var mi=Math.floor(d/60000),dd=Math.floor(mi/1440),h=Math.floor(mi%1440/60);return dd?'em '+dd+'d '+h+'h':'em '+h+'h '+(mi%60)+'min'}return x.n===null||x.n===undefined?'':x.n<0?'há '+(-x.n)+' dia(s)':x.n===0?'HOJE':x.n===1?'amanhã':'em '+x.n+' dias'}
   function cor(n){return n===null||n===undefined?'#8E938F':n<=1?'#E59A8A':n<=7?'#E6C27A':'#8FBDA3'}
-  var CAT={licitacoes:['Licitações','#E6C27A'],contratos:['Contratos','#8FBDA3'],notificacoes:['Notificações e recursos','#E59A8A'],documentos:['Documentos','#9DB4E0']};
+  var CAT={licitacoes:['Licitações','#E6C27A'],notificacoes:['Impugnações e recursos','#E59A8A'],documentos:['Documentos','#9DB4E0']};
   var box=document.getElementById('dv-ag'),AT=null,mes=null,dsel=null,filt=null,MS=['janeiro','fevereiro','março','abril','maio','junho','julho','agosto','setembro','outubro','novembro','dezembro'];
   function br(d){return d?e(d.slice(0,10).split('-').reverse().join('/')):''}
   function z(v){return(v<10?'0':'')+v}

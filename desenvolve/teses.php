@@ -1,5 +1,5 @@
 /**
- * Desenvolve — Banco de teses (jurisprudência do TCU sobre licitações e contratos)
+ * Desenvolve — Banco de teses (jurisprudência do TCU sobre licitações)
  * Base: Jurisprudência Selecionada do TCU (dados abertos), filtrada e publicada no GitHub
  * (aquila-dados/aquila/jur) por uma tarefa mensal. O site guarda uma cópia em uploads e
  * renova a cada 7 dias. Incluso na assinatura (sem custo de crédito).
@@ -24,6 +24,7 @@ function dv_ts_base() {
 	$f = dv_ts_arquivo( 'tcu-licitacoes.json' ); $j = $f ? json_decode( file_get_contents( $f ), true ) : array();
 	$b = array();
 	foreach ( (array) ( $j['selecionada'] ?? array() ) as $x ) {
+		if ( ( $x['ar'] ?? '' ) !== 'Licitação' ) { continue; }
 		$x['e'] = trim( wp_strip_all_tags( $x['e'] ) );
 		if ( $x['e'] === '' ) { continue; }
 		$x['_n'] = dv_ts_norm( $x['e'] . ' ' . $x['t'] . ' ' . $x['s'] . ' ' . ( $x['idx'] ?? '' ) );
@@ -72,6 +73,7 @@ add_action( 'rest_api_init', function () {
 		$q = sanitize_text_field( (string) $r['q'] ); $tema = sanitize_text_field( (string) $r['tema'] );
 		if ( $q === '' && $tema === '' ) {
 			$f = dv_ts_arquivo( 'situacoes.json' ); $sit = $f ? json_decode( file_get_contents( $f ), true ) : array();
+			$sit = array_values( array_filter( (array) $sit, function ( $x ) { return ! in_array( $x['slug'] ?? '', array( 'repactuacao-negada', 'multa-ou-penalidade' ), true ); } ) );
 			$temas = array(); foreach ( dv_ts_base() as $x ) { $k = $x['ar'] . ' > ' . $x['t']; $temas[ $k ] = ( $temas[ $k ] ?? 0 ) + 1; } arsort( $temas );
 			return array( 'situacoes' => $sit, 'temas' => array_slice( $temas, 0, 40, true ), 'total_base' => count( dv_ts_base() ) );
 		}
@@ -83,7 +85,7 @@ add_shortcode( 'dv_teses', function () {
 	if ( ! is_user_logged_in() ) { return ''; }
 	ob_start(); ?>
 <div class="ts" id="dv-ts" data-api="<?php echo esc_attr( rest_url( 'desenvolve/v1/' ) ); ?>" data-nonce="<?php echo esc_attr( wp_create_nonce( 'wp_rest' ) ); ?>">
-	<form class="ts-b" autocomplete="off"><input name="q" type="search" placeholder="Digite o tema da sua tese. Ex.: erro na planilha, atestado somatório, repactuação prorrogação, multa"><button>Buscar</button></form>
+	<form class="ts-b" autocomplete="off"><input name="q" type="search" placeholder="Digite o tema da sua tese. Ex.: erro na planilha, atestado somatório, inexequível, vistoria, índice contábil"><button>Buscar</button></form>
 	<div class="ts-sel" hidden></div>
 	<div class="ts-r"><p class="ts-h">Carregando…</p></div>
 	<p class="ts-h ts-av">Fonte: Jurisprudência Selecionada do Tribunal de Contas da União (dados abertos), atualizada mensalmente. Os enunciados retratam o entendimento de cada decisão e não substituem a leitura do acórdão. Conteúdo informativo, que não constitui parecer jurídico.</p>
@@ -119,7 +121,7 @@ function barra(){var n=Object.keys(SEL).length,B=R.querySelector('.ts-sel');B.hi
 function item(x){var s=SEL[x.k];return'<div class="ts-i'+(s?' sel':'')+'" data-k="'+e(x.k)+'"><div class="m"><a href="'+url(x)+'" target="_blank" rel="noopener">'+e(ac(x))+'</a> · '+e(x.d)+' · Rel. '+e(tit(x.rel))+' · '+e(x.t)+' › '+e(x.s)+'</div><p>'+e(x.e)+'</p><div class="k"><button type="button" class="g" data-cp="'+e(x.k)+'">Copiar citação</button><button type="button" class="g" data-sl="'+e(x.k)+'">'+(s?'✓ Selecionada':'+ Selecionar')+'</button></div></div>'}
 var ATUAIS={};
 function inicio(){O.innerHTML='<p class="ts-h">Carregando…</p>';g('teses').then(function(j){BASE=j;var h='<h3>Teses prontas para as situações mais comuns</h3><div class="ts-sg">'+(j.situacoes||[]).map(function(s,i){return'<button type="button" class="ts-s" data-sit="'+i+'"><span>'+e(s.tema)+'</span><b>'+e(s.titulo)+'</b></button>'}).join('')+'</div>';
- h+='<h3>Ou navegue pelos temas <small class="ts-h">('+(j.total_base||0).toLocaleString('pt-BR')+' enunciados de licitações e contratos)</small></h3><div class="ts-tm">'+Object.keys(j.temas||{}).map(function(k){return'<span data-tema="'+e(k)+'">'+e(k.split(' > ')[1])+' <small>'+j.temas[k]+'</small></span>'}).join('')+'</div>';O.innerHTML=h}).catch(function(){O.innerHTML='<p class="ts-h">Não foi possível carregar o banco agora. Tente de novo em instantes.</p>'})}
+ h+='<h3>Ou navegue pelos temas <small class="ts-h">('+(j.total_base||0).toLocaleString('pt-BR')+' enunciados sobre licitações)</small></h3><div class="ts-tm">'+Object.keys(j.temas||{}).map(function(k){return'<span data-tema="'+e(k)+'">'+e(k.split(' > ')[1])+' <small>'+j.temas[k]+'</small></span>'}).join('')+'</div>';O.innerHTML=h}).catch(function(){O.innerHTML='<p class="ts-h">Não foi possível carregar o banco agora. Tente de novo em instantes.</p>'})}
 function situacao(i){var s=BASE.situacoes[i];var h='<p><a href="#" data-home="1">← Voltar</a></p><div class="ts-cx"><span class="ts-h">'+e(s.tema)+'</span><h4>'+e(s.titulo)+'</h4><p>'+e(s.resumo)+'</p><b>Na prática</b><ul>'+s.pratica.map(function(p){return'<li>'+e(p)+'</li>'}).join('')+'</ul><b>Prazo:</b> '+e(s.prazo)+(s.nota?'<p class="ts-h"><i>'+e(s.nota)+'</i></p>':'')+'</div><h3>Decisões do TCU</h3>';
  h+=s.dec.map(function(d){var m=d.url.match(/KEY%253A([^/]+)/),k=m?m[1]:d.ac,p=d.ac.match(/Acórdão (\d+)\/(\d+) – (.+)/)||[];var x={k:k,n:p[1],a:p[2],c:p[3],d:d.data,rel:d.rel,e:d.enunciado,t:s.tema,s:''};ATUAIS[k]=x;return item(x).replace('<p>','<p><b>'+e(d.txt)+'</b></p><p class="ts-h">')}).join('');
  h+='<p><a href="#" data-q="'+e(s.titulo)+'">Ver mais decisões sobre este assunto →</a></p>';O.innerHTML=h;window.scrollTo({top:R.getBoundingClientRect().top+scrollY-20})}
@@ -128,14 +130,14 @@ function buscar(){O.innerHTML='<p class="ts-h">Buscando…</p>';g('teses?q='+enc
  h+=j.itens.length?j.itens.map(item).join(''):'<p class="ts-h">Nada encontrado. Tente palavras mais gerais (ex.: "planilha" em vez de "planilha de custos e formação de preços").</p>';
  var np=Math.ceil(j.total/j.por);if(np>1)h+='<div class="ts-pg">'+(PAG>1?'<button type="button" class="g" data-pg="'+(PAG-1)+'">← Anteriores</button>':'')+'<span class="ts-h">Página '+PAG+' de '+np+'</span>'+(PAG<np?'<button type="button" class="g" data-pg="'+(PAG+1)+'">Próximos →</button>':'')+'</div>';
  O.innerHTML=h})}
-function ia(){var L=Object.keys(SEL).map(function(k){return SEL[k]});var box=document.createElement('div');box.className='ts-ia';box.innerHTML='<b>Descreva o seu caso</b> <span class="ts-h">(o que aconteceu, o órgão, a peça que você precisa: recurso, impugnação, defesa, pedido)</span><textarea placeholder="Ex.: Fomos desclassificados no pregão 12/2026 da Prefeitura X porque a planilha não trazia o adicional noturno, sem diligência prévia. Preciso de um recurso."></textarea><div class="ias">'+IAS.map(function(a,i){return'<button type="button" class="g" data-ai="'+i+'"><img src="https://www.google.com/s2/favicons?domain='+a[2]+'&sz=64" alt="">'+a[0]+'</button>'}).join('')+'<button type="button" class="g" data-ai="c">Só copiar</button></div><p class="ts-h ts-iam"></p>';
+function ia(){var L=Object.keys(SEL).map(function(k){return SEL[k]});var box=document.createElement('div');box.className='ts-ia';box.innerHTML='<b>Descreva o seu caso</b> <span class="ts-h">(o que aconteceu, o órgão, a peça que você precisa: impugnação, recurso, contrarrazões, resposta a diligência)</span><textarea placeholder="Ex.: Fomos desclassificados no pregão 12/2026 da Prefeitura X porque a planilha não trazia o adicional noturno, sem diligência prévia. Preciso de um recurso."></textarea><div class="ias">'+IAS.map(function(a,i){return'<button type="button" class="g" data-ai="'+i+'"><img src="https://www.google.com/s2/favicons?domain='+a[2]+'&sz=64" alt="">'+a[0]+'</button>'}).join('')+'<button type="button" class="g" data-ai="c">Só copiar</button></div><p class="ts-h ts-iam"></p>';
  var old=R.querySelector('.ts-ia');if(old)old.remove();R.querySelector('.ts-sel').after(box);box.querySelector('textarea').focus();box._L=L}
-function prompt(box){var L=box._L,c=box.querySelector('textarea').value.trim();return'Você é um especialista em licitações e contratos públicos (Lei 14.133/2021). Com base no caso abaixo e usando como fundamento as teses do TCU listadas, monte a argumentação da peça indicada: (1) resumo dos fatos; (2) argumentos, um por tese, explicando por que ela se aplica ao caso; (3) pedido final. Cite as decisões exatamente como estão abaixo, sem inventar outros acórdãos ou números. Se alguma tese não se aplicar ao caso, diga isso.\n\nCASO:\n'+(c||'[descreva aqui]')+'\n\nTESES DO TCU:\n'+L.map(function(x,i){return(i+1)+'. '+cit(x)}).join('\n')+'\n\nAo final, lembre que o texto deve ser revisado antes do protocolo.'}
+function prompt(box){var L=box._L,c=box.querySelector('textarea').value.trim();return'Você é um especialista em licitações públicas (Lei 14.133/2021). Com base no caso abaixo e usando como fundamento as teses do TCU listadas, monte a argumentação da peça indicada: (1) resumo dos fatos; (2) argumentos, um por tese, explicando por que ela se aplica ao caso; (3) pedido final. Cite as decisões exatamente como estão abaixo, sem inventar outros acórdãos ou números. Se alguma tese não se aplicar ao caso, diga isso.\n\nCASO:\n'+(c||'[descreva aqui]')+'\n\nTESES DO TCU:\n'+L.map(function(x,i){return(i+1)+'. '+cit(x)}).join('\n')+'\n\nAo final, lembre que o texto deve ser revisado antes do protocolo.'}
 R.addEventListener('submit',function(ev){ev.preventDefault();Q=R.querySelector('[name=q]').value.trim();TEMA='';PAG=1;if(Q)buscar();else inicio()});
 R.addEventListener('click',function(ev){var t=ev.target.closest('button,a,span[data-tema]');if(!t||!R.contains(t))return;var D=t.dataset,x;
  if(D.home){ev.preventDefault();Q='';TEMA='';inicio();return}
  if(D.sit!=null){situacao(+D.sit);return}
- if(D.q){ev.preventDefault();Q=D.q.replace(/^(Fui|Disseram que o meu|Pediram um|O órgão não quer conceder a|Recebi uma notificação de)\s*/i,'').replace(/\(.*\)/,'').trim();R.querySelector('[name=q]').value=Q;TEMA='';PAG=1;buscar();return}
+ if(D.q){ev.preventDefault();Q=D.q.replace(/^(Fui|Disseram que o meu|Pediram um)\s*/i,'').replace(/\(.*\)/,'').trim();R.querySelector('[name=q]').value=Q;TEMA='';PAG=1;buscar();return}
  if(D.tema){TEMA=D.tema;PAG=1;buscar();return}
  if(D.pg){PAG=+D.pg;buscar();window.scrollTo({top:R.getBoundingClientRect().top+scrollY-20});return}
  if(D.cp){x=ATUAIS[D.cp];if(x){copiar(cit(x));t.textContent='Copiado ✓'}return}

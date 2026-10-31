@@ -521,6 +521,15 @@ add_action( 'wp_head', function () {
 	echo "\n" . '<meta property="og:type" content="website"><meta property="og:site_name" content="Desenvolve Estratégias"><meta property="og:title" content="' . esc_attr( $t ) . '"><meta property="og:description" content="' . esc_attr( $d ) . '"><meta name="description" content="' . esc_attr( $d ) . '"><meta property="og:url" content="' . esc_url( home_url( add_query_arg( array() ) ) ) . '"><meta property="og:image" content="' . $img . '"><meta property="og:image:width" content="1200"><meta property="og:image:height" content="630"><meta name="twitter:card" content="summary_large_image">' . "\n";
 }, 1 );
 
+/* Páginas do site antigo levam ao site novo (301). As páginas continuam salvas no WordPress. */
+add_action( 'template_redirect', function () {
+	if ( is_admin() || ! is_page() ) { return; }
+	$m = array( 'sobre' => '/', 'contato' => '/', 'blog' => '/', 'areas-de-atuacao' => '/', 'home' => '/', 'termos-de-uso' => '/termos-de-uso-plataforma/', 'politicas-de-privacidade' => '/politica-de-privacidade/' );
+	$o = get_queried_object(); if ( ! $o || empty( $o->post_name ) || ! isset( $m[ $o->post_name ] ) || (int) $o->post_parent !== 0 ) { return; }
+	if ( (int) get_option( 'page_on_front' ) === (int) $o->ID ) { return; }
+	wp_safe_redirect( home_url( $m[ $o->post_name ] ), 301 ); exit;
+}, 1 );
+
 /* Enquanto o Asaas não tem chave, "Assinar" e "Comprar créditos" levam ao WhatsApp da Desenvolve */
 function dv_wa_venda() { return 'https://wa.me/5511993500950?text=' . rawurlencode( 'Olá! Quero assinar a plataforma Desenvolve.' ); }
 add_action( 'template_redirect', function () {

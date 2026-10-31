@@ -377,6 +377,9 @@ add_action( 'rest_api_init', function () {
 			$x = wp_remote_get( 'https://brasilapi.com.br/api/cnpj/v1/' . $cnpj, array( 'timeout' => 20 ) );
 			$c = is_wp_error( $x ) ? array() : (array) json_decode( wp_remote_retrieve_body( $x ), true );
 			if ( empty( $c['razao_social'] ) ) { return new WP_Error( 'dv_cad', 'Cadastro indisponível agora.', array( 'status' => 502 ) ); }
+			if ( preg_match( '/MUNICIP|ESTAD|FEDERAL|UNIAO|AUTARQUIA|FUNDACAO PUBLICA|ORGAO PUBLICO|CONSORCIO PUBLICO|FUNDO PUBLICO|DISTRITO FEDERAL|PODER|MINISTERIO PUBLICO|TRIBUNAL|CAMARA|ASSEMBLEIA/', dv_ds_nrm( $c['natureza_juridica'] ?? '' ) ) ) {
+				return array( 'message' => 'Este CNPJ é de um órgão público (' . $c['razao_social'] . '). O Raio-X de concorrentes é feito para empresas: para órgãos, os processos sairiam misturados com os de órgãos de mesmo nome em outras cidades. Para ver os processos, as notícias e o risco de vender para este órgão, use o Raio-X do comprador, em Meu painel.', 'orgao_publico' => true );
+			}
 			$n = trim( preg_replace( '/\s+(EM RECUPERACAO JUDICIAL)$/', '', dv_ds_nrm( $c['razao_social'] ) ) );
 			$n = trim( preg_replace( '/\s+(LTDA|LIMITADA|EIRELI|S\/?A|S\.A\.?|ME|EPP)\.?$/', '', $n ) );
 			set_time_limit( 120 );

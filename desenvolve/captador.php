@@ -35,11 +35,22 @@ function dv_capt_fmt_cnpj( $d ) { return preg_replace( '/^(\d{2})(\d{3})(\d{3})(
 function dv_capt_termos( $uid ) { $t = json_decode( get_user_meta( $uid, 'dv_capt_termos', true ) ?: '[]', true ); return is_array( $t ) ? $t : array(); }
 function dv_capt_salvar( $uid, $t ) { update_user_meta( $uid, 'dv_capt_termos', wp_json_encode( array_values( $t ) ) ); }
 
-/** Consulta o Querido Diário e grava as publicações novas do termo. Devolve quantas entraram. */
-function dv_capt_buscar( $uid, $t, $desde ) {
+function dv_capt_gravar( $uid, $rot, $data, $local, $uf, $url, $txt, $trecho ) {
 	global $wpdb;
-	if ( $t['tipo'] === 'cnpj' ) { $q = '"' . dv_capt_fmt_cnpj( $t['valor'] ) . '" | "' . $t['valor'] . '"'; $rot = dv_capt_fmt_cnpj( $t['valor'] ); }
-	else { $q = '"' . str_replace( '"', '', $t['valor'] ) . '"'; $rot = $t['valor']; }
+	return (int) $wpdb->query( $wpdb->prepare( "INSERT IGNORE INTO {$wpdb->prefix}dv_capt (user_id,termo,data,municipio,uf,url,txt,trecho,visto,criado,hash) VALUES (%d,%s,%s,%s,%s,%s,%s,%s,0,%s,%s)",
+		$uid, $rot, $data ?: current_time( 'Y-m-d' ), mb_substr( (string) $local, 0, 120 ), substr( (string) $uf, 0, 2 ), substr( (string) $url, 0, 500 ), substr( (string) $txt, 0, 500 ),
+		mb_substr( (string) $trecho, 0, 4000 ), current_time( 'mysql' ), sha1( $rot . '|' . $url . '|' . $data ) ) );
+}
+/** Nome da empresa para buscar junto com o CNPJ (muitas publicações citam só a razão social). */
+function dv_capt_nome_cnpj( $cnpj ) {
+	$r = wp_remote_get( 'https://brasilapi.com.br/api/cnpj/v1/' . $cnpj, array( 'timeout' => 20 ) );
+	$j = is_wp_error( $r ) ? array() : (array) json_decode( wp_remote_retrieve_body( $r ), true );
+	if ( empty( $j['razao_social'] ) ) { return null; }
+	$n = function_exists( 'dv_nt_nucleo' ) ? dv_nt_nucleo( $j['razao_social'] ) : strtoupper( remove_accents( $j['razao_social'] ) );
+	return ( function_exists( 'dv_nt_util' ) ? dv_nt_util( $n ) : count( explode( ' ', $n ) ) >= 2 ) ? $n : '';
+}
+/** Querido Diário (diários municipais). */
+function dv_capt_qd( $uid, $rot, $q, $desde ) {
 	$novos = 0; $off = 0;
 	do {
 		$u = add_query_arg( array( 'querystring' => rawurlencode( $q ), 'published_since' => $desde, 'size' => 50, 'offset' => $off,
@@ -49,15 +60,40 @@ function dv_capt_buscar( $uid, $t, $desde ) {
 		$j = json_decode( wp_remote_retrieve_body( $r ), true ); $gs = $j['gazettes'] ?? array();
 		foreach ( $gs as $g ) {
 			$tr = implode( "\n…\n", array_map( function ( $e ) { return trim( preg_replace( '/\s+/', ' ', wp_strip_all_tags( $e ) ) ); }, (array) ( $g['excerpts'] ?? array() ) ) );
-			$ok = $wpdb->query( $wpdb->prepare( "INSERT IGNORE INTO {$wpdb->prefix}dv_capt (user_id,termo,data,municipio,uf,url,txt,trecho,visto,criado,hash) VALUES (%d,%s,%s,%s,%s,%s,%s,%s,0,%s,%s)",
-				$uid, $rot, $g['date'] ?? current_time( 'Y-m-d' ), mb_substr( (string) ( $g['territory_name'] ?? '' ), 0, 120 ), substr( (string) ( $g['state_code'] ?? '' ), 0, 2 ),
-				substr( (string) ( $g['url'] ?? '' ), 0, 500 ), substr( (string) ( $g['txt_url'] ?? '' ), 0, 500 ), mb_substr( $tr, 0, 4000 ), current_time( 'mysql' ),
-				sha1( $rot . '|' . ( $g['url'] ?? '' ) . '|' . ( $g['date'] ?? '' ) ) ) );
-			$novos += (int) $ok;
+			$novos += dv_capt_gravar( $uid, $rot, $g['date'] ?? '', $g['territory_name'] ?? '', $g['state_code'] ?? '', $g['url'] ?? '', $g['txt_url'] ?? '', $tr );
 		}
 		$off += 50;
 	} while ( count( $gs ) === 50 && $off < 300 );
 	return $novos;
+}
+/** Diário Oficial da União (busca pública da Imprensa Nacional). */
+function dv_capt_dou( $uid, $rot, $termo, $desde ) {
+	$u = 'https://www.in.gov.br/consulta/-/buscar/dou?q=' . rawurlencode( '"' . $termo . '"' ) . '&s=todos&exactDate=personalizado&sortType=0&delta=75'
+		. '&publishFrom=' . gmdate( 'd-m-Y', strtotime( $desde ) ) . '&publishTo=' . current_time( 'd-m-Y' );
+	$r = wp_remote_get( $u, array( 'timeout' => 30, 'user-agent' => 'Mozilla/5.0 (compatible; Desenvolve/1.0)' ) );
+	if ( is_wp_error( $r ) || wp_remote_retrieve_response_code( $r ) !== 200 ) { return 0; }
+	$h = wp_remote_retrieve_body( $r );
+	if ( ! preg_match( '#<script[^>]*id="_br_com_seatecnologia_in_buscadou_BuscaDouPortlet_params"[^>]*>(.*?)</script>#s', $h, $m ) ) { return 0; }
+	$j = json_decode( trim( $m[1] ), true ); $novos = 0;
+	foreach ( (array) ( $j['jsonArray'] ?? array() ) as $it ) {
+		$d = (string) ( $it['pubDate'] ?? '' ); $data = preg_match( '#^(\d{2})/(\d{2})/(\d{4})#', $d, $x ) ? "$x[3]-$x[2]-$x[1]" : '';
+		$tr = trim( preg_replace( '/\s+/', ' ', wp_strip_all_tags( html_entity_decode( ( $it['title'] ?? '' ) . ' — ' . ( $it['content'] ?? '' ), ENT_QUOTES, 'UTF-8' ) ) ) );
+		$url = ! empty( $it['urlTitle'] ) ? 'https://www.in.gov.br/web/dou/-/' . $it['urlTitle'] : '';
+		$novos += dv_capt_gravar( $uid, $rot, $data, 'Diário Oficial da União' . ( ! empty( $it['pubName'] ) ? ' (' . $it['pubName'] . ')' : '' ), '', $url, '', $tr );
+	}
+	return $novos;
+}
+/** Busca o termo em todas as fontes e grava o que for novo. Devolve quantas entraram. */
+function dv_capt_buscar( $uid, &$t, $desde ) {
+	if ( $t['tipo'] === 'cnpj' ) {
+		$rot = dv_capt_fmt_cnpj( $t['valor'] );
+		if ( ! isset( $t['nome'] ) ) { $nm = dv_capt_nome_cnpj( $t['valor'] ); if ( $nm !== null ) { $t['nome'] = $nm; } }
+		$n = dv_capt_qd( $uid, $rot, '"' . $rot . '" | "' . $t['valor'] . '"', $desde ) + dv_capt_dou( $uid, $rot, $rot, $desde );
+		if ( ! empty( $t['nome'] ) ) { $n += dv_capt_qd( $uid, $rot, '"' . $t['nome'] . '"', $desde ) + dv_capt_dou( $uid, $rot, $t['nome'], $desde ); }
+		return $n;
+	}
+	$v = str_replace( '"', '', $t['valor'] );
+	return dv_capt_qd( $uid, $t['valor'], '"' . $v . '"', $desde ) + dv_capt_dou( $uid, $t['valor'], $v, $desde );
 }
 
 /** Cobra o mês do termo (1 crédito). Devolve true ou WP_Error. */
@@ -186,6 +222,12 @@ add_action( 'rest_api_init', function () {
 		update_user_meta( $uid, 'dv_capt_pref', wp_json_encode( $p ) );
 		return array( 'ok' => true, 'pref' => $p );
 	} ) );
+	register_rest_route( 'desenvolve/v1', '/captador/rebuscar', array( 'methods' => 'POST', 'permission_callback' => $perm, 'callback' => function ( WP_REST_Request $r ) {
+		$uid = get_current_user_id(); $id = sanitize_key( $r['id'] ); $ts = dv_capt_termos( $uid ); $n = 0;
+		foreach ( $ts as &$t ) { if ( $t['id'] === $id && empty( $t['pausado'] ) ) { $n = dv_capt_buscar( $uid, $t, gmdate( 'Y-m-d', strtotime( current_time( 'Y-m-d' ) . ' -180 days' ) ) ); } }
+		unset( $t ); dv_capt_salvar( $uid, $ts );
+		return array( 'ok' => true, 'encontradas' => $n );
+	} ) );
 	register_rest_route( 'desenvolve/v1', '/captador/visto', array( 'methods' => 'POST', 'permission_callback' => $perm, 'callback' => function () {
 		global $wpdb; $wpdb->update( $wpdb->prefix . 'dv_capt', array( 'visto' => 1 ), array( 'user_id' => get_current_user_id() ) );
 		return array( 'ok' => true );
@@ -212,7 +254,7 @@ add_shortcode( 'dv_captador', function () {
 		<aside><h3>Termos monitorados <small class="cp-n"></small></h3><ul class="cp-t"></ul></aside>
 		<section><div class="cp-top"><h3>Publicações encontradas</h3><button type="button" class="cp-lido g">Marcar tudo como visto</button></div><div class="cp-p"><p class="cp-h">Carregando…</p></div></section>
 	</div>
-	<p class="cp-src">Fonte: Querido Diário (Open Knowledge Brasil), que reúne diários oficiais de municípios. A cobertura depende dos municípios disponíveis na base; o Diário Oficial da União e os diários estaduais ainda não fazem parte da busca. Confira sempre a edição original.</p>
+	<p class="cp-src">Fontes: Diário Oficial da União (Imprensa Nacional) e diários oficiais de municípios reunidos pelo Querido Diário (Open Knowledge Brasil). Para CNPJ, buscamos também pela razão social. A cobertura municipal depende dos municípios disponíveis na base; os diários estaduais estão sendo incluídos. Confira sempre a edição original.</p>
 </div>
 <style>
 .cp{--ln:#E3DED2;--mu:#6E6A60;--gd:#A8843F;color:#16191E;font-family:"Hanken Grotesk",-apple-system,sans-serif;padding:28px}

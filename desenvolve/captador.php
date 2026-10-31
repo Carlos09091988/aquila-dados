@@ -49,6 +49,19 @@ function dv_capt_nome_cnpj( $cnpj ) {
 	$n = function_exists( 'dv_nt_nucleo' ) ? dv_nt_nucleo( $j['razao_social'] ) : strtoupper( remove_accents( $j['razao_social'] ) );
 	return ( function_exists( 'dv_nt_util' ) ? dv_nt_util( $n ) : count( explode( ' ', $n ) ) >= 2 ) ? $n : '';
 }
+/** CNPJs das filiais ativas da mesma raiz (índice publicado pelo robô de dados). */
+function dv_capt_filiais( $cnpj ) {
+	$raiz = substr( $cnpj, 0, 8 ); $ck = 'dv_fil_' . $raiz; $c = get_transient( $ck ); if ( is_array( $c ) ) { return $c; }
+	$r = wp_remote_get( 'https://carlos09091988.github.io/aquila-dados/filiais/' . substr( $raiz, 0, 3 ) . '.json.gz', array( 'timeout' => 25 ) );
+	$l = array();
+	if ( ! is_wp_error( $r ) && wp_remote_retrieve_response_code( $r ) === 200 ) {
+		$o = json_decode( (string) @gzdecode( wp_remote_retrieve_body( $r ) ), true );
+		foreach ( (array) ( $o[ $raiz ] ?? array() ) as $x ) { $l[] = explode( '|', $x )[0]; }
+		unset( $o );
+	}
+	set_transient( $ck, $l, 7 * DAY_IN_SECONDS );
+	return $l;
+}
 /** Querido Diário (diários municipais). */
 function dv_capt_qd( $uid, $rot, $q, $desde ) {
 	$novos = 0; $off = 0;
@@ -88,8 +101,15 @@ function dv_capt_buscar( $uid, &$t, $desde ) {
 	if ( $t['tipo'] === 'cnpj' ) {
 		$rot = dv_capt_fmt_cnpj( $t['valor'] );
 		if ( ! isset( $t['nome'] ) ) { $nm = dv_capt_nome_cnpj( $t['valor'] ); if ( $nm !== null ) { $t['nome'] = $nm; } }
-		$raiz = substr( $rot, 0, 10 ); // 00.000.000 — pega a matriz e todas as filiais
-		$n = dv_capt_qd( $uid, $rot, '"' . $raiz . '" | "' . $t['valor'] . '"', $desde ) + dv_capt_dou( $uid, $rot, $raiz, $desde );
+		// matriz + filiais ativas (índice do robô de dados da Receita)
+		$docs = array( $t['valor'] );
+		foreach ( dv_capt_filiais( $t['valor'] ) as $f ) { if ( $f !== $t['valor'] ) { $docs[] = $f; } }
+		$n = 0;
+		foreach ( array_chunk( array_slice( $docs, 0, 60 ), 10 ) as $lote ) {
+			$q = implode( ' | ', array_map( function ( $d ) { return '"' . dv_capt_fmt_cnpj( $d ) . '" | "' . $d . '"'; }, $lote ) );
+			$n += dv_capt_qd( $uid, $rot, $q, $desde );
+		}
+		foreach ( array_slice( $docs, 0, 15 ) as $d ) { $n += dv_capt_dou( $uid, $rot, dv_capt_fmt_cnpj( $d ), $desde ); }
 		if ( ! empty( $t['nome'] ) ) { $n += dv_capt_qd( $uid, $rot, '"' . $t['nome'] . '"', $desde ) + dv_capt_dou( $uid, $rot, $t['nome'], $desde ); }
 		return $n;
 	}

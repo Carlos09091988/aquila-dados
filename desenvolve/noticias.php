@@ -22,7 +22,7 @@ function dv_nt_util( $n ) {
 	$gen = array( 'SERVICOS', 'SERVICO', 'TERCEIRIZADOS', 'TERCEIRIZACAO', 'COMERCIO', 'CONSTRUCOES', 'CONSTRUTORA', 'ENGENHARIA', 'ALIMENTOS', 'ALIMENTACAO', 'LIMPEZA', 'TRANSPORTES', 'SEGURANCA', 'VIGILANCIA', 'PARTICIPACOES', 'EMPREENDIMENTOS', 'SOLUCOES', 'TECNOLOGIA', 'BRASIL', 'GERAIS', 'DO', 'DA', 'DE', 'DOS', 'DAS', 'E' );
 	$p = array_diff( explode( ' ', $n ), $gen );
 	$w = count( explode( ' ', $n ) );
-	return mb_strlen( $n ) >= 8 && ( ( $w >= 2 && count( $p ) >= 1 ) || $w >= 3 );
+	return mb_strlen( $n ) >= 8 && ( ( $w >= 2 && count( $p ) >= 1 ) || $w >= 3 || ( $w === 1 && count( $p ) === 1 && mb_strlen( $n ) >= 9 ) );
 }
 
 function dv_nt_riscos() {

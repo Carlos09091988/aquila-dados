@@ -54,8 +54,12 @@ function dv_ds_multi( $urls, $headers = array(), $timeout = 25 ) {
 
 /* ---------- Contratos no PNCP (todas as esferas) ---------- */
 function dv_ds_pncp( $cnpj ) {
-	$urls = array(); for ( $p = 1; $p <= 5; $p++ ) { $urls[ $p ] = 'https://pncp.gov.br/api/search/?q=' . $cnpj . '&tipos_documento=contrato&ordenacao=-data&pagina=' . $p . '&tam_pagina=100'; }
-	$b = dv_ds_multi( $urls ); $itens = array(); $total = null; $vistos = array();
+	$base = 'https://pncp.gov.br/api/search/?q=' . $cnpj . '&tipos_documento=contrato&ordenacao=-data&tam_pagina=100&pagina=';
+	$b = array(); $total = null;
+	for ( $t = 0; $t < 3 && empty( $b[1] ); $t++ ) { $x = dv_ds_multi( array( 1 => $base . '1' ), array(), 30 ); $b[1] = $x[1]; }
+	$j1 = $b[1] ? json_decode( $b[1], true ) : null; $paginas = $j1 ? min( 5, (int) ceil( ( (int) ( $j1['total'] ?? 0 ) ) / 100 ) ) : 0;
+	for ( $pg = 2; $pg <= $paginas; $pg++ ) { $x = dv_ds_multi( array( $pg => $base . $pg ), array(), 30 ); $b[ $pg ] = $x[ $pg ]; }
+	$itens = array(); $vistos = array();
 	foreach ( $b as $body ) {
 		$j = $body ? json_decode( $body, true ) : null; if ( ! $j ) { continue; }
 		$total = $total ?? (int) ( $j['total'] ?? 0 );
@@ -151,13 +155,13 @@ function dv_ds_diarios( $cnpj, $nome ) {
 		}
 	}
 	usort( $itens, function ( $a, $b ) { return strcmp( $b['data'], $a['data'] ); } );
-	$re = '/PENALIDADE|PROCESSO ADMINISTRATIVO|PROCESSO DE RESPONSABILIZACAO|\bPAR\b|DEFESA PREVIA|APURACAO DE RESPONSABILIDADE|APURAR|IMPEDIMENTO DE LICITAR|IMPEDIDA DE LICITAR|INIDONE|SUSPENSAO TEMPORARIA|MULTA|RESCISAO|RESCINDIR|ADVERTENCIA|SANCAO|SANCIONATORIO|INADIMPLEMENTO|NOTIFICA|INTIMA/';
+	$re = '/PENALIDADE|PUNITIVO|DEFESA PREVIA|APURACAO DE RESPONSABILIDADE|PROCESSO (ADMINISTRATIVO )?(SANCIONATORIO|PUNITIVO|DE RESPONSABILIZACAO|DE APURACAO)|IMPEDIMENTO DE LICITAR|IMPEDID[AO] DE LICITAR|INIDONE|SUSPENSAO TEMPORARIA|APLICA(CAO|R) (DE |A )?MULTA|MULTA (CONTRATUAL|MORATORIA|COMPENSATORIA)|RESCISAO (UNILATERAL|CONTRATUAL|DO CONTRATO)|ADVERTENCIA|SANCAO|SANCIONATORIO|INADIMPLEMENTO|NOTIFICACAO (EXTRAJUDICIAL|PARA (APRESENTAR )?DEFESA)|INTIMACAO PARA (APRESENTAR )?DEFESA|DESCUMPRIMENTO CONTRATUAL/';
 	foreach ( $itens as &$i ) { $t = dv_ds_nrm( $i['trecho'] ); $i['alerta'] = (bool) preg_match( $re, $t ); } unset( $i );
 	return $itens;
 }
 
 function dv_dossie_dados( $cnpj ) {
-	$ck = 'dv_ds2_' . $cnpj; $c = get_transient( $ck ); if ( $c ) { return $c; }
+	$ck = 'dv_ds3_' . $cnpj; $c = get_transient( $ck ); if ( $c ) { return $c; }
 	$t0 = microtime( true );
 	$r = wp_remote_get( 'https://brasilapi.com.br/api/cnpj/v1/' . $cnpj, array( 'timeout' => 25 ) );
 	$cad = is_wp_error( $r ) ? array() : (array) json_decode( wp_remote_retrieve_body( $r ), true );

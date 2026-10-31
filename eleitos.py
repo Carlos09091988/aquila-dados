@@ -31,25 +31,36 @@ def eleito(r):
     s = norm(r.get('DS_SIT_TOT_TURNO', ''))
     return s.startswith('ELEITO')
 
-dados = {}
-for r in linhas(2024):
-    if not eleito(r): continue
-    uf = r['SG_UF']; mun = norm(r['NM_UE']); cargo = r['CD_CARGO']
-    d = dados.setdefault(uf, {}).setdefault(mun, {'p': None, 'v': None, 'c': []})
-    pess = [r['NM_CANDIDATO'].strip(), r['NM_URNA_CANDIDATO'].strip(), r['SG_PARTIDO'].strip()]
-    if cargo == '11': d['p'] = pess
-    elif cargo == '12': d['v'] = pess
-    elif cargo == '13': d['c'].append(pess[1:])
-for r in linhas(2022):
-    if not eleito(r) or r['CD_CARGO'] not in ('3', '4'): continue
-    uf = r['SG_UF']; g = dados.setdefault(uf, {}).setdefault('_GOV', {'p': None, 'v': None})
-    pess = [r['NM_CANDIDATO'].strip(), r['NM_URNA_CANDIDATO'].strip(), r['SG_PARTIDO'].strip()]
-    if r['CD_CARGO'] == '3': g['p'] = pess
-    else: g['v'] = pess
-os.makedirs(OUT, exist_ok=True)
-for uf, m in dados.items():
-    for v in m.values():
-        if 'c' in v: v['c'].sort()
-    with open(os.path.join(OUT, f'{uf}.json'), 'w', encoding='utf-8') as f:
-        json.dump(m, f, ensure_ascii=False, separators=(',', ':'))
-print({uf: len(m) for uf, m in sorted(dados.items())})
+def main():
+  dados = {}
+  for r in linhas(2024):
+      if not eleito(r): continue
+      uf = r['SG_UF']; mun = norm(r['NM_UE']); cargo = r['CD_CARGO']
+      d = dados.setdefault(uf, {}).setdefault(mun, {'p': None, 'v': None, 'c': []})
+      pess = [r['NM_CANDIDATO'].strip(), r['NM_URNA_CANDIDATO'].strip(), r['SG_PARTIDO'].strip()]
+      if cargo == '11': d['p'] = pess
+      elif cargo == '12': d['v'] = pess
+      elif cargo == '13': d['c'].append(pess[1:])
+  for r in linhas(2022):
+      if not eleito(r) or r['CD_CARGO'] not in ('3', '4'): continue
+      uf = r['SG_UF']; g = dados.setdefault(uf, {}).setdefault('_GOV', {'p': None, 'v': None})
+      pess = [r['NM_CANDIDATO'].strip(), r['NM_URNA_CANDIDATO'].strip(), r['SG_PARTIDO'].strip()]
+      if r['CD_CARGO'] == '3': g['p'] = pess
+      else: g['v'] = pess
+  os.makedirs(OUT, exist_ok=True)
+  for uf, m in dados.items():
+      for v in m.values():
+          if 'c' in v: v['c'].sort()
+      with open(os.path.join(OUT, f'{uf}.json'), 'w', encoding='utf-8') as f:
+          json.dump(m, f, ensure_ascii=False, separators=(',', ':'))
+  print({uf: len(m) for uf, m in sorted(dados.items())})
+
+
+if __name__ == '__main__':
+    import traceback, sys
+    try:
+        main()
+    except Exception:
+        t = traceback.format_exc().replace('\n', ' | ')
+        print('::error::' + t[-900:])
+        sys.exit(1)

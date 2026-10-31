@@ -127,6 +127,48 @@ function dv_ds_djen( $nome, $paginas = 3, $so_criminal = false ) {
 	}
 	return array( 'publicacoes' => $count, 'processos' => $itens );
 }
+/* Varredura completa: todas as publicações (até $max páginas de 100), processos distintos por tipo */
+function dv_ds_djen_full( $nome, $max = 60 ) {
+	$ck = 'dv_dj_' . md5( $nome ); $c = get_transient( $ck ); if ( $c ) { return $c; }
+	$base = 'https://comunicaapi.pje.jus.br/api/v1/comunicacao?nomeParte=' . rawurlencode( $nome ) . '&itensPorPagina=100&pagina=';
+	$x = dv_ds_multi( array( 1 => $base . '1' ), array(), 30 ); $j = $x[1] ? json_decode( $x[1], true ) : null;
+	if ( ! $j ) { return array( 'erro' => 1, 'processos' => array() ); }
+	$count = (int) ( $j['count'] ?? 0 ); $pags = min( $max, (int) ceil( $count / 100 ) ); $bodies = array( 1 => $x[1] );
+	for ( $ini = 2; $ini <= $pags; $ini += 12 ) {
+		$u = array(); for ( $pg = $ini; $pg < $ini + 12 && $pg <= $pags; $pg++ ) { $u[ $pg ] = $base . $pg; }
+		foreach ( dv_ds_multi( $u, array(), 40 ) as $k => $b ) { $bodies[ $k ] = $b; }
+	}
+	$alvo = dv_ds_nrm( $nome ); $proc = array(); $lidas = 0;
+	foreach ( $bodies as $b ) {
+		$jj = $b ? json_decode( $b, true ) : null; if ( ! $jj ) { continue; }
+		foreach ( (array) ( $jj['items'] ?? array() ) as $i ) {
+			$lidas++;
+			$dest = implode( ' ; ', array_map( function ( $d ) { return dv_ds_nrm( $d['nome'] ?? '' ); }, (array) ( $i['destinatarios'] ?? array() ) ) );
+			if ( strpos( $dest, $alvo ) === false ) { continue; }
+			$n = $i['numeroprocessocommascara'] ?? $i['numero_processo'] ?? ''; if ( ! $n ) { continue; }
+			$tipo = dv_ds_classe( $i['nomeClasse'] ?? '', (string) ( $i['siglaTribunal'] ?? '' ), $dest );
+			$data = substr( (string) ( $i['data_disponibilizacao'] ?? '' ), 0, 10 );
+			if ( ! isset( $proc[ $n ] ) ) {
+				$proc[ $n ] = array( 'tipo' => $tipo, 'processo' => $n, 'classe' => $i['nomeClasse'] ?? '', 'tribunal' => $i['siglaTribunal'] ?? '', 'orgao' => $i['nomeOrgao'] ?? '',
+					'data' => $data, 'link' => $i['link'] ?? '', 'trecho' => mb_substr( trim( preg_replace( '/\s+/', ' ', wp_strip_all_tags( (string) ( $i['texto'] ?? '' ) ) ) ), 0, 400 ) );
+			} elseif ( $tipo !== 'outros' && in_array( $proc[ $n ]['tipo'], array( 'outros', 'trabalhista', 'execucao' ), true ) && $tipo !== $proc[ $n ]['tipo'] && in_array( $tipo, array( 'criminal', 'improbidade', 'coletiva', 'falencia', 'trab_execucao' ), true ) ) {
+				$proc[ $n ]['tipo'] = $tipo; $proc[ $n ]['classe'] = $i['nomeClasse'] ?? $proc[ $n ]['classe'];
+			}
+		}
+	}
+	unset( $bodies );
+	$por = array(); $trib = array();
+	foreach ( $proc as $p ) { $por[ $p['tipo'] ] = ( $por[ $p['tipo'] ] ?? 0 ) + 1; $trib[ $p['tribunal'] ] = ( $trib[ $p['tribunal'] ] ?? 0 ) + 1; }
+	arsort( $trib );
+	$dest = array_values( array_filter( $proc, function ( $p ) { return in_array( $p['tipo'], array( 'criminal', 'improbidade', 'coletiva', 'falencia' ), true ); } ) );
+	usort( $dest, function ( $a, $b ) { return strcmp( $b['data'], $a['data'] ); } );
+	$o = array( 'publicacoes' => $count, 'lidas' => $lidas, 'parcial' => $count > $pags * 100, 'distintos' => count( $proc ), 'por_tipo' => $por,
+		'por_tribunal' => array_slice( $trib, 0, 12, true ), 'destaques' => array_slice( $dest, 0, 80 ),
+		'processos' => array_slice( array_values( $proc ), 0, 150 ) );
+	set_transient( $ck, $o, DAY_IN_SECONDS );
+	return $o;
+}
+
 /* volume de publicações por mês nos últimos 12 meses (tendência) */
 function dv_ds_djen_mensal( $nome ) {
 	$urls = array(); $hoje = current_time( 'Y-m-01' );
@@ -183,7 +225,7 @@ function dv_ds_diarios( $cnpj, $nome ) {
 }
 
 function dv_dossie_dados( $cnpj ) {
-	$ck = 'dv_ds6_' . $cnpj; $c = get_transient( $ck ); if ( $c ) { return $c; }
+	$ck = 'dv_ds7_' . $cnpj; $c = get_transient( $ck ); if ( $c ) { return $c; }
 	$t0 = microtime( true );
 	$r = wp_remote_get( 'https://brasilapi.com.br/api/cnpj/v1/' . $cnpj, array( 'timeout' => 25 ) );
 	$cad = is_wp_error( $r ) ? array() : (array) json_decode( wp_remote_retrieve_body( $r ), true );
@@ -258,7 +300,8 @@ function dv_dossie_dados( $cnpj ) {
 
 	/* Processos judiciais: empresa (todos os tipos) e sócios pessoa física (só criminais) */
 	$nomeEmp = dv_ds_nrm( $cad['razao_social'] ); $nomeEmp = trim( preg_replace( '/\s+(EM RECUPERACAO JUDICIAL)$/', '', $nomeEmp ) );
-	$D['judicial'] = array( 'empresa' => dv_ds_djen( $nomeEmp, 3 ), 'mensal' => dv_ds_djen_mensal( $nomeEmp ), 'socios' => array() );
+	$nomeJ = trim( preg_replace( '/\s+(LTDA|LIMITADA|EIRELI|S\/?A|S\.A\.?|ME|EPP)\.?$/', '', $nomeEmp ) );
+	$D['judicial'] = array( 'empresa' => dv_ds_djen_full( $nomeJ ), 'mensal' => dv_ds_djen_mensal( $nomeJ ), 'socios' => array() );
 	$D['pep'] = array();
 	foreach ( array_slice( (array) ( $cad['qsa'] ?? array() ), 0, 8 ) as $s ) {
 		$doc = preg_replace( '/\D/', '', (string) ( $s['cnpj_cpf_do_socio'] ?? '' ) ); if ( strlen( $doc ) === 14 ) { continue; }
@@ -298,5 +341,22 @@ add_action( 'rest_api_init', function () {
 			for ( $i = 1; $i <= $n; $i++ ) { $u = dv_usar( $uid, 'dossie', 'dossie|' . $cnpj . '|' . $i, $i === 1 ? ( $D['cadastro']['razao_social'] ?? $cnpj ) : '' ); if ( is_wp_error( $u ) ) { return $u; } }
 			$D['saldo'] = dv_saldo( $uid );
 			return $D;
+		} ) );
+} );
+
+/* Processos judiciais para o Raio-X (mesma varredura do dossiê) */
+add_action( 'rest_api_init', function () {
+	register_rest_route( 'dvtools/v1', '/fornecedor/processos', array( 'methods' => 'GET',
+		'permission_callback' => function () { return function_exists( 'dv_tools_perm' ) && dv_tools_perm(); },
+		'callback' => function ( WP_REST_Request $r ) {
+			$cnpj = preg_replace( '/\D/', '', (string) $r['cnpj'] ); if ( strlen( $cnpj ) !== 14 ) { return new WP_Error( 'dv_cnpj', 'CNPJ inválido.', array( 'status' => 400 ) ); }
+			$x = wp_remote_get( 'https://brasilapi.com.br/api/cnpj/v1/' . $cnpj, array( 'timeout' => 20 ) );
+			$c = is_wp_error( $x ) ? array() : (array) json_decode( wp_remote_retrieve_body( $x ), true );
+			if ( empty( $c['razao_social'] ) ) { return new WP_Error( 'dv_cad', 'Cadastro indisponível agora.', array( 'status' => 502 ) ); }
+			$n = trim( preg_replace( '/\s+(EM RECUPERACAO JUDICIAL)$/', '', dv_ds_nrm( $c['razao_social'] ) ) );
+			$n = trim( preg_replace( '/\s+(LTDA|LIMITADA|EIRELI|S\/?A|S\.A\.?|ME|EPP)\.?$/', '', $n ) );
+			set_time_limit( 120 );
+			$f = dv_ds_djen_full( $n ); unset( $f['processos'] ); $f['nome'] = $n;
+			return $f;
 		} ) );
 } );

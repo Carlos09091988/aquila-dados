@@ -37,30 +37,42 @@ function dv_nt_riscos() {
 	);
 }
 
-function dv_nt_buscar( $termo ) {
-	$u = 'https://news.google.com/rss/search?q=' . rawurlencode( '"' . $termo . '" when:3y' ) . '&hl=pt-BR&gl=BR&ceid=BR:pt-419';
-	$r = wp_remote_get( $u, array( 'timeout' => 20, 'user-agent' => 'Mozilla/5.0 (compatible; Desenvolve/1.0)' ) );
-	if ( is_wp_error( $r ) || wp_remote_retrieve_response_code( $r ) !== 200 ) { return null; }
-	$prev = libxml_use_internal_errors( true );
-	$x = simplexml_load_string( wp_remote_retrieve_body( $r ) );
-	libxml_use_internal_errors( $prev );
-	if ( ! $x || ! isset( $x->channel->item ) ) { return array(); }
-	$out = array();
+function dv_nt_rss( $xml ) {
+	$prev = libxml_use_internal_errors( true ); $x = simplexml_load_string( (string) $xml ); libxml_use_internal_errors( $prev );
+	$out = array(); if ( ! $x || ! isset( $x->channel->item ) ) { return $out; }
 	foreach ( $x->channel->item as $it ) {
-		$t = html_entity_decode( (string) $it->title, ENT_QUOTES, 'UTF-8' );
-		$fonte = (string) $it->source;
+		$t = html_entity_decode( (string) $it->title, ENT_QUOTES, 'UTF-8' ); $fonte = (string) $it->source;
 		if ( $fonte && substr( $t, -strlen( ' - ' . $fonte ) ) === ' - ' . $fonte ) { $t = substr( $t, 0, -strlen( ' - ' . $fonte ) ); }
-		$out[] = array( 'titulo' => $t, 'fonte' => $fonte, 'url' => (string) $it->link,
-			'data' => gmdate( 'Y-m-d', strtotime( (string) $it->pubDate ) ?: time() ),
+		$out[] = array( 'titulo' => $t, 'fonte' => $fonte, 'url' => (string) $it->link, 'data' => gmdate( 'Y-m-d', strtotime( (string) $it->pubDate ) ?: time() ),
 			'resumo' => trim( wp_strip_all_tags( html_entity_decode( (string) $it->description, ENT_QUOTES, 'UTF-8' ) ) ) );
 	}
+	return $out;
+}
+/** Várias buscas em paralelo (um ano por vez, mais uma focada em termos de risco) para não ficar preso ao limite de resultados do Google. */
+function dv_nt_buscar( $termo ) {
+	$g = function ( $q ) { return 'https://news.google.com/rss/search?q=' . rawurlencode( $q ) . '&hl=pt-BR&gl=BR&ceid=BR:pt-419'; };
+	$urls = array( 'geral' => $g( '"' . $termo . '"' ),
+		'risco' => $g( '"' . $termo . '" (multa OR suspensão OR rescisão OR investigação OR operação OR paralisação OR salários OR denúncia OR condenada OR improbidade OR "Ministério Público" OR TCE OR TCU)' ) );
+	$ano = (int) current_time( 'Y' );
+	for ( $a = $ano; $a >= $ano - 5; $a-- ) { $urls[ 'a' . $a ] = $g( '"' . $termo . '" after:' . $a . '-01-01 before:' . ( $a + 1 ) . '-01-01' ); }
+	$bodies = array();
+	if ( class_exists( '\WpOrg\Requests\Requests' ) ) {
+		$reqs = array(); foreach ( $urls as $k => $u ) { $reqs[ $k ] = array( 'url' => $u, 'type' => 'GET', 'headers' => array( 'User-Agent' => 'Mozilla/5.0 (compatible; Desenvolve/1.0)' ), 'options' => array( 'timeout' => 20 ) ); }
+		try { $rs = \WpOrg\Requests\Requests::request_multiple( $reqs, array( 'timeout' => 20 ) ); } catch ( \Throwable $e ) { $rs = array(); }
+		foreach ( $rs as $k => $r ) { if ( is_object( $r ) && isset( $r->status_code ) && $r->status_code === 200 ) { $bodies[ $k ] = $r->body; } }
+	} else {
+		foreach ( $urls as $k => $u ) { $r = wp_remote_get( $u, array( 'timeout' => 20 ) ); if ( ! is_wp_error( $r ) && wp_remote_retrieve_response_code( $r ) === 200 ) { $bodies[ $k ] = wp_remote_retrieve_body( $r ); } }
+	}
+	if ( ! $bodies ) { return null; }
+	$out = array(); $vistos = array();
+	foreach ( $bodies as $b ) { foreach ( dv_nt_rss( $b ) as $it ) { $h = md5( $it['url'] ); if ( isset( $vistos[ $h ] ) ) { continue; } $vistos[ $h ] = 1; $out[] = $it; } }
 	return $out;
 }
 
 function dv_noticias( $cnpj ) {
 	$cnpj = preg_replace( '/\D/', '', (string) $cnpj );
 	if ( strlen( $cnpj ) !== 14 ) { return new WP_Error( 'dv_cnpj', 'CNPJ inválido.', array( 'status' => 400 ) ); }
-	$ck = 'dv_nt5_' . $cnpj; $c = empty( $_GET['debug'] ) ? get_transient( $ck ) : false; if ( $c ) { return $c; }
+	$ck = 'dv_nt6_' . $cnpj; $c = empty( $_GET['debug'] ) ? get_transient( $ck ) : false; if ( $c ) { return $c; }
 	$r = wp_remote_get( 'https://brasilapi.com.br/api/cnpj/v1/' . $cnpj, array( 'timeout' => 20 ) );
 	$j = is_wp_error( $r ) ? array() : (array) json_decode( wp_remote_retrieve_body( $r ), true );
 	if ( empty( $j['razao_social'] ) ) { return array( 'cnpj' => $cnpj, 'termos' => array(), 'itens' => array(), 'aviso' => 'Não foi possível consultar o cadastro da empresa agora. Tente de novo em alguns minutos.' ); }
@@ -89,9 +101,9 @@ function dv_noticias( $cnpj ) {
 		}
 	}
 	usort( $res['itens'], function ( $a, $b ) { return strcmp( $b['data'], $a['data'] ); } );
-	$res['itens'] = array_slice( $res['itens'], 0, 30 );
+	$res['itens'] = array_slice( $res['itens'], 0, 60 );
 	usort( $res['mencoes'], function ( $a, $b ) { return strcmp( $b['data'], $a['data'] ); } );
-	$res['mencoes'] = array_slice( $res['mencoes'], 0, 20 );
+	$res['mencoes'] = array_slice( $res['mencoes'], 0, 40 );
 	if ( $falhou && ! $res['itens'] ) { $res['aviso'] = 'A busca na imprensa não respondeu agora. Tente consultar de novo em alguns minutos.'; return $res; }
 	set_transient( $ck, $res, 12 * HOUR_IN_SECONDS );
 	return $res;

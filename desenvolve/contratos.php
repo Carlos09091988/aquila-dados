@@ -221,7 +221,7 @@ add_shortcode( 'dv_contratos', function () {
 @media(max-width:700px){.ct{padding:16px}.ct-3{grid-template-columns:1fr}.ct-c{grid-template-columns:1fr}.ct-c .ac{flex-direction:row;flex-wrap:wrap;min-width:0}.ct-emps input{width:100%}}
 </style>
 <script>
-(function(){var R=document.getElementById('dv-ct');if(!R)return;var api=R.dataset.api,nonce=R.dataset.nonce,S=null,emp='',aba='atencao',F=R.querySelector('.ct-f'),D=F.closest('dialog'),M=R.querySelector('.ct-msg');
+(function(){var R=document.getElementById('dv-ct');if(!R)return;var api=R.dataset.api,nonce=R.dataset.nonce,S=null,emp='',aba='atencao',F=R.querySelector('form.ct-f'),D=F.closest('dialog'),M=R.querySelector('.ct-msg');
 function e(s){return String(s==null?'':s).replace(/[&<>"]/g,function(c){return{'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]})}
 function br(d){return d?d.slice(0,10).split('-').reverse().join('/'):''}
 function moeda(v){return v?Number(v).toLocaleString('pt-BR',{style:'currency',currency:'BRL',maximumFractionDigits:0}):''}

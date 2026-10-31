@@ -1,0 +1,274 @@
+[
+ {
+  "slug": "erro-na-planilha",
+  "titulo": "Fui desclassificado por erro na planilha",
+  "tema": "Proposta e planilha de custos",
+  "resumo": "Erro de preenchimento ou item esquecido na planilha de custos, por si só, não deveria tirar a sua empresa da disputa. O TCU entende que o órgão precisa abrir diligência e dar a chance de corrigir, desde que o valor total da proposta não aumente. E o pregoeiro tem que dizer com clareza o que está errado.",
+  "pratica": [
+   "Peça por escrito a diligência para corrigir a planilha.",
+   "Corrija sem aumentar o preço global da proposta.",
+   "Se já foi desclassificado, manifeste a intenção de recorrer logo após o julgamento, na própria sessão."
+  ],
+  "prazo": "Recurso: 3 dias úteis (art. 165 da Lei 14.133/2021), com a intenção de recorrer manifestada imediatamente.",
+  "dec": [
+   {
+    "ac": "Acórdão 4668/2026 – 2ª Câmara",
+    "data": "01/09/2026",
+    "rel": "Jorge Oliveira",
+    "txt": "Erro material ou omissão sanável na planilha não gera desclassificação sumária: o órgão deve fazer diligência para a correção, sem aumento do valor global.",
+    "enunciado": "A existência de erro material ou omissão sanável na planilha de custos e de formação de preços não enseja a desclassificação sumária da proposta, devendo o órgão ou a entidade licitante promover diligência para possibilitar a correção da falha, desde que não haja majoração do valor global originalmente proposto, em observância à busca de contratação mais vantajosa para a Administração Pública (art. 11, inciso I, da Lei 14.133/2021).",
+    "url": "https://pesquisa.apps.tcu.gov.br/documento/jurisprudencia-selecionada/*/KEY%253AJURISPRUDENCIA-SELECIONADA-208596/score%2520desc/0"
+   },
+   {
+    "ac": "Acórdão 4370/2023 – 1ª Câmara",
+    "data": "06/06/2023",
+    "rel": "Jhonatan De Jesus",
+    "txt": "O pregoeiro precisa apontar exatamente o que está errado na planilha, e não só o módulo ou o item.",
+    "enunciado": "Cabe ao pregoeiro indicar de forma clara e objetiva as inconsistências que devem ser corrigidas na planilha de preços apresentada pelo licitante, sem alteração do valor final da proposta, não se limitando a informar apenas os itens, submódulos ou módulos da planilha onde os erros se encontram, sem especificar o que está errado. Essa indicação, desde que realizada de forma indistinta em relação a todos os licitantes, favorece a transparência e viabiliza o efetivo exercício do contraditório e da ampla defesa, possibilitando o aproveitamento de propostas mais vantajosas pela Administração.",
+    "url": "https://pesquisa.apps.tcu.gov.br/documento/jurisprudencia-selecionada/*/KEY%253AJURISPRUDENCIA-SELECIONADA-152209/score%2520desc/0"
+   },
+   {
+    "ac": "Acórdão 1784/2024 – Plenário",
+    "data": "28/08/2024",
+    "rel": "Aroldo Cedraz",
+    "txt": "Terceirizada não pode ser desclassificada por deixar de incluir benefício da convenção coletiva que vale só para quem trabalha em contrato público.",
+    "enunciado": "Nas contratações de serviços de terceirização, é irregular a desclassificação de licitante por não ter incluído em sua planilha de custos e formação de preços despesas com benefícios, previstos em convenção coletiva de trabalho, exclusivos aos empregados envolvidos na execução de tais contratos, por se tratar de exigência a que a Administração Pública está vedada de se vincular (art. 135, § 2º, da Lei 14.133/2021 e art. 6º, parágrafo único, da IN Seges-MPDG 5/2017).",
+    "url": "https://pesquisa.apps.tcu.gov.br/documento/jurisprudencia-selecionada/*/KEY%253AJURISPRUDENCIA-SELECIONADA-173186/score%2520desc/0"
+   },
+   {
+    "ac": "Acórdão 906/2020 – Plenário",
+    "data": "15/04/2020",
+    "rel": "Weder De Oliveira",
+    "txt": "Diferenças entre a sua planilha e a do órgão, inclusive lucro zero ou negativo, não desclassificam por si só: o que importa é se a proposta é exequível.",
+    "enunciado": "Divergências entre as planilhas de composição de custos e formação de preços da licitante e as da Administração, inclusive relativas a cotação de lucro zero ou negativo, não são, em princípio, motivo de desclassificação, devendo para tanto haver o exame da exequibilidade da proposta, uma vez que as planilhas possuem caráter subsidiário e instrumental.",
+    "url": "https://pesquisa.apps.tcu.gov.br/documento/jurisprudencia-selecionada/*/KEY%253AJURISPRUDENCIA-SELECIONADA-88847/score%2520desc/0"
+   },
+   {
+    "ac": "Acórdão 898/2019 – Plenário",
+    "data": "16/04/2019",
+    "rel": "Benjamin Zymler",
+    "txt": "Erro na planilha que pode ser ajustado sem aumentar o preço global não é motivo para desclassificar.",
+    "enunciado": "Erros no preenchimento da planilha de preços unitários não são motivos para a desclassificação de licitante, quando a planilha puder ser ajustada sem majoração do preço global ofertado.",
+    "url": "https://pesquisa.apps.tcu.gov.br/documento/jurisprudencia-selecionada/*/KEY%253AJURISPRUDENCIA-SELECIONADA-71729/score%2520desc/0"
+   }
+  ]
+ },
+ {
+  "slug": "preco-inexequivel",
+  "titulo": "Disseram que o meu preço é inexequível",
+  "tema": "Inexequibilidade",
+  "resumo": "Preço baixo, sozinho, não prova que a proposta é inviável. Em obras e serviços de engenharia, a Lei 14.133 presume inexequível o que fica abaixo de 75% do orçado, mas o TCU diz que essa presunção é relativa: a empresa tem que ter a chance de provar que consegue executar. Em bens e serviços em geral, o TCU trata valores abaixo de 50% do orçado como indício, que exige diligência antes de qualquer decisão.",
+  "pratica": [
+   "Peça a diligência e demonstre a exequibilidade com planilha, notas fiscais e contratos parecidos.",
+   "Explique o que torna o seu preço possível: estrutura já instalada, ganho de escala, custo de oportunidade.",
+   "A análise deve olhar a proposta inteira, não um item isolado."
+  ],
+  "prazo": "Se a desclassificação acontecer, recurso em 3 dias úteis (art. 165 da Lei 14.133/2021).",
+  "dec": [
+   {
+    "ac": "Acórdão 214/2025 – Plenário",
+    "data": "05/02/2025",
+    "rel": "Jhonatan De Jesus",
+    "txt": "O critério de 75% do art. 59, § 4º, é presunção relativa: o órgão deve dar à empresa a oportunidade de demonstrar a exequibilidade.",
+    "enunciado": "O critério definido no art. 59, § 4º, da Lei 14.133/2021 conduz a uma presunção relativa de inexequibilidade de preços, devendo a Administração, nos termos do art. 59, § 2º, da referida lei, dar à licitante a oportunidade de demonstrar a exequibilidade de sua proposta.",
+    "url": "https://pesquisa.apps.tcu.gov.br/documento/jurisprudencia-selecionada/*/KEY%253AJURISPRUDENCIA-SELECIONADA-178740/score%2520desc/0"
+   },
+   {
+    "ac": "Acórdão 963/2024 – Plenário",
+    "data": "22/05/2024",
+    "rel": "Benjamin Zymler",
+    "txt": "Em bens e serviços em geral, abaixo de 50% do orçado há indício de inexequibilidade, e o órgão deve fazer diligência antes de concluir.",
+    "enunciado": "No fornecimento de bens ou na prestação de serviços em geral, há indício de inexequibilidade quando as propostas contêm valores inferiores a 50% do valor orçado pela Administração. Nesses casos, deve o agente ou a comissão de contratação realizar diligência, pois a confirmação da inviabilidade da oferta depende da comprovação de que o custo do licitante ultrapassa o valor da proposta e, concomitantemente, de que inexistem custos de oportunidade capazes de justificar o vulto da oferta (art. 34, caput e parágrafo único, da IN Seges/ME 73/2022). O parâmetro objetivo para aferição da inexequibilidade das propostas previsto no art. 59, § 4º, da Lei 14.133/2021 (75% do valor orçado pela Administração) diz respeito apenas a obras e serviços de engenharia.",
+    "url": "https://pesquisa.apps.tcu.gov.br/documento/jurisprudencia-selecionada/*/KEY%253AJURISPRUDENCIA-SELECIONADA-168423/score%2520desc/0"
+   },
+   {
+    "ac": "Acórdão 379/2024 – Plenário",
+    "data": "06/03/2024",
+    "rel": "Benjamin Zymler",
+    "txt": "A conclusão pela inexequibilidade exige análise de todos os itens da proposta, não de itens isolados.",
+    "enunciado": "A conclusão pela inexequibilidade de proposta apresentada por licitante demanda análise ampla de todos os itens que a compõem e não apenas de itens isolados.",
+    "url": "https://pesquisa.apps.tcu.gov.br/documento/jurisprudencia-selecionada/*/KEY%253AJURISPRUDENCIA-SELECIONADA-164901/score%2520desc/0"
+   },
+   {
+    "ac": "Acórdão 2705/2021 – Plenário",
+    "data": "17/11/2021",
+    "rel": "Augusto Sherman",
+    "txt": "Salário proporcional à jornada prevista no edital, ainda que abaixo do piso fixado para jornada maior, não torna a proposta inexequível.",
+    "enunciado": "Não deve ser considerada inexequível proposta de licitante que prevê, em sua planilha de preços para prestação de serviços terceirizados com dedicação exclusiva de mão de obra, o pagamento de salário proporcional à jornada semanal definida no edital, ainda que esse valor salarial seja inferior ao piso da categoria, fixado em convenção coletiva de trabalho para jornada semanal de maior duração.",
+    "url": "https://pesquisa.apps.tcu.gov.br/documento/jurisprudencia-selecionada/*/KEY%253AJURISPRUDENCIA-SELECIONADA-123862/score%2520desc/0"
+   },
+   {
+    "ac": "Acórdão 948/2024 – Plenário",
+    "data": "15/05/2024",
+    "rel": "Jorge Oliveira",
+    "txt": "Atenção: lance manifestamente inexequível pode ser excluído durante a própria disputa.",
+    "enunciado": "Constatado que lance manifestamente inexequível possa, durante a disputa, comprometer, restringir ou frustrar a competitividade do processo licitatório, o agente de contratação pode excluí-lo, de forma a resguardar a Administração de eventual comprometimento da busca pela proposta mais vantajosa (art. 21, § 4º, da IN Seges/ME 73/2022).",
+    "url": "https://pesquisa.apps.tcu.gov.br/documento/jurisprudencia-selecionada/*/KEY%253AJURISPRUDENCIA-SELECIONADA-168080/score%2520desc/0"
+   }
+  ]
+ },
+ {
+  "slug": "atestado-exigido",
+  "titulo": "Pediram um atestado que eu não tenho (ou que parece exagerado)",
+  "tema": "Qualificação técnica e atestados",
+  "resumo": "O órgão só pode pedir atestado das parcelas de maior relevância ou valor significativo do objeto, com quantidade mínima de até 50% dessas parcelas (art. 67, §§ 1º e 2º, da Lei 14.133/2021). Exigências como 100% dos postos ao mesmo tempo, tempo mínimo de experiência sem justificativa ou proibição de somar atestados precisam de justificativa técnica forte; sem ela, são irregulares e podem ser impugnadas.",
+  "pratica": [
+   "Compare a exigência com o art. 67 e veja se o edital justifica a parcela pedida.",
+   "Se for exagerada, impugne o edital antes da sessão.",
+   "Cuidado: atestado de outra empresa do grupo não vale automaticamente, e o órgão pode pedir as notas fiscais do período atestado."
+  ],
+  "prazo": "Impugnação: até 3 dias úteis antes da abertura (art. 164 da Lei 14.133/2021).",
+  "dec": [
+   {
+    "ac": "Acórdão 3388/2026 – 1ª Câmara",
+    "data": "30/06/2026",
+    "rel": "Bruno Dantas",
+    "txt": "É irregular exigir atestado sem demonstrar que o serviço é parcela de maior relevância técnica ou de valor significativo.",
+    "enunciado": "É irregular a exigência de atestados de capacidade técnica sem a demonstração de que os serviços correspondentes constituem parcelas de maior relevância técnica ou valor significativo do objeto, por contrariar o disposto no art. 67, § 1º, da Lei 14.133/2021.",
+    "url": "https://pesquisa.apps.tcu.gov.br/documento/jurisprudencia-selecionada/*/KEY%253AJURISPRUDENCIA-SELECIONADA-205474/score%2520desc/0"
+   },
+   {
+    "ac": "Acórdão 1604/2025 – Plenário",
+    "data": "23/07/2025",
+    "rel": "Jorge Oliveira",
+    "txt": "Em serviços por postos de trabalho, é irregular exigir atestado de execução simultânea de 100% dos postos; o limite legal é de até 50%.",
+    "enunciado": "Na contratação de serviços por postos de trabalho, é irregular a exigência editalícia que condicione a habilitação do licitante à apresentação de atestados comprovando a execução simultânea de 100% dos postos previstos, pois o item 10.6, c.2, do Anexo VII-A da IN Seges MP 5/2017 é incompatível com a Lei 14.133/2021, que, em função da hierarquia normativa, deve prevalecer. O art. 67, § 2º, da referida lei prevê que será admitida a exigência de atestados com quantidades mínimas de até 50% das parcelas de maior relevância ou valor significativo do objeto da licitação, sem exceções no que concerne ao quantitativo de postos de trabalho.",
+    "url": "https://pesquisa.apps.tcu.gov.br/documento/jurisprudencia-selecionada/*/KEY%253AJURISPRUDENCIA-SELECIONADA-187211/score%2520desc/0"
+   },
+   {
+    "ac": "Acórdão 2585/2024 – Plenário",
+    "data": "04/12/2024",
+    "rel": "Augusto Nardes",
+    "txt": "É irregular exigir, sem justificativa, 3 anos de experiência em terceirização para contrato de até 12 meses.",
+    "enunciado": "Em licitações de serviços por postos de trabalho, é irregular a exigência não justificada, para fins de comprovação da qualificação técnico-operacional, de atestados que comprovem que o licitante gerencia ou gerenciou serviços de terceirização compatíveis com o objeto licitado por período mínimo de três anos (Anexo VII-A, item 10.7, da IN Seges/MP 5/2017), para contratação cuja vigência inicial não seja superior a doze meses.",
+    "url": "https://pesquisa.apps.tcu.gov.br/documento/jurisprudencia-selecionada/*/KEY%253AJURISPRUDENCIA-SELECIONADA-177988/score%2520desc/0"
+   },
+   {
+    "ac": "Acórdão 2839/2025 – Plenário",
+    "data": "03/12/2025",
+    "rel": "Jhonatan De Jesus",
+    "txt": "Proibir a soma de atestados só é válido com justificativa técnica robusta, registrada na fase preparatória.",
+    "enunciado": "É irregular a vedação ao somatório de atestados para fins de qualificação técnico-operacional em situações em que não fique técnica e inequivocamente demonstrado que a execução em maior escala do serviço eleva sua complexidade a patamar tal que a experiência em projetos menores, mesmo que somada, não se mostra suficiente para garantir a aptidão da licitante. A justificativa deve ser robusta, detalhada e constar dos atos preparatórios da licitação, em observância aos princípios da motivação, da razoabilidade, da competitividade, da economicidade e da busca pela proposta mais vantajosa para a Administração.",
+    "url": "https://pesquisa.apps.tcu.gov.br/documento/jurisprudencia-selecionada/*/KEY%253AJURISPRUDENCIA-SELECIONADA-194047/score%2520desc/0"
+   },
+   {
+    "ac": "Acórdão 2418/2026 – Plenário",
+    "data": "09/09/2026",
+    "rel": "Benjamin Zymler",
+    "txt": "Atestado em nome de outra empresa só vale se ficar demonstrada a transferência da capacidade técnica; sócios em comum não bastam.",
+    "enunciado": "É irregular o aproveitamento, para fins de qualificação técnico-operacional, de atestados emitidos em nome de pessoa jurídica diversa da licitante sem demonstração da efetiva transferência da capacidade técnico-operacional neles certificada, não sendo suficiente, para tanto, a mera existência de sócios comuns entre as empresas.",
+    "url": "https://pesquisa.apps.tcu.gov.br/documento/jurisprudencia-selecionada/*/KEY%253AJURISPRUDENCIA-SELECIONADA-208771/score%2520desc/0"
+   },
+   {
+    "ac": "Acórdão 519/2025 – Plenário",
+    "data": "12/03/2025",
+    "rel": "Benjamin Zymler",
+    "txt": "Quando o órgão pede comprovação do atestado, ela é feita por nota fiscal, cobrindo todo o período atestado.",
+    "enunciado": "A comprovação da prestação de serviços constantes de atestado de capacidade técnica, quando solicitada, deve ser feita mediante nota fiscal, e não por meio de recibo, compreendendo todo o período mencionado no atestado.",
+    "url": "https://pesquisa.apps.tcu.gov.br/documento/jurisprudencia-selecionada/*/KEY%253AJURISPRUDENCIA-SELECIONADA-180748/score%2520desc/0"
+   }
+  ]
+ },
+ {
+  "slug": "repactuacao-negada",
+  "titulo": "O órgão não quer conceder a repactuação",
+  "tema": "Repactuação e reajuste",
+  "resumo": "A repactuação vale para serviços contínuos com dedicação exclusiva de mão de obra e acompanha a variação dos custos do contrato, principalmente a convenção coletiva, respeitado o intervalo de 1 ano. O cuidado mais importante é o prazo: peça antes de assinar a prorrogação ou antes de o contrato terminar. Para o TCU, quem assina o aditivo sem pedir perde o direito (preclusão).",
+  "pratica": [
+   "Protocole o pedido assim que a nova convenção coletiva for registrada, com a planilha demonstrando a variação.",
+   "Nunca assine a prorrogação sem pedir a repactuação ou, no mínimo, ressalvar o direito por escrito.",
+   "Guarde o protocolo e cobre resposta formal."
+  ],
+  "prazo": "Sem prazo fixo na lei, mas o direito se perde na prorrogação ou no fim do contrato se não for pedido antes. A Lei 14.133/2021 trata da repactuação no art. 135.",
+  "nota": "As decisões abaixo foram tomadas na vigência da Lei 8.666/1993. A Lei 14.133/2021 manteve a repactuação (art. 135).",
+  "dec": [
+   {
+    "ac": "Acórdão 1574/2015 – Plenário",
+    "data": "24/06/2015",
+    "rel": "Benjamin Zymler",
+    "txt": "A repactuação se aplica a serviços contínuos com dedicação exclusiva de mão de obra, respeitado 1 ano da data do orçamento, e deve ser demonstrada na planilha de custos.",
+    "enunciado": "A repactuação de preços aplica-se apenas às contratações de serviços continuados com dedicação exclusiva de mão de obra e ocorre a partir da variação dos componentes dos custos do contrato, desde que seja observado o interregno mínimo de um ano das datas dos orçamentos aos quais a proposta se referir, conforme estabelece o art. 5º do Decreto 2.271/1997, devendo ser demonstrada analiticamente, de acordo com a Planilha de Custos e Formação de Preços.",
+    "url": "https://pesquisa.apps.tcu.gov.br/documento/jurisprudencia-selecionada/*/KEY%253AJURISPRUDENCIA-SELECIONADA-17262/score%2520desc/0"
+   },
+   {
+    "ac": "Acórdão 1488/2016 – Plenário",
+    "data": "08/06/2016",
+    "rel": "Vital Do Rêgo",
+    "txt": "A repactuação só cabe em contratos de serviços contínuos com dedicação exclusiva de mão de obra.",
+    "enunciado": "O instituto da repactuação de preços aplica-se apenas a contratos de serviços continuados prestados com dedicação exclusiva da mão de obra.",
+    "url": "https://pesquisa.apps.tcu.gov.br/documento/jurisprudencia-selecionada/*/KEY%253AJURISPRUDENCIA-SELECIONADA-9751/score%2520desc/0"
+   },
+   {
+    "ac": "Acórdão 2094/2010 – 2ª Câmara",
+    "data": "11/05/2010",
+    "rel": "André De Carvalho",
+    "txt": "O pedido pode ser feito do evento que gera a repactuação até a prorrogação seguinte ou o fim do contrato; depois disso, o direito se perde.",
+    "enunciado": "O prazo dentro do qual poderá o contratado exercer perante a Administração seu direito à repactuação contratual conta-se da data do evento que ensejar a repactuação até a data da prorrogação contratual subsequente, se for o caso, ou do encerramento do contrato, sendo que se não o fizer de forma tempestiva e, por via de consequência, prorrogar o contrato ou deixar transcorrer o prazo de vigência, ocorrerá a preclusão do seu direito a repactuar.",
+    "url": "https://pesquisa.apps.tcu.gov.br/documento/jurisprudencia-selecionada/*/KEY%253AJURISPRUDENCIA-SELECIONADA-18415/score%2520desc/0"
+   },
+   {
+    "ac": "Acórdão 1601/2014 – Plenário",
+    "data": "18/06/2014",
+    "rel": "Benjamin Zymler",
+    "txt": "Assinar a prorrogação sem pedir os novos valores da convenção coletiva faz perder o direito à repactuação.",
+    "enunciado": "Ocorre preclusão lógica do direito à repactuação de preços decorrente de majorações salariais da categoria profissional quando a contratada firma termo aditivo de prorrogação contratual sem suscitar os novos valores pactuados no acordo coletivo, ratificando os preços até então acordados.",
+    "url": "https://pesquisa.apps.tcu.gov.br/documento/jurisprudencia-selecionada/*/KEY%253AJURISPRUDENCIA-SELECIONADA-14814/score%2520desc/0"
+   }
+  ]
+ },
+ {
+  "slug": "multa-ou-penalidade",
+  "titulo": "Recebi uma notificação de multa ou penalidade",
+  "tema": "Sanções e defesa",
+  "resumo": "Nenhuma penalidade pode ser aplicada sem processo e direito de defesa. Na Lei 14.133/2021, a multa vai de 0,5% a 30% do valor do contrato (art. 156, § 3º), e o impedimento de licitar vale no ente federativo que aplicou a sanção, enquanto a declaração de inidoneidade vale em todos (art. 156, §§ 4º e 5º). A penalidade não atinge automaticamente os contratos que você já tem.",
+  "pratica": [
+   "Anote o prazo da defesa no dia em que receber a notificação.",
+   "Reúna e-mails, ofícios, medições e tudo que mostre a sua versão dos fatos.",
+   "Questione a proporcionalidade: a sanção tem que ser compatível com a gravidade da falha."
+  ],
+  "prazo": "Defesa: 15 dias úteis (arts. 157 e 158 da Lei 14.133/2021).",
+  "nota": "Parte das decisões abaixo foi tomada na vigência da Lei 8.666/1993 e da Lei 10.520/2002.",
+  "dec": [
+   {
+    "ac": "Acórdão 2183/2019 – Plenário",
+    "data": "11/09/2019",
+    "rel": "Augusto Sherman",
+    "txt": "A sanção vale dali para frente e não alcança automaticamente contratos assinados antes dela.",
+    "enunciado": "A penalidade de suspensão temporária de participação em licitação e impedimento de contratar com a Administração produz efeitos ex nunc, não alcançando automaticamente os contratos celebrados antes da aplicação da sanção.",
+    "url": "https://pesquisa.apps.tcu.gov.br/documento/jurisprudencia-selecionada/*/KEY%253AJURISPRUDENCIA-SELECIONADA-78684/score%2520desc/0"
+   },
+   {
+    "ac": "Acórdão 1757/2020 – Plenário",
+    "data": "08/07/2020",
+    "rel": "Raimundo Carreiro",
+    "txt": "É irregular desclassificar uma empresa só porque ela foi suspensa por outro órgão.",
+    "enunciado": "É irregular a desclassificação de licitante, como medida preventiva ou de prudência, em razão da existência de penalidade de suspensão temporária prevista no art. 87, inciso III, da Lei 8.666/1993, que lhe foi aplicada por outro órgão ou entidade da Administração Pública pelo descumprimento de obrigações trabalhistas e previdenciárias. Os efeitos dessa penalidade restringem-se à participação em licitações junto ao ente que imputou a sanção.",
+    "url": "https://pesquisa.apps.tcu.gov.br/documento/jurisprudencia-selecionada/*/KEY%253AJURISPRUDENCIA-SELECIONADA-94564/score%2520desc/0"
+   },
+   {
+    "ac": "Acórdão 269/2019 – Plenário",
+    "data": "13/02/2019",
+    "rel": "Bruno Dantas",
+    "txt": "O impedimento de licitar se limita ao ente federativo que aplicou a sanção (União, estado ou município).",
+    "enunciado": "Os efeitos da sanção de impedimento de licitar e contratar prevista no art. 7º da Lei 10.520/2002 restringem-se ao âmbito do ente federativo sancionador (União ou estado ou município ou Distrito Federal).",
+    "url": "https://pesquisa.apps.tcu.gov.br/documento/jurisprudencia-selecionada/*/KEY%253AJURISPRUDENCIA-SELECIONADA-68667/score%2520desc/0"
+   },
+   {
+    "ac": "Acórdão 2274/2020 – Plenário",
+    "data": "26/08/2020",
+    "rel": "Raimundo Carreiro",
+    "txt": "Multa por inexecução total limitada a 10% do valor do contrato. Note que o TCU já decidiu de forma diferente (ver o acórdão seguinte).",
+    "enunciado": "A multa contratual decorrente da inexecução total do objeto está limitada a 10% do valor do contrato (art. 9º do Decreto 22.626/1933, revigorado pelo Decreto s/nº de 29/11/1991).",
+    "url": "https://pesquisa.apps.tcu.gov.br/documento/jurisprudencia-selecionada/*/KEY%253AJURISPRUDENCIA-SELECIONADA-97944/score%2520desc/0"
+   },
+   {
+    "ac": "Acórdão 715/2021 – Plenário",
+    "data": "31/03/2021",
+    "rel": "Raimundo Carreiro",
+    "txt": "Multa de 20% sobre a parcela não executada foi considerada lícita.",
+    "enunciado": "É lícita a fixação de multa no valor de 20% sobre a parcela inadimplida do contrato. O limite de 10% para a cláusula penal previsto no art. 9º do Decreto 22.626/1933 (Lei da Usura) não é aplicável aos contratos administrativos, e sim o estabelecido no art. 412 do Código Civil - aplicado supletivamente às contratações públicas por força do art. 54, caput, da Lei 8.666/1993 -, segundo o qual o limite para a estipulação da penalidade é o valor da obrigação principal.",
+    "url": "https://pesquisa.apps.tcu.gov.br/documento/jurisprudencia-selecionada/*/KEY%253AJURISPRUDENCIA-SELECIONADA-109139/score%2520desc/0"
+   }
+  ]
+ }
+]

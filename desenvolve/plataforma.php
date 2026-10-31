@@ -512,6 +512,17 @@ add_action( 'wp_footer', function () {
 	echo '<script>document.querySelectorAll(\'a[href$="/painel/"]\').forEach(function(a){if(/^\s*Entrar\s*$/i.test(a.textContent))a.textContent="Meu painel"})</script>';
 }, 70 );
 
+/* Enquanto o Asaas não tem chave, "Assinar" e "Comprar créditos" levam ao WhatsApp da Desenvolve */
+function dv_wa_venda() { return 'https://wa.me/5511993500950?text=' . rawurlencode( 'Olá! Quero assinar a plataforma Desenvolve.' ); }
+add_action( 'template_redirect', function () {
+	if ( get_option( 'dv_asaas_key' ) || current_user_can( 'manage_options' ) ) { return; }
+	if ( is_page( array( 'assinar', 'creditos' ) ) ) { wp_redirect( dv_wa_venda() ); exit; }
+} );
+add_action( 'wp_footer', function () {
+	if ( get_option( 'dv_asaas_key' ) ) { return; }
+	echo '<script>(function(){var u=' . wp_json_encode( dv_wa_venda() ) . ';function f(){document.querySelectorAll(\'a[href*="/assinar/"],a[href*="/creditos/"]\').forEach(function(a){a.href=u;a.target="_blank";a.rel="noopener"})}f();new MutationObserver(f).observe(document.body,{childList:true,subtree:true})})()</script>';
+}, 71 );
+
 /* ---------------- Aparência das telas do assinante ---------------- */
 add_action( 'wp_footer', function () {
 	global $post;

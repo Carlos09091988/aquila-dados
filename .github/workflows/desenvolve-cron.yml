@@ -1,0 +1,13 @@
+name: Desenvolve - cron do site
+# Chama o wp-cron do site para disparar os alertas e e-mails no horario,
+# sem depender de visitas (substitui o cron do hPanel).
+on:
+  schedule:
+    - cron: '*/15 * * * *'
+  workflow_dispatch:
+jobs:
+  ping:
+    runs-on: ubuntu-latest
+    timeout-minutes: 3
+    steps:
+      - run: curl -s -o /dev/null -w "%{http_code}\n" --max-time 60 "https://desenvolveestrategias.com.br/wp-cron.php?doing_wp_cron"

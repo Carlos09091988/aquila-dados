@@ -219,6 +219,7 @@ def socios(con):
     log('vínculos selecionados', con.execute('SELECT count(*) FROM sel').fetchone()[0])
     # contatos em comum (telefone, e-mail, endereço) entre estabelecimentos ativos
     con.execute('CREATE TABLE ct0 (k VARCHAR, basico VARCHAR)')
+    con.execute('CREATE TABLE fl0 (basico VARCHAR, cnpj VARCHAR, uf VARCHAR, mun VARCHAR)')
     for i in range(n):
         z = b(f'Estabelecimentos{i}.zip'); est = extrair([z], os.path.join(WORK, 'rf_est')); os.remove(z)
         conv = []
@@ -231,6 +232,10 @@ def socios(con):
                     fo.write(ch.decode('latin-1').encode('utf-8'))
             os.remove(f); conv.append(g)
         est = conv
+        # filiais ativas (para monitorar publicações de todas as unidades)
+        con.execute(f"""INSERT INTO fl0 SELECT column00, column00 || column01 || column02, column19, column20
+           FROM read_csv({est!r}, delim=';', header=false, all_varchar=true, quote='"', ignore_errors=true, null_padding=true)
+           WHERE column05 = '02'""")
         con.execute(f"""CREATE OR REPLACE TABLE es AS SELECT column00 AS basico, regexp_replace(coalesce(column21,'') || coalesce(column22,''), '\\D', '', 'g') AS t1,
            regexp_replace(coalesce(column23,'') || coalesce(column24,''), '\\D', '', 'g') AS t2, lower(trim(coalesce(column27,''))) AS em,
            regexp_replace(coalesce(column18,''), '\\D', '', 'g') AS cep, regexp_replace(upper(coalesce(column15,'')), '[^A-Z0-9]', '', 'g') AS num,
@@ -244,6 +249,16 @@ def socios(con):
         con.execute('DROP TABLE es')
         shutil.rmtree(os.path.join(WORK, 'rf_est'), ignore_errors=True)
         log('estabelecimentos', i, 'ok')
+    # índice de filiais: só empresas com 2+ unidades ativas (até 200 por empresa)
+    cur = con.execute("""SELECT substr(basico,1,3), basico, list(cnpj || '|' || coalesce(uf,'') ORDER BY cnpj)[1:200] FROM fl0
+       WHERE basico IN (SELECT basico FROM fl0 GROUP BY basico HAVING count(*) >= 2) GROUP BY basico ORDER BY 1, 2""")
+    def it3():
+        while True:
+            lote = cur.fetchmany(50000)
+            if not lote: break
+            for sh, b, l in lote: yield sh, b, l
+    filiais = gravar_shards(it3(), os.path.join(OUT, 'filiais'), 'Filiais')
+    con.execute('DROP TABLE fl0')
     con.execute("""CREATE TABLE ct AS SELECT DISTINCT ct0.k, ct0.basico FROM ct0 JOIN (SELECT k FROM ct0 GROUP BY k HAVING count(DISTINCT basico) BETWEEN 2 AND 30) USING (k)""")
     con.execute('DROP TABLE ct0')
     log('contatos em comum', con.execute('SELECT count(*) FROM ct').fetchone()[0])
@@ -290,7 +305,7 @@ def socios(con):
     sinais = gravar_shards(it2(), os.path.join(OUT, 'vinc'), 'Sinais')
     for p in glob.glob(os.path.join(WORK, 'rf_*.zip')):
         os.remove(p)
-    return {'referencia': mes, 'chaves': total, 'sinais': sinais}
+    return {'referencia': mes, 'chaves': total, 'sinais': sinais, 'filiais': filiais}
 
 
 def main():

@@ -24,7 +24,7 @@ function card(){var c=document.createElement('div');c.className='dv-ia';c.style.
   m.style.color='#2F7A55';m.textContent=ia?(direto?(t.length<=LIM?'Abrimos o '+ia[0]+' já com o relatório. É só enviar.':'Abrimos o '+ia[0]+' já com o resumo e os pontos de atenção. Para a análise completa, cole também o relatório inteiro, que já está copiado (Ctrl+V ou ⌘+V).'):'Copiado! Na aba do '+ia[0]+', cole (Ctrl+V ou ⌘+V) e envie.'):'Copiado! Cole na sua IA (Ctrl+V ou ⌘+V).';
   if(!ok&&!navigator.clipboard){m.style.color='#B04A3A';m.textContent='Não conseguimos copiar automaticamente. Use "Baixar arquivo".'}});
  return c}
-function ancora(){if(dossie){var r=tool.querySelector('.rp');return r?r.querySelector('.rp-sec'):null}
+function ancora(){if(dossie){var r=tool.querySelector('.rp');if(!r)return null;var s=r.querySelectorAll('.rp-sec');return s[2]||s[s.length-1]||null}
  var w=document.createTreeWalker(tool,NodeFilter.SHOW_TEXT,null),n;while((n=w.nextNode())){if(/^\s*pontos de aten[cç][aã]o\s*$/i.test(n.nodeValue))return n.parentElement.parentElement}return null}
 var ult='';function checar(){var a=ancora();if(!a)return;var cn=cnpj(),ex=tool.querySelector('.dv-ia');if(ex&&ult===cn)return;if(ex)ex.remove();ult=cn;a.insertAdjacentElement(dossie?'beforebegin':'afterend',card())}
 var t=null;new MutationObserver(function(){clearTimeout(t);t=setTimeout(checar,300)}).observe(tool,{childList:true,subtree:true});

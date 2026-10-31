@@ -80,6 +80,40 @@ add_action( 'rest_api_init', function () {
 		dv_ct_salvar_itens( $uid, array_filter( dv_ct_itens( $uid ), function ( $x ) use ( $ids ) { return ! in_array( $x['id'], $ids, true ); } ) ); return array( 'ok' => true );
 	} ) );
 } );
+/* Ficha do contrato: notificações ligadas e publicações nos diários oficiais */
+function dv_ct_num( $n ) { // "Contrato nº 00026/2025" -> "26/2025"
+	if ( preg_match( '#(\d{1,8})\s*/\s*(\d{4})#', (string) $n, $m ) ) { return ltrim( $m[1], '0' ) . '/' . $m[2]; }
+	return '';
+}
+function dv_ct_diarios( $c, $nome ) {
+	$num = dv_ct_num( $c['numero'] ?? '' ); $out = array(); if ( ! $num ) { return $out; }
+	$ck = 'dv_ctd1_' . md5( $num . $nome ); $x = get_transient( $ck ); if ( is_array( $x ) ) { return $x; }
+	$pal = array_slice( array_filter( explode( ' ', preg_replace( '/[^A-Z0-9 ]/', ' ', strtoupper( remove_accents( $nome ) ) ) ), function ( $w ) { return strlen( $w ) > 3 && ! in_array( $w, array( 'LTDA', 'EIRELI', 'S/A', 'EPP' ), true ); } ), 0, 2 );
+	$q = '"' . $num . '"' . ( $pal ? ' + "' . implode( ' ', $pal ) . '"' : '' );
+	$desde = $c['inicio'] ? gmdate( 'Y-m-d', strtotime( $c['inicio'] . ' -60 days' ) ) : gmdate( 'Y-m-d', strtotime( '-3 years' ) );
+	$u = add_query_arg( array( 'querystring' => rawurlencode( $q ), 'published_since' => $desde, 'size' => 30, 'excerpt_size' => 400, 'number_of_excerpts' => 2, 'sort_by' => 'descending_date' ), 'https://queridodiario.ok.org.br/api/gazettes' );
+	$r = wp_remote_get( $u, array( 'timeout' => 30 ) );
+	if ( ! is_wp_error( $r ) && wp_remote_retrieve_response_code( $r ) === 200 ) {
+		foreach ( (array) ( json_decode( wp_remote_retrieve_body( $r ), true )['gazettes'] ?? array() ) as $g ) {
+			$out[] = array( 'data' => $g['date'] ?? '', 'fonte' => ( $g['territory_name'] ?? '' ) . ( ! empty( $g['state_code'] ) ? '/' . $g['state_code'] : '' ), 'url' => $g['url'] ?? '', 'trecho' => mb_substr( implode( ' … ', array_map( function ( $e ) { return trim( preg_replace( '/\s+/', ' ', wp_strip_all_tags( $e ) ) ); }, (array) ( $g['excerpts'] ?? array() ) ) ), 0, 700 ) );
+		}
+	}
+	set_transient( $ck, $out, 12 * HOUR_IN_SECONDS );
+	return $out;
+}
+add_action( 'rest_api_init', function () {
+	register_rest_route( 'desenvolve/v1', '/contratos/ficha', array( 'methods' => 'GET', 'permission_callback' => function () { return function_exists( 'dv_tools_perm' ) && dv_tools_perm(); }, 'callback' => function ( WP_REST_Request $r ) {
+		global $wpdb; $uid = get_current_user_id(); $id = sanitize_key( (string) $r['id'] ); $hoje = current_time( 'Y-m-d' ); $c = null;
+		foreach ( dv_ct_itens( $uid ) as $x ) { if ( $x['id'] === $id ) { $c = dv_ct_calc( $x, $hoje ); } }
+		if ( ! $c ) { return new WP_Error( 'dv_ct', 'Contrato não encontrado.', array( 'status' => 404 ) ); }
+		$not = array(); if ( function_exists( 'dv_rc_itens' ) ) { $T = dv_rc_tipos(); foreach ( dv_rc_itens( $uid ) as $x ) { if ( ( $x['contrato'] ?? '' ) === $id ) { $x = dv_rc_calc( $x, $hoje ); $x['tipo_nome'] = $T[ $x['tipo'] ][0] ?? $x['tipo']; $not[] = $x; } } }
+		$nome = ''; foreach ( ( function_exists( 'dv_docs_emps' ) ? dv_docs_emps( $uid ) : array() ) as $e ) { if ( $e['cnpj'] === $c['cnpj'] ) { $nome = $e['nome']; } }
+		$num = dv_ct_num( $c['numero'] ); $radar = array();
+		if ( $num ) { $radar = $wpdb->get_results( $wpdb->prepare( "SELECT data,municipio,uf,url,trecho FROM {$wpdb->prefix}dv_capt WHERE user_id=%d AND trecho LIKE %s ORDER BY data DESC LIMIT 30", $uid, '%' . $wpdb->esc_like( $num ) . '%' ), ARRAY_A ); }
+		$pub = $r['diarios'] ? dv_ct_diarios( $c, $nome ) : null;
+		return array( 'contrato' => $c, 'notificacoes' => $not, 'radar' => $radar, 'diarios' => $pub, 'numero_busca' => $num );
+	} ) );
+} );
 function dv_al_norm_ct( $s ) { return strtoupper( preg_replace( '/[^A-Z0-9]/i', '', remove_accents( (string) $s ) ) ); }
 
 /* Avisos diários: vigência (120, 90, 60, 30, 15 e 0 dias), reajuste/repactuação (60, 30 e 0 dias), garantia (30, 15, 7 e 0 dias) */
@@ -124,9 +158,11 @@ add_shortcode( 'dv_contratos', function () {
 <div class="ct" id="dv-ct" data-api="<?php echo esc_attr( rest_url( 'desenvolve/v1/' ) ); ?>" data-nonce="<?php echo esc_attr( wp_create_nonce( 'wp_rest' ) ); ?>">
 	<div class="ct-emps"></div>
 	<div class="ct-kpi"></div>
+	<input class="ct-busca" placeholder="Buscar por número do contrato, órgão, objeto ou cidade" style="margin:0 0 12px">
 	<div class="ct-top"><span class="ct-tabs"></span><span><button class="g ct-novo">+ Contrato à mão</button> <button class="ct-imp">Buscar meus contratos no PNCP</button></span></div>
 	<p class="ct-msg ct-h"></p>
 	<div class="ct-list"><p class="ct-h">Carregando…</p></div>
+	<dialog class="ct-dlg ct-fi"><div class="ct-f"><div class="ct-fb"></div><div class="ct-act"><button type="button" class="g ct-fx">Fechar</button></div></div></dialog>
 	<dialog class="ct-dlg"><form method="dialog" class="ct-f">
 		<h3>Contrato</h3>
 		<label>Órgão<input name="orgao"></label>
@@ -156,6 +192,8 @@ add_shortcode( 'dv_contratos', function () {
 .ct-c .ac{display:flex;flex-direction:column;gap:6px;min-width:170px}.ct-c .ac button,.ct-c .ac a{font-size:.8rem;padding:7px 12px;text-align:center;text-decoration:none;border-radius:10px;font-weight:700}.ct-c .ac a{border:1px solid var(--ln);color:#8A6A2C}.ct-c .ac a.s{background:#0C0F13;color:#F4F2EC;border-color:#0C0F13}
 .ct-dlg{border:0;border-radius:16px;padding:0;max-width:680px;width:calc(100% - 32px)}.ct-dlg::backdrop{background:rgba(12,15,19,.55)}
 .ct-f{padding:22px;display:grid;gap:10px}.ct-f h3{margin:0}.ct-f label{font-weight:600;font-size:.86rem;display:grid;gap:4px}.ct-3{display:grid;grid-template-columns:repeat(3,1fr);gap:10px}.ct-act{display:flex;justify-content:flex-end;gap:8px}.ct-fm.e{color:var(--rd)}
+.ct-fi{max-width:820px}.ct-fb h3{margin:0 0 4px}.ct-fb h4{margin:18px 0 8px;font-size:.8rem;letter-spacing:.12em;text-transform:uppercase;color:var(--gd)}.ct-fb .gr{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}.ct-fb .gr div{border:1px solid var(--ln);border-radius:12px;padding:10px 12px;background:#fff}.ct-fb .gr b{display:block;font-size:1.05rem}.ct-fb .gr span{color:var(--mu);font-size:.78rem;font-weight:600}.ct-fb .it{border-top:1px solid #EEE9DE;padding:8px 0;font-size:.88rem}.ct-fb .it .m{color:var(--mu);font-size:.78rem}.ct-fb a{color:#8A6A2C;font-weight:700}
+@media(max-width:700px){.ct-fb .gr{grid-template-columns:1fr}}
 .ct-vazio{border:1px dashed var(--ln);border-radius:14px;padding:22px;text-align:center;color:var(--mu);margin-top:10px}
 @media(max-width:700px){.ct{padding:16px}.ct-3{grid-template-columns:1fr}.ct-c{grid-template-columns:1fr}.ct-c .ac{flex-direction:row;flex-wrap:wrap;min-width:0}.ct-emps input{width:100%}}
 </style>
@@ -176,7 +214,8 @@ function pintar(){
  R.querySelector('.ct-kpi').innerHTML=emp?'<div><b>'+vig.length+'</b><span>Contratos vigentes</span></div><div><b>'+moeda(tot)+'</b><span>Valor da carteira vigente</span></div><div><b style="color:var(--rd)">'+at+'</b><span>Pedem atenção agora</span></div><div><b style="color:var(--am)">'+sg+'</b><span>Sem garantia cadastrada</span></div>':'';
  var T={atencao:'Pedem atenção',vigentes:'Vigentes',encerrados:'Encerrados',todos:'Todos'};
  R.querySelector('.ct-tabs').innerHTML=emp?Object.keys(T).map(function(k){return'<span data-t="'+k+'" class="'+(k===aba?'on':'')+'">'+T[k]+'</span>'}).join(''):'';
- var l=ds.filter(function(c){return aba==='todos'||(aba==='vigentes'&&c.vigente)||(aba==='encerrados'&&!c.vigente)||(aba==='atencao'&&atencao(c))});
+ var qb=(R.querySelector('.ct-busca').value||'').toLowerCase().replace(/^0+/,'');
+ var l=ds.filter(function(c){return!qb||[c.numero,c.orgao,c.objeto,c.municipio,c.uf].join(' ').toLowerCase().replace(/\b0+(\d)/g,'$1').indexOf(qb)>=0}).filter(function(c){return qb||aba==='todos'||(aba==='vigentes'&&c.vigente)||(aba==='encerrados'&&!c.vigente)||(aba==='atencao'&&atencao(c))});
  l.sort(function(a,b){var x=Math.min(a.dias_fim==null?9999:a.dias_fim,a.dias_reajuste==null?9999:a.dias_reajuste,a.dias_garantia==null?9999:a.dias_garantia),y=Math.min(b.dias_fim==null?9999:b.dias_fim,b.dias_reajuste==null?9999:b.dias_reajuste,b.dias_garantia==null?9999:b.dias_garantia);return x-y});
  var L=R.querySelector('.ct-list');
  if(!S.empresas.length){L.innerHTML='<div class="ct-vazio">Informe acima o CNPJ da sua empresa. Buscamos no PNCP e no Portal da Transparência todos os contratos públicos dela (matriz e filiais) e passamos a avisar vigência, reajuste e garantia.</div>';return}
@@ -187,7 +226,7 @@ function pintar(){
   if(c.garantia_tipo)ch.push([c.dias_garantia!==null&&c.dias_garantia<=15?'r':c.dias_garantia!==null&&c.dias_garantia<=30?'a':'v',c.garantia_tipo+(c.garantia_vence?' até '+br(c.garantia_vence):'')]);else if(c.vigente)ch.push(['a','Garantia não cadastrada']);
   ch.push(['',c.fonte]);
   var seg=c.vigente?'<a class="s" target="_blank" rel="noopener" href="'+e(wa('Olá! Quero cotar seguro garantia para o contrato '+(c.numero||'')+' com '+(c.orgao||'')+' (valor '+moeda(c.valor)+', vigência até '+br(c.fim)+').'))+'">Cotar seguro garantia</a>':'';
-  return'<div class="ct-c"><div><div class="o">'+e(c.orgao||'Órgão não informado')+(c.uf?' · '+e(c.municipio?c.municipio+'/':'')+e(c.uf):'')+'</div><div class="m">'+e(c.numero||'')+(c.valor?' · '+moeda(c.valor):'')+(c.inicio?' · desde '+br(c.inicio):'')+(c.indice?' · '+e(c.indice):'')+'</div><div class="ob">'+e(String(c.objeto||'').slice(0,240))+'</div><div class="ct-ch">'+ch.map(function(k){return'<span class="'+k[0]+'">'+e(k[1])+'</span>'}).join('')+'</div>'+(c.notas?'<div class="m">📝 '+e(c.notas.slice(0,160))+'</div>':'')+'</div><div class="ac">'+seg+(c.vigente?'<a href="/plataforma/repactuacao/">Calcular repactuação</a>':'')+'<button class="g" data-ed="'+c.id+'">Editar datas e garantia</button>'+(c.link?'<a href="'+e(c.link)+'" target="_blank" rel="noopener">Ver na fonte</a>':'')+'<button class="g" data-x="'+c.id+'">Remover</button></div></div>'}).join(''):'<div class="ct-vazio">Nada nesta aba.</div>'}
+  return'<div class="ct-c"><div><div class="o">'+e(c.orgao||'Órgão não informado')+(c.uf?' · '+e(c.municipio?c.municipio+'/':'')+e(c.uf):'')+'</div><div class="m">'+e(c.numero||'')+(c.valor?' · '+moeda(c.valor):'')+(c.inicio?' · desde '+br(c.inicio):'')+(c.indice?' · '+e(c.indice):'')+'</div><div class="ob">'+e(String(c.objeto||'').slice(0,240))+'</div><div class="ct-ch">'+ch.map(function(k){return'<span class="'+k[0]+'">'+e(k[1])+'</span>'}).join('')+'</div>'+(c.notas?'<div class="m">📝 '+e(c.notas.slice(0,160))+'</div>':'')+'</div><div class="ac">'+seg+(c.vigente?'<a href="/plataforma/repactuacao/">Calcular repactuação</a>':'')+'<button data-fi="'+c.id+'">Ficha do contrato</button><button class="g" data-ed="'+c.id+'">Editar datas e garantia</button>'+(c.link?'<a href="'+e(c.link)+'" target="_blank" rel="noopener">Ver na fonte</a>':'')+'<button class="g" data-x="'+c.id+'">Remover</button></div></div>'}).join(''):'<div class="ct-vazio">Nada nesta aba.</div>'}
 function form(c){F.reset();F.querySelector('.ct-fm').textContent='';if(c)Object.keys(c).forEach(function(k){var i=F.querySelector('[name='+k+']');if(i&&c[k]!=null)i.value=c[k]});F.querySelector('[name=cnpj]').value=emp;if(c&&c.garantia_valor==0)F.querySelector('[name=garantia_valor]').value='';D.showModal()}
 F.querySelector('.ct-ok').addEventListener('click',function(){var o={};new FormData(F).forEach(function(v,k){o[k]=v});o.valor=num(o.valor);o.garantia_valor=num(o.garantia_valor);var m=F.querySelector('.ct-fm');m.textContent='Salvando…';req('POST','contratos/salvar',o).then(function(){D.close();carregar()}).catch(function(j){m.className='ct-fm ct-h e';m.textContent=(j&&j.message)||'Erro.'})});
 R.addEventListener('submit',function(ev){if(!ev.target.matches('.ct-add'))return;ev.preventDefault();var c=ev.target.querySelector('input').value.replace(/\D/g,'');req('POST','docs/empresa',{cnpj:c}).then(function(){emp=c;return carregar()}).catch(function(j){alert((j&&j.message)||'Erro')})});
@@ -198,8 +237,23 @@ R.addEventListener('click',function(ev){var t=ev.target,c;
  if(t.matches('.ct-imp')){if(!emp){alert('Cadastre a empresa primeiro.');return}t.disabled=true;M.className='ct-msg ct-h';M.textContent='Buscando no PNCP e no Portal da Transparência (matriz e filiais)… pode levar até 1 minuto.';
   req('POST','contratos/importar',{cnpj:emp}).then(function(j){M.className='ct-msg ct-h o';M.textContent=j.encontrados+' contrato(s) encontrados, '+j.adicionados+' novo(s) na sua carteira'+(j.encerrados?' ('+j.encerrados+' encerrados há mais de 1 ano ficaram de fora)':'')+'. Complete a data-base e a garantia de cada um para receber os avisos certos.'+(j.pncp<3?' O PNCP respondeu pouco agora: rode a busca de novo em alguns minutos (o que já está na carteira não se duplica).':'');aba='vigentes';t.disabled=false;return carregar()}).catch(function(j){t.disabled=false;M.className='ct-msg ct-h e';M.textContent=(j&&j.message)||'A busca demorou demais. Tente de novo.'});return}
  if(t.dataset.ed){c=S.itens.filter(function(x){return x.id===t.dataset.ed})[0];form(c);return}
+ if(t.dataset.fi){ficha(t.dataset.fi);return}
+ if(t.matches('.ct-fx')){FI.close();return}
+ if(t.matches('.ct-dio')){t.disabled=true;t.textContent='Buscando nos diários oficiais…';req('GET','contratos/ficha?diarios=1&id='+t.dataset.id).then(function(j){t.outerHTML=pubs(j.diarios,'Nada encontrado nos diários municipais disponíveis com o número deste contrato e o nome da empresa.')}).catch(function(){t.disabled=false;t.textContent='Tentar de novo'});return}
  if(t.dataset.x){if(confirm('Remover este contrato da carteira?'))req('POST','contratos/excluir',{ids:[t.dataset.x]}).then(carregar)}});
-carregar();
+var FI=R.querySelector('.ct-fi');
+function pubs(l,vazio){return l&&l.length?l.map(function(p){return'<div class="it"><div class="m">'+br(p.data)+' · '+e(p.fonte||((p.municipio||'')+(p.uf?'/'+p.uf:'')))+'</div>'+e(String(p.trecho||'').slice(0,500))+(p.url?' <a href="'+e(p.url)+'" target="_blank" rel="noopener">abrir</a>':'')+'</div>'}).join(''):'<p class="ct-h">'+vazio+'</p>'}
+function ficha(id){var B=FI.querySelector('.ct-fb');B.innerHTML='<p class="ct-h">Carregando a ficha…</p>';FI.showModal();
+ req('GET','contratos/ficha?id='+id).then(function(j){var c=j.contrato,H='';
+  H+='<h3>'+e(c.orgao||'')+'</h3><p class="ct-h">'+e(c.numero||'')+(c.valor?' · '+moeda(c.valor):'')+' · '+e(c.fonte||'')+'</p><p style="font-size:.92rem">'+e(c.objeto||'')+'</p>';
+  var vg=c.dias_fim===null?'Sem data':(c.dias_fim<0?'Encerrado em '+br(c.fim):br(c.fim)+' ('+c.dias_fim+' dias)');
+  H+='<div class="gr"><div><span>Vigência</span><b>'+vg+'</b>'+(c.verificar?'<span style="color:var(--am)">Confirme se foi prorrogado</span>':'')+'</div><div><span>Próximo reajuste / repactuação</span><b>'+(c.vigente&&c.prox_reajuste?br(c.prox_reajuste)+' ('+c.dias_reajuste+' dias)':'—')+'</b>'+(c.indice?'<span>'+e(c.indice)+'</span>':'')+'</div><div><span>Garantia</span><b>'+(c.garantia_tipo?e(c.garantia_tipo):'Não cadastrada')+'</b>'+(c.garantia_vence?'<span>vence '+br(c.garantia_vence)+(c.dias_garantia!==null?' ('+c.dias_garantia+' dias)':'')+'</span>':'')+(c.garantia_valor>0?'<span> · '+moeda(c.garantia_valor)+'</span>':'')+'</div></div>';
+  H+='<h4>Notificações, ofícios e recursos ('+j.notificacoes.length+')</h4>'+(j.notificacoes.length?j.notificacoes.map(function(n){return'<div class="it"><b>'+e(n.titulo||n.tipo_nome)+'</b>'+(n.numero_doc?' · '+e(n.numero_doc):'')+'<div class="m">'+e(n.tipo_nome)+(n.intimacao?' · recebida em '+br(n.intimacao):'')+(n.prazo?' · prazo '+br(n.prazo)+(n.prazo_hora&&n.prazo_hora!=='23:59'?' '+n.prazo_hora:''):'')+' · '+({aberto:'a responder',respondido:'respondido',protocolado:'protocolado',deferido:'deferido',indeferido:'indeferido'}[n.status]||n.status)+'</div></div>'}).join(''):'<p class="ct-h">Nenhuma registrada.</p>')+'<p><a href="/plataforma/recursos/?contrato='+c.id+'&tipo=notificacao">+ Registrar notificação deste contrato</a></p>';
+  H+='<h4>No Diário Oficial</h4>'+(j.numero_busca?(j.radar.length?'<p class="ct-h">Já encontradas pelo seu Radar do Diário Oficial:</p>'+pubs(j.radar,''):'')+'<button class="g ct-dio" data-id="'+c.id+'">Buscar publicações deste contrato (nº '+e(j.numero_busca)+') nos diários</button>':'<p class="ct-h">Cadastre o número do contrato (ex.: 26/2025) para buscarmos as publicações.</p>');
+  H+='<div class="ct-act" style="justify-content:flex-start;margin-top:14px">'+(c.vigente?'<a class="g" style="border:1px solid var(--ln);border-radius:10px;padding:8px 12px;text-decoration:none" target="_blank" rel="noopener" href="'+e(wa('Olá! Quero cotar seguro garantia para o contrato '+(c.numero||'')+' com '+(c.orgao||'')+' (valor '+moeda(c.valor)+', vigência até '+br(c.fim)+').'))+'">Cotar seguro garantia</a> <a class="g" style="border:1px solid var(--ln);border-radius:10px;padding:8px 12px;text-decoration:none" href="/plataforma/repactuacao/">Calcular repactuação</a>':'')+(c.link?' <a style="padding:8px 12px" href="'+e(c.link)+'" target="_blank" rel="noopener">Ver na fonte</a>':'')+'</div>';
+  B.innerHTML=H}).catch(function(j){B.innerHTML='<p class="ct-h">'+e((j&&j.message)||'Não foi possível abrir a ficha.')+'</p>'})}
+R.querySelector('.ct-busca').addEventListener('input',function(){pintar()});
+carregar().then(function(){var m=location.search.match(/[?&]ficha=([a-z0-9]+)/);if(m)ficha(m[1])});
 })();
 </script>
 	<?php return ob_get_clean();

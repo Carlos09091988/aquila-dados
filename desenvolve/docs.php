@@ -37,7 +37,7 @@ function dv_docs_tipos() {
 		'certificado_dig' => array( 'Certificado digital (e-CNPJ)', 'Cadastros e outros', 365, '', 0 ),
 		'garantia'        => array( 'Apólice de seguro garantia', 'Cadastros e outros', 0, '', 0 ),
 		'declaracoes'     => array( 'Declarações (art. 63, menor aprendiz, ME/EPP etc.)', 'Cadastros e outros', 0, '', 0 ),
-		'outro'           => array( 'Outro documento', 'Cadastros e outros', 0, '', 0 ),
+		'outro'           => array( 'Outro documento (você dá o nome)', 'Outros documentos que você controla', 0, '', 0 ),
 	);
 }
 
@@ -239,7 +239,7 @@ add_shortcode( 'dv_documentos', function () {
 		<label class="dc-drop">Opcional: arraste o PDF da certidão ou <u>escolha o arquivo</u> para preencher os dados sozinho<input type="file" accept=".pdf"><span class="dc-fn"></span><small style="display:block;color:#6E6A60;margin-top:6px">O arquivo não é enviado nem guardado: a leitura acontece só no seu computador. Guarde a certidão na rede da sua empresa.</small></label>
 		<p class="dc-lido dc-h"></p>
 		<label>Tipo de documento<select name="tipo"></select></label>
-		<label>Descrição<input name="titulo" maxlength="190"></label>
+		<label><span class="dc-tl">Descrição</span><input name="titulo" maxlength="190"></label>
 		<div class="dc-2"><label>Emissão<input type="date" name="emissao"></label><label>Válido até<input type="date" name="validade"></label></div>
 		<label>Resultado<select name="resultado"><option value="">—</option><option value="negativa">Negativa / regular</option><option value="pcen">Positiva com efeitos de negativa</option><option value="positiva">Positiva (irregular)</option></select></label>
 		<label>Observação<input name="obs" maxlength="500" placeholder="Ex.: emitida para o pregão 12/2026"></label>
@@ -300,7 +300,7 @@ function pintar(){
  if(rd.carregando)H+='<div class="dc-rad ok"><b>Radar de habilitação</b><p class="dc-h">Verificando dívida ativa, sanções e situação do CNPJ…</p></div>';
  else if(rd.alertas&&rd.alertas.length)H+='<div class="dc-rad"><b>Radar de habilitação: '+rd.alertas.length+' ponto(s) de atenção antes de emitir as certidões</b><ul>'+rd.alertas.map(function(a){return'<li>'+e(a.txt)+'</li>'}).join('')+'</ul><p class="dc-h">Fontes: PGFN (dívida ativa), CGU (CEIS e CNEP), TCU (inidôneos) e Receita Federal. Precisa regularizar? Acione um consultor da Desenvolve.</p></div>';
  else if(rd.alertas)H+='<div class="dc-rad ok"><b>Radar de habilitação: nada impeditivo encontrado</b><p class="dc-h">Sem dívida ativa da União, sem sanções no CEIS, CNEP e TCU e CNPJ ativo na Receita. Fontes oficiais, atualizadas periodicamente.</p></div>';
- H+='<div class="dc-top"><button class="dc-novo">+ Cadastrar documento</button></div>';
+ H+='<div class="dc-top"><button class="dc-novo">+ Cadastrar documento</button><button class="g dc-outro">+ Outro documento que quero controlar</button></div><p class="dc-h" style="margin:-4px 0 8px">Alvará, licença, AVCB, registro em conselho, certificado digital, apólice, atestado de vistoria, contrato de aluguel, o que quiser: dê o nome e a validade e receba o aviso antes de vencer.</p>';
  var grupos=[];S.tipos.forEach(function(t){if(grupos.indexOf(t.grupo)<0)grupos.push(t.grupo)});
  grupos.forEach(function(g){var linhas='';
   S.tipos.filter(function(t){return t.grupo===g}).forEach(function(t){var l=por[t.k]||[];
@@ -310,11 +310,13 @@ function pintar(){
   if(linhas)H+='<div class="dc-g">'+e(g)+'</div>'+linhas});
  H+='<p class="dc-src">A Desenvolve não guarda os seus documentos: aqui ficam só os dados para o alerta (tipo, emissão e validade). Guarde as certidões na rede da sua empresa. Confira sempre o que o edital exige: prazos de validade podem variar por órgão (art. 70 da Lei 14.133/2021 permite substituir por registro cadastral). Avisos por e-mail 30, 15, 7, 3 e 1 dia antes do vencimento, para os mesmos e-mails do Radar do Diário Oficial. <a href="#" class="dc-rmv" style="color:var(--rd)">Remover esta empresa</a></p>';
  B.innerHTML=H}
+function rotulo(){var o=F.querySelector('[name=tipo]').value==='outro';F.querySelector('.dc-tl').textContent=o?'Nome do documento (obrigatório)':'Descrição'}
 function abrir(d,tk){edit=d?d.id:0;F.reset();F.querySelector('.dc-fn').textContent='';var L=F.querySelector('.dc-lido');L.className='dc-lido dc-h';F.querySelector('.dc-fm').textContent='';
  F.querySelector('.dc-ft').textContent=d?'Editar documento':'Cadastrar documento';
  var sl=F.querySelector('[name=tipo]'),g='',o='';S.tipos.forEach(function(t){if(t.grupo!==g){if(g)o+='</optgroup>';g=t.grupo;o+='<optgroup label="'+e(g)+'">'}o+='<option value="'+t.k+'">'+e(t.nome)+'</option>'});sl.innerHTML=o+'</optgroup>';
  if(d){['tipo','titulo','emissao','validade','resultado','obs'].forEach(function(k){F.querySelector('[name='+k+']').value=d[k]||''})}else if(tk){sl.value=tk;F.querySelector('[name=titulo]').value=tipo(tk).nome}
- dlg.showModal()}
+ rotulo();dlg.showModal()}
+F.querySelector('[name=tipo]').addEventListener('change',rotulo);
 /* Leitura automática do PDF */
 var REG=[[/negativa de d[eé]bitos trabalhistas|CNDT/i,'cndt'],[/regularidade do FGTS|CRF\b|Certificado de Regularidade/i,'crf_fgts'],[/tributos federais|d[ií]vida ativa da uni[aã]o|Receita Federal do Brasil/i,'cnd_federal'],[/fal[eê]ncia|recupera[cç][aã]o judicial|concordata/i,'falencia'],[/fazenda (do estado|estadual)|d[eé]bitos (tribut[aá]rios )?(estaduais|inscritos.*estado)|ICMS/i,'cnd_estadual'],[/(prefeitura|munic[ií]pio).*(certid[aã]o|d[eé]bitos)|tributos mobili[aá]rios|ISS\b/i,'cnd_municipal'],[/comprovante de inscri[cç][aã]o e de situa[cç][aã]o cadastral/i,'cartao_cnpj'],[/SICAF|Sistema de Cadastramento Unificado/i,'sicaf'],[/acervo t[eé]cnico/i,'cat'],[/atestado de capacidade t[eé]cnica|atestamos/i,'atestado'],[/balan[cç]o patrimonial/i,'balanco'],[/alvar[aá]/i,'alvara'],[/ap[oó]lice|seguro garantia/i,'garantia'],[/contrato social|altera[cç][aã]o contratual/i,'contrato_social']];
 function dataBR(s){var m=s.match(/(\d{2})\/(\d{2})\/(\d{4})/);return m?m[3]+'-'+m[2]+'-'+m[1]:''}
@@ -341,11 +343,12 @@ inp.addEventListener('change',function(){if(inp.files[0])ler(inp.files[0])});
 ['dragover','dragenter'].forEach(function(ev){drop.addEventListener(ev,function(x){x.preventDefault();drop.classList.add('on')})});
 ['dragleave','drop'].forEach(function(ev){drop.addEventListener(ev,function(x){x.preventDefault();drop.classList.remove('on')})});
 drop.addEventListener('drop',function(x){if(x.dataTransfer.files[0]){inp.files=x.dataTransfer.files;ler(x.dataTransfer.files[0])}});
-F.querySelector('.dc-ok').addEventListener('click',function(){var o={},m=F.querySelector('.dc-fm');['tipo','titulo','emissao','validade','resultado','obs'].forEach(function(k){o[k]=F.querySelector('[name='+k+']').value});o.cnpj=emp;if(edit)o.id=edit;if(!o.validade&&!o.emissao&&tipo(o.tipo).dias){m.className='dc-fm dc-h e';m.textContent='Informe a emissão ou a validade para receber o alerta.';return}
+F.querySelector('.dc-ok').addEventListener('click',function(){var o={},m=F.querySelector('.dc-fm');['tipo','titulo','emissao','validade','resultado','obs'].forEach(function(k){o[k]=F.querySelector('[name='+k+']').value});o.cnpj=emp;if(edit)o.id=edit;if(o.tipo==='outro'&&!o.titulo.trim()){m.className='dc-fm dc-h e';m.textContent='Dê um nome ao documento.';return}if(o.tipo==='outro'&&!o.validade){m.className='dc-fm dc-h e';m.textContent='Informe a validade para receber o aviso.';return}if(!o.validade&&!o.emissao&&tipo(o.tipo).dias){m.className='dc-fm dc-h e';m.textContent='Informe a emissão ou a validade para receber o alerta.';return}
  m.className='dc-fm dc-h';m.textContent='Salvando…';req('POST','docs/salvar',o).then(function(){dlg.close();carregar()}).catch(function(j){m.className='dc-fm dc-h e';m.textContent=(j&&j.message)||'Não foi possível salvar.'})});
 R.addEventListener('click',function(x){var t=x.target,d;
  if(t.matches('.e')){emp=t.dataset.c;sel={};pintar();if(!radar[emp])buscarRadar(emp);return}
  if(t.matches('.dc-novo')){abrir();return}
+ if(t.matches('.dc-outro')){abrir(null,'outro');F.querySelector('[name=titulo]').value='';F.querySelector('[name=titulo]').placeholder='Ex.: Licença da vigilância sanitária — filial Campinas';F.querySelector('[name=titulo]').focus();return}
  if(t.dataset.n){abrir(null,t.dataset.n);return}
  if(t.dataset.ed){d=S.docs.filter(function(y){return y.id==t.dataset.ed})[0];abrir(d);return}
  if(t.dataset.x){if(confirm('Excluir este cadastro?'))req('POST','docs/excluir',{id:+t.dataset.x}).then(carregar);return}

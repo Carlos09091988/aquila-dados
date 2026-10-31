@@ -87,7 +87,7 @@ function dv_ct_num( $n ) { // "Contrato nº 00026/2025" -> "26/2025"
 }
 function dv_ct_diarios( $c, $nome ) {
 	$num = dv_ct_num( $c['numero'] ?? '' ); $out = array(); if ( ! $num ) { return $out; }
-	$ck = 'dv_ctd2_' . md5( $num . $nome . ( $c['municipio'] ?? '' ) ); $x = get_transient( $ck ); if ( is_array( $x ) ) { return $x; }
+	$ck = 'dv_ctd3_' . md5( $num . $nome . ( $c['municipio'] ?? '' ) ); $x = get_transient( $ck ); if ( is_array( $x ) ) { return $x; }
 	$pal = array_slice( array_values( array_filter( explode( ' ', preg_replace( '/[^A-Z0-9 ]/', ' ', strtoupper( remove_accents( $nome ) ) ) ), function ( $w ) { return strlen( $w ) > 3 && ! in_array( $w, array( 'LTDA', 'EIRELI', 'EPP' ), true ); } ) ), 0, 2 );
 	$desde = ! empty( $c['inicio'] ) ? gmdate( 'Y-m-d', strtotime( $c['inicio'] . ' -60 days' ) ) : gmdate( 'Y-m-d', strtotime( '-3 years' ) );
 	$norm = function ( $t ) { return strtoupper( preg_replace( '/[^A-Z0-9]/i', '', remove_accents( (string) $t ) ) ); };
@@ -104,16 +104,15 @@ function dv_ct_diarios( $c, $nome ) {
 			}
 		}
 	}
-	/* Diário Oficial da União: número do contrato + nome da empresa */
+	/* Diário Oficial da União: busca pelo número do contrato e fica só com o que cita a empresa */
 	if ( $pal ) {
-		$u = 'https://www.in.gov.br/consulta/-/buscar/dou?q=' . rawurlencode( '"' . $num . '" "' . implode( ' ', $pal ) . '"' ) . '&s=todos&exactDate=personalizado&sortType=0&delta=30&publishFrom=' . gmdate( 'd-m-Y', strtotime( $desde ) ) . '&publishTo=' . current_time( 'd-m-Y' );
+		$u = 'https://www.in.gov.br/consulta/-/buscar/dou?q=' . rawurlencode( '"' . $num . '"' ) . '&s=todos&exactDate=personalizado&sortType=0&delta=75&publishFrom=' . gmdate( 'd-m-Y', strtotime( $desde ) ) . '&publishTo=' . current_time( 'd-m-Y' );
 		$r = wp_remote_get( $u, array( 'timeout' => 30, 'user-agent' => 'Mozilla/5.0 (compatible; Desenvolve/1.0)' ) );
-		$GLOBALS['dv_ct_dbg'] = array( 'dou_q' => '"' . $num . '" "' . implode( ' ', $pal ) . '"', 'dou_http' => is_wp_error( $r ) ? $r->get_error_message() : wp_remote_retrieve_response_code( $r ) );
-		if ( ! is_wp_error( $r ) && preg_match( '#<script[^>]*id="_br_com_seatecnologia_in_buscadou_BuscaDouPortlet_params"[^>]*>(.*?)</script>#s', wp_remote_retrieve_body( $r ), $mm ) ) { $GLOBALS['dv_ct_dbg']['dou_n'] = count( (array) ( json_decode( trim( $mm[1] ), true )['jsonArray'] ?? array() ) ); }
 		if ( ! is_wp_error( $r ) && wp_remote_retrieve_response_code( $r ) === 200 && preg_match( '#<script[^>]*id="_br_com_seatecnologia_in_buscadou_BuscaDouPortlet_params"[^>]*>(.*?)</script>#s', wp_remote_retrieve_body( $r ), $m ) ) {
+			$alvo = $norm( implode( '', $pal ) ); $raiz = substr( preg_replace( '/\D/', '', (string) ( $c['cnpj'] ?? '' ) ), 0, 8 );
 			foreach ( (array) ( json_decode( trim( $m[1] ), true )['jsonArray'] ?? array() ) as $it ) {
 				$tx = trim( preg_replace( '/\s+/', ' ', wp_strip_all_tags( html_entity_decode( ( $it['title'] ?? '' ) . ' — ' . ( $it['content'] ?? '' ), ENT_QUOTES, 'UTF-8' ) ) ) );
-				if ( strpos( $norm( $tx ), $norm( $pal[0] ) ) === false ) { continue; }
+				$nt = $norm( $tx ); if ( strpos( $nt, $alvo ) === false && ( ! $raiz || strpos( preg_replace( '/\D/', '', $tx ), $raiz ) === false ) ) { continue; }
 				$d = (string) ( $it['pubDate'] ?? '' );
 				$out[] = array( 'data' => preg_match( '#^(\d{2})/(\d{2})/(\d{4})#', $d, $y ) ? "$y[3]-$y[2]-$y[1]" : '', 'fonte' => 'Diário Oficial da União', 'url' => ! empty( $it['urlTitle'] ) ? 'https://www.in.gov.br/web/dou/-/' . $it['urlTitle'] : '', 'trecho' => mb_substr( $tx, 0, 700 ) );
 			}
@@ -134,7 +133,7 @@ add_action( 'rest_api_init', function () {
 		if ( $num ) { $radar = $wpdb->get_results( $wpdb->prepare( "SELECT data,municipio,uf,url,trecho FROM {$wpdb->prefix}dv_capt WHERE user_id=%d AND trecho LIKE %s ORDER BY data DESC LIMIT 30", $uid, '%' . $wpdb->esc_like( $num ) . '%' ), ARRAY_A ); }
 		$pub = $r['diarios'] ? dv_ct_diarios( $c, $nome ) : null;
 		$o = array( 'contrato' => $c, 'notificacoes' => $not, 'radar' => $radar, 'diarios' => $pub, 'numero_busca' => $num );
-		if ( $r['debug'] && current_user_can( 'manage_options' ) ) { delete_transient( 'dv_ctd2_' . md5( $num . $nome . ( $c['municipio'] ?? '' ) ) ); $o['diarios'] = dv_ct_diarios( $c, $nome ); $o['dbg'] = $GLOBALS['dv_ct_dbg'] ?? null; $o['nome'] = $nome; }
+		if ( $r['debug'] && current_user_can( 'manage_options' ) ) { delete_transient( 'dv_ctd3_' . md5( $num . $nome . ( $c['municipio'] ?? '' ) ) ); $o['diarios'] = dv_ct_diarios( $c, $nome ); $o['dbg'] = $GLOBALS['dv_ct_dbg'] ?? null; $o['nome'] = $nome; }
 		return $o;
 	} ) );
 } );

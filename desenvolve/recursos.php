@@ -165,7 +165,7 @@ add_shortcode( 'dv_recursos', function () {
 <style>
 .rc{--ln:#E3DED2;--mu:#6E6A60;--gd:#A8843F;--rd:#B04A3A;--gr:#2F7A55;--am:#9A6B12;color:#16191E;font-family:"Hanken Grotesk",-apple-system,sans-serif;padding:28px}
 .rc button{background:#C9A45C;color:#241A06;border:0;border-radius:10px;padding:11px 18px;font:inherit;font-weight:700;cursor:pointer}.rc button.g{background:#fff;border:1px solid var(--ln);color:#16191E;font-weight:600;padding:8px 14px}
-.rc-auto{background:#F8F6F0;border:1px solid var(--ln,#E3DED2);border-radius:12px;padding:12px 14px;margin:6px 0 12px}.rc-auto .rc-res{font-size:.9rem;margin-top:4px}.rc-adv{margin:0 0 12px}.rc-adv summary{cursor:pointer;font-weight:600;color:#6E6A60;font-size:.88rem;margin-bottom:8px}
+.rc-auto{background:rgba(201,164,92,.10);border:1px solid rgba(201,164,92,.55);border-radius:12px;padding:12px 14px;margin:6px 0 12px;color:inherit}.rc-auto .rc-2{display:block}.rc-auto label{color:inherit}.rc-auto .rc-res{color:inherit}.rc-auto .rc-res b{color:#E8D29A}.rc-auto .rc-res{font-size:.9rem;margin-top:4px}.rc-adv{margin:0 0 12px}.rc-adv summary{cursor:pointer;font-weight:600;color:inherit;opacity:.75;font-size:.88rem;margin-bottom:8px}
 .rc input,.rc select,.rc textarea{border:1px solid #CFC8B8;border-radius:10px;padding:10px 12px;font:inherit;background:#fff;width:100%;box-sizing:border-box}.rc small{color:var(--mu);font-weight:500}
 .rc-h{color:var(--mu);font-size:.86rem;margin:6px 0 0}
 .rc-c{border:1px solid var(--ln);border-radius:14px;background:#fff;padding:14px 16px;margin-top:10px;display:grid;grid-template-columns:1fr auto;gap:10px}.rc-c .o{font-weight:700}.rc-c .m{color:var(--mu);font-size:.82rem;margin-top:3px}

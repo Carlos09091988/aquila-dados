@@ -97,7 +97,7 @@ function dv_int_toks( $t ) {
 function dv_int_bate( $txt, $tk ) { if ( ! $tk ) { return true; } $t = strtolower( remove_accents( (string) $txt ) ); foreach ( $tk as $w ) { if ( strpos( $t, $w ) !== false ) { return true; } } return false; }
 
 function dv_int_orgao( $cnpj, $item ) {
-	$tk = dv_int_toks( $item ); $ck = 'dv_io3_' . $cnpj . '_' . md5( implode( ',', $tk ) ); $c = get_transient( $ck ); if ( $c !== false ) { return $c; }
+	$tk = dv_int_toks( $item ); $ck = 'dv_io4_' . $cnpj . '_' . md5( implode( ',', $tk ) ); $c = get_transient( $ck ); if ( $c !== false ) { return $c; }
 	$hoje = current_time( 'timestamp' ); $ano = (int) gmdate( 'Y', $hoje );
 	/* contratos do órgão (3 anos) */
 	$u = array(); for ( $a = $ano; $a >= $ano - 2; $a-- ) { for ( $pg = 1; $pg <= 2; $pg++ ) { $u[ $a . '_' . $pg ] = 'https://pncp.gov.br/api/consulta/v1/contratos?cnpjOrgao=' . $cnpj . '&tamanhoPagina=500&pagina=' . $pg . '&dataInicial=' . $a . '0101&dataFinal=' . ( $a === $ano ? gmdate( 'Ymd', $hoje ) : $a . '1231' ); } }
@@ -120,7 +120,7 @@ function dv_int_orgao( $cnpj, $item ) {
 	$ini = gmdate( 'Ymd', $hoje - 365 * DAY_IN_SECONDS ); $fim = gmdate( 'Ymd', $hoje ); $u = array();
 	for ( $pg = 1; $pg <= 6; $pg++ ) { $u[ $pg ] = 'https://pncp.gov.br/api/consulta/v1/contratacoes/publicacao?dataInicial=' . $ini . '&dataFinal=' . $fim . '&codigoModalidadeContratacao=6&cnpj=' . $cnpj . '&tamanhoPagina=50&pagina=' . $pg; }
 	$cp = array(); foreach ( dv_int_get( $u, 35 ) as $b ) { $j = $b ? json_decode( $b, true ) : null; foreach ( (array) ( $j['data'] ?? array() ) as $x ) { $cp[ $x['numeroControlePNCP'] ?? count( $cp ) ] = $x; } }
-	$todos = array();
+	$todos = array(); $PI = array();
 	$H = array( 'total' => 0, 'revogadas' => 0, 'anuladas' => 0, 'suspensas' => 0, 'sem_resultado' => 0, 'do_item' => 0, 'descontos' => array(), 'srp' => 0 );
 	foreach ( $cp as $x ) {
 		$H['total']++; $s = strtolower( remove_accents( (string) ( $x['situacaoCompraNome'] ?? '' ) ) );
@@ -129,12 +129,18 @@ function dv_int_orgao( $cnpj, $item ) {
 		if ( empty( $x['existeResultado'] ) && $enc && $enc < gmdate( 'Y-m-d', $hoje - 45 * DAY_IN_SECONDS ) && strpos( $s, 'divulgada' ) !== false ) { $H['sem_resultado']++; }
 		if ( ! empty( $x['srp'] ) ) { $H['srp']++; }
 		if ( dv_int_bate( $x['objetoCompra'] ?? '', $tk ) ) { $H['do_item']++; }
+		if ( ! empty( $x['existeResultado'] ) && ( ! $tk || dv_int_bate( $x['objetoCompra'] ?? '', $tk ) ) && preg_match( '#^(\d{14})-\d-(\d+)/(\d{4})$#', (string) ( $x['numeroControlePNCP'] ?? '' ), $mm ) ) {
+			$e1 = (float) ( $x['valorTotalEstimado'] ?? 0 ); $h1 = (float) ( $x['valorTotalHomologado'] ?? 0 ); $s1 = (int) ( $x['orcamentoSigilosoCodigo'] ?? 1 );
+			$PI[] = array( 'ref' => $mm[1] . '/' . $mm[3] . '/' . (int) $mm[2], 'objeto' => mb_substr( (string) ( $x['objetoCompra'] ?? '' ), 0, 200 ), 'data' => substr( (string) ( $x['dataEncerramentoProposta'] ?? $x['dataPublicacaoPncp'] ?? '' ), 0, 10 ),
+				'desconto' => ( $e1 > 0 && $h1 > 0 && $s1 <= 1 && $h1 < $e1 * 1.3 ) ? round( ( 1 - $h1 / $e1 ) * 100, 1 ) : null, 'numero' => trim( ( $x['numeroCompra'] ?? '' ) . '/' . ( $x['anoCompra'] ?? '' ) ) );
+		}
 		$e = (float) ( $x['valorTotalEstimado'] ?? 0 ); $h = (float) ( $x['valorTotalHomologado'] ?? 0 ); $sig = (int) ( $x['orcamentoSigilosoCodigo'] ?? 1 );
 		if ( $e > 0 && $h > 0 && $sig <= 1 ) { $d = ( 1 - $h / $e ) * 100; if ( $d > -30 && $d < 95 ) { $todos[] = $d; if ( $tk && dv_int_bate( $x['objetoCompra'] ?? '', $tk ) ) { $H['descontos'][] = $d; } } }
 	}
 	if ( ! $tk || ! $H['descontos'] ) { $H['descontos'] = $todos; $H['desconto_do_item'] = false; } else { $H['desconto_do_item'] = true; }
 	$H['desconto_medio'] = $H['descontos'] ? round( array_sum( $H['descontos'] ) / count( $H['descontos'] ), 1 ) : null; $H['n_desconto'] = count( $H['descontos'] ); unset( $H['descontos'] );
-	$c = array( 'item' => $item, 'tokens' => $tk, 'contratos' => count( $ct ), 'vencedores' => array_slice( $F, 0, 8 ), 'concentracao' => ( $F && $totF > 0 ) ? round( $F[0]['valor'] / $totF * 100 ) : null,
+	usort( $PI, function ( $a, $b ) { return strcmp( $b['data'], $a['data'] ); } );
+	$c = array( 'item' => $item, 'tokens' => $tk, 'contratos' => count( $ct ), 'pregoes_item' => array_slice( $PI, 0, 10 ), 'vencedores' => array_slice( $F, 0, 8 ), 'concentracao' => ( $F && $totF > 0 ) ? round( $F[0]['valor'] / $totF * 100 ) : null,
 		'calendario' => array_slice( $cal, 0, 10 ), 'n_calendario' => count( $cal ), 'historico' => $H );
 	set_transient( $ck, $c, ( $ct || $cp ) ? 12 * HOUR_IN_SECONDS : HOUR_IN_SECONDS );
 	return $c;
@@ -174,6 +180,19 @@ function dv_int_pagamentos( $cnpj ) {
 	$m30 = count( array_filter( $dias, function ( $d ) { return $d > 30; } ) );
 	$c = array( 'disponivel' => true, 'municipio' => $cd['municipio'] ?? '', 'meses' => $meses, 'pagamentos' => $n, 'mediana' => $q( .5 ), 'p75' => $q( .75 ), 'p90' => $q( .9 ), 'acima30' => round( $m30 / $n * 100 ), 'mesmo_dia' => round( count( array_filter( $dias, function ( $d ) { return $d === 0; } ) ) / $n * 100 ) );
 	set_transient( $ck, $c, 7 * DAY_IN_SECONDS ); return $c;
+}
+
+/** Participantes registrados na base (sessões, atas e robô) nas licitações do órgão. */
+function dv_int_base_orgao( $cnpj, $refs ) {
+	global $wpdb; $t = $wpdb->prefix . 'dv_part';
+	if ( $wpdb->get_var( "SHOW TABLES LIKE '$t'" ) !== $t ) { return array( 'licitacoes' => 0 ); }
+	$refs = array_values( array_filter( (array) $refs ) );
+	if ( $refs ) { $ph = implode( ',', array_fill( 0, count( $refs ), '%s' ) ); $w = $wpdb->prepare( "ref IN ($ph)", $refs ); } else { $w = $wpdb->prepare( 'ref LIKE %s', $wpdb->esc_like( $cnpj . '/' ) . '%' ); }
+	$por = $wpdb->get_results( "SELECT ref, COUNT(DISTINCT cnpj) n FROM $t WHERE $w GROUP BY ref", ARRAY_A );
+	if ( ! $por ) { return array( 'licitacoes' => 0, 'refs' => array() ); }
+	$quem = $wpdb->get_results( "SELECT cnpj, MAX(nome) nome, COUNT(DISTINCT ref) n, SUM(posicao=1) v FROM $t WHERE $w GROUP BY cnpj ORDER BY n DESC, v DESC LIMIT 10", ARRAY_A );
+	$ns = array_map( 'intval', array_column( $por, 'n' ) );
+	return array( 'licitacoes' => count( $por ), 'media' => round( array_sum( $ns ) / count( $ns ), 1 ), 'min' => min( $ns ), 'max' => max( $ns ), 'refs' => array_column( $por, 'ref' ), 'por' => array_combine( array_column( $por, 'ref' ), $ns ), 'empresas' => (int) $wpdb->get_var( "SELECT COUNT(DISTINCT cnpj) FROM $t WHERE $w" ), 'frequentes' => $quem );
 }
 
 /* ---------------- Due Diligence: sócios e linha do tempo ---------------- */
@@ -285,7 +304,9 @@ add_action( 'rest_api_init', function () {
 	} ) );
 	register_rest_route( 'desenvolve/v1', '/int/orgao', array( 'methods' => 'GET', 'permission_callback' => $logado, 'callback' => function ( WP_REST_Request $r ) use ( $cn ) {
 		$c = $cn( $r ); if ( ! $c ) { return new WP_Error( 'dv_cnpj', 'CNPJ inválido.', array( 'status' => 400 ) ); } @set_time_limit( 150 );
-		return dv_int_orgao( $c, sanitize_text_field( (string) $r['item'] ) );
+		$o = dv_int_orgao( $c, sanitize_text_field( (string) $r['item'] ) );
+		$o['base'] = dv_int_base_orgao( $c, array_column( (array) $o['pregoes_item'], 'ref' ) );
+		return $o;
 	} ) );
 	register_rest_route( 'desenvolve/v1', '/int/pagamentos', array( 'methods' => 'GET', 'permission_callback' => $logado, 'callback' => function ( WP_REST_Request $r ) use ( $cn ) {
 		$c = $cn( $r ); if ( ! $c ) { return new WP_Error( 'dv_cnpj', 'CNPJ inválido.', array( 'status' => 400 ) ); }
@@ -423,12 +444,13 @@ function comprador(c){var r=root(),ref=[].filter.call(r.querySelectorAll('.rp-se
  var b=document.getElementById('dv-io');if(!b){b=document.createElement('section');b.id='dv-io';b.className='dv-ix';if(ref)ref.parentNode.insertBefore(b,ref.nextSibling);else r.appendChild(b)}
  if(b.dataset.c===c&&b._ok)return;b._ok=1;b.dataset.c=c;var it=(document.querySelectorAll('.dv-tool input')[1]||{}).value||new URLSearchParams(location.search).get('item')||'';
  b.innerHTML='<p class="k">Inteligência do comprador</p><p>Levantando quem ganha aqui, o histórico das licitações e os contratos que vão vencer…</p>';
- get('int/orgao?cnpj='+c+'&item='+encodeURIComponent(it)).then(function(J){b.innerHTML=htmlO(J,c);pagamentos(b,c)}).catch(function(){b.innerHTML='<p class="k">Inteligência do comprador</p><p>Não foi possível consultar o PNCP agora.</p>'})}
+ get('int/orgao?cnpj='+c+'&item='+encodeURIComponent(it)).then(function(J){b.innerHTML=htmlO(J,c);pagamentos(b,c);concorr(b,J,c,it)}).catch(function(){b.innerHTML='<p class="k">Inteligência do comprador</p><p>Não foi possível consultar o PNCP agora.</p>'})}
 function htmlO(J,c){var H=J.historico||{},it=J.item?' de "'+e(J.item)+'"':'';var h='<p class="k">Inteligência do comprador</p><h3>Quem ganha aqui, como o órgão licita e o que vem por aí</h3>';
  h+='<div class="n"><div><b>'+(H.total||0)+'</b><span>pregões eletrônicos em 12 meses</span></div><div><b>'+pc(H.desconto_medio)+'</b><span>desconto médio homologado</span></div><div><b>'+((H.revogadas||0)+(H.anuladas||0))+'</b><span>revogados ou anulados</span></div><div><b>'+(J.n_calendario||0)+'</b><span>contratos'+(J.item?' do seu item':'')+' vencem em 6 meses</span></div></div>';
  var V=J.vencedores||[];h+='<h4>Quem ganha aqui'+it+'</h4>';
  if(V.length){h+='<div class="tw"><table><tr><th>Empresa</th><th>Contratos</th><th>Valor</th><th></th></tr>'+V.map(function(v){return'<tr><td>'+e(v.nome)+'<small>'+fc(v.cnpj)+'</small></td><td>'+v.n+'</td><td>'+mc(v.valor)+'</td><td><a href="/plataforma/raio-x/?cnpj='+v.cnpj+'">Raio-X</a></td></tr>'}).join('')+'</table></div>';if(J.concentracao>=50)h+='<div class="al">'+J.concentracao+'% do valor'+(J.item?' do seu item':'')+' está com um único fornecedor. Vale entender por quê antes de entrar (exigências do edital, prazos de mobilização).</div>'}
  else h+='<p>Nenhum contrato'+it+' encontrado no PNCP nos últimos 3 anos.</p>';
+ h+='<h4>Concorrência'+(J.item?' no seu ramo':'')+' neste órgão</h4><div class="cc"><p class="m st">Contando os participantes…</p></div>';
  h+='<h4>Como o órgão licita (12 meses)</h4><p>'+(H.total?H.total+' pregão(ões) eletrônico(s) publicado(s)'+(H.srp?', '+H.srp+' por registro de preços':'')+'. Revogados: <b>'+(H.revogadas||0)+'</b> · anulados: <b>'+(H.anuladas||0)+'</b> · suspensos: <b>'+(H.suspensas||0)+'</b>.':'Nenhum pregão eletrônico publicado no PNCP nos últimos 12 meses.')+'</p>';
  if(H.total&&((H.revogadas||0)+(H.anuladas||0)+(H.suspensas||0))/H.total>=.15)h+='<div class="al">Taxa alta de revogação, anulação ou suspensão. Leia o edital com atenção: há espaço para impugnação e o certame pode não chegar ao fim.</div>';
  if(H.desconto_medio!=null)h+='<p class="m">Desconto médio entre o estimado e o homologado em '+H.n_desconto+' licitação(ões). Use como referência para o seu preço.</p>';
@@ -440,6 +462,26 @@ function htmlO(J,c){var H=J.historico||{},it=J.item?' de "'+e(J.item)+'"':'';var
 function pagamentos(b,c){var o=b.querySelector('.pg');get('int/pagamentos?cnpj='+c).then(function(P){if(!P.disponivel){o.innerHTML='<p class="m">'+e(P.motivo||'Dado indisponível.')+'</p>';return}
  var cor=P.mediana<=15?'v':P.mediana<=30?'a':'r';o.innerHTML='<p>Entre a liquidação (serviço atestado) e o pagamento, '+e(P.municipio)+' levou <span class="tag '+cor+'">'+P.mediana+' dias na mediana</span>. Um quarto dos pagamentos levou mais de '+P.p75+' dias; 10% levaram mais de '+P.p90+' dias. <b>'+P.acima30+'%</b> passaram de 30 dias.</p><p class="m">'+P.pagamentos.toLocaleString('pt-BR')+' pagamentos a empresas em '+P.meses.join(', ')+' (dados do TCE-SP, publicados com atraso de alguns meses). A lei fixa a ordem cronológica de pagamentos (art. 141).</p>'}).catch(function(){o.innerHTML='<p class="m">Não foi possível consultar o TCE-SP agora.</p>'})}
 
+
+function cnpjOk(c){if(!/^\d{14}$/.test(c)||/^(\d)\1+$/.test(c))return false;for(var n=12;n<=13;n++){var s=0,p=n-7;for(var i=0;i<n;i++){s+=c[i]*p--;if(p<2)p=9}var d=s%11<2?0:11-s%11;if(+c[n]!==d)return false}return true}
+function pdfjs(){if(window.pdfjsLib)return Promise.resolve(window.pdfjsLib);return new Promise(function(ok,no){var sc=document.createElement('script');sc.src='https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js';sc.onload=function(){pdfjsLib.GlobalWorkerOptions.workerSrc='https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';ok(pdfjsLib)};sc.onerror=no;document.head.appendChild(sc)})}
+function lePdf(buf){return pdfjs().then(function(L){return L.getDocument({data:buf}).promise}).then(function(pdf){var ps=[];for(var i=1;i<=Math.min(pdf.numPages,40);i++)ps.push(pdf.getPage(i).then(function(pg){return pg.getTextContent()}).then(function(tc){var y=null,out='';tc.items.forEach(function(it){var yy=Math.round(it.transform[5]);out+=(y!==null&&yy!==y?'\n':'  ')+it.str;y=yy});return out}));return Promise.all(ps).then(function(a){return a.join('\n')})})}
+function extraiP(t,org){var o={},re=/(\d{2}\.?\d{3}\.?\d{3}\s?\/?\s?\d{4}\s?-?\s?\d{2})/g,m;while(m=re.exec(t)){var c=m[1].replace(/\D/g,'');if(c===org||o[c]||!cnpjOk(c))continue;var ln=t.slice(Math.max(0,t.lastIndexOf('\n',m.index)+1),m.index).replace(/[,;\s]*(CPF\/CNPJ|CNPJ\/MF|CNPJ|inscrita no|sob o n[ºo°]?)\s*[:n°º.]*\s*$/i,'').replace(/^.*?(Empresa|Fornecedor|Licitante|Raz[aã]o Social)\s*:\s*/i,'');var sg=ln.split(/\s{2,}|\t|\|/).filter(function(x){return/[A-Za-zÀ-ú]{3}/.test(x)});o[c]={c:c,n:(sg.pop()||'').trim().slice(0,120)}}return Object.keys(o).map(function(k){return o[k]})}
+function lerAta(p,org,orgao){return get('lic/pncp?ref='+encodeURIComponent(p.ref)).then(function(L){var A=(L.arquivos||[]).filter(function(a){var t=(a.titulo+' '+(a.tipo||''));return/ata|julgamento|resultado|homologa|adjudica|classifica|sess[aã]o|propostas|relat[oó]rio/i.test(t)&&!/edital|termo de refer|minuta|estudo t[eé]cnico|ETP|projeto|impugna|amostra|registro de pre/i.test(t)}).slice(0,2);var P={},q=Promise.resolve();
+ A.forEach(function(a){q=q.then(function(){if(Object.keys(P).length>=2)return;return fetch(API+'lic/arquivo?u='+encodeURIComponent(a.url),{credentials:'same-origin',headers:{'X-WP-Nonce':NONCE}}).then(function(r){if(!r.ok)throw 0;return r.arrayBuffer()}).then(function(buf){var u=new Uint8Array(buf);if(u[0]!==37||u[1]!==80)return;return lePdf(buf).then(function(t){extraiP(t,org).forEach(function(x){P[x.c]=x})})}).catch(function(){})})});
+ return q.then(function(){var Ls=Object.keys(P).map(function(k){return P[k]});if(Ls.length<2)return;return post('participantes',{ref:p.ref,fonte:'ata',item:'',estimado:0,objeto:p.objeto,orgao:orgao,linhas:Ls})})})}
+function concorr(b,J,c,it){var o=b.querySelector('.cc');if(!o)return;var PI=J.pregoes_item||[],org=c;
+ function render(B){B=B||{};var por=B.por||{},h='';
+  var ds=PI.map(function(p){return p.desconto}).filter(function(x){return x!=null});var dm=ds.length?ds.reduce(function(a,x){return a+x},0)/ds.length:null;
+  if(B.licitacoes)h+='<p>Nos <b>'+B.licitacoes+'</b> pregão(ões)'+(J.item?' do seu ramo':'')+' com participantes conhecidos: <b>'+String(B.media).replace('.',',')+' empresas por disputa</b> em média (de '+B.min+' a '+B.max+'), '+B.empresas+' empresas diferentes no total.'+(dm!=null?' Desconto médio homologado: <b>'+pc(dm)+'</b>.':'')+'</p>';
+  else h+='<p>'+(PI.length?'Ainda não conseguimos ler os participantes destes pregões no PNCP (a ata pode não ter sido publicada).':'Nenhum pregão'+(J.item?' do seu ramo':'')+' com resultado neste órgão nos últimos 12 meses.')+(dm!=null?' Desconto médio homologado: <b>'+pc(dm)+'</b>.':'')+'</p>';
+  if(PI.length)h+='<div class="tw"><table><tr><th>Pregão</th><th>Data</th><th>Participantes</th><th>Desconto</th></tr>'+PI.map(function(p){return'<tr><td>'+e(p.numero)+'<small>'+e(String(p.objeto).slice(0,110))+' · <a href="https://pncp.gov.br/app/editais/'+e(p.ref)+'" target="_blank" rel="noopener">PNCP</a></small></td><td>'+br(p.data)+'</td><td>'+(por[p.ref]||'—')+'</td><td>'+pc(p.desconto)+'</td></tr>'}).join('')+'</table></div>';
+  if((B.frequentes||[]).length)h+='<p style="margin-top:10px!important"><b>Quem mais disputa aqui:</b></p><p>'+B.frequentes.map(function(f){return'<a class="bt" href="/plataforma/raio-x/?cnpj='+f.cnpj+'">'+e(f.nome||fc(f.cnpj))+' · '+f.n+(f.n>1?' disputas':' disputa')+(+f.v?' · '+f.v+'× 1º':'')+'</a>'}).join('')+'</p>';
+  h+='<p class="m st"></p><p class="m">Participantes lidos das atas publicadas no PNCP e das sessões consultadas na plataforma. Desconto entre o valor estimado e o homologado de cada pregão.</p>';o.innerHTML=h}
+ render(J.base);var tem={};((J.base||{}).refs||[]).forEach(function(r){tem[r]=1});var falta=PI.filter(function(p){return!tem[p.ref]}).slice(0,5);if(!falta.length)return;
+ var st=o.querySelector('.st');if(st)st.textContent='Lendo as atas de '+falta.length+' pregão(ões) no PNCP para contar os participantes…';var q=Promise.resolve();
+ falta.forEach(function(p,i){q=q.then(function(){var s2=o.querySelector('.st');if(s2)s2.textContent='Lendo a ata '+(i+1)+' de '+falta.length+'…';return lerAta(p,org,(document.querySelector('.rp-hd h2')||{}).textContent||'').catch(function(){})})});
+ q.then(function(){return get('int/orgao?cnpj='+c+'&item='+encodeURIComponent(it||''))}).then(function(J2){render(J2.base)}).catch(function(){var s3=o.querySelector('.st');if(s3)s3.textContent=''})}
 /* ---------- Due Diligence: sócios e linha do tempo ---------- */
 function dossie(c){var b=caixa('dv-id','#dv-ic');if(b.dataset.c===c&&b._ok)return;b._ok=1;b.dataset.c=c;b.innerHTML='<p class="k">Sócios e linha do tempo</p><p>Montando…</p>';
  get('int/dossie?cnpj='+c).then(function(J){b.innerHTML=htmlD(J)}).catch(function(x){b.innerHTML='<p class="k">Sócios e linha do tempo</p><p>'+e((x&&x.message)||'Indisponível agora.')+'</p>'})}

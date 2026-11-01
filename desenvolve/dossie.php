@@ -362,7 +362,8 @@ add_action( 'rest_api_init', function () {
 			}
 			set_time_limit( 120 );
 			$D = dv_dossie_dados( $cnpj ); if ( is_wp_error( $D ) ) { return $D; }
-			for ( $i = 1; $i <= $n; $i++ ) { $u = dv_usar( $uid, 'dossie', 'dossie|' . $cnpj . '|' . $i, $i === 1 ? ( $D['cadastro']['razao_social'] ?? $cnpj ) : '' ); if ( is_wp_error( $u ) ) { return $u; } }
+			$u = dv_usar( $uid, 'dossie', 'dossie|' . $cnpj . '|1', $D['cadastro']['razao_social'] ?? $cnpj ); if ( is_wp_error( $u ) ) { return $u; }
+			if ( ! empty( $u['cobrado'] ) ) { for ( $i = 2; $i <= $n; $i++ ) { $u = dv_usar( $uid, 'dossie', 'dossie|' . $cnpj . '|' . $i, '' ); if ( is_wp_error( $u ) ) { return $u; } } } // já pago (inclusive pelo pacote da licitação): não cobra de novo
 			$D['saldo'] = dv_saldo( $uid );
 			return $D;
 		} ) );
@@ -387,3 +388,9 @@ add_action( 'rest_api_init', function () {
 			return $f;
 		} ) );
 } );
+
+/* Abre o dossiê já pago pelo pacote da licitação (?cnpj=...&auto=1) */
+add_action( 'wp_footer', function () {
+	if ( strpos( (string) ( $_SERVER['REQUEST_URI'] ?? '' ), '/plataforma/dossie' ) === false ) { return; }
+	echo '<script>(function(){if(!/[?&]auto=1/.test(location.search)||!/cnpj=\\d{14}/.test(location.search))return;var f=document.querySelector(".ds-f");if(f&&f.requestSubmit)setTimeout(function(){f.requestSubmit()},300)})();</script>';
+}, 99 );

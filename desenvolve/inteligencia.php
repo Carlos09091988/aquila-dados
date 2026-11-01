@@ -201,7 +201,7 @@ function dv_int_dossie( $cnpj ) {
 		if ( isset( $grav[ $tp ] ) ) { $ev( $p['data'] ?? '', $grav[ $tp ] . ' · ' . ( $p['tribunal'] ?? '' ) . ' · ' . ( $p['processo'] ?? '' ), 'processo', $p['link'] ?? '' ); }
 		elseif ( $tp === 'trabalhista' ) { $y = substr( (string) ( $p['data'] ?? '' ), 0, 4 ); if ( $y ) { $nTrab[ $y ] = ( $nTrab[ $y ] ?? 0 ) + 1; } }
 	}
-	foreach ( $nTrab as $y => $n ) { $ev( $y . '-12-31', $n . ' processo(s) trabalhista(s) publicado(s) em ' . $y, 'trabalhista' ); }
+	foreach ( $nTrab as $y => $n ) { $ev( min( $y . '-12-31', current_time( 'Y-m-d' ) ), $n . ' processo(s) trabalhista(s) publicado(s) em ' . $y, 'trabalhista' ); }
 	foreach ( (array) ( $D['noticias']['itens'] ?? array() ) as $x ) { $ev( $x['data'] ?? '', 'Notícia: ' . ( $x['titulo'] ?? '' ), 'noticia', $x['url'] ?? '' ); }
 	foreach ( array( 'ceis', 'cnep' ) as $k ) { foreach ( (array) ( $D['raiox']['sancoes'][ $k ] ?? array() ) as $x ) { $ev( $x['dataInicioSancao'] ?? $x['inicio'] ?? '', 'Sanção ' . strtoupper( $k ) . ': ' . ( $x['tipoSancao']['descricaoResumida'] ?? $x['tipo'] ?? 'registro' ), 'sancao' ); } }
 	usort( $T, function ( $a, $b ) { return strcmp( $b['data'], $a['data'] ); } );

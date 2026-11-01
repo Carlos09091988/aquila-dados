@@ -12,7 +12,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - run: sudo apt-get install -y poppler-utils >/dev/null
-      - run: python3 scripts/fontes_pdf.py
+      - run: python3 scripts/fontes_pdf.py && python3 scripts/outras_fontes.py
       - run: |
           git config user.name "github-actions"; git config user.email "actions@github.com"
           git add aquila/jur && (git diff --cached --quiet || (git commit -m "Fontes PDF: atualizacao" && git pull --rebase && git push))

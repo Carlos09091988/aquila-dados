@@ -148,11 +148,11 @@ add_action( 'rest_api_init', function () {
 	/* Fornecedores do órgão no mesmo objeto (contratos no PNCP), mais leve que o Raio-X completo */
 	register_rest_route( $ns, '/lic/fornecedores', array( 'methods' => 'GET', 'permission_callback' => $perm, 'callback' => function ( WP_REST_Request $r ) {
 		$cnpj = preg_replace( '/\D/', '', (string) $r['cnpj'] ); if ( strlen( $cnpj ) !== 14 ) { return new WP_Error( 'dv_lic', 'CNPJ inválido.', array( 'status' => 400 ) ); }
-		$ck = 'dv_forn_' . $cnpj; $c = get_transient( $ck );
+		$ck = 'dv_forn2_' . $cnpj; $c = get_transient( $ck );
 		if ( $c === false ) {
 			$x = wp_remote_get( 'https://brasilapi.com.br/api/cnpj/v1/' . $cnpj, array( 'timeout' => 15 ) ); $cad = is_wp_error( $x ) ? array() : (array) json_decode( wp_remote_retrieve_body( $x ), true );
 			$B = 'https://pncp.gov.br/api/consulta/v1/contratos?cnpjOrgao=' . $cnpj . '&tamanhoPagina=500&pagina=1'; $ano = (int) current_time( 'Y' ); $u = array();
-			for ( $a = $ano; $a >= $ano - 2; $a-- ) { $u[ $a ] = $B . '&dataInicial=' . $a . '0101&dataFinal=' . ( $a === $ano ? current_time( 'Ymd' ) : $a . '1231' ); }
+			for ( $a = $ano; $a >= $ano - 5; $a-- ) { $u[ $a ] = $B . '&dataInicial=' . $a . '0101&dataFinal=' . ( $a === $ano ? current_time( 'Ymd' ) : $a . '1231' ); }
 			$res = function_exists( 'dv_ds_multi' ) ? dv_ds_multi( $u, array(), 25 ) : array(); $it = array();
 			foreach ( $res as $body ) { $j = is_string( $body ) ? json_decode( $body, true ) : $body; foreach ( (array) ( $j['data'] ?? array() ) as $i ) {
 				$it[] = array( 'ni' => preg_replace( '/\D/', '', (string) ( $i['niFornecedor'] ?? '' ) ), 'nome' => $i['nomeRazaoSocialFornecedor'] ?? '', 'objeto' => mb_substr( (string) ( $i['objetoContrato'] ?? '' ), 0, 200 ), 'valor' => (float) ( $i['valorGlobal'] ?? $i['valorInicial'] ?? 0 ) );
@@ -366,7 +366,7 @@ function abrir(ref,item,st,obj){var cnpj=ref.slice(0,14),bg=document.createEleme
   h+='<label><input type="checkbox" data-t="comprador" checked><span><b>Raio-X do órgão</b> · '+CUSTO.comprador+' créditos<small>Se paga em dia, processos, notícias e contratos'+(C&&C.orgao?' de '+e(C.orgao):'')+'</small></span></label>';
   if(V.length)h+='<h4>Vencedores desta licitação (resultado homologado no PNCP)</h4>'+V.slice(0,6).map(function(v,i){return'<label><input type="checkbox" data-t="raiox" data-c="'+v.cnpj+'" data-n="'+e(v.nome)+'"'+(i<2?' checked':'')+'><span><b>'+e(v.nome)+'</b> · '+CUSTO.raiox+' créditos<small>CNPJ '+fc(v.cnpj)+' · '+v.itens+' item(ns) · '+moeda(v.valor)+'</small></span></label>'}).join('');
   else if(/disputa|recurso|ganha|perdida/.test(st))h+='<p class="h">O resultado desta licitação ainda não está homologado no PNCP.</p>';
-  if(FO.length)h+='<h4>Quem mais fornece esse objeto para este órgão (contratos dos últimos anos)</h4>'+FO.map(function(v,i){return'<label><input type="checkbox" data-t="raiox" data-c="'+v.cnpj+'" data-n="'+e(v.nome)+'"'+(!V.length&&i<2?' checked':'')+'><span><b>'+e(v.nome)+'</b> · '+CUSTO.raiox+' créditos<small>CNPJ '+fc(v.cnpj)+' · '+v.n+' contrato(s) · '+moeda(v.valor)+'</small></span></label>'}).join('');
+  if(FO.length)h+='<h4>Quem mais fornece esse objeto para este órgão (contratos dos últimos 5 anos)</h4>'+FO.map(function(v,i){return'<label><input type="checkbox" data-t="raiox" data-c="'+v.cnpj+'" data-n="'+e(v.nome)+'"'+(!V.length&&i<2?' checked':'')+'><span><b>'+e(v.nome)+'</b> · '+CUSTO.raiox+' créditos<small>CNPJ '+fc(v.cnpj)+' · '+v.n+' contrato(s) · '+moeda(v.valor)+'</small></span></label>'}).join('');
   if(!V.length&&!FO.length)h+='<p class="h">Não encontramos fornecedores anteriores desse objeto para este órgão. Você ainda pode gerar o Raio-X do órgão.</p>';
   h+='<div class="tot"><b class="tt"></b><span><button class="g" data-f="1">Cancelar</button> <button class="go">Gerar relatórios</button></span></div><p class="h msg"></p>';P.innerHTML=h;
   function soma(){var t=0;P.querySelectorAll('input:checked').forEach(function(i){t+=CUSTO[i.dataset.t]});P.querySelector('.tt').textContent='Total: '+t+' crédito(s)';P.querySelector('.go').disabled=!t}soma();P.addEventListener('change',soma);

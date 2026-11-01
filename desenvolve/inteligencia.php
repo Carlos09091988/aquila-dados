@@ -97,7 +97,7 @@ function dv_int_toks( $t ) {
 function dv_int_bate( $txt, $tk ) { if ( ! $tk ) { return true; } $t = strtolower( remove_accents( (string) $txt ) ); foreach ( $tk as $w ) { if ( strpos( $t, $w ) !== false ) { return true; } } return false; }
 
 function dv_int_orgao( $cnpj, $item ) {
-	$tk = dv_int_toks( $item ); $ck = 'dv_io4_' . $cnpj . '_' . md5( implode( ',', $tk ) ); $c = get_transient( $ck ); if ( $c !== false ) { return $c; }
+	$tk = dv_int_toks( $item ); $ck = 'dv_io5_' . $cnpj . '_' . md5( implode( ',', $tk ) ); $c = get_transient( $ck ); if ( $c !== false ) { return $c; }
 	$hoje = current_time( 'timestamp' ); $ano = (int) gmdate( 'Y', $hoje );
 	/* contratos do órgão (3 anos) */
 	$u = array(); for ( $a = $ano; $a >= $ano - 2; $a-- ) { for ( $pg = 1; $pg <= 2; $pg++ ) { $u[ $a . '_' . $pg ] = 'https://pncp.gov.br/api/consulta/v1/contratos?cnpjOrgao=' . $cnpj . '&tamanhoPagina=500&pagina=' . $pg . '&dataInicial=' . $a . '0101&dataFinal=' . ( $a === $ano ? gmdate( 'Ymd', $hoje ) : $a . '1231' ); } }
@@ -129,7 +129,7 @@ function dv_int_orgao( $cnpj, $item ) {
 		if ( empty( $x['existeResultado'] ) && $enc && $enc < gmdate( 'Y-m-d', $hoje - 45 * DAY_IN_SECONDS ) && strpos( $s, 'divulgada' ) !== false ) { $H['sem_resultado']++; }
 		if ( ! empty( $x['srp'] ) ) { $H['srp']++; }
 		if ( dv_int_bate( $x['objetoCompra'] ?? '', $tk ) ) { $H['do_item']++; }
-		if ( ! empty( $x['existeResultado'] ) && ( ! $tk || dv_int_bate( $x['objetoCompra'] ?? '', $tk ) ) && preg_match( '#^(\d{14})-\d-(\d+)/(\d{4})$#', (string) ( $x['numeroControlePNCP'] ?? '' ), $mm ) ) {
+		if ( ( ! empty( $x['existeResultado'] ) || (float) ( $x['valorTotalHomologado'] ?? 0 ) > 0 || ( substr( (string) ( $x['dataEncerramentoProposta'] ?? '' ), 0, 10 ) && substr( (string) ( $x['dataEncerramentoProposta'] ?? '' ), 0, 10 ) < gmdate( 'Y-m-d', $hoje - 5 * DAY_IN_SECONDS ) ) ) && ( ! $tk || dv_int_bate( $x['objetoCompra'] ?? '', $tk ) ) && preg_match( '#^(\d{14})-\d-(\d+)/(\d{4})$#', (string) ( $x['numeroControlePNCP'] ?? '' ), $mm ) ) {
 			$e1 = (float) ( $x['valorTotalEstimado'] ?? 0 ); $h1 = (float) ( $x['valorTotalHomologado'] ?? 0 ); $s1 = (int) ( $x['orcamentoSigilosoCodigo'] ?? 1 );
 			$PI[] = array( 'ref' => $mm[1] . '/' . $mm[3] . '/' . (int) $mm[2], 'objeto' => mb_substr( (string) ( $x['objetoCompra'] ?? '' ), 0, 200 ), 'data' => substr( (string) ( $x['dataEncerramentoProposta'] ?? $x['dataPublicacaoPncp'] ?? '' ), 0, 10 ),
 				'desconto' => ( $e1 > 0 && $h1 > 0 && $s1 <= 1 && $h1 < $e1 * 1.3 ) ? round( ( 1 - $h1 / $e1 ) * 100, 1 ) : null, 'numero' => trim( ( $x['numeroCompra'] ?? '' ) . '/' . ( $x['anoCompra'] ?? '' ) ) );

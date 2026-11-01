@@ -16,7 +16,7 @@ add_action( 'wp_footer', function () {
 .dv-rs .h small{font-size:.72rem!important;letter-spacing:.14em;text-transform:uppercase;color:#8A6A2E!important;font-weight:700}
 .dv-rs .h h3{margin:0!important;font-size:1.25rem!important;color:#16191E!important;letter-spacing:-.01em;flex:1 1 auto}
 .dv-rs .nv{border-radius:999px;padding:6px 14px;font-weight:800;font-size:.9rem}
-.dv-rs .nv.a{background:#FDEDEA;color:#9A3524}.dv-rs .nv.m{background:#FBF1DC;color:#7A5410}.dv-rs .nv.b{background:#EAF5EE;color:#1F5A3B}
+.dv-rs .h .nv+.nv{margin-left:-4px}.dv-rs .nv.a{background:#FDEDEA;color:#9A3524}.dv-rs .nv.m{background:#FBF1DC;color:#7A5410}.dv-rs .nv.b{background:#EAF5EE;color:#1F5A3B}
 .dv-rs .g{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
 .dv-rs .q{background:#FAF8F3;border:1px solid #EEE9DD;border-radius:12px;padding:12px 14px;min-width:0}
 .dv-rs .q b{display:block;font-size:.78rem;text-transform:uppercase;letter-spacing:.08em;color:#6E6A60!important;margin:0 0 4px}
@@ -102,12 +102,22 @@ function htmlEmpresa(S){
  var ac='<a class="p" href="/plataforma/recursos/">Usar no recurso</a>';
  if(PG==='concorrente'&&S.cnpj)ac+='<a href="/plataforma/dossie/?cnpj='+S.cnpj+'">Due Diligence completa</a>';
  var prox=A.length?'Junte as certidões e o print das fontes e prepare o recurso no prazo (3 dias úteis da intenção, art. 165, §1º, I).':M.length?'Confira as certidões apresentadas no certame e peça diligência sobre os pontos acima antes do recurso.':'Não há o que explorar aqui. Foque nos documentos da proposta e da habilitação.';
- return '<div class="h"><small>Resumo executivo</small><h3>O que importa para a decisão</h3><span class="nv '+nv[0]+'">'+nv[1]+'</span></div>'+
+ var pts=100,comp=[];function tira(v,t){v=Math.round(v);if(v>0){pts-=v;comp.push([v,t])}}
+ if(S.sit&&S.sit!=='ATIVA')tira(40,'CNPJ '+S.sit.toLowerCase());if(S.sanc.length)tira(40,'sanção registrada');
+ if(S.cobranca>0)tira(25,'dívida ativa em cobrança');else if(S.cobranca<0&&S.pgfn>0)tira(8,'dívida ativa da União');else if(S.parcelada)tira(3,'dívida ativa parcelada');
+ if(S.fgts)tira(15,'débito de FGTS');if(S.falen)tira(25,'falência ou recuperação judicial');tira(Math.min(15,S.trabEx*1.5),'execuções trabalhistas');
+ tira(Math.min(10,S.comum*4),'empresas ligadas com contato em comum');if(S.impr)tira(10,'improbidade');if(S.crim)tira(10,'processo criminal');if(S.colet)tira(5,'ação coletiva');
+ tira(Math.min(10,S.noticias*3),'notícias negativas');if(S.trab>=50)tira(5,'volume de ações trabalhistas');if(S.anos!=null&&S.anos<2)tira(5,'menos de 2 anos de atividade');
+ pts=Math.max(0,pts);window.DVRS={S:S,arg:arg,pts:pts,comp:comp,inab:inab};
+ var ncor=pts>=80?'b':pts>=55?'m':'a';
+ ac+='<a href="#" data-pdfr>PDF para anexar ao recurso</a>';
+ return '<div class="h"><small>Resumo executivo</small><h3>O que importa para a decisão</h3><span class="nv '+nv[0]+'">'+nv[1]+'</span><span class="nv '+ncor+'" title="Nota de risco de 0 a 100: quanto maior, menor o risco">Nota '+pts+'/100</span></div>'+
  '<div class="g"><div class="q w"><b>Nível de atenção</b><p>'+(mot.length?e(mot.join(' · '))+'.':'Nenhum ponto relevante nas fontes consultadas.')+'</p></div>'+
  '<div class="q"><b>Pode ser inabilitada?</b><p>'+pode+'</p></div>'+
  '<div class="q"><b>Argumento mais forte para o recurso</b><p>'+forte+'</p></div>'+
  '<div class="q"><b>Tem fôlego para executar?</b><p>'+fol+'</p></div>'+
- '<div class="q"><b>Próximo passo</b><p>'+e(prox)+'</p><div class="ac">'+ac+'</div></div></div>';
+ '<div class="q"><b>Próximo passo</b><p>'+e(prox)+'</p><div class="ac">'+ac+'</div></div>'+
+ '<div class="q w"><b>Nota de risco: '+pts+'/100</b><p>'+(comp.length?'Começa em 100 e desconta: '+e(comp.map(function(c){return c[1]+' (−'+c[0]+')'}).join(' · '))+'. ':'Nada a descontar nas fontes consultadas. ')+'De 80 a 100, risco baixo; de 55 a 79, moderado; abaixo de 55, alto.</p></div></div>';
 }
 
 function htmlComprador(r){
@@ -133,6 +143,19 @@ function htmlComprador(r){
  '<div class="q w"><b>Próximo passo</b><p>'+e(prev)+'</p><div class="ac"><a class="p" href="/plataforma/buscador/">Ver licitações abertas</a><a href="/plataforma/contratos-vencendo/">Contratos vencendo</a></div></div></div>';
 }
 
+function pdfRecurso(){var X=window.DVRS;if(!X)return;var r=root(),S=X.S,h2=r.querySelector('.rx-card.ink h2, .rp-hd h2, h2'),nome=h2?h2.textContent.trim():'',hoje=new Date().toLocaleDateString('pt-BR');
+ var L=[];[].forEach.call(r.querySelectorAll('.pj-card a, .rd a, .rp-sec.rd a'),function(a){if(L.length>=15||!/^https?:/.test(a.href))return;var li=a.closest('li,div');L.push([String((li||a).innerText||'').replace(/\s+/g,' ').replace(/(ver processo.*|abrir|todas as publica.*)$/i,'').trim().slice(0,220),a.href])});
+ var F=[['Receita Federal (comprovante de CNPJ)','https://solucoes.receita.fazenda.gov.br/servicos/cnpjreva/cnpjreva_solicitacao.asp'],['CEIS e CNEP (Portal da Transparência)','https://portaldatransparencia.gov.br/sancoes/consulta'],['Certidão consolidada TCU, CNJ e CGU','https://certidoes-apf.apps.tcu.gov.br/'],['Lista de devedores da PGFN','https://www.listadevedores.pgfn.gov.br/'],['CNDT (Justiça do Trabalho)','https://cndt-certidao.tst.jus.br/inicio.faces'],['Regularidade do FGTS (Caixa)','https://consulta-crf.caixa.gov.br/consultacrf/pages/consultaEmpregador.jsf'],['PNCP','https://pncp.gov.br/'],['Comunicações processuais (CNJ)','https://comunica.pje.jus.br/']];
+ var fat=X.arg.map(function(a){return a[0]});if(S.cobranca===0&&S.pgfn>0)fat.push('Dívida ativa da União de '+mc(S.pgfn)+' em situação parcelada, garantida ou suspensa (base trimestral da PGFN).');
+ var css='body{font-family:Georgia,serif;color:#111;max-width:760px;margin:30px auto;padding:0 20px;line-height:1.5;font-size:13pt}h1{font-size:16pt;margin:0 0 4px}h2{font-size:13pt;margin:22px 0 8px;border-bottom:1px solid #999}small{color:#555}li{margin:0 0 8px}a{color:#111}.n{font-size:10pt;color:#444;margin-top:26px;border-top:1px solid #999;padding-top:8px}';
+ var H='<!doctype html><html lang="pt-BR"><head><meta charset="utf-8"><title>Fatos públicos - '+e(nome)+'</title><style>'+css+'</style></head><body><h1>Fatos públicos sobre '+e(nome)+'</h1><small>CNPJ '+e(String(S.cnpj).replace(/^(\d{2})(\d{3})(\d{3})(\d{4})(\d{2})$/,'$1.$2.$3/$4-$5'))+' · levantamento em '+hoje+'</small>'+
+  '<h2>Fatos apurados</h2><ol>'+(fat.length?fat.map(function(f){return'<li>'+e(f)+'</li>'}).join(''):'<li>Nenhum fato restritivo encontrado nas fontes consultadas.</li>')+'</ol>'+
+  (L.length?'<h2>Processos citados</h2><ol>'+L.map(function(l){return'<li>'+e(l[0])+'<br><small>'+e(l[1])+'</small></li>'}).join('')+'</ol>':'')+
+  '<h2>Situação cadastral e capacidade</h2><p>Situação na Receita: '+e(S.sit||'não informada')+'. '+(S.capital?'Capital social de '+mc(S.capital)+'. ':'')+(S.anos!=null?S.anos+' ano(s) de atividade. ':'')+(S.contratos?S.contratos+' contrato(s) público(s) localizado(s) no PNCP.':'')+'</p>'+
+  '<h2>Fontes oficiais para conferência</h2><ul>'+F.map(function(f){return'<li>'+f[0]+': '+f[1]+'</li>'}).join('')+'</ul>'+
+  '<p class="n">Levantamento de dados públicos e oficiais, na data indicada. Cada fato deve ser confirmado na fonte e instruído com a respectiva certidão ou documento. Não constitui parecer jurídico.</p></body></html>';
+ var w=window.open('','_blank');if(!w){alert('Permita a abertura de janelas para gerar o PDF.');return}w.document.open();w.document.write(H);w.document.close();setTimeout(function(){w.focus();w.print()},400)}
+document.addEventListener('click',function(ev){var a=ev.target.closest&&ev.target.closest('[data-pdfr]');if(!a)return;ev.preventDefault();pdfRecurso()});
 var ult='',tm=null,ts=null,relId=0,est0={};[].forEach.call(document.querySelectorAll('style[id]'),function(x){est0[x.id]=1});
 var TOOL={concorrente:'raiox',comprador:'comprador',dossie:'dossie'}[PG];
 function salvar(){

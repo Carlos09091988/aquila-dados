@@ -13,7 +13,7 @@ function dv_app_pagina() {
 function dv_app_menu() {
 	return array(
 		array( '', array( array( 'Início', '/painel/', '🏠' ) ) ),
-		array( 'Raio-X e Due Diligence', array( array( 'Raio-X do comprador', '/plataforma/raio-x-comprador/', '🏛️' ), array( 'Raio-X do concorrente', '/plataforma/raio-x/', '🩻' ), array( 'Due Diligence completa', '/plataforma/dossie/', '📑' ) ) ),
+		array( 'Raio-X e Due Diligence', array( array( 'Raio-X do comprador', '/plataforma/raio-x-comprador/', '🏛️' ), array( 'Raio-X do concorrente', '/plataforma/raio-x/', '🩻' ), array( 'Due Diligence completa', '/plataforma/dossie/', '📑' ), array( 'Raio-X em lote', '/plataforma/raio-x-lote/', '🗂️' ) ) ),
 		array( 'Encontrar', array( array( 'Buscador de licitações', '/plataforma/buscador/', '🔎' ), array( 'Alertas e oportunidades', '/plataforma/alertas/', '📥', 'caixa' ), array( 'Contratos vencendo', '/plataforma/contratos-vencendo/', '⏳' ) ) ),
 		array( 'Analisar e disputar', array( array( 'Gestão de licitações', '/plataforma/licitacoes/', '📋', 'sessoes' ), array( 'Banco de preços', '/plataforma/banco-de-precos/', '💲' ), array( 'Calculadora de prazos', '/plataforma/prazos/', '📅' ) ) ),
 		array( 'Concorrência', array( array( 'Comparador de licitantes', '/plataforma/comparador/', '🔗' ) ) ),

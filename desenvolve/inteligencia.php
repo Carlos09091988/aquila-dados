@@ -268,7 +268,7 @@ add_action( 'rest_api_init', function () {
 	register_rest_route( 'desenvolve/v1', '/int/concorrente', array( 'methods' => 'GET', 'permission_callback' => $logado, 'callback' => function ( WP_REST_Request $r ) use ( $cn ) {
 		$c = $cn( $r ); if ( ! $c ) { return new WP_Error( 'dv_cnpj', 'CNPJ inválido.', array( 'status' => 400 ) ); }
 		$uid = get_current_user_id(); @set_time_limit( 150 );
-		$o = dv_int_concorrente( $c ); $nm = preg_replace( '/\D/', '', (string) $r['meu'] ); if ( strlen( $nm ) === 14 && function_exists( 'dv_part_cnpj_ok' ) && dv_part_cnpj_ok( $nm ) ) { update_user_meta( $uid, 'dv_cnpj_empresa', $nm ); }
+		$o = dv_int_concorrente( $c ); $nm = preg_replace( '/\D/', '', (string) $r['meu'] ); if ( strlen( $nm ) === 14 && function_exists( 'dv_part_cnpj_ok' ) && dv_part_cnpj_ok( $nm ) ) { update_user_meta( $uid, 'dv_cnpj_empresa', $nm ); } elseif ( (string) $r['meu'] === '0' ) { delete_user_meta( $uid, 'dv_cnpj_empresa' ); }
 		$meu = preg_replace( '/\D/', '', (string) ( get_user_meta( $uid, 'dv_cnpj_empresa', true ) ?: get_user_meta( $uid, 'dv_doc', true ) ) );
 		$o['meu'] = ( strlen( $meu ) === 14 && $meu !== $c ) ? $meu : '';
 		$o['monitorado'] = in_array( $c, dv_int_mon_lista( $uid ), true );

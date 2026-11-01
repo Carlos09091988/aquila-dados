@@ -921,6 +921,7 @@ add_action( 'wp_footer', function () {
 add_action( 'wp_footer', function () {
 	if ( is_admin() || ! function_exists( 'dv_pre_lancamento' ) || ! dv_pre_lancamento() ) { return; }
 	echo '<script>document.querySelectorAll("a").forEach(function(a){var t=a.textContent.trim();if(/^(Assine|Assinar|Assine já|Assinar agora)$/i.test(t)||/\/assinar\/?(\?|$)/.test(a.getAttribute("href")||"")){if(/^(Assine|Assinar)/i.test(t))a.textContent="Lista de espera";a.setAttribute("href","/#lista")}})</script>';
+	if ( is_user_logged_in() ) { echo '<script>document.querySelectorAll("header .nav-cta a.btn,header .nav-cta a[href*=lista]").forEach(function(a){a.style.display="none"})</script>'; }
 }, 80 );
 
 /* Processos judiciais nas ferramentas (Raio-X, Due Diligence, comprador): além da publicação, link para o processo no tribunal e para todas as publicações dele */
@@ -936,3 +937,6 @@ function liga(root){(root.querySelectorAll?root:document).querySelectorAll('a').
 liga(document);new MutationObserver(function(ms){ms.forEach(function(x){x.addedNodes.forEach(function(n){if(n.nodeType===1)liga(n)})})}).observe(document.body,{childList:true,subtree:true})})();</script>
 	<?php
 }, 99 );
+
+/* Título das abas: "Desenvolve Estratégias" (sem "Empresariais") em todas as páginas */
+add_filter( 'document_title_parts', function ( $t ) { if ( isset( $t['site'] ) ) { $t['site'] = 'Desenvolve Estratégias'; } if ( isset( $t['tagline'] ) ) { $t['tagline'] = 'Inteligência em licitações'; } return $t; }, 20 );

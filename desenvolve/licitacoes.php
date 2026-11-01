@@ -37,7 +37,8 @@ function dv_lic_detectar_cat( $obj ) {
 	$o = strtoupper( remove_accents( (string) $obj ) );
 	if ( preg_match( '/(AQUISICAO|FORNECIMENTO|COMPRA).{0,60}GENEROS|GENEROS ALIMENTICIOS E MATERIA/', $o ) ) { return 'bens'; }
 	if ( preg_match( '/ALIMENTA|MERENDA|REFEIC|NUTRI|COZINHA|GENEROS ALIMENT/', $o ) ) { return 'alimentacao'; }
-	if ( preg_match( '/OBRA|ENGENHARIA|REFORMA|CONSTRU|PAVIMENT|DRENAGEM|EDIFICA/', $o ) ) { return 'engenharia'; }
+	if ( preg_match( '/MAO DE OBRA|DEDICACAO EXCLUSIVA|TERCEIRIZ/', $o ) && ! preg_match( '/ENGENHARIA|REFORMA|CONSTRU|PAVIMENT|DRENAGEM|EDIFICA/', $o ) ) { return 'mao_obra'; }
+	if ( preg_match( '/\bOBRAS?\b|ENGENHARIA|REFORMA|CONSTRU|PAVIMENT|DRENAGEM|EDIFICA/', str_replace( 'MAO DE OBRA', '', $o ) ) ) { return 'engenharia'; }
 	if ( preg_match( '/LIMPEZA|CONSERVACAO|VIGILANCIA|PORTARIA|RECEPCAO|MAO DE OBRA|DEDICACAO EXCLUSIVA|TERCEIRIZ|COPEIRAG|JARDINAG|MOTORISTA/', $o ) ) { return 'mao_obra'; }
 	if ( preg_match( '/MEDICAMENT|HOSPITAL|SAUDE|ODONTO|LABORATOR|INSUMOS MEDIC|EQUIPAMENTOS MEDIC/', $o ) ) { return 'saude'; }
 	if ( preg_match( '/SOFTWARE|SISTEMA|INFORMATICA|TECNOLOGIA DA INFORMACAO|COMPUTADOR|LICENC|NUVEM|REDE LOGICA/', $o ) ) { return 'ti'; }
@@ -381,7 +382,7 @@ R.addEventListener('click',function(ev){var t=ev.target,x;
  if(t.dataset.ed){x=S.itens.filter(function(y){return y.id===t.dataset.ed})[0];form(x);return}
  if(t.dataset.ia){x=S.itens.filter(function(y){return y.id===t.dataset.ia})[0];abrirIA(x);return}
  if(t.dataset.x){if(confirm('Excluir esta licitação da lista?'))req('POST','lic/excluir',{id:t.dataset.x}).then(carregar)}});
-carregar().then(function(){var v=location.search.match(/[?&]ver=([a-z0-9]+)/);if(v){history.replaceState(null,'',location.pathname);var x=S.itens.filter(function(y){return y.id===v[1]})[0];if(x){aba='todas';pintar();form(x)}return}var m=location.search.match(/[?&]importar=([0-9]{14}\/[0-9]{4}\/[0-9]+)/);if(!m)return;history.replaceState(null,'',location.pathname);var f=R.querySelector('.lc-imp');f.querySelector('input').value=m[1];f.requestSubmit()});
+carregar().then(function(){var v=location.search.match(/[?&]ver=([a-z0-9]+)/);window.__dvan=location.search;if(v){history.replaceState(null,'',location.pathname);var x=S.itens.filter(function(y){return y.id===v[1]})[0];if(x){aba='todas';pintar();if(/[?&]analisar=1/.test(location.search+(window.__dvan||'')))abrirIA(x);else form(x)}return}var m=location.search.match(/[?&]importar=([0-9]{14}\/[0-9]{4}\/[0-9]+)/);if(!m)return;history.replaceState(null,'',location.pathname);var f=R.querySelector('.lc-imp');f.querySelector('input').value=m[1];f.requestSubmit()});
 })();
 </script>
 <style>

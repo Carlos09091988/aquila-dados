@@ -12,6 +12,16 @@ function dv_al_ativo( $uid ) { return function_exists( 'dv_is_master' ) && ( dv_
 function dv_al_norm( $s ) { return strtoupper( remove_accents( (string) $s ) ); }
 
 /** Busca no PNCP as licitações abertas que batem com o alerta, publicadas desde $desde (Y-m-d). */
+/** A busca do PNCP traz qualquer edital com UMA das palavras ("limpeza predial" trazia "manutenção predial"); aqui exigimos todas as palavras do termo */
+function dv_al_relevante( $termo, $nd ) {
+	$stop = array( 'DE', 'DA', 'DO', 'DAS', 'DOS', 'E', 'EM', 'PARA', 'COM', 'A', 'O', 'AS', 'OS', 'NA', 'NO', 'POR' );
+	foreach ( preg_split( '/[^A-Z0-9]+/', dv_al_norm( $termo ) ) as $w ) {
+		if ( strlen( $w ) < 3 || in_array( $w, $stop, true ) ) { continue; }
+		$raiz = strlen( $w ) > 6 ? substr( $w, 0, max( 5, strlen( $w ) - 3 ) ) : rtrim( $w, 'S' );
+		if ( strpos( $nd, $raiz ) === false ) { return false; }
+	}
+	return true;
+}
 function dv_al_buscar( $a, $desde ) {
 	$termos = array_slice( array_filter( array_map( 'trim', preg_split( '/[,;\n]+/', (string) $a['termos'] ) ) ), 0, 6 );
 	$excl = array_filter( array_map( function ( $x ) { return dv_al_norm( trim( $x ) ); }, preg_split( '/[,;\n]+/', (string) ( $a['excluir'] ?? '' ) ) ) );
@@ -34,6 +44,7 @@ function dv_al_buscar( $a, $desde ) {
 			if ( ! preg_match( '#/compras/(\d{14})/(\d{4})/(\d+)#', (string) ( $i['item_url'] ?? '' ), $m ) ) { continue; }
 			$ref = $m[1] . '/' . $m[2] . '/' . $m[3];
 			$desc = (string) ( $i['description'] ?? '' ); $nd = dv_al_norm( $desc . ' ' . ( $i['title'] ?? '' ) );
+			if ( ! dv_al_relevante( $termo, $nd ) ) { continue; }
 			$pula = false; foreach ( $excl as $x ) { if ( $x !== '' && strpos( $nd, $x ) !== false ) { $pula = true; } } if ( $pula ) { continue; }
 			$v = (float) ( $i['valor_global'] ?? 0 );
 			if ( ! empty( $a['vmin'] ) && $v && $v < (float) $a['vmin'] ) { continue; }

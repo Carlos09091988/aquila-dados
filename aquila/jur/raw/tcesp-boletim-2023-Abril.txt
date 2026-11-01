@@ -1,0 +1,472 @@
+Bole%m de Jurisprudência TCESP ‐ Junho/2021 >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>> www.tce.sp.gov.br/jurisprudencia
+
+
+
+
+                                    Boletim de
+                                    Jurisprudência
+                                    EXPEDIENT E
+
+
+                                    Idealização:
+                                    Gabinete da Presidência
+
+
+
+
+                                    Seleção das Decisões:
+                                    Gabinete da Presidência
+                                    Gabinetes dos Conselheiros
+                                    Comissão Permanente de Análise de Jurisprudência (CPAJ)
+
+
+
+
+                                    Coordenação:
+                                    Comissão Permanente de Análise de Jurisprudência (CPAJ)
+
+
+
+
+                                    Apoio:
+                                    Observatório do Futuro
+                                    Divisão de Sistemas (DSIS)
+                                    Coordenadoria de Comunicação Social (CCS)
+
+
+
+
+                                    Avenida Rangel Pestana, 315
+                                    Centro - São Paulo/SP
+                                    CEP 01017-906 - PABX: 3292-3266
+                   BOLETIM DE JURISPRUDÊNCIA
+
+                             Edição nº 23 – Abril/2023
+
+              O Boletim de Jurisprudência TCESP é uma publicação mensal que objetiva
+divulgar a servidores, jurisdicionados e sociedade em geral as principais decisões
+proferidas nas Câmaras e no Plenário do Tribunal de Contas do Estado de São Paulo,
+propiciando maior transparência e segurança jurídica.
+              Dentre os critérios utilizados para seleção dos processos destacam-se:
+assuntos envolvendo estudos e/ou consultas; ocorrência de votos revisores/desempate,
+discussões e/ou sustentações orais; ineditismo e/ou relevância da tese; alteração ou
+reiteração de novo entendimento; e menção a Súmulas do TCESP.
+              A partir de 2022, o Boletim passa a correlacionar as decisões com os
+Objetivos de Desenvolvimento Sustentável (ODS) e suas metas, em consonância com a
+Agenda 2030 da ONU e com o Plano Estratégico 2022-2026 do TCESP.
+              Além disso, alguns dos precedentes são acompanhados de ‘Nota CPAJ’, que
+busca destacar aspectos relevantes ocorridos nas sessões de julgamento, bem como
+outros pontos eventualmente não explicitados nas Ementas.
+              Importante ressaltar que as informações aqui apresentadas não representam
+o posicionamento prevalecente deste Tribunal sobre as matérias analisadas em cada caso,
+tampouco constituem resumo oficial dos Acórdãos, Pareceres e Votos, cujo inteiro teor
+pode ser acessado clicando nos links disponíveis em cada processo.
+               A presente edição contém informações sintéticas sobre os julgados mais
+significativos do mês de abril de 2023, com destaque para decisões do Plenário envolvendo
+a possibilidade do uso do credenciamento em licitações destinadas ao gerenciamento de
+vales benefícios e à deliberação quanto a eventual legalidade das despesas efetuadas,
+quando houver adequado cumprimento das obrigações avençadas e a regularidade dos
+pagamentos.
+               As respectivas sessões públicas podem ser acessadas no canal oficial do
+TCESP no YouTube (https://www.youtube.com/tcespoficial).
+Sumário
+
+
+EXAME PRÉVIO DE EDITAL ........................................................................................................................... 4
+   006663.989.23-4 ................................................................................................................................................. 4
+   (Sessão Plenária de 12/04/2023. Relatoria: Conselheiro Antônio Roque Citadini).................................. 4
+   021288.989.22-1 ................................................................................................................................................. 5
+   (Sessão Plenária de 12/04/2023. Relatoria: Conselheiro Edgard Camargo Rodrigues) ......................... 5
+   007629.989.23-7 ................................................................................................................................................. 6
+   (Sessão Plenária de 19/04/2023. Relatoria: Conselheiro Renato Martins Costa) .................................... 6
+   ............................................................................................................................................................................... 6
+   008005.989.23-1 ................................................................................................................................................. 7
+   (Sessão Plenária de 12/04/2023. Relatoria: Conselheiro-Substituto Valdenir Antônio Polizeli) ............ 7
+   001921.989.23-2 e outro ................................................................................................................................... 8
+   (Sessão Plenária de 08/03/2023. Relatoria: Conselheira Cristiana de Castro Moraes) .......................... 8
+   006629.989.23-7 ................................................................................................................................................. 9
+   (Sessão Plenária de 12/04/2023. Relatoria: Conselheiro Dimas Ramalho) .............................................. 9
+TRIBUNAL PLENO ........................................................................................................................................... 9
+   002008.989.23-8 e outro ................................................................................................................................ 10
+   (Sessão Plenária de 19/04/2023. Relatoria: Conselheiro Antônio Roque Citadini)................................ 10
+   006290.989.23-5 ............................................................................................................................................... 11
+   (Sessão Plenária de 12/04/2023. Relatoria: Conselheiro Edgard Camargo Rodrigues) ....................... 11
+   024069.026.17................................................................................................................................................... 11
+   (Sessão Plenária de 05/04/2023. Relatoria: Conselheiro Renato Martins Costa) .................................. 12
+   012720.989.22-7 e outros................................................................................................................................ 13
+   (Sessão Plenária de 05/04/2023. Relatoria: Conselheiro Robson Marinho) ........................................... 13
+   016344.989.22-3 e outro ................................................................................................................................. 14
+   (Sessão Plenária de 05/04/2023. Relatoria: Conselheira Cristiana de Castro Moraes) ........................ 14
+   010355.989.22-9 ............................................................................................................................................... 15
+   (Sessão Plenária de 05/04/2023. Relatoria: Conselheiro Dimas Ramalho) ............................................ 15
+PRIMEIRA CÂMARA ...................................................................................................................................... 16
+   012975.989.22-9 ............................................................................................................................................... 16
+   (Sessão de 18/04/2023. Relatoria: Conselheiro Antonio Roque Citadini) ............................................... 16
+   013338.989.18-9 e outro ................................................................................................................................. 17
+   (Sessão de 25/04/2023. Relatoria: Conselheiro Edgard Camargo Rodrigues) ...................................... 17
+   009719.989.16-2 e outros................................................................................................................................ 18
+   (Sessão de 11/04/2023. Relatoria: Conselheiro Dimas Ramalho)............................................................ 18
+SEGUNDA CÂMARA ...................................................................................................................................... 19
+   003852.989.20-1 ............................................................................................................................................... 19
+   (Sessão de 25/04/2023. Relatoria: Conselheiro Renato Martins Costa) ................................................. 19
+   015780.989.22-4 ............................................................................................................................................... 20
+   (Sessão de 04/04/2023. Relatoria: Conselheiro Robson Marinho) ........................................................... 20
+   024318.989.21-6.................................................................................................................................................. 21
+   (Sessão de 04/04/2023. Relatoria: Conselheira Cristiana de Castro Moraes)........................................ 21
+EXAME PRÉVIO DE EDITAL
+
+006663.989.23-4
+(Sessão Plenária de 12/04/2023. Relatoria: Conselheiro Antônio Roque Citadini)
+
+
+EMENTA: EXAME PRÉVIO DE EDITAL. PREGÃO ELETRÔNICO. PROCEDÊNCIA
+PARCIAL. DA REPRESENTAÇÃO.
+Registro de preços visando a aquisição de central de monitoramento, equipamentos com software, aplicativos
+e integração. Inadequada a adoção do sistema de registro de preços, pois existem serviços com demanda
+certa, sem caráter eventual.
+
+
+Nota CPAJ: Ressaltou o e. Relator a indevida a adoção do sistema de registro de preços para serviços "com
+demanda certa, sem caráter eventual".
+021288.989.22-1
+(Sessão Plenária de 12/04/2023. Redator: Conselheiro Edgard Camargo Rodrigues)
+
+EMENTA:    EXAME    PRÉVIO   DE   EDITAL.  CHAMAMENTO   PÚBLICO.
+CREDENCIAMENTO DE EMPRESA PARA GERENCIAMENTO DE VALE
+ALIMENTAÇÃO. VEDAÇÃO DE TAXA DE ADMINISTRAÇÃO NEGATIVA. ESCOLHA
+DO CONTRATADO A CARGO DO BENEFICIÁRIO DIRETO DA PRESTAÇÃO.
+POSSIBILIDADE. IMPROCEDÊNCIA DAS REPRESENTAÇÕES.
+
+Nota CPAJ: O voto revisor, acolhido pela maioria do Plenário, propôs a alteração do entendimento até então
+vigente nesta Corte para permitir o uso do credenciamento em licitações destinadas à administração,
+implementação, gerenciamento, emissão, distribuição e fornecimento de cartões eletrônicos para vale-
+alimentação e/ou multi-benefícios.
+007629.989.23-7
+(Sessão Plenária de 19/04/2023. Relatoria: Conselheiro Renato Martins Costa)
+
+EMENTA: EXAME PRÉVIO DE EDITAL. PREGÃO ELETRÔNICO. ALIENAÇÃO DE
+ATIVOS MOBILIÁRIOS. MODALIDADE LICITATÓRIA. SERVIÇOS COMUNS. ART. 1º,
+PARÁGRO ÚNICO, DA LEI Nº 10.520/02. POSSIBILIDADE. QUALIFICAÇÃO
+OPERACIONAL. EXPERIÊNCIA NO SETOR ELÉTRICO. RESTRITIVIDADE. SÚMULA
+Nº 30. PROCEDÊNCIA PARCIAL DA REPRESENTAÇÃO.
+1. Os serviços de consultoria para avaliação, estruturação e execução da alienação de ativos mobiliários,
+correspondentes às ações representativas do capital social de Empresa Estatal, são considerados como
+sendo “serviços comuns” para efeito do art. 1º, parágrafo único, da Lei nº 10.520/02.
+2. Há restritividade indevida na exigência de apresentação de atestados de qualificação operacional reduzidos
+ao Setor Elétrico, incidindo a orientação retratada no Enunciado nº 30 da Súmula de Jurisprudência deste E.
+Tribunal.
+
+Nota CPAJ: Destaca o e. Relator que, na hipótese, viável se revelou a utilização do pregão, posto que, além
+do "movimento vivenciado nos últimos anos de intensificação de esforços para redução do papel do Estado
+na ordem econômica, não escapa à nossa realidade que o volume de operações envolvendo as
+transformações societárias no Setor Privado é ainda muito maior, circunstância capaz de tornar o serviço
+comum na perspectiva do próprio Mercado de Capitais, prenhe de experiências na área de fusões e
+aquisições".
+008005.989.23-1
+(Sessão Plenária de 12/04/2023. Relatoria: Conselheiro-Substituto Valdenir Antônio Polizeli)
+
+
+EMENTA: EDITAL DE LICITAÇÃO. PREGÃO ELETRÔNICO. CESSÃO DE USO DE
+SISTEMAS INTEGRADOS DE INFORMÁTICA. ALCANCE DAS PENALIDADES DE
+SUSPENSÃO E IMPEDIMENTO. PRAZO PARA IMPUGNAÇÃO AO EDITAL.
+PRECIFICAÇÃO E PAGAMENTO. DATACENTER. PROVA CONCEITO. MIGRAÇÃO DE
+DADOS. PROCEDÊNCIA PARCIAL.
+Nota CPAJ: Observou o e. Relator que, "confirmado que o objeto envolve não só o licenciamento de um
+sistema (incluindo os serviços correlatos), mas também o provimento de uma infraestrutura de Datacenter,
+deve o edital dispor sobre a possibilidade de participação de empresas em consórcio e/ou autorização de
+subcontratação daquela parcela, favorecendo a ampliação da disputa".
+001921.989.23-2 e outro
+(Sessão Plenária de 08/03/2023. Relatoria: Conselheira Cristiana de Castro Moraes)
+
+
+EMENTA: EXAMES PRÉVIOS DE EDITAL. LICITAÇÃO. CONCORRÊNCIA.
+CONCESSÃO ADMINISTRATIVA. SERVIÇOS PÚBLICOS INTEGRADOS DE LIMPEZA
+URBANA E MANEJO DE RESÍDUOS SÓLIDOS. RELANÇAMENTO. REFORMULAÇÃO
+DOS CRITÉRIOS DE JULGAMENTO DAS PROPOSTAS TÉCNICAS. LIMITAÇÃO AO
+CÔMPUTO DE ATESTADOS EMITIDOS EM NOME DE SOCIEDADES DE PROPÓSITO
+ESPECÍFICO. METODOLOGIA DE CÁLCULO PARA AFERIÇÃO DO OPEX E
+INVESTIMENTOS.   IMPROCEDENTE    E    PARCIALMENTE   PROCEDENTE.
+DETERMINAÇÕES.
+
+Nota CPAJ: A e. Relatora ressaltou a possibilidade de adoção, em certames para concessão de administrativa
+para serviços de limpeza urbana, do critério de julgamento por técnica e preço, desde que observadas as
+diretrizes aplicáveis à valoração das propostas.
+006629.989.23-7
+(Sessão Plenária de 12/04/2023. Relatoria: Conselheiro Dimas Ramalho)
+
+EMENTA: EXAME PRÉVIO DE EDITAL. CHAMAMENTO PÚBLICO. PROTOCOLO
+PRESENCIAL DE IMPUGNAÇÕES, RECURSOS E DOCUMENTOS CORRELATOS.
+DESARRAZOADO. QUALIFICAÇÃO TÉCNICA. QUALIFICAÇÃO ECONÔMICO-
+FINANCEIRA. ÍNDICES CONTÁBEIS PARA AFERIÇÃO DA BOA SITUAÇÃO
+FINANCEIRA DAS PROPONENTES. PROCEDÊNCIA.
+1. Deve a Administração utilizar os recursos de tecnologia da informação disponíveis para permitir a ampliação
+dos meios de recepção de pedidos de esclarecimentos, impugnações ao edital e recursos, admitindo o uso
+de meios eletrônicos ou digitais para estas finalidades;
+2. Nos termos do artigo 31, §5º da Lei 8.666/93, não se pode admitir a exigência de balanço patrimonial e
+demonstrações contábeis do último exercício social, sem a definição de critérios objetivos de aferição da boa
+situação financeira das proponentes;
+3. Nos termos do artigo 28 da Lei 13.019/14, os requisitos para celebração de termos de colaboração e termos
+de fomento, previstos nos artigos 33 e 34 da referida lei, apenas podem ser verificados depois de encerrada
+a etapa competitiva e ordenadas as propostas.
+
+Nota CPAJ: A ementa do v. acórdão consignou que, "nos termos do artigo 28 da Lei 13.019/14, os requisitos
+para celebração de termos de colaboração e termos de fomento, previstos nos artigos 33 e 34 da referida lei,
+apenas podem ser verificados depois de encerrada a etapa competitiva e ordenadas as propostas".
+TRIBUNAL PLENO
+
+
+002008.989.23-8 e outro
+(Sessão Plenária de 19/04/2023. Relatoria: Conselheiro Antônio Roque Citadini)
+
+EMENTA:  RECURSOS     ORDINÁRIOS.                           CONTRATO             DE      CONCESSÃO.
+CONHECIMENTO. PROVIMENTO.
+Contrato de Concessão para direito de uso de central hidrelétrica. Apresentados os estudos de viabilidade e
+autorizações necessárias. Irregularidades afastadas. Recurso conhecido e provido.
+
+Nota CPAJ: Ponderou o e. Relator que, a despeito da singularidade do objeto, que envolve a concessão de
+direito de uso de central hidrelétrica no município, foram apresentados os devidos estudos de viabilidade e
+autorizações necessárias a viabilizar a regularidade da matéria.
+006290.989.23-5
+(Sessão Plenária de 12/04/2023. Relatoria: Conselheiro Edgard Camargo Rodrigues)
+
+EMENTA: PEDIDO DE REEXAME. CONTAS ANUAIS. PREFEITURA. CONTROLE
+INTERNO INEFICAZ. SUPERÁVIT ORÇAMENTÁRIO INSUFICIENTE PARA REVERTER
+O DÉFICIT FINANCEIRO ADVINDO DO EXERCÍCIO ANTERIOR. EXCESSIVAS
+ALTERAÇÕES ORÇAMENTÁRIAS. ABERTURA DE CRÉDITOS ADICIONAIS SEM
+LASTRO EM SUPERÁVIT ANTERIOR. INSUFICIENTE QUITAÇÃO DOS PRECATÓRIOS
+E RECOLHIMENTO DE ENCARGOS SOCIAIS, INCLUSIVE ORIUNDOS DE
+PARCELAMENTOS ANTERIORES. DESPESAS EXCESSIVAS COM MULTAS E JUROS
+EM FUNÇÃO DO ATRASO NA QUITAÇÃO DE DESPESAS OBRIGATÓRIAS.
+COMPENSAÇÃO PREVIDENCIÁRIA UNILATERAL INDEVIDA. SERVIDORES
+COMISSIONADOS COM ATRIBUIÇÕES E ESCOLARIDADES INCOMPATÍVEIS COM A
+JURISPRUDÊNCIA. FRACO DESEMPENHO NO IEG-M. TENDÊNCIA ACENTUADA DE
+PIORA DA GESTÃO. DETERIORAÇÃO SISTEMÁTICA DA SITUAÇÃO FINANCEIRA, A
+DESPEITO DO AUMENTO DE ARRECADAÇÃO. DESPROVIMENTO.
+
+
+Nota CPAJ: Sublinhou o voto do e. Relator que as contas não apenas incorrem "em falhas tidas como capitais
+pela jurisprudência (insatisfatória quitação dos precatórios e recolhimento de encargos sociais; compensação
+previdenciária indevida etc.), como a Origem não promoveu medidas de austeridade suficientes a manter as
+contas públicas nos trilhos (artigo 9º, LRF)".
+024069.026.17
+(Sessão Plenária de 05/04/2023. Relatoria: Conselheiro Renato Martins Costa)
+
+
+EMENTA: RECURSO ORDINÁRIO. PRESTAÇÃO DE CONTAS. CONVÊNIO.
+EXECUÇÃO DE SERVIÇOS DE SAÚDE. DESPESAS NÃO COMPROVADAS. REJEIÇÃO
+DO CRITÉRIO DE RATEIO DE GASTOS GERAIS DA ENTIDADE ENTRE OS DIVERSOS
+CONVÊNIOS POR ELA MANTIDOS. PAGAMENTO DE JUROS RELATIVOS A
+EMPRÉSTIMO CONTRAÍDO PARA FINANCIAMENTO DA EXECUÇÃO DOS
+SERVIÇOS, PROCEDIMENTO EXPRESSAMENTE VEDADO NO CONVÊNIO.
+RECURSO PARCIALMENTE PROVIDO, PARA EXCLUIR O JUÍZO DE
+IRREGULARIDADE QUE INCIDIU SOBRE O PAGAMENTO DE HONORÁRIOS
+ADVOCATÍCIOS, UMA VEZ DEMONSTRADA A PRESTAÇÃO DOS SERVIÇOS, BEM
+COMO PARA DECLARAR A REGULARIDADE EM RELAÇÃO À PARCELA DAS
+DESPESAS QUE FORAM COMPROVADAS E, AINDA, AUTORIZAR O
+PARCELAMENTO DE DÉBITOS RELATIVOS ÀS DESPESAS NÃO COMPROVADAS.
+PROVIMENTO PARCIAL.
+1. Nos repasses a entidades do Terceiro Setor, é imprescindível que a aplicação de recursos em despesas
+administrativas e/ou custos indiretos, além de devidamente prevista no Plano de Trabalho, seja documentalmente
+comprovada (TC-020859/026/16 e TC025990/026/14).
+2. Nas Prestações de Contas serão glosadas as despesas com pagamento de juros quando expressamente vedadas
+no Convênio de Origem.
+
+Nota CPAJ: Enfatizou o e. Relator que, para ser aceito o rateio nas despesas da entidade, “necessária a
+apresentação de controles que revelem maior grau de acurácia, buscando identificar, mesmo que de maneira
+aproximada, o efetivo consumo específico de cada bem ou serviço, de forma a possibilitar o direcionamento
+para a respectiva Unidade”. Coibindo-se, desta forma, a inclusão de despesas que não estejam relacionadas
+ao objeto avençado.
+012720.989.22-7 e outros
+(Sessão Plenária de 05/04/2023. Relatoria: Conselheiro Robson Marinho)
+
+
+EMENTA: RECURSOS ORDINÁRIOS. LICITAÇÃO E CONTRATO. PRESTAÇÃO DE
+SERVIÇOS DE LIMPEZA PÚBLICA. QUESTÕES PRELIMINARES E PEDIDO DE
+ARQUIVAMENTO REJEITADOS. EDITAL. EXIGÊNCIAS DE QUALIFICAÇÃO TÉCNICA.
+PRECEITOS CONSTITUCIONAIS, DA LEI Nº 8.666/93 E DA JURISPRUDÊNCIA DESTA
+CORTE VIOLADOS. CLÁUSULAS QUE ISOLADAS OU CONJUNTAMENTE
+MOTIVARAM VÁRIAS INABILITAÇÕES. ÚNICA PROPONENTE HABILITADA.
+FRUSTRAÇÃO AO CARÁTER COMPETITIVO DO CERTAME. MULTAS. DOSIMETRIA
+DA PENA. PRESENÇA DE ELEMENTOS ATENUANTES. POSSIBILIDADE DE AJUSTE.
+INCIDÊNCIA DOS PRECEITOS DA LINDB. MINORAÇÃO DOS VALORES.
+PROVIMENTO PARCIAL DOS RECURSOS DOS AGENTES RESPONSÁVEIS PELO
+CONTRATO. DESPROVIMENTO DOS RECURSOS DA PREFEITURA, DO ATUAL
+PREFEITO E DA CONTRATADA.
+1. A prolação de decisão em sede de Mandado de Segurança que tenha assentado a inexistência de direito líquido
+e certo da impetrante, denegando, assim, a segurança, não tem o condão de aniquilar as competências técnicas e
+privativas do Tribunal de Contas do Estado, de julgar contratos, ajustes e demais atos jurídicos análogos, fixada no
+art. 2º, XVIII da Lei Orgânica do Tribunal (Lei Complementar Estadual nº 709/93), em vista do princípio da
+independência das instâncias, consoante firme entendimento doutrinário e jurisprudencial no âmbito desta Corte
+e dos Tribunais Judiciários, e que só é derrogado se houver provimento jurisdicional oriundo da esfera penal
+fundado na inexistência do fato ou na negativa de autoria.
+2. Exigências relacionadas à qualificação técnica dos licitantes devem limitar-se àquelas indispensáveis à plena
+satisfação das obrigações, por força do mandamento emanado do art. 37, XXI, da Constituição Federal de 1988.
+3. A ausência de indícios de sobrepreço ou danos ao erário e de elementos desabonadores das condutas dos
+responsáveis, são razões bastantes e que autorizam abrandar o valor da multa a eles cominada, em homenagem
+aos princípios da razoabilidade e proporcionalidade.
+
+Nota CPAJ: Destacou-se na ementa do v. acórdão que "a prolação de decisão em sede de Mandado de
+Segurança que tenha assentado a inexistência de direito líquido e certo da impetrante, denegando, assim, a
+segurança, não tem o condão de aniquilar as competências técnicas e privativas do Tribunal de Contas do
+Estado, de julgar contratos, ajustes e demais atos jurídicos análogos, fixada no art. 2º, XVIII da Lei Orgânica
+do Tribunal (Lei Complementar Estadual nº 709/93), em vista do princípio da independência das instâncias,
+consoante firme entendimento doutrinário e jurisprudencial no âmbito desta Corte e dos Tribunais Judiciários,
+e que só é derrogado se houver provimento jurisdicional oriundo da esfera penal fundado na inexistência do
+fato ou na negativa de autoria".
+01252.989.23-1
+(Sessão Plenária de 05/04/2023. Relatoria: Conselheira Cristiana de Castro Moraes)
+
+EMENTA: RECURSO ORDINÁRIO. CONTRATO. DISPENSA DE LICITAÇÃO.
+SERVIÇOS DE COLETA DE RESÍDUOS SÓLIDOS E MANEJO DO ATERRO
+SANITÁRIO. SITUAÇÃO EMERGENCIAL NÃO CARACTERIZADA. FALHAS NO
+PLANEJAMENTO DE GOVERNO. AGLUTINAÇÃO INDEVIDA DE OBJETOS. MATÉRIA
+DECIDIDA PELO E. PLENÁRIO EM SEDE DE EXAME PRÉVIO ANTERIOR, SEM
+OBSERVÂNCIA DAS PROVIDÊNCIAS CORRETIVAS. FALTA DE COMPROVAÇÃO
+DOCUMENTAL DE SITUAÇÕES EXCEPCIONAIS RELACIONADAS À COVID-19.
+DESPESAS DECORRENTES. COMPROVAÇÃO DA ADEQUADA REALIZAÇÃO DOS
+SERVIÇOS AVENÇADOS E REGULARIDADE DOS PAGAMENTOS. PROVIMENTO
+PARCIAL, APENAS PARA CANCELAR A DECLARAÇÃO DE ILEGALIDADE DAS
+DESPESAS.
+
+Nota CPAJ: Inovou o voto da e. Relatora ao considerar que, tendo sido reconhecido "o adequado cumprimento
+das obrigações avençadas e a regularidade dos pagamentos", pertinente o acolhimento do pedido de
+cancelamento da declaração de ilegalidade das despesas efetuadas.
+010355.989.22-9
+(Sessão Plenária de 05/04/2023. Relatoria: Conselheiro Dimas Ramalho)
+
+EMENTA: RECURSO ORDINÁRIO. CONTAS ANUAIS. CÂMARA MUNICIPAL. 2017.
+QUADRO DE PESSOAL. EXCESSO DE CARGOS EM COMISSÃO. DESPROPORÇÃO
+NO NÚMERO DE COMISSIONADOS EM RELAÇÃO A EDILIDADES DE ESTRUTURA
+SIMILAR. CONCESSÃO INDEVIDA DE SEXTA PARTE A SERVIDORES.
+RECOMPOSIÇÃO AO ERÁRIO. MANUTENÇÃO DA RESPONSABILIZAÇÃO PELA
+FALHA. NÃO PROVIMENTO.
+A recomposição do erário não exclui de forma automática a responsabilidade do gestor pelas irregularidades que
+causaram o dano aos cofres públicos.
+
+Nota CPAJ: Reforçou o e. Relator que "o aumento das despesas apurado pela equipe técnica não ocorreu
+apenas pelo crescimento vegetativo da folha de pagamento no mês de dezembro, ou ainda, de inexistente
+redução da receita corrente líquida, como argumenta a defesa, mas foi em grande parte impactada pela
+majoração de 650% no abono natalino ocorrida em dezembro de 2020, portanto em período não permitido
+pelo art. 21, II da Lei de Responsabilidade Fiscal".
+PRIMEIRA CÂMARA
+
+012975.989.22-9
+(Sessão de 18/04/2023. Relatoria: Conselheiro Antonio Roque Citadini)
+
+
+EMENTA: CONCESSÃO. CONTRATO. ADITIVOS. IRREGULARIDADE.
+Serviços de abastecimento de água e de coleta e destinação final de esgotos sanitários. Irregularidade da licitação,
+dos termos contratuais e aditivos. Ausência de informações acerca dos investimentos a serem realizados pela
+concessionária. Art. 18, XV, da Lei Federal n° 8.987/95. Exigência de execução de obras não previstas em edital.
+Ausência de comprovação de garantia contratual. Não apresentada a composição do BDI utilizado na contratação.
+Ausência de estudo de impacto ambiental. Descumprimento da vinculação ao edital. Art. 30, inciso II, e §1°, da Lei
+Federal n° 8.666/93. Violação às Súmulas n°s 23 e 24, deste Tribunal. Ausência de remessa dos termos de
+aditamento. Determinada a sustação de toda a avença. Remessa ao Ministério Público do Estado. Irregularidade
+da licitação, dos termos contratuais e aditivos. V.U.
+
+
+Nota CPAJ: Destacou-se no voto a existência de falhas graves, reiteradamente condenadas por esta Corte,
+como a “ausência de informações acerca dos investimentos a serem realizados pela concessionária, como
+também a exigência de execução de obras não previstas em Edital, o descumprimento da vinculação ao
+Edital, a ausência de comprovação de garantia contratual, e também a não definição do BDI utilizado na
+contratação".
+013338.989.18-9 e outro
+
+(Sessão de 25/04/2023. Relatoria: Conselheiro Edgard Camargo Rodrigues)
+
+
+EMENTA: LICITAÇÃO. PREGÃO PRESENCIAL. CONTRATO. LOCAÇÃO DE
+EQUIPAMENTOS DE INFORMÁTICA COM SERVIÇOS TÉCNICOS EDUCACIONAIS.
+PLANEJAMENTO FALHO. TERMO DE REFERÊNCIA DEFICIENTE. IMPRECISO
+DIMENSIONAMENTO DO OBJETO.        REPERCUSSÃO NEGATIVA SOBRE A
+ELABORAÇÃO DO ORÇAMENTO. AGLUTINAÇÃO DE ITENS. IMPOSSIBILIDADE DE
+IDENTIFICAR TODOS OS CUSTOS UNITÁRIOS INCIDENTES SOBRE A EXECUÇÃO
+DOS SERVIÇOS. PEÇA ESTIMATIVA INSUSCETÍVEL DE ORIENTAR A FORMULAÇÃO
+DAS PROPOSTAS E EMBASAR AFERIÇÃO DA COMPATIBILIDADE DOS VALORES
+PACTUADOS. REQUISITOS TÉCNICOS RESTRITIVOS, SEJA DOS EQUIPAMENTOS,
+SEJA DO CONTEÚDO DO PORTAL EDUCACIONAL E DAS VIDEOAULAS E
+APOSTILAS. PARTICIPAÇÃO DE LICITANTE ÚNICA. INDISPONIBILIDADE DO
+PRODUTO CONTRATADO DURANTE BOA PARTE DO ANO LETIVO. FALHA NA
+PROGRAMAÇÃO DETALHADA EM EDITAL. IRREGULARIDADE. EXECUÇÃO
+CONTRATUAL. OBSERVÂNCIA MAJORITÁRIA DAS BASES CONTRATUAIS.
+INSPEÇÃO FINAL REALIZADA QUANDO JÁ EXAURIDO O AJUSTE. PREJUÍZO À
+CONFIRMAÇÃO DE MEDIDAS SANEADORAS ANUNCIADAS PELA ORIGEM.
+PAGAMENTOS REALIZADOS EM APARENTE CONFORMIDADE COM AS
+CLÁUSULAS DE CUNHO ECONÔMICO-FINANCEIRO. CONHECIMENTO.
+1. É possível a contratação conjunta de serviços sob gestão integrada da empresa contratada, devendo a
+Administração, na fase de planejamento da contratação, estabelecer a composição dos custos unitários de mão
+de obra, material, insumos e equipamentos, bem como realizar preciso levantamento de quantitativos, em
+conformidade com o art. 7º, § 2º, II, c/c o art. 40, § 2º, II, da Lei n° 8.666/93.
+2. Quando da formatação do objeto, especificações com potencial de restringir o caráter competitivo da licitação
+devem ser adequadamente fundamentadas, com base em estudos técnicos que indiquem a sua essencialidade
+para atender às necessidades administrativas.
+3.A exigência de que os produtos ofertados sejam exclusivamente de fabricação nacional afronta o art. 3º, § 1º, I,
+da Lei n° 8.666/93.
+
+Nota CPAJ: Reafirmou o e. Relator a remansosa jurisprudência desta Corte "no sentido de que, quando o
+ajuste é composto pelo fornecimento de bens, mediante aquisição ou locação, combinado com a prestação
+de variados serviços, cada faceta do objeto deve ser precificada individualmente".
+009719.989.16-2 e outros
+(Sessão de 11/04/2023. Relatoria: Conselheiro Dimas Ramalho)
+
+
+EMENTA: LICITAÇÃO. CONTRATO. TERMOS ADITIVOS. EXECUÇÃO. PRESTAÇÃO
+DE SERVIÇOS MÉDICOS SOCORRISTAS. DEMANDA DO SERVIÇO DE URGÊNCIA E
+EMERGÊNCIA. DESRESPEITO AO INSTITUTO DO CONCURSO PÚBLICO. FALTA DE
+COMPROVAÇÃO DA ECONOMICIDADE. IRREGULARIDADE. ACESSORIEDADE.
+
+Nota CPAJ: Ressaltou o e. Relator inexistir justificativa que embase a contratação examinada que, na
+verdade, constitui terceirização indevida, em burla à regra do concurso público, consubstanciada no art. 37,
+II, da Constituição Federal.
+SEGUNDA CÂMARA
+
+
+003852.989.20-1
+(Sessão de 25/04/2023. Relatoria: Conselheiro Renato Martins Costa)
+
+
+EMENTA: CONTAS ANUAIS. CONTROLE INTERNO. DEFICIÊNCIAS REITERADAS NO
+SETOR. QUADRO DE PESSOAL. INADEQUAÇÃO DO REQUISITO DE
+ESCOLARIDADE PARA INVESTIDURA EM CARGOS EM COMISSÃO. PAGAMENTOS
+AOS SERVIDORES ACIMA DO TETO CONSTITUCIONAL. DEVOLUÇÃO.
+INADEQUAÇÃO NO RECOLHIMENTO DOS ENCARGOS SOCIAIS. CONCESSÃO
+INDEVIDA DE GRATIFICAÇÕES POR ENCARGOS ESPECIAIS. HORAS
+EXTRAORDINÁRIAS EM CARÁTER HABITUAL E EXCESSIVO. LICITAÇÕES E
+CONTRATOS LEVADOS A EFEITO COM INOBSERVÂNCIA DA LEGISLAÇÃO
+INCIDENTE. CONTAS IRREGULARES. RECOMENDAÇÕES.
+
+
+Nota CPAJ: Afora as inúmeras falhas observadas nas contas, e reiteradamente rechaçadas por esta Corte,
+ressaltou o e. Relator "o pagamento de ‘gratificações por encargos especiais’, por meio da Lei Complementar
+nº 25/2007 (artigos 87 e 98, caput,c/c, art. 244, § 1º), a qual prevê o pagamento aos servidores municipais,
+inclusive para aqueles que já recebem função gratificada, de forma discricionária, no limite de até 100% dos
+vencimentos, em inobservância aos Princípios da Impessoalidade, da Razoabilidade e da Economicidade".
+015780.989.22-4
+(Sessão de 04/04/2023. Relatoria: Conselheiro Robson Marinho)
+
+
+EMENTA:  RECURSO     ORDINÁRIO. LICITAÇÃO. PREGÃO   ELETRÔNICO.
+FORNECIMENTO DE EQUIPAMENTOS “ANTITUMULTO”. AUSÊNCIA DE
+PUBLICAÇÃO DO EXTRATO DE CONTRATO NA IMPRENSA OFICIAL. ESTATUTO
+JURÍDICO DAS EMPRESAS ESTATAIS. AFASTADA A RECOMENDAÇÃO.
+CONHECIDO E PROVIDO.
+
+Nota CPAJ: A controvérsia residiu nos meios a serem utilizados para se dar publicidade aos contratos
+celebrados sob a égide da Lei das Estatais. Nesse aspecto, a despeito de decisões dessa Corte em sentido
+oposto, entendeu o e. Relator que "o comando normativo contido no artigo 51, § 2º, da Lei Federal 13.303/164
+não abrange a publicação do contrato ou eventual extrato após sua formalização, mas sim a publicação do
+aviso que abre a etapa externa da licitação, contendo o resumo dos editais e contratos".
+024318.989.21-6
+(Sessão de 04/04/2023. Relatoria: Conselheira Cristiana de Castro Moraes)
+
+EMENTA: LICITAÇÃO E CONTRATO. PESQUISA PRÉVIA DE PREÇOS REALIZADA
+COM APENAS 02 (DUAS) EMPRESAS. DIVERGÊNCIAS ENTRE OS ELEMENTOS
+CONSIDERADOS NOS ORÇAMENTOS OBTIDOS. INCONSISTÊNCIA DO VALOR DE
+REFERÊNCIA. IRREGULARIDADE.
+
+
+Nota CPAJ: Observou-se nos autos, falha grave, reiteradamente recriminada por esta Corte, consistente na
+falta de demonstração "da suficiência do levantamento prévio de preços realizado e, tampouco, demonstrada
+a sua consistência, de modo que, consequentemente, não há comprovação da adequação do valor que veio
+a ser contratado".
+

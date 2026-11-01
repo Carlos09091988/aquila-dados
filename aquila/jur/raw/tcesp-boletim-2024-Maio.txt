@@ -1,0 +1,391 @@
+Bole%m de Jurisprudência TCESP ‐ Junho/2021 >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>> www.tce.sp.gov.br/jurisprudencia
+
+
+
+
+                                    Boletim de
+                                    Jurisprudência
+                                    EXPEDIENT E
+
+
+                                    Idealização:
+                                    Gabinete da Presidência
+
+
+
+
+                                    Seleção das Decisões:
+                                    Gabinete da Presidência
+                                    Gabinetes dos Conselheiros
+                                    Comissão Permanente de Análise de Jurisprudência (CPAJ)
+
+
+
+
+                                    Coordenação:
+                                    Comissão Permanente de Análise de Jurisprudência (CPAJ)
+
+
+
+
+                                    Apoio:
+                                    Observatório do Futuro
+                                    Divisão de Sistemas (DSIS)
+                                    Coordenadoria de Comunicação Social (CCS)
+
+
+
+
+                                    Avenida Rangel Pestana, 315
+                                    Centro - São Paulo/SP
+                                    CEP 01017-906 - PABX: 3292-3266
+                     BOLETIM DE JURISPRUDÊNCIA
+
+
+                                Edição nº 35 – Maio/2024
+
+
+               O Boletim de Jurisprudência TCESP é uma publicação mensal que objetiva
+ divulgar a servidores, jurisdicionados e sociedade em geral as principais decisões
+ proferidas nas Câmaras e no Plenário do Tribunal de Contas do Estado de São Paulo,
+ propiciando maior transparência e segurança jurídica.
+               Dentre os critérios utilizados para seleção dos processos destacam-se:
+ assuntos envolvendo estudos e/ou consultas; ocorrência de votos revisores/desempate,
+ discussões e/ou sustentações orais; ineditismo e/ou relevância da tese; alteração ou
+ reiteração de novo entendimento; e menção a Súmulas do TCESP.
+               A partir de 2022, o Boletim passa a correlacionar as decisões com os
+ Objetivos de Desenvolvimento Sustentável (ODS) e suas metas, em consonância com a
+ Agenda 2030 da ONU e com o Plano Estratégico 2022-2026 do TCESP.
+               Além disso, alguns dos precedentes são acompanhados de ‘Nota CPAJ’, que
+ busca destacar aspectos relevantes ocorridos nas sessões de julgamento, bem como
+ outros pontos eventualmente não explicitados nas Ementas.
+               Importante ressaltar que as informações aqui apresentadas não representam
+ o posicionamento prevalecente deste Tribunal sobre as matérias analisadas em cada caso,
+ tampouco constituem resumo oficial dos Acórdãos, Pareceres e Votos, cujo inteiro teor
+ pode ser acessado clicando nos links disponíveis em cada processo.
+               A presente edição contém informações sintéticas sobre os julgados mais
+significativos do mês de maio de 2024, destacando-se diversas decisões em sede de exame
+prévio de edital acerca da nova lei de licitações.
+                As respectivas sessões públicas podem ser acessadas no canal oficial do
+ TCESP no YouTube (https://www.youtube.com/tcespoficial).
+Sumário
+EXAME PRÉVIO DE EDITAL ...................................................................................................................... 3
+    009486.989.24-7 ..................................................................................................................................... 3
+    (Sessão Plenária de 22/05/2024. Relatoria: Conselheiro Robson Marinho).............................................. 3
+    009916.989.24-7 ..................................................................................................................................... 4
+    (Sessão Plenária de 22/05/2024. Relatoria: Conselheira Cristiana de Castro Moraes)............................. 4
+    008472.989.24-3 ..................................................................................................................................... 5
+    (Sessão Plenária de 29/05/2024. Relatoria: Conselheiro Dimas Ramalho) .............................................. 5
+    008533.989.24-0 ..................................................................................................................................... 6
+    (Sessão Plenária de 22/05/2024. Relatoria: Conselheiro Sidney Estanislau Beraldo) .............................. 6
+TRIBUNAL PLENO ..................................................................................................................................... 7
+   018881.989.22-2 ...................................................................................................................................... 7
+   (Sessão Plenária de 29/05/2024. Relatoria: Conselheiro Antonio Roque Citadini) ..................................... 7
+   021597.989.23-5 ...................................................................................................................................... 8
+   (Sessão Plenária de 22/05/2024. Relatoria: Conselheiro Robson Marinho) ............................................... 8
+   010393.989.23-1 ...................................................................................................................................... 9
+   (Sessão Plenária de 22/05/2024. Relatoria: Conselheira Cristiana de Castro Moraes) .............................. 9
+   005521.989.23-6 .....................................................................................................................................10
+   (Sessão Plenária de 29/05/2024. Relatoria: Conselheiro Dimas Ramalho)...............................................10
+   015463.989.21-0 .....................................................................................................................................11
+   (Sessão Plenária de 22/05/2024. Relatoria: Conselheiro Sidney Estanislau Beraldo) ...............................11
+   044247/026/09 ........................................................................................................................................12
+   (Sessão Plenária de 22/05/2024. Relatoria: Conselheiro Marco Aurélio Bertaiolli)....................................12
+PRIMEIRA CÂMARA..................................................................................................................................13
+   004149.989.22-0 .....................................................................................................................................13
+   (Sessão de 28/05/2024. Relatoria: Conselheiro Antonio Roque Citadini) .................................................13
+   018426.989.21-6 .....................................................................................................................................14
+   (Sessão de 28/05/2024. Relatoria: Conselheiro Dimas Ramalho) ............................................................14
+   023162.989.22-2 .....................................................................................................................................15
+   (Sessão de 28/05/2024. Relatoria: Conselheiro Marco Aurélio Bertaiolli) .................................................15
+SEGUNDA CÂMARA .................................................................................................................................16
+   004086.989.22-5 .....................................................................................................................................16
+   (Sessão de 28/05/2024. Relatoria: Conselheiro Robson Marinho) ...........................................................16
+   021969.989.21-9 .....................................................................................................................................17
+   (Sessão de 28/05/2024. Relatoria: Conselheira Cristiana de Castro Moraes)...........................................17
+   020063.989.23-0 .....................................................................................................................................18
+   (Sessão de 21/05/2024. Relatoria: Conselheiro Sidney Estanislau Beraldo) ............................................18
+EXAME PRÉVIO DE EDITAL
+
+
+009486.989.24-7
+(Sessão Plenária de 22/05/2024. Relatoria: Conselheiro Robson Marinho)
+
+
+EMENTA: REPRESENTAÇÃO. EXAME PRÉVIO DE EDITAL. LOCAÇÃO DE VEÍCULOS.
+MODALIDADE PRESENCIAL. IRREGULARIDADE. ART. 17, § 2º DA LEI 14.133/2021.
+CORREÇÕES DETERMINADAS.
+
+
+Nota CPAJ: Ressalta-se do voto do e. Relator a previsão do artigo 17, § 2º, da Lei 14.133/21 de que as
+licitações devem ser realizadas preferencialmente na modalidade eletrônica, impondo-se a apresentação de
+justificativas para o uso da forma presencial.
+009916.989.24-7
+(Sessão Plenária de 22/05/2024. Relatoria: Conselheira Cristiana de Castro Moraes)
+
+
+EMENTA: EXAME PRÉVIO DE EDITAL. LICITAÇÃO. PREGÃO PRESENCIAL. CESSÃO
+DE DIREITO DE USO DE SOFTWARE DE GESTÃO PÚBLICA. IMPUGNAÇÕES,
+PEDIDOS         DE      ESCLARECIMENTOS,               RECURSOS           ADMINISTRATIVOS              E
+CONTRARRAZÕES.                 PROTOCOLO               ELETRÔNICO.               IMPOSSIBILIDADE.
+FORNECIMENTO DE DATA CENTER. VEDAÇÃO À SUBCONTRATAÇÃO. CARÊNCIA
+DE ESPECIFICAÇÕES DESSA INFRAESTRUTURA. MODELO DE PROPOSTA.
+AUSÊNCIA DE CAMPOS ESPECÍFICOS PARA A PRECIFICAÇÃO INDIVIDUAL DE
+ATIVIDADES COMPONENTES DO OBJETO LICITADO. PROVA DE CONCEITO.
+DEMONSTRAÇÃO DA ÍNTEGRA DAS FUNCIONALIDADES REQUISITADAS PARA O
+SISTEMA A SER DISPONIBILIZADO. VOLUME DE DADOS E FORMATO DO
+RESPECTIVO BANCO. FALTA DE INFORMAÇÕES PARA FINS DE MIGRAÇÃO E
+CONVERSÃO. PROCEDÊNCIA. RECOMENDAÇÃO.
+
+Nota CPAJ: Sublinha a e. Relatora, na esteira de diversos precedentes do Tribunal Pleno, a necessidade de
+que conste no modelo da proposta "campo específico também para a valoração não só das licenças mensais
+de uso (...), como também dos serviços de migração e conversão de dados, relativos à fase de
+implementação".
+008472.989.24-3
+(Sessão Plenária de 29/05/2024. Relatoria: Conselheiro Dimas Ramalho)
+
+
+EMENTA. EXAME PRÉVIO DE EDITAL. CHAMADA PÚBLICA. CREDENCIAMENTO DE
+EMPRESA          PARA       ADMINISTRAÇÃO,              IMPLEMENTAÇÃO,               GERENCIAMENTO,
+EMISSÃO,            DISTRIBUIÇÃO               E        FORNECIMENTO                  DE         CARTÕES
+ELETRÔNICOS/MAGNÉTICOS                    TIPO      CARTÃO         ALIMENTAÇÃO             E   REFEIÇÃO.
+INOBSERVÂNCIA DAS NORMAS LEGAIS PARA O CREDENCIAMENTO. CORREÇÃO
+DETERMINADA. PROCEDÊNCIA PARCIAL.
+Nota CPAJ: Salienta o e. Relator que a votação para escolha da empresa a ser contratada dentre as
+credenciadas, contraria o disposto no inciso I do parágrafo único do artigo 79 da Lei 14.133/21, que determina
+que a Administração deverá divulgar e manter à disposição do público, em sítio eletrônico oficial, edital de
+chamamento de interessados, de modo a permitir o cadastramento permanente de novos interessados. Afora
+isso, relevante o destaque de que "o fornecimento de vale alimentação e refeição, objeto que a Prefeitura (...)
+pretende contratar, insere-se na hipótese prevista no artigo 79, II, da Lei 14.133/216, onde é transferida ao
+usuário direto do serviço a escolha da empresa que prestará o serviço, conforme seus critérios subjetivos e
+pessoais e de acordo com suas necessidades individuais. Assim, todas as empresas que atendam aos
+requisitos do ato convocatório devem ser consideradas aptas para serem contratadas pela Administração,
+transferindo-se a escolha para o usuário do serviço, de acordo com suas necessidades individuais”.
+008533.989.24-0
+(Sessão Plenária de 22/05/2024. Relatoria: Conselheiro Sidney Estanislau Beraldo)
+
+
+EMENTA: EXAME PRÉVIO DE EDITAL. CHAMAMENTO PÚBLICO. PARCERIA
+PÚBLICO PRIVADA. PROGRAMA MINHA CASA, MINHA VIDA. SELEÇÃO DE
+EMPRESA DO RAMO DA CONSTRUÇÃO CIVIL PARA A EXECUÇÃO DE PROJETOS E
+OBRAS.       CONTRATO           ATÍPICO.      FIGURA        COMO       CONTRATANTE             A    CAIXA
+ECONÕMICA FEDERAL. APLICAÇÃO DA LINDB. ATENDIMENTO AOS PRINCÍPIOS
+GERAIS DA ADMINISTRAÇÃO PÚBLICA. DOCUMENTOS DE CAPACITAÇÃO
+TÉCNICA. CARÁTER MERAMENTE CLASSIFICATÓRIO. INADEQUADA MARGEM DE
+PONTUAÇÃO DA EXPERIÊNCIA OPERACIONAL. AUSÊNCIA DE INFORMAÇÕES
+ACERCA DO QUESITO “INCREMENTO DE CONDOMÍNIO”. CAPACITAÇÃO DO
+PROFISSIONAL. DOCUMENTO INCOMPATÍVEL. PROCEDÊNCIA PARCIAL.
+
+Nota CPAJ: Ressalva o e. Relator que se trata de procedimento atípico, em que a Prefeitura licitante não
+figurará como parte no ajuste, devendo, assim, serem observados os ditames da LINDB, mormente do artigo
+22, que dispõe que “na interpretação de normas sobre gestão pública, serão considerados os obstáculos e
+as dificuldades reais do gestor e as exigências das políticas públicas a seu cargo, sem prejuízo dos direitos
+dos administrados”.
+TRIBUNAL PLENO
+
+
+
+018881.989.22-2
+(Sessão Plenária de 29/05/2024. Relatoria: Conselheiro Antonio Roque Citadini)
+
+
+EMENTA: RECURSO ORDINÁRIO. PRESTAÇÃO DE CONTAS. CONHECIMENTO.
+PROVIMENTO.
+Prestação de Contas. Despesas de pessoal durante o período de intervenção. Gratificação concedida aos
+funcionários sem previsão legal. Falhas em Notas Fiscais. Ausência de controle de horas extras e de
+adicionais sem comprovações de registros eletrônicos ou biométricos. Conhecido. Recurso não provido.
+
+
+Nota CPAJ: Sublinha o e. Relator não poder ser acolhida a tese de que “não seria devido o controle de
+frequência dos médicos porque foram contratados por meio de cooperativas”, posto ser esta a única maneira
+de se verificar a adequada prestação dos recursos públicos repassados.
+021597.989.23-5
+(Sessão Plenária de 22/05/2024. Relatoria: Conselheiro Robson Marinho)
+
+
+EMENTA: RECURSO ORDINÁRIO. BALANÇO GERAL DO EXERCÍCIO. FUNDAÇÃO
+MUNICIPAL          DE      APOIO.        INCONSISTÊNCIAS              CONTÁBEIS.            INSOLVÊNCIA
+ECONÔMICOFINANCEIRA. NÃO PROVIMENTO.
+
+
+Nota CPAJ: Destaca o e. Relator que "a Fundação foi instituída a partir de patrimônio público, devendo a
+gestão zelar por ele". No caso, afora a falta de fidedignidade nas demonstrações contábeis, constatou-se,
+dentre outras tantas falhas, "passivo a descoberto, elevado endividamento e insatisfatórios índices de liquidez
+imediata e geral, o que corrobora para o juízo desfavorável destas contas".
+010393.989.23-1
+(Sessão Plenária de 22/05/2024. Relatoria: Conselheira Cristiana de Castro Moraes)
+
+EMENTA: PEDIDO DE REEXAME. CONTAS ANUAIS. PREFEITURA. CONCESSÃO DE
+RGA A SERVIDORES E AGENTES POLÍTICOS. OPÇÃO DO ENTE MUNICIPAL PELA
+RENOVAÇÃO DO DECRETO DE CALAMIDADE. INCIDÊNCIA DAS VEDAÇÕES DO
+ART. 8º DA LC Nº 173/2020. INOBSERVÂNCIA DO ART. 37, X, DA CF/88. CUMULAÇÃO
+DE VARIAÇÃO INFLACIONÁRIA DE VÁRIOS EXERCÍCIOS. FALTA DE PARIDADE DE
+DATA-BASE.        PERCENTUAIS           DISTINTOS       DE     CORREÇÃO,         COM      BENEFÍCIO
+MAJORADO AOS AGENTE POLÍTICOS. IEGM. CORREÇÕES POSTERIORES QUE
+NÃO SUPLANTAM AS OCORRÊNCIAS DELINEADAS. ESTAGNAÇÃO HÁ VÁRIOS
+EXERCÍCIOS. CONHECIMENTO. DESPROVIMENTO. CANCELANDO COMANDO DE
+OFÍCIO À CÂMARA, TENDO EM VISTA A RESTITUIÇÃO ANTECIPADA DE VALORES
+PELOS RESPONSÁVEIS.
+A opção do ente público por renovar o decreto de calamidade para os fins preceituados no art. 65 da LRF
+implica no prosseguimento das vedações do art. 8º da Lei Complementar nº 173/2020.
+
+
+
+
+Nota CPAJ: Salienta a e. Relatora não subsistir "a alegação de que existia dúvida interpretativa quanto à
+possibilidade de se conceder a RGA no ano de 2021, já que, a teor do lembrado pelo MPC, esta Casa dirimiu
+a matéria por meio de Consulta publicada em 10/12/2020 e que firmava inequívoca orientação sobre o veto
+legal ao reajustamento de salários, diretriz vocalizada muito antes do ato concreto das concessões
+revisionais". Além disso, foi ressaltado o descumprimento das diretrizes constitucionais que norteiam a
+Revisão Geral Anual (art. 37, X, da CF/88), indevidamente cumulando variação inflacionária de vários
+exercícios e sem observar a paridade dos índices.
+ 005521.989.23-6
+(Sessão Plenária de 29/05/2024. Relatoria: Conselheiro Dimas Ramalho)
+
+
+EMENTA: EMENTA: RECURSO ORDINÁRIO. BALANÇO GERAL DO EXERCÍCIO.
+FUNDAÇÃO          ESTADUAL            DE   APOIO.    SITUAÇÃO           ECONÔMICO-FINANCEIRA
+DESFAVORÁVEL.            RISCO        DE   DESCONTINUIDADE              DAS   ATIVIDADES.        NÃO
+PROVIMENTO.
+
+
+Nota CPAJ: Rublinha o e. Relator que o acordão recorrido adequadamente sopesou o complexo contexto de
+custeio improvisado das atividades de saúde, decorrente de omissão do Estado, razão pela qual deixou de
+sancionar os responsáveis pela Fundação, mas concluiu pela necessidade de que fossem informados os
+Conselheiros relatores das Contas do Governador e da Secretaria de Estado da Saúde, para medidas
+cabíveis nos processos respectivos.
+ 015463.989.21-0
+(Sessão Plenária de 22/05/2024. Relatoria: Conselheiro Sidney Estanislau Beraldo)
+
+
+EMENTA: RECURSO ORDINÁRIO. DISPENSA DE LICITAÇÃO. AUTORIZAÇÕES DE
+FORNECIMENTO. COMPRA EMERGENCIAL. MÁSCARAS E LUVAS. PANDEMIA DE
+COVID-19. FALTA DE JUSTIFICATIVA DOS PREÇOS. FALTA DE PREVISÃO DE
+ENTREGA E DE CONDIÇÕES DE PAGAMENTO. NÃO PROVIMENTO.
+
+
+Nota CPAJ: Importante observar no voto do e. Relator que, inobstante o enquadramento das contratações
+nas hipóteses de dispensa de licitação, e a situação de pandemia, "aquisições semelhantes para itens
+idênticos foram realizadas por órgãos públicos, estaduais e municipais, por preços substancialmente
+inferiores aos contratados pela Prefeitura de São Bernardo do Campo". Evidenciado assim a precariedade
+dos orçamentos que embasaram a demonstração de economicidade das aquisições.
+044247/026/09
+(Sessão Plenária de 22/05/2024. Relatoria: Conselheiro Marco Aurélio Bertaiolli)
+
+
+EMENTA: RECURSO ORDINÁRIO. PREGÃO ELETRÔNICO. CONTRATO. ADITIVOS.
+SERVIÇOS VIÁRIOS, URBANIZAÇÃO E PAISAGISMO. ADOÇÃO DE MODALIDADE
+LICITATÓRIA         INAPROPRIADA.           DISCREPÂNCIAS             NOS      PREÇOS    ORÇADOS.
+DESCARACTERIZAÇÃO                DO     OBJETO        PELA      SUPRESSÃO          DOS   ITENS      DE
+ILUMINAÇÃO E PAISAGISMO. FALTA DE COMPETITIVIDADE. NEGATIVA DE
+PROVIMENTO.
+
+Nota CPAJ: Relevante aspecto abordado pelo e. Relator diz respeito às modificações operadas via termos
+aditivos, "que não só ocasionaram a descaracterização do objeto contratual, mediante a supressão de
+misteres relevantes como “iluminação” e “paisagismo”, como culminaram na diminuição da vantagem
+inicialmente concedida pela proposta vencedora, da ordem de 21% em relação ao orçamento referencial, eis
+que o desconto obtido teve sua maior parte (78,8%) concentrada justamente no item “paisagismo”,
+posteriormente suprimido".
+PRIMEIRA CÂMARA
+
+
+
+ 004149.989.22-0
+(Sessão de 28/05/2024. Relatoria: Conselheiro Antonio Roque Citadini)
+
+
+EMENTA: CONTAS ANUAIS. PREFEITURA MUNICIPAL. DESFAVORÁVEL.
+Falhas no Planejamento. Atraso no recolhimento dos encargos. Atraso no pagamento do parcelamento de
+débitos previdenciários e reparcelamento. Pagamento parcial de requisitórios. Contabilização Incorreta das
+dívidas judiciais. Elevado percentual de alterações orçamentárias. Gastos elevados com combustíveis e
+manutenção de veículos. IEG-M insatisfatório. Parecer Desfavorável com Recomendações.
+
+
+Nota CPAJ: Destaca o e. Relator, dentre as inúmeras falhas verificadas, a existência de "duas obras
+paralisadas (área da Educação) há quase uma década”, afora ter a fiscalização relatado “que novo projeto de
+Creche com recursos federais, no bairro Jardim das Palmeiras, foi incluído nas Leis Orçamentárias
+subsequentes ao exercício financeiro da paralisação, sem que os projetos referentes às obras evidenciadas
+no quadro acima tivessem sido adequadamente atendidos, em afronta ao artigo 45 da LRF".
+ 018426.989.21-6
+(Sessão de 28/05/2024. Relatoria: Conselheiro Dimas Ramalho)
+
+
+EMENTA: RECURSO ORDINARIO. BALANÇO GERAL. AUTARQUIA MUNICIPAL.
+INSTITUTO DE PREVIDÊNCIA DOS SERVIDORES PUBLICOS DO MUNICÍPIO. FALTA
+DE PROVIDÊNCIAS EM RELAÇÃO À INADIMPLÊNCIA DA PREFEITURA. FALTA DE
+FIDEDIGNIDADE           NOS     REGISTROS          DA    PRESTAÇÃO         DE     CONTAS.        NÂO
+PROVIMENTO.
+
+
+Nota CPAJ: Observa o e. Relator, quanto às aplicações financeiras do Instituto de Previdência, que "os
+resgates superaram em R$ 9.317.338,09 os investimentos/reinvestimentos”, destinando-se a maior parte ao
+pagamento de benefícios previdenciários/assistenciais.
+023162.989.22-2
+(Sessão de 28/05/2024. Relatoria: Conselheiro Marco Aurélio Bertaiolli)
+
+
+EMENTA: INEXIGIBILIDADE DE LICITAÇÃO. CONTRATO. INVIABILIDADE DE
+COMPETIÇÃO             NÃO        CARACTERIZADA.               IRREGULARIDADE.              EXECUÇÃO
+CONTRATUAL. BOA ORDEM. ADIMPLEMENTO DAS CONDIÇÕES PACTUADAS.
+TERMO DE RECEBIMENTO. CONHECIMENTO.
+1. A indicação ou a preferência por marca só é admissível se restar comprovado que a escolha é a mais
+vantajosa e a única que atende às necessidades da Administração.
+2. A demonstração de exclusividade de marca não comprova, por si só, o requisito de inviabilidade de
+competição necessário para fundamentar inexigibilidade de licitação.
+
+
+Nota CPAJ: Esclarece o e. Relator que "a demonstração de exclusividade de marca não comprova o requisito
+de inviabilidade de competição necessário para fundamentar inexigibilidade de licitação".
+SEGUNDA CÂMARA
+
+
+
+004086.989.22-5
+(Sessão de 28/05/2024. Relatoria: Conselheiro Robson Marinho)
+
+
+EMENTA: CONTAS ANUAIS. PREFEITURA. CUMPRIMENTO DOS ÍNDICES LEGAIS E
+CONSTITUCIONAIS DE DESPESA. DESPESAS IMPRÓPRIAS COM EXONERAÇÃO E
+POSTERIOR ADMISSÃO DOS MESMOS SERVIDORES E COM FESTIVIDADES. BAIXO
+ÍNDICE DE EFETIVIDADE NA GESTÃO MUNICIPAL EM PRATICAMENTE TODOS OS
+VETORES ANALISADOS. PREFEITO REELEITO. PARECER DESFAVORÁVEL.
+ADVERTÊNCIA.
+
+
+Nota CPAJ: Ressalva o e. Relator que, a despeito de diversos aspectos favoráveis, maculam as contas o fato
+de o Município obter, em praticamente todos os itens avaliados pelo IEGM, "o conceito C (baixo nível de
+adequação), último patamar de qualificação e numa trajetória decrescente, mesmo sendo o segundo ano do
+segundo mandato do Prefeito Municipal. Esse cenário revela o afastamento do município em relação aos
+padrões que qualificam grande parte dos aspectos abordados, além da inobservância às determinações e
+orientações promovidas por esta Casa em pareceres anteriores".
+021969.989.21-9
+(Sessão de 28/05/2024. Relatoria: Conselheira Cristiana de Castro Moraes)
+
+
+EMENTA: REPASSES AO TERCEIRO SETOR. TERMO DE COLABORAÇÃO. FALHA
+NO EDITAL QUANTO À FORMA DE ATRIBUIÇÃO DE PONTUAÇÃO À PROPOSTA
+FINANCEIRA. ENTIDADE PROIBIDA DE RECEBER REPASSES PÚBLICOS À ÉPOCA
+DO    CERTAME.         DESACERTOS            NÃO      AFASTADOS,            QUE    CONTAMINAM           O
+CHAMAMENTO PÚBLICO E O DECORRENTE AJUSTE. IRREGULARIDADE.
+
+
+Nota CPAJ: Evidencia-se no voto da e. Relatora, a falta de justificativas para a escolha da proposta mais
+dispendiosa à Administração Pública. Constatada, ainda, “ofensa aos princípios da vinculação ao instrumento
+convocatório e da impessoalidade, na medida em que a inclusão de novos critérios sem a devida publicidade
+pode ter gerado indevido direcionamento de propostas”.
+020063.989.23-0
+(Sessão de 21/05/2024. Relatoria: Conselheiro Sidney Estanislau Beraldo)
+
+
+EMENTA: RECURSO ORDINÁRIO. COMPLEMENTAÇÃO DE PENSÃO. PREFEITURA
+MUNICIPAL. AUSÊNCIA DE FONTE DE CUSTEIO. CONTRARIEDADE A REGRA
+CONSTITUCIONAL. NEGATIVA DE REGISTRO DO ATO. CONHECIMENTO. NÃO
+PROVIMENTO.
+
+
+Nota CPAJ: Pondera o e. Relator que "a legislação municipal, na qual o ato de complementação de pensão
+se fundamenta, não prevê nenhum recolhimento de contribuições previdenciárias capaz de sustentar o
+pagamento do benefício em questão, lembrando que a Emenda Constitucional nº 103/2019, que entrou em
+vigor em 13-11-195, ou seja, antes da expedição do ato em exame (01-09-21), pressupõe a correspondente
+fonte de custeio".
+

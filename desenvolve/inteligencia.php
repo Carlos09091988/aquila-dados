@@ -109,7 +109,7 @@ function dv_int_orgao( $cnpj, $item ) {
 			'link' => ! empty( $x['numeroControlePNCP'] ) && preg_match( '#^(\d{14})-\d-(\d+)/(\d{4})$#', $x['numeroControlePNCP'], $m ) ? 'https://pncp.gov.br/app/contratos/' . $m[1] . '/' . $m[3] . '/' . (int) $m[2] : '' );
 	} }
 	/* quem ganha */
-	$F = array(); foreach ( $ct as $x ) { if ( strlen( $x['ni'] ) !== 14 || ! dv_int_bate( $x['objeto'], $tk ) ) { continue; } $k = $x['ni']; if ( ! isset( $F[ $k ] ) ) { $F[ $k ] = array( 'cnpj' => $k, 'nome' => $x['nome'], 'n' => 0, 'valor' => 0 ); } $F[ $k ]['n']++; $F[ $k ]['valor'] += $x['valor']; }
+	$F = array(); foreach ( $ct as $x ) { if ( strlen( $x['ni'] ) !== 14 || $x['valor'] < 5000 || ! dv_int_bate( $x['objeto'], $tk ) ) { continue; } $k = $x['ni']; if ( ! isset( $F[ $k ] ) ) { $F[ $k ] = array( 'cnpj' => $k, 'nome' => $x['nome'], 'n' => 0, 'valor' => 0 ); } $F[ $k ]['n']++; $F[ $k ]['valor'] += $x['valor']; }
 	usort( $F, function ( $a, $b ) { return $b['valor'] <=> $a['valor']; } );
 	$totF = array_sum( array_column( $F, 'valor' ) );
 	/* calendário: contratos que vencem nos próximos 6 meses */
@@ -428,7 +428,7 @@ function htmlO(J,c){var H=J.historico||{},it=J.item?' de "'+e(J.item)+'"':'';var
  var V=J.vencedores||[];h+='<h4>Quem ganha aqui'+it+'</h4>';
  if(V.length){h+='<div class="tw"><table><tr><th>Empresa</th><th>Contratos</th><th>Valor</th><th></th></tr>'+V.map(function(v){return'<tr><td>'+e(v.nome)+'<small>'+fc(v.cnpj)+'</small></td><td>'+v.n+'</td><td>'+mc(v.valor)+'</td><td><a href="/plataforma/raio-x/?cnpj='+v.cnpj+'">Raio-X</a></td></tr>'}).join('')+'</table></div>';if(J.concentracao>=50)h+='<div class="al">'+J.concentracao+'% do valor'+(J.item?' do seu item':'')+' está com um único fornecedor. Vale entender por quê antes de entrar (exigências do edital, prazos de mobilização).</div>'}
  else h+='<p>Nenhum contrato'+it+' encontrado no PNCP nos últimos 3 anos.</p>';
- h+='<h4>Como o órgão licita (12 meses)</h4><p>'+(H.total?H.total+' pregão(ões) eletrônico(s) publicado(s)'+(H.srp?', '+H.srp+' por registro de preços':'')+'. Revogados: <b>'+(H.revogadas||0)+'</b> · anulados: <b>'+(H.anuladas||0)+'</b> · suspensos: <b>'+(H.suspensas||0)+'</b> · sem resultado 45 dias após a sessão: <b>'+(H.sem_resultado||0)+'</b>.':'Nenhum pregão eletrônico publicado no PNCP nos últimos 12 meses.')+'</p>';
+ h+='<h4>Como o órgão licita (12 meses)</h4><p>'+(H.total?H.total+' pregão(ões) eletrônico(s) publicado(s)'+(H.srp?', '+H.srp+' por registro de preços':'')+'. Revogados: <b>'+(H.revogadas||0)+'</b> · anulados: <b>'+(H.anuladas||0)+'</b> · suspensos: <b>'+(H.suspensas||0)+'</b>.':'Nenhum pregão eletrônico publicado no PNCP nos últimos 12 meses.')+'</p>';
  if(H.total&&((H.revogadas||0)+(H.anuladas||0)+(H.suspensas||0))/H.total>=.15)h+='<div class="al">Taxa alta de revogação, anulação ou suspensão. Leia o edital com atenção: há espaço para impugnação e o certame pode não chegar ao fim.</div>';
  if(H.desconto_medio!=null)h+='<p class="m">Desconto médio entre o estimado e o homologado em '+H.n_desconto+' licitação(ões). Use como referência para o seu preço.</p>';
  var C=J.calendario||[];h+='<h4>Contratos'+(J.item?' do seu item':'')+' que vencem nos próximos 6 meses</h4>';

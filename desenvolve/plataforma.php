@@ -946,7 +946,7 @@ add_action( 'wp_footer', function () {
 	if ( is_admin() ) { return; } ?>
 <style>
 .dv-tool .aq{--ink:#0C0F13;--ink-2:#16191E;--stone:#F3F0E8;--paper:#FAF8F3;--gold:#C9A45C;--gold-lt:#E6C27A;--slate:#6E6A60;--mist:#B9BDB8;--rule:#E3DED2}
-.dv-tool .aq,.dv-tool .aq *{font-family:"Hanken Grotesk",-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif!important}
+html body .dv-tool .aq,html body .dv-tool .aq *{font-family:"Hanken Grotesk",-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif!important}
 .dv-tool .aq b,.dv-tool .aq strong,.dv-tool .aq h2,.dv-tool .aq h3,.dv-tool .aq .r-date{font-weight:700;letter-spacing:-.01em}
 .dv-tool .aq .r-date{font-weight:800}
 .dv-tool .aq input[type=radio],.dv-tool .aq input[type=checkbox]{accent-color:#C9A45C}

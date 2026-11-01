@@ -180,7 +180,7 @@ function melhora(D){if(!D||!D.body||D.body.getAttribute('data-dvx')||!/EMPRESA A
   '.dv-rs .h h3,.dv-pv h3,.dv-ix h3{font-size:13pt!important}.dv-pv table,.dv-ix table{font-size:9pt!important}';
  var st=D.createElement('style');st.textContent=css;(D.head||D.body).appendChild(st);
  /* textos antigos */
- var tw=D.createTreeWalker(D.body,4),n;while(n=tw.nextNode()){var t=n.nodeValue;if(/raio-x-do-fornecedor/.test(t))n.nodeValue=t.replace(/desenvolveestrategias\.com\.br\/raio-x-do-fornecedor\/?/,'desenvolveestrategias.com.br/plataforma/raio-x');if(/RAIO-X DE CONCORRENTES/.test(t))n.nodeValue=t.replace('RAIO-X DE CONCORRENTES','RAIO-X DO CONCORRENTE');if(/^\s*google\.com\s*$/.test(t))n.nodeValue='site da prefeitura'}
+ var tw=D.createTreeWalker(D.body,4),n;while(n=tw.nextNode()){var t=n.nodeValue;if(/raio-x-do-fornecedor/.test(t))n.nodeValue=t.replace(/desenvolveestrategias\.com\.br\/raio-x-do-fornecedor\/?/,'desenvolveestrategias.com.br/plataforma/raio-x');if(/raio-x de concorrentes/i.test(t))n.nodeValue=t.replace(/raio-x de concorrentes/i,'Raio-X do concorrente');if(/^\s*google\.com\s*$/.test(t))n.nodeValue='site da prefeitura'}
  [].forEach.call(D.querySelectorAll('p,div'),function(el){if(el.children.length<=2&&/^\s*Quer apoio para decidir\?/.test(el.textContent))el.remove()});
  /* diários oficiais: trecho resumido */
  [].forEach.call(D.querySelectorAll('td,p,div'),function(el){if(el.children.length===0&&el.textContent.length>700&&/CNPJ|Contrat/i.test(el.textContent)){var t=el.textContent.replace(/https?:\/\/\S+/g,'').replace(/\s+/g,' ').trim(),i=Math.max(0,t.search(/Objeto|Contrat/i)-60);el.textContent=(i?'… ':'')+t.slice(i,i+600)+'…'}});

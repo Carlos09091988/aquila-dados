@@ -42,8 +42,11 @@ function dv_ap_modelo( $uid ) {
 	static $cache = array(); if ( isset( $cache[ $uid ] ) ) { return $cache[ $uid ]; }
 	$M = array( 'Q' => 0, 'D' => 0, 'f' => array(), 'ganhas' => 0 );
 	$add = function ( $feat, $lado, $peso ) use ( &$M ) { $M[ $lado ] += $peso; foreach ( $feat as $k ) { if ( ! isset( $M['f'][ $k ] ) ) { $M['f'][ $k ] = array( 0, 0 ); } $M['f'][ $k ][ $lado === 'Q' ? 0 : 1 ] += $peso; } };
+	$H = dv_ap_hist( $uid ); $novo = false;
+	if ( function_exists( 'dv_al_caixa' ) ) { foreach ( dv_al_caixa( $uid ) as $ref => $x ) { $st = $x['st'] ?? ''; if ( ( $st === 'quero' || $st === 'desc' ) && ! isset( $H[ $ref ] ) ) { $H[ $ref ] = array( 'f' => dv_ap_feat( $x ), 's' => $st === 'quero' ? 'q' : 'd', 't' => substr( (string) ( $x['achado'] ?? current_time( 'Y-m-d' ) ), 0, 10 ), 'o' => mb_substr( (string) ( $x['objeto'] ?? '' ), 0, 160 ) ); $novo = true; } } }
+	if ( $novo ) { update_user_meta( $uid, 'dv_al_hist', wp_slash( wp_json_encode( $H, JSON_UNESCAPED_UNICODE ) ) ); }
 	$vistos = array();
-	foreach ( dv_ap_hist( $uid ) as $ref => $x ) { $add( (array) $x['f'], $x['s'] === 'q' ? 'Q' : 'D', 1 ); $vistos[ $ref ] = 1; }
+	foreach ( $H as $ref => $x ) { $add( (array) $x['f'], $x['s'] === 'q' ? 'Q' : 'D', 1 ); $vistos[ $ref ] = 1; }
 	if ( function_exists( 'dv_lic_itens' ) ) {
 		foreach ( dv_lic_itens( $uid ) as $l ) {
 			$st = $l['status'] ?? ''; if ( ! in_array( $st, array( 'ganha', 'perdida' ), true ) ) { continue; }

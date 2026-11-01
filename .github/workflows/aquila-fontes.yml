@@ -1,0 +1,18 @@
+name: Aquila - fontes em PDF (CJF, TCE-SP)
+on:
+  schedule:
+    - cron: '47 9 5 * *'
+  workflow_dispatch:
+permissions:
+  contents: write
+jobs:
+  baixar:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+      - run: sudo apt-get install -y poppler-utils >/dev/null
+      - run: python3 scripts/fontes_pdf.py
+      - run: |
+          git config user.name "github-actions"; git config user.email "actions@github.com"
+          git add aquila/jur && (git diff --cached --quiet || (git commit -m "Fontes PDF: atualizacao" && git push))

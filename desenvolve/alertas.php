@@ -168,6 +168,7 @@ R.addEventListener('click',function(ev){var t=ev.target,a;
  if(t.dataset.p&&a){var o=Object.assign({},a,{ativo:a.ativo?0:1});req('POST','alertas/salvar',o).then(carregar);return}
  if(t.dataset.x&&a){if(confirm('Excluir o alerta "'+a.nome+'"?'))req('POST','alertas/excluir',{id:a.id}).then(carregar);return}
  if(t.dataset.imp){t.disabled=true;t.textContent='Importando…';req('GET','lic/pncp?ref='+encodeURIComponent(t.dataset.imp)).then(function(j){return req('POST','lic/salvar',j)}).then(function(){t.textContent='Na sua gestão ✓';var cn=String(t.dataset.imp||'').slice(0,14);if(/^\d{14}$/.test(cn)&&!t.nextElementSibling?.classList?.contains('al-rx')){var a=document.createElement('a');a.className='g al-rx';a.href='/plataforma/raio-x-comprador/?cnpj='+cn;a.textContent='Raio-X do órgão →';a.style.cssText='font-size:.85rem;font-weight:600;color:#16191E;border:1px solid #E3DED2;border-radius:10px;padding:8px 12px;text-decoration:none';t.after(a)}}).catch(function(j){t.disabled=false;t.textContent=(j&&j.message)?'Tentar de novo':'Erro'})}});
+(function(){var q=new URLSearchParams(location.search);if(q.get('termos')){F.querySelector('[name=termos]').value=q.get('termos');if(q.get('nome'))F.querySelector('[name=nome]').value=q.get('nome');(q.get('uf')||'').split(',').forEach(function(u){if(u)ufs[u.toUpperCase()]=1});M.className='al-m al-h o';M.textContent='Alerta pré-preenchido a partir do Radar de contratos vencendo. Confira e salve.';history.replaceState(null,'',location.pathname)}})();
 pUfs();carregar();
 })();
 </script>

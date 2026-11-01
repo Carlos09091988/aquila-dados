@@ -1,0 +1,23 @@
+name: Desenvolve - contratos vencendo (PNCP)
+# Semanal: domingo a noite. Carga inicial: rode manualmente com modo=carga
+# (retoma de onde parou; repita ate o estado.json marcar carga_concluida).
+on:
+  schedule:
+    - cron: '17 23 * * 0'
+  workflow_dispatch:
+    inputs:
+      modo:
+        description: 'carga ou semanal'
+        default: 'carga'
+permissions:
+  contents: write
+jobs:
+  radar:
+    runs-on: ubuntu-latest
+    timeout-minutes: 330
+    steps:
+      - uses: actions/checkout@v4
+      - run: LIMITE_SEG=18000 python3 scripts/contratos_vencendo.py ${{ github.event.inputs.modo || 'semanal' }}
+      - run: |
+          git config user.name "github-actions"; git config user.email "actions@github.com"
+          git add data/contratos && (git diff --cached --quiet || (git commit -q -m "Contratos vencendo: atualizacao" && git pull -q --rebase && git push))

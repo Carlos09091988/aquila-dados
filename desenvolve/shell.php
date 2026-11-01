@@ -13,9 +13,10 @@ function dv_app_pagina() {
 function dv_app_menu() {
 	return array(
 		array( '', array( array( 'Início', '/painel/', '🏠' ) ) ),
+		array( 'Raio-X e Due Diligence', array( array( 'Raio-X do comprador', '/plataforma/raio-x-comprador/', '🏛️' ), array( 'Raio-X do fornecedor', '/plataforma/raio-x/', '🩻' ), array( 'Due Diligence completa', '/plataforma/dossie/', '📑' ) ) ),
 		array( 'Encontrar', array( array( 'Buscador de licitações', '/plataforma/buscador/', '🔎' ), array( 'Alertas e oportunidades', '/plataforma/alertas/', '📥', 'caixa' ), array( 'Contratos vencendo', '/plataforma/contratos-vencendo/', '⏳' ) ) ),
-		array( 'Analisar e disputar', array( array( 'Gestão de licitações', '/plataforma/licitacoes/', '📋', 'sessoes' ), array( 'Raio-X do comprador', '/plataforma/raio-x-comprador/', '🏛️' ), array( 'Banco de preços', '/plataforma/banco-de-precos/', '💲' ), array( 'Calculadora de prazos', '/plataforma/prazos/', '📅' ) ) ),
-		array( 'Concorrência', array( array( 'Raio-X de concorrentes', '/plataforma/raio-x/', '🩻' ), array( 'Comparador de licitantes', '/plataforma/comparador/', '🔗' ), array( 'Due Diligence', '/plataforma/dossie/', '📑' ) ) ),
+		array( 'Analisar e disputar', array( array( 'Gestão de licitações', '/plataforma/licitacoes/', '📋', 'sessoes' ), array( 'Banco de preços', '/plataforma/banco-de-precos/', '💲' ), array( 'Calculadora de prazos', '/plataforma/prazos/', '📅' ) ) ),
+		array( 'Concorrência', array( array( 'Comparador de licitantes', '/plataforma/comparador/', '🔗' ) ) ),
 		array( 'Habilitação e garantias', array( array( 'Documentos e certidões', '/plataforma/documentos/', '🗂️', 'docs' ), array( 'Meus contratos e garantias', '/plataforma/meus-contratos/', '🛡️' ) ) ),
 		array( 'Contestar', array( array( 'Impugnações e recursos', '/plataforma/recursos/', '⚖️', 'prazos' ), array( 'Banco de teses', '/plataforma/banco-de-teses/', '📚' ) ) ),
 	);
@@ -58,6 +59,13 @@ body.dv-app .dv-next a{color:var(--gold2)!important}
 body.dv-app .dvp{--sf:#fff;--ln:#E6E1D6;--fg:#16191E;--mu:#6E6A60;--gd:#A8843F;max-width:1180px;padding:0 32px;margin:26px auto}
 body.dv-app .dvp [style*="color:#F4F2EC"]{color:#16191E!important}
 body.dv-app .dvp .dv-c,body.dv-app .dvp .dv-tools a{box-shadow:0 1px 2px rgba(22,25,30,.04)}
+/* consulta rápida de CNPJ no painel */
+.dv-cnpj{max-width:1116px;margin:26px auto 16px;background:#fff;border:1px solid var(--ln);border-radius:18px;padding:18px 20px;box-shadow:0 8px 28px rgba(22,25,30,.05);font-family:"Hanken Grotesk",sans-serif;color:var(--ink)}
+.dv-cnpj .t{display:flex;gap:10px;align-items:baseline;flex-wrap:wrap;margin-bottom:10px}.dv-cnpj .t b{font-size:1.1rem}.dv-cnpj .t span{color:var(--mu);font-size:.9rem}
+.dv-cnpj form{display:flex;gap:8px;flex-wrap:wrap}.dv-cnpj input{flex:1 1 220px;border:1px solid #CFC8B8;border-radius:11px;padding:12px 14px;font:inherit;font-size:1.05rem;letter-spacing:.02em}
+.dv-cnpj button{border:1px solid var(--ln);background:#FAF8F3;border-radius:11px;padding:8px 14px;font:inherit;font-weight:700;cursor:pointer;text-align:left;line-height:1.2}.dv-cnpj button small{display:block;font-weight:500;color:var(--mu);font-size:.72rem}.dv-cnpj button.p{background:#0C0F13;color:#F4F2EC;border-color:#0C0F13}.dv-cnpj button.p small{color:#B9BDB8}.dv-cnpj button:hover{border-color:var(--gold)}
+.dv-cnpj .m{color:#B04A3A;font-size:.85rem;margin:6px 0 0}
+@media(max-width:980px){.dv-cnpj{margin:16px 12px}.dv-cnpj button{flex:1 1 30%}}
 /* componentes comuns dentro das ferramentas */
 body.dv-app .dv-tool input:focus,body.dv-app .dv-tool select:focus,body.dv-app .dv-tool textarea:focus{outline:2px solid rgba(201,164,92,.45);outline-offset:1px;border-color:var(--gold)!important}
 body.dv-app #ht-ctc-chat{bottom:18px!important}
@@ -108,6 +116,7 @@ add_action( 'wp_footer', function () {
 <script>(function(){var w=document.createElement('div');w.innerHTML=<?php echo wp_json_encode( $html ); ?>;while(w.firstChild)document.body.insertBefore(w.firstChild,document.body.firstChild);
 if(!document.getElementById('mark')){var lg=document.querySelector('.dv-side .lg svg');if(lg)lg.outerHTML='<span style="width:30px;height:30px;border-radius:8px;background:#C9A45C;display:inline-block"></span>'}
 function tg(o){document.body.classList.toggle('dv-side-on',o)}document.querySelector('.dv-burg').onclick=function(){tg(true)};document.querySelector('.dv-veil').onclick=function(){tg(false)};
+var pn=document.getElementById('dv-painel');if(pn){var C=window.DVC||{},q=document.createElement('div');q.className='dv-cnpj';q.innerHTML='<div class="t"><b>Consultar um CNPJ</b><span>Órgão público ou empresa: veja tudo antes de disputar.</span></div><form><input inputmode="numeric" placeholder="00.000.000/0000-00" aria-label="CNPJ"><button type="button" data-u="/plataforma/raio-x-comprador/?cnpj=">🏛️ Raio-X do comprador<small>'+(C.comprador||5)+' créditos</small></button><button type="button" data-u="/plataforma/raio-x/?cnpj=" class="p">🩻 Raio-X do fornecedor<small>'+(C.raiox||5)+' créditos</small></button><button type="button" data-u="/plataforma/dossie/?auto=1&cnpj=">📑 Due Diligence<small>'+(C.dossie||10)+' créditos</small></button></form><p class="m"></p>';pn.parentNode.insertBefore(q,pn);var I=q.querySelector('input');I.addEventListener('input',function(){var d=I.value.replace(/\D/g,'').slice(0,14);I.value=d.replace(/^(\d{2})(\d)/,'$1.$2').replace(/^(\d{2})\.(\d{3})(\d)/,'$1.$2.$3').replace(/\.(\d{3})(\d)/,'.$1/$2').replace(/(\d{4})(\d)/,'$1-$2')});q.querySelector('form').addEventListener('submit',function(e){e.preventDefault();q.querySelector('button.p').click()});q.addEventListener('click',function(e){var b=e.target.closest('button');if(!b)return;var d=I.value.replace(/\D/g,'');if(d.length!==14){q.querySelector('.m').textContent='Digite os 14 números do CNPJ.';I.focus();return}location.href=b.dataset.u+d})}
 var on=document.querySelector('.dv-side nav a.on');if(on&&on.scrollIntoView)on.scrollIntoView({block:'nearest'})})();</script>
 	<?php
 }, 1 );

@@ -158,7 +158,7 @@ function pdfRecurso(){var X=window.DVRS;if(!X)return;var r=root(),S=X.S,h2=r.que
  var w=window.open('','_blank');if(!w){alert('Permita a abertura de janelas para gerar o PDF.');return}w.document.open();w.document.write(H);w.document.close();setTimeout(function(){w.focus();w.print()},400)}
 
 /* Relatório completo (PDF): leva o resumo executivo, os processos, as licitações vencidas e a experiência; corrige textos antigos */
-if(PG==='concorrente'){(function(){var _open=window.open;window.open=function(u){var w=_open.apply(window,arguments);if(!w||(u&&u!=='about:blank'))return w;try{var d=w.document,_w=d.write.bind(d),_p=w.print?w.print.bind(w):null;
+if(PG==='concorrente'){(function(){var _open=window.open;window.open=function(u){var w=_open.apply(window,arguments);if(!w||(u&&u!=='about:blank'))return w;window.DVXW=w;try{var d=w.document,_w=d.write.bind(d),_p=w.print?w.print.bind(w):null;
  d.write=function(h){try{if(/RAIO-X|Raio-X|raio-x/.test(h)&&/<html|<body|<div/i.test(h)){var x=new DOMParser().parseFromString(h,'text/html');melhora(x);h='<!doctype html>'+x.documentElement.outerHTML}}catch(e){}return _w(h)};
  if(_p)w.print=function(){try{melhora(w.document)}catch(e){}return _p()}}catch(e){}return w}})()}
 window.DVXM=function(D){return melhora(D)};

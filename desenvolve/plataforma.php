@@ -237,6 +237,11 @@ function dv_usar( $uid, $ferramenta, $chave, $rotulo = '' ) {
 	$jan = in_array( $ferramenta, array( 'raiox', 'comprador', 'dossie' ), true ) ? 15 * MINUTE_IN_SECONDS : (int) dv_cfg( 'dedupe_dias' ) * DAY_IN_SECONDS;
 	$ja = $wpdb->get_var( $wpdb->prepare( "SELECT id FROM $t WHERE user_id=%d AND chave=%s AND criado > %s LIMIT 1",
 		$uid, $chave, gmdate( 'Y-m-d H:i:s', current_time( 'timestamp' ) - $jan ) ) );
+	/* Pago antecipadamente no pacote da licitação: abrir em até 30 dias não cobra de novo */
+	if ( ! $ja && $jan < DAY_IN_SECONDS ) {
+		$ja = $wpdb->get_var( $wpdb->prepare( "SELECT id FROM $t WHERE user_id=%d AND chave=%s AND rotulo LIKE %s AND criado > %s LIMIT 1",
+			$uid, $chave, 'Pacote:%', gmdate( 'Y-m-d H:i:s', current_time( 'timestamp' ) - 30 * DAY_IN_SECONDS ) ) );
+	}
 	if ( $ja ) { return array( 'cobrado' => 0, 'motivo' => 'repetido', 'saldo' => dv_saldo( $uid ) ); }
 	if ( dv_is_master( $uid ) ) {
 		$wpdb->insert( $t, $base + array( 'cobrado' => 0, 'origem' => 'master' ) );
@@ -364,10 +369,11 @@ add_action( 'rest_api_init', function () {
 		$h = $wpdb->get_results( $wpdb->prepare( "SELECT ferramenta, MAX(rotulo) rotulo, SUM(cobrado) cobrado, MIN(origem) origem, MIN(criado) criado FROM {$wpdb->prefix}dv_uso WHERE user_id=%d GROUP BY ferramenta, SUBSTRING(criado,1,16) ORDER BY criado DESC LIMIT 50", $uid ), ARRAY_A );
 		if ( function_exists( 'dv_rel_lista' ) ) {
 			global $wpdb; $lim = gmdate( 'Y-m-d H:i:s', current_time( 'timestamp' ) - 30 * DAY_IN_SECONDS );
-			$rel = $wpdb->get_results( $wpdb->prepare( "SELECT id, ferramenta, criado FROM {$wpdb->prefix}dv_rel WHERE user_id=%d AND criado >= %s ORDER BY id", $uid, $lim ), ARRAY_A );
+			$rel = $wpdb->get_results( $wpdb->prepare( "SELECT id, ferramenta, cnpj, criado FROM {$wpdb->prefix}dv_rel WHERE user_id=%d AND criado >= %s ORDER BY id", $uid, $lim ), ARRAY_A );
 			foreach ( $h as &$x ) {
 				$x['cobrado'] = (int) $x['cobrado']; $t0 = strtotime( $x['criado'] );
-				foreach ( $rel as $r ) { $d = strtotime( $r['criado'] ) - $t0; if ( $r['ferramenta'] === $x['ferramenta'] && $d >= -60 && $d <= 1800 ) { $x['rel'] = dv_rel_url( $r['ferramenta'] ) . '?rel=' . $r['id']; break; } }
+				$xc = preg_replace( '/\D/', '', (string) $x['rotulo'] ); $xc = strlen( $xc ) === 14 ? $xc : '';
+				foreach ( $rel as $r ) { $d = strtotime( $r['criado'] ) - $t0; if ( $r['ferramenta'] === $x['ferramenta'] && $d >= -60 && $d <= 1800 && ( ! $xc || $xc === $r['cnpj'] ) ) { $x['rel'] = dv_rel_url( $r['ferramenta'] ) . '?rel=' . $r['id']; break; } }
 			}
 			unset( $x );
 		}
@@ -697,6 +703,8 @@ m.querySelector('[data-s]').onclick=function(){var b=this;b.disabled=true;b.text
 function cobrar(depois){var k=chave();if(!k){depois();return}if(ok[k]){depois();return}
 fetch(D.api+'usar',{method:'POST',credentials:'same-origin',headers:{'X-WP-Nonce':D.nonce,'Content-Type':'application/json'},body:JSON.stringify({ferramenta:D.tool,chave:k,rotulo:rot()})}).then(function(r){return r.json().then(function(j){return{s:r.status,j:j}})}).then(function(x){if(x.s>=400){semCredito(x.j&&x.j.message);return}ok[k]=1;saldo(x.j.saldo);cons.classList.add('on');depois()}).catch(function(){semCredito('Não foi possível validar seus créditos agora. Tente de novo.')})}
 var passe=false;if(tool.hasAttribute('data-sem-portao'))return;
+if(/^(raiox|comprador)$/.test(D.tool)&&!/[?&]rel=/.test(location.search)){var pago=false,vz=0,iv=setInterval(function(){if(++vz>90){clearInterval(iv);return}var out=document.querySelector('.rx-out .rx-pts,.rp .rp-sec');if(!out||pago)return;var k=chave();if(!k){var qc=(new URLSearchParams(location.search).get('cnpj')||'').replace(/\D/g,'');if(qc.length!==14)return;k='cnpj='+qc}if(ok[k]){pago=true;clearInterval(iv);return}pago=true;clearInterval(iv);
+fetch(D.api+'usar',{method:'POST',credentials:'same-origin',headers:{'X-WP-Nonce':D.nonce,'Content-Type':'application/json'},body:JSON.stringify({ferramenta:D.tool,chave:k,rotulo:rot()})}).then(function(r){return r.json().then(function(j){return{s:r.status,j:j}})}).then(function(x){if(x.s>=400){var ap=function(){document.querySelectorAll('.rx-out,.rp').forEach(function(o){o.remove()})};ap();new MutationObserver(ap).observe(tool,{childList:true,subtree:true});semCredito(x.j&&x.j.message);return}ok[k]=1;saldo(x.j.saldo)}).catch(function(){})},2000)}
 function acao(b){if(!b||b.disabled)return false;if(b.closest('.dv-md,.dv-cons'))return false;var t=(b.textContent||b.value||'')+' '+(b.getAttribute('aria-label')||'');return b.type==='submit'||ACT.test(t)}
 document.addEventListener('click',function(e){if(passe)return;var b=e.target.closest('button,input[type=submit],input[type=button],a.btn,.btn');if(!b||!tool.contains(b)||!acao(b))return;var k=chave();if(!k||ok[k])return;e.preventDefault();e.stopImmediatePropagation();cobrar(function(){passe=true;b.click();passe=false})},true);
 document.addEventListener('submit',function(e){if(passe||!tool.contains(e.target))return;var k=chave();if(!k||ok[k])return;e.preventDefault();e.stopImmediatePropagation();var f=e.target;cobrar(function(){passe=true;if(f.requestSubmit)f.requestSubmit();else f.submit();passe=false})},true);

@@ -116,6 +116,7 @@ function fc(c){return c.replace(/^(\d{2})(\d{3})(\d{3})(\d{4})(\d{2})$/,'$1.$2.$
 function dt(s){var m=String(s).match(/(\d{4})-(\d{2})-(\d{2})(?:[ T](\d{2}):(\d{2}))?/);return m?m[3]+'/'+m[2]+'/'+m[1]+(m[4]?' às '+m[4]+':'+m[5]:''):''}
 function cr(){return R.custo+(R.custo===1?' crédito':' créditos')}
 var tool=document.querySelector('.dv-tool');if(!tool)return;
+var QC=(Q.get('cnpj')||'').replace(/\D/g,'');if(!REL&&QC.length===14){var sk='';try{sk=sessionStorage.getItem('dv_rel_skip')||''}catch(x){}if(sk!==QC){for(var i=0;i<R.lista.length;i++)if(R.lista[i].cnpj===QC){window.DVREL_VIEW=true;location.replace(R.lista[i].url);return}}}
 function urlNova(c){try{sessionStorage.setItem('dv_rel_skip',c)}catch(x){}return location.pathname+'?'+(R.tool==='dossie'?'auto=1&':'')+'cnpj='+c}
 /* lista dos relatórios salvos */
 if(R.lista.length&&!REL){var bx=document.createElement('div');bx.className='dv-rl';bx.innerHTML='<b>Seus relatórios dos últimos 30 dias · abrir não gasta créditos</b><div class="l">'+R.lista.slice(0,12).map(function(x){return'<a href="'+e(x.url)+'">'+e(x.rotulo||fc(x.cnpj))+'<small>'+fc(x.cnpj)+' · '+dt(x.criado).split(' às')[0]+'</small></a>'}).join('')+'</div>';tool.parentNode.insertBefore(bx,tool)}

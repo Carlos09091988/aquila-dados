@@ -108,11 +108,12 @@ def main():
         if not e.get('ok') and e.get('t', 0) < 6 and e.get('objeto'):
             alvo[ref] = {'objeto': e['objeto'], 'orgao': e.get('orgao', '')}
     # pregões eletrônicos publicados há 21 dias (sessão já deve ter ocorrido)
+    d_ini = (HOJE - dt.timedelta(days=24)).strftime('%Y%m%d')
     dia = (HOJE - dt.timedelta(days=21)).strftime('%Y%m%d')
     for pg in range(1, 200):
         if not tempo():
             break
-        q = urllib.parse.urlencode({'dataInicial': dia, 'dataFinal': dia, 'codigoModalidadeContratacao': 6, 'pagina': pg, 'tamanhoPagina': 50})
+        q = urllib.parse.urlencode({'dataInicial': d_ini, 'dataFinal': dia, 'codigoModalidadeContratacao': 6, 'pagina': pg, 'tamanhoPagina': 50})
         j = get('https://pncp.gov.br/api/consulta/v1/contratacoes/publicacao?' + q)
         if not j or not j.get('data'):
             break

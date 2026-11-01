@@ -1,0 +1,879 @@
+                       COMPOSIÇÃO DO CONSELHO DA JUSTIÇA FEDERAL
+
+                                                   Presidente
+                                      Ministro João Otávio de Noronha
+                Corregedora-Geral da Justiça Federal e Diretora do Centro de Estudos Judiciários
+                                    Ministra Maria Thereza de Assis Moura
+                                               Membros Efetivos
+                                        Ministro Antonio Carlos Ferreira
+                                      Ministro Ricardo Villas Bôas Cueva
+                                   Ministro Sebastião Alves dos Reis Júnior
+                            Desembargador Federal I’talo Fioravanti Sabo Mendes
+                                    Desembargador Federal Reis Friede
+                           Desembargador Federal Mairan Gonçalves Maia Júnior
+                             Desembargador Federal Victor Luiz dos Santos Laus
+                              Desembargador Federal Vladimir Souza Carvalho
+                                              Membros Suplentes
+                                    Ministro Marco Aurélio Gastaldi Buzzi
+                                    Ministro Marco Aurélio Bellizze Oliveira
+                                  Ministra Assusete Dumont Reis Magalhães
+                               Desembargador Federal Francisco de Assis Betti
+                                Desembargador Federal Messod Azulay Neto
+                       Desembargadora Federal Consuelo Yatsuda Moromizato Yoshida
+                           Desembargador Federal Luís Alberto d’Azevedo Aurvalle
+                                 Desembargador Federal Lázaro Guimarães
+
+                  COORDENAÇÃO DA I JORNADA DE DIREITO ADMINISTRATIVO
+
+                                           COORDENAÇÃO GERAL
+                  Ministra Assusete Magalhães, Superior Tribunal de Justiça (Presidente)
+                                Professor Cesar Augusto Guimarães Pereira
+                   Ministro Tarcísio Vieira de Carvalho Neto, Tribunal Superior Eleitoral
+                                 Juiz Federal Daniel Marchionatti Barbosa
+
+                           COMISSÕES DE TRABALHO E COORDENADORES CIENTÍFICOS
+               Regime jurídico administrativo. Poderes da administração. Ato administrativo.
+                             Discricionariedade. Agentes públicos. Bens públicos.
+                    Presidente: Ministro Benedito Gonçalves, Superior Tribunal de Justiça
+            Coordenadores científicos: Fabrício Macedo Motta e Juliana Bonacorsi de Palma
+        Organização Administrativa. Estatais. Estado acionista. Privatização. Terceiro setor. Fomento.
+                        Presidente: Ministro Og Fernandes, Superior Tribunal de Justiça
+                   Coordenadores científicos: Cristiana Fortini e Rafael Wallbach Schwind
+Processo administrativo. Arbitragem e mediação. Desapropriação e intervenção do Estado na propriedade.
+                                       Responsabilidade civil do Estado.
+                        Presidente: Ministro Sérgio Kukina, Superior Tribunal de Justiça
+            Coordenadores científicos: Flavio Amaral Garcia e Maria Cristina Cesar de Oliveira
+              Licitações. Contratos administrativos. Concessões e Parcerias Público-Privadas.
+                           Presidente: Desembargador Federal João Batista Moreira
+                   Coordenadores científicos: Eduardo Jordão e Joel de Menezes Niebuhr
+                Regulação. Agências reguladoras. Serviço público e atividade econômica.
+                         Intervenção do Estado no domínio econômico. Autorização.
+                 Presidente: Ministro Mauro Campbell Marques, Superior Tribunal de Justiça
+                  Coordenadores científicos: Bernardo Strobel Guimarães e Vera Monteiro
+           Controle da administração. Improbidade administrativa. Legislação anticorrupção.
+                    Acordos de Leniência. Transações e consensualidade administrativa.
+                      Presidente: Ministro Herman Benjamin, Superior Tribunal de Justiça
+                           Coordenadores científicos: Irene Nohara e Luciano Ferraz
+
+
+
+                                                       1
+                                                                   SUMÁRIO
+
+
+
+APRESENTAÇÃO ......................................................................................................................................3
+
+INTRODUÇÃO ..........................................................................................................................................6
+
+PROGRAMAÇÃO ...................................................................................................................................12
+
+ENUNCIADOS APROVADOS ...................................................................................................................13
+
+LISTA DE PARTICIPANTES .........................................................................................................................18
+
+
+
+
+                                                                          2
+                                         APRESENTAÇÃO
+
+
+
+           É com grande satisfação que apresento esta obra, com os quarenta enunciados
+aprovados na I Jornada de Direito Administrativo, promovida pelo Centro de Estudos Judiciários (CEJ)
+do Conselho da Justiça Federal (CJF) e concebida por feliz iniciativa da Ministra Maria Thereza de
+Assis Moura, sua Diretora, com o apoio do Ministro João Otávio de Noronha, Presidente do Conselho
+da Justiça Federal.
+
+           O Centro de Estudos Judiciários do Conselho da Justiça Federal vem realizando, há cerca
+de duas décadas, Jornadas de Direito Civil, de Direito Processual Civil e de Direito Comercial, mas
+agora voltou os seus olhos, pela vez primeira, para o debate e o estudo de relevantes temas de
+Direito Administrativo, que, pela sua atualidade, têm gerado inúmeros conflitos e controvérsias que
+desaguam na Justiça Federal e em todo o Judiciário brasileiro.
+
+           Invoco o soneto de CAMÕES, que sabiamente recita, do fundo dos séculos:
+
+                                  "Mudam-se os tempos,
+                                  Mudam-se as vontades,
+                                  Todo o mundo é composto de mudança,
+                                  Tomando sempre novas qualidades."
+
+           Essa premonição camoniana concretizou-se também no Direito Administrativo brasileiro,
+em face das rápidas e complexas transformações do modelo de Estado, notadamente a partir da
+década de 90 do século XX, após o advento da Constituição Federal de 1988, com o surgimento
+de temas novos, inexistentes na construção clássica do nosso Direito Administrativo, inspirado,
+inicialmente, no arquétipo francês.
+
+           Tais mudanças, nas palavras de DI PIETRO, estão intimamente relacionadas à
+globalização, ao neoliberalismo e ao neoconstitucionalismo, fenômeno que, no Brasil, inseriu
+princípios da Administração Pública no art. 37 da Carta de 1988, ampliou os mecanismos de
+controle da Administração Pública, com reflexos na redução da discricionariedade administrativa,
+na valorização dos direitos fundamentais e no crescimento do consensualismo, entre outros, sob
+inspiração do direito comunitário europeu e do direito norte-americano.
+
+           A partir da Constituição Federal de 1988 inúmeras leis foram promulgadas, com grande
+repercussão no Direito Administrativo brasileiro, entre elas a Lei de Licitações, a Lei de Improbidade
+Administrativa, as Leis de Processo Administrativo Federal, Estaduais e Municipais, a Lei de
+Concessões e a Lei de Parcerias Público-Privadas – como reflexo da formação de um Direito
+Administrativo Econômico –, as parcerias com o Terceiro Setor, as Emendas à Constituição que
+implementaram as Reformas Administrativa e Previdenciária, a Lei Anticorrupção, a Lei das Estatais,
+
+
+
+                                                  3
+a recente Lei n. 13.655/2018, que introduziu dez artigos na Lei de Introdução às Normas do Direito
+Brasileiro, com reflexos significativos na aplicação do Direito Público.
+
+           Passadas mais de três décadas do advento da Constituição de 1988, buscando a melhor
+exegese de temas tão novos e desafiadores, num momento em que a jurisprudência tem ocupado
+papel proeminente como fonte de direito, o Centro de Estudos Judiciários do CJF abriu suas portas
+para o debate com a magistratura, a academia e a comunidade jurídica.
+
+           Na programação da Jornada, houve, nos dias 3 e 5 de agosto de 2020, uma fase
+preliminar, com painéis e conferência, com a participação de renomados professores e estudiosos
+dos temas que foram debatidos no evento, nos dias 6 e 7 de agosto, respectivamente, nas seis
+Comissões de Trabalho e na plenária. Da fase preliminar participaram os professores Carlos Ari
+Sundfeld, Dinorá Musetti Grotti, Fernando Dias Menezes de Almeida, Floriano de Azevedo Marques
+Neto, Odete Medauar, Márcio Cammarosano, Sérgio Ferraz e Marçal Justen Filho.
+
+           As seis Comissões de Trabalho foram presididas pelos Ministros Herman Benjamin, Og
+Fernandes, Mauro Campbell Marques, Benedito Gonçalves, Sérgio Kukina – que integram a Primeira
+Seção do STJ – e pelo Desembargador Federal João Batista Gomes Moreira. Foram convidados,
+para integrar a Coordenação Científica das Comissões de Trabalho, expoentes de gerações
+variadas do estudo do Direito Administrativo brasileiro, oriundos de vários Estados da Federação,
+com grande participação feminina: os professores Fabrício Motta, Juliana Bonacorsi de Palma,
+Cristiana Fortini, Rafael Wallbach Schwind, Flávio Amaral Garcia, Maria Cristina Cesar de Oliveira,
+Eduardo Jordão, Joel de Menezes Niebuhr, Bernardo Strobel Guimarães, Vera Monteiro, Irene Nohara
+e Luciano Ferraz.
+
+           O amplo e rico debate, nas Comissões de Trabalho e na plenária – com a efetiva
+participação de ministros, magistrados federais e estaduais de 1º e 2º Graus, doutrinadores,
+professores e especialistas, representantes do Ministério Público, advogados públicos e privados e
+da comunidade jurídica em geral – produziu, após votação, quarenta enunciados ora
+apresentados, que representam uma resposta qualificada e importante sobre os variados temas
+objeto da Jornada.
+
+           O resultado exitoso da I Jornada de Direito Administrativo do CEJ do CJF – que despertou
+profundo interesse da comunidade jurídica, que apresentou 743 propostas de enunciados para
+discussão e votação – prenuncia que a sua realização representará marco histórico no Direito
+Administrativo brasileiro, que recomenda seja ela replicada em outras edições.
+
+           Registro o agradecimento à Ministra Maria Thereza de Assis Moura e ao Ministro João
+Otávio de Noronha, pela confiança e pelo indispensável apoio à realização da Jornada; aos
+demais integrantes da Coordenação Geral Científica da Jornada – o Ministro do TSE Tarcísio Vieira
+de Carvalho Neto, o Juiz Federal Daniel Marchionatti Barbosa e o Professor César Augusto Guimarães
+
+
+                                                   4
+Pereira –, que, desde outubro de 2019, trabalharam incansavelmente em prol da realização do
+evento, inclusive para a sua readequação à modalidade telepresencial, em face das restrições
+decorrentes da pandemia; aos painelistas e conferencista; aos professores Coordenadores
+Científicos das Comissões temáticas e aos Ministros do STJ que as presidiram ou as integraram; aos
+magistrados; a toda a comunidade jurídica que participou da Jornada; à valorosa equipe de
+servidores do Conselho da Justiça Federal; e a todos os que contribuíram, direta ou indiretamente,
+para a realização do evento.
+
+           Ao término da Jornada, com a apresentação dos quarenta enunciados nela produzidos,
+tenho a firme convicção de que a riqueza dos debates nela encetados, o seu formato aberto e
+democrático e a participação plural garantirão resultados muito positivos em prol da melhor
+exegese e aplicação das normas do Direito Administrativo brasileiro.
+
+
+
+                                   Ministra ASSUSETE MAGALHÃES
+                         Presidente da Coordenação Geral Científica da
+                                I Jornada de Direito Administrativo
+
+
+
+
+                                                5
+                                         INTRODUÇÃO
+
+
+
+                                “The imagination loses vitality as it ceases to adhere to what is real”
+                                             The Necessary Angel: Essays on Reality and the Imagination
+                                                                                       Wallace Stevens
+
+
+
+            É desnecessário ressaltar a dose extraordinária de criatividade e inovação empregada
+na realização da I Jornada de Direito Administrativo. Programada inicialmente para abril de 2020,
+foi atingida diretamente pelos eventos relacionados com a pandemia da covid-19 e pelas medidas
+de distanciamento social. Após muita ponderação acerca da viabilidade de uma Jornada em
+formato virtual, tomou-se a decisão de realizá-la pelo modo telepresencial em agosto de 2020. A
+decisão não poderia ter sido mais acertada, nem mais positivo o resultado produzido pela Jornada.
+
+Contexto
+            Mesmo antes das circunstâncias especiais verificadas a partir de março de 2020, a
+Coordenação Geral da I Jornada de Direito Administrativo estava consciente das dificuldades de
+transpor, para o campo do Direito Público, o modelo já consagrado das Jornadas do Conselho da
+Justiça Federal (CJF), concebido pela imaginação e sensibilidade do Ministro Ruy Rosado de Aguiar
+para provocar um debate necessário e objetivo acerca da interpretação do Código Civil de 2002.
+            O relativo desconhecimento do formato entre os especialistas de Direito Público
+recomendou a realização de diversas reuniões preparatórias, organizadas em janeiro e fevereiro
+com a colaboração ou por iniciativa dos Coordenadores Científicos das várias Comissões
+Temáticas, todos doutrinadores e profissionais consagrados nas múltiplas áreas de especialização
+abrangidas pela Jornada. O esforço resultou em número praticamente recorde de 743 propostas
+de enunciados, que consistiram na matéria sobre a qual trabalharam as Coordenações,
+selecionando, condensando e reunindo propostas para selecionar as 196 submetidas aos 410
+participantes da Jornada, reduzidas nas Comissões Temáticas para 62 propostas apresentadas à
+Sessão Plenária – levando, nessa etapa final, à aprovação dos 40 enunciados agora publicados
+pelo CJF.
+
+Discussão oportuna
+            A imaginação traduzida na ideia original das Jornadas e subjacente aos esforços
+tecnológicos e organizacionais – brilhantemente promovidos pelo corpo de servidores do CJF –
+exigidos para a concretização da I Jornada de Direito Administrativo frutificou porque assentada em
+uma premissa real fundamental. Decorridos mais de trinta anos desde a promulgação da
+Constituição de 1988, as transformações do Direito Administrativo exigiam o momento de reflexão,
+meditação e compromisso proporcionado pelas Jornadas do CJF. O debate plural, aberto e intenso
+
+
+
+                                                 6
+levou à aprovação de Enunciados – sempre por maioria de 2/3 tanto na respectiva Comissão
+Temática como na Sessão Plenária da Jornada – que formulam conclusões doutrinárias
+representativas do pensamento atual do Direito Administrativo brasileiro, aptas a orientar a
+jurisprudência e a conduta da Administração Pública.
+            A variedade dos temas abrangidos pelos enunciados reflete a amplitude dos objetivos
+que a Jornada se dispôs a perseguir. Pretendeu-se realizar um balanço da evolução recente do
+Direito Administrativo, com a distribuição dos temas em seis comissões de trabalho que se dedicaram
+à identificação dos problemas fundamentais em áreas variadas como função administrativa,
+responsabilidade    do   Estado,     desapropriação,   organização   administrativa,   resolução   de
+controvérsias, processo administrativo, concessões e parcerias público-privadas, licitações e
+contratos administrativos, regulação, consensualidade e controle da Administração Pública. Todas
+estão refletidas nos quarenta enunciados que se somam agora à seleção de proposições
+colecionadas pelo CJF em outros campos do Direito.
+
+Maturidade e inovação
+            É revelador da vitalidade do Direito Administrativo e da riqueza dos debates que os
+enunciados enfrentem questões recorrentes com a mesma profundidade com que tratam dos temas
+que ainda desafiam a compreensão mais atual. Os enunciados n. 3 e 4 consagram a interpretação
+adequada de dispositivos da Lei de Desapropriação (Decreto-Lei n. 3.365), de 1941, enquanto o
+Enunciado n. 12 prevê requisitos de validade para a “decisão administrativa robótica”, baseada em
+algoritmos cuja explicabilidade, e não opacidade, é exigida para que possam produzir seus efeitos
+próprios.
+            A I Jornada de Direito Administrativo foi inovadora também na realização de um
+Seminário de Abertura com palestras de doutrinadores consagrados, representativos de gerações
+variadas do pensamento jurídico do Direito Administrativo. Os professores Carlos Ari Sundfeld, Dinorá
+Musetti Grotti, Fernando Dias Menezes de Almeida e Floriano de Azevedo Marques Neto trataram de
+temas ligados a controle, consensualidade e regulação. A função administrativa, a organização da
+Administração Pública e o processo administrativo foram examinados pelos professores Odete
+Medauar, Marcio Cammarosano e Sergio Ferraz. E o professor Marçal Justen Filho realizou a
+conferência de encerramento discorrendo sobre as relações entre o Poder Judiciário e a
+Administração Pública, com foco no sentido da deferência judicial. As lições preparatórias então
+lançadas foram permanentemente relembradas nos debates da Jornada e refletidas em ampla
+variedade de Enunciados, dirigidos a dar objetividade à aplicação dos valores fundamentais que
+orientam o Direito Administrativo.
+            A objetividade e a preocupação em propor soluções para problemas reais e existentes
+são características que sobressaem nos enunciados. Pode-se prever que terão ampla utilização
+prática, justamente porque resultantes do compartilhamento de experiências entre magistrados,
+
+
+
+                                                  7
+integrantes do Ministério Público e dos Tribunais de Contas, advogados públicos e privados,
+professores e doutrinadores e ampla variedade de especialistas dedicados a traduzir o amplo
+esforço da Jornada em proposições aptas a facilitar a aplicação efetiva do Direito Administrativo.
+
+Função administrativa
+           Na área relativa ao exercício da função administrativa, o enunciado n. 2 tratou dos limites
+para a adoção proporcional do desforço imediato para a proteção de imóvel público. O
+enunciado n. 11 vale-se de conceito moderno de autovinculação administrativa para delimitar os
+efeitos do contrato de desempenho. O enunciado n. 16 consigna o taxativo de determinadas
+hipóteses de remoção de servidor público federal e a consequente validade do indeferimento de
+pedido não amparado em tais hipóteses. O enunciado n. 23 elimina uma dúvida prática, impedindo
+que se assimile um processo seletivo para preenchimento de cargo de confiança a um concurso
+público, com regime e efeitos próprios. O enunciado n. 37 reconhece que a estabilidade do servidor
+não pode ser adquirida pelo mero decurso do tempo, mas exige avaliação de desempenho.
+
+Terceiro Setor
+           O enunciado n. 5 define os dirigentes de organização da sociedade civil, afastando os
+equívocos da extensão indevida da definição a outras pessoas. O enunciado n. 9 também trata do
+Terceiro Setor, resolvendo um problema federativo envolvido na cumulação de títulos de OSCIP –
+Organizações da Sociedade Civil de Interesse Público e OS – Organizações Sociais.
+
+Empresas estatais
+           O tema das empresas estatais, em grande evidência desde a edição da Lei das
+Empresas Estatais (Lei n. 13.303, de 2016) e dos regulamentos que dela derivaram, mereceu um
+grande número de enunciados, todos relevantes para a solução de questões concretas e reais. O
+enunciado n. 8 trata da conciliação entre o caráter empresarial e o atendimento da finalidade
+pública específica da empresa estatal. A mesma preocupação inspira o enunciado n. 13, que
+estende às estatais a aplicação da Lei de Acesso à Informação (Lei n. 12.527, de 2011), afastando
+restrições infralegais. O enunciado n. 14 enfrenta um problema fundamental, consistente nos
+requisitos constitucionais de relevante interesse coletivo e imperativo de segurança nacional,
+minudenciados na Lei das Empresas Estatais; estabelece requisitos objetivos para a demonstração
+do seu atendimento. O enunciado n. 17 esclarece um ponto apto a gerar controvérsias práticas
+relevantes: a Lei de Licitações e Contratos Administrativos (Lei n. 8.666, de 1993) não se aplica
+subsidiariamente aos contratos celebrados pelas empresas estatais, regidos pela própria Lei das
+Empresas Estatais e pelo Direito Privado. O tema da participação minoritária estatal em empresas
+privadas e sua caracterização como “oportunidades de negócio”, na redação da Lei das Empresas
+Estatais, é objeto do enunciado n. 22. O tema da oportunidade de negócios mereceu ainda outros
+enunciados. O enunciado n. 27 se relaciona com a interpretação do conceito de inviabilidade de
+
+
+                                                  8
+competição, cujo sentido varia segundo o ângulo examinado. A questão é retomada no enunciado
+n. 30, que reconhece haver inviabilidade de competição mesmo em situações onde pode haver
+mais de um interessado na oportunidade de negócio envolvendo determinada empresa estatal. Os
+limites do regulamento interno de licitações das estatais são enfrentados no enunciado n. 24,
+especificamente no que se refere à fixação de prazo para defesa em processo sancionador. O
+enunciado n. 32 destina-se a evitar abusos na contratação de seguro de responsabilidade civil em
+favor de dirigentes de empresas estatais.
+
+Desapropriação
+           A área de desapropriação, conquanto regulada por diploma de 1941, recebeu atenção
+em três enunciados. A autorização para que o Poder Judiciário enfrente, na ação de
+desapropriação, temas ligados à regularidade do processo administrativo e à validade do ato
+expropriatório, é objeto do enunciado n. 3. Um requisito específico do ato expropriatório, consistente
+em efetiva motivação, é estabelecido pelo enunciado n. 4, que afasta a mera alusão a uma
+hipótese legal como suficiente. O enunciado n. 31 estabelece que a avaliação do bem expropriado
+deve considerar as características mercadológicas da época da perda da posse.
+
+Responsabilidade patrimonial do Estado
+           No campo da responsabilidade patrimonial do Estado, o enunciado n. 40 esclarece que
+as ações indenizatórias contra a Fazenda Pública prescrevem em cinco anos, não se aplicando o
+prazo de três anos do art. 206, § 3º, V, do Código Civil.
+
+Processo administrativo
+           No âmbito do processo administrativo, o enunciado n. 20 consignou o direito do
+interessado a prévia intimação e contraditório no caso de autotutela administrativa destinada ao
+desfazimento de ato administrativo benéfico ao interessado. O enunciado n. 33 afasta a dúvida
+sobre se o CPC – Código de Processo Civil – teria estendido ao processo administrativo a contagem
+de prazos em dias úteis. E o já referido enunciado n. 12 enfrenta uma dificuldade que apenas
+começa a se manifestar ao tratar das decisões administrativas baseadas em algoritmos – tema que
+gerou, nos dias subsequentes à realização da Jornada, grande debate no Reino Unido a propósito
+da atribuição estimativa, por meio de algoritmos, de notas em substituição às de provas efetivas
+(tornadas inviáveis pela pandemia da covid-19) em um exame nacional similar ao ENEM – Exame
+Nacional do Ensino Médio.
+
+Arbitragem e meios adequados de resolução de conflitos
+           O tema da arbitragem, mediação e dispute boards envolvendo a Administração Pública
+foi objeto de cinco enunciados, que complementam os aprovados na Jornada do CJF sobre
+resolução de controvérsias, realizada em 2016. O enunciado n. 10 prevê que, nos contratos sujeitos
+à Lei de Licitações e Contratos Administrativos, cabe a celebração de aditivo para introduzir
+
+
+                                                  9
+métodos extrajudiciais adequados como mediação, arbitragem e dispute board (junta de
+prevenção e solução de conflitos). Esse enunciado trata da inclusão de cláusula compromissória,
+enquanto o enunciado nº 18 reconhece o cabimento da celebração de compromisso arbitral para
+a resolução de controvérsia por arbitragem mesmo sem previsão de arbitragem no edital e, por
+conseguinte, no contrato de origem. O enunciado n. 15 confirma o entendimento adotado na
+Jornada de 2016 e consigna que a Administração Pública deve promover a publicidade ativa das
+arbitragens de que é parte, sujeita à Lei de Acesso à Informação. O enunciado n. 19 afasta qualquer
+dúvida que pudesse existir sobre a submissão de temas ligados ao equilíbrio econômico-financeiro
+aos meios adequados de solução de conflitos, inclusive conciliação, mediação, dispute boards e
+arbitragem. Por fim, o enunciado n. 39 retrata o entendimento consolidado e afasta eventuais
+preocupações da Administração Pública em relação à nomeação ou aceitação de árbitros: não
+há necessidade de qualquer seleção pública formal, apenas a motivação adequada, com a
+formalização própria.
+
+Licitações, contratos administrativos e concessões
+           Um dos campos mais amplamente retratados nos enunciados é o relativo às licitações e
+contratos administrativos. O enunciado n. 6 é direto e enfrenta um problema real: o atraso superior
+a noventa dias autoriza a suspensão contratual pelo contratado mesmo sem decisão judicial nesse
+sentido. O enunciado n. 26 afasta a dúvida de que a complexidade técnica ou a natureza
+intelectual de um bem ou serviço poderia impedir a utilização do pregão. Um tema fundamental,
+evidenciado ainda mais pelos impactos da pandemia da covid-19 sobre os contratos
+administrativos, é o do enunciado n. 28, segundo o qual, na fase interna das licitações para
+concessões e PPPs, deve ser motivada a alocação de riscos e deve-se adotar como diretriz a melhor
+capacidade da gestão do risco em questão. O enunciado n. 29 trata de outra situação prática em
+que o esclarecimento é útil: limites e efeitos do diálogo entre a Administração e os potenciais
+contratados na fase de planejamento das licitações. A diferença entre reajuste e revisão contratual
+e o direito ao reajuste automático é objeto do enunciado n. 34. Outro enunciado de grande
+aplicação prática é o de n. 35, que garante o cabimento de mandado de segurança contra a
+frustração da ordem cronológica de pagamentos. O enunciado n. 36 delimita a extensão da
+responsabilidade solidária de empresas consorciadas, a qual não se aplica a penalidades.
+
+Regulação
+           No campo da regulação, o enunciado n. 38 consagra uma visão sofisticada da Análise
+de Impacto Regulatório (AIR) ao estabelecer que também se devem considerar na análise as
+hipóteses de não regulação estatal ou desregulação. O enunciado n. 1 exige a imparcialidade e
+objetividade no Procedimento de Manifestação de Interesse (PMI). O enunciado n. 25 afasta o
+recurso impróprio contra decisões finais de agências reguladoras, reforçando a noção de sua
+autonomia e independência.
+
+
+
+                                                10
+Controle
+       Em relação ao controle da Administração Pública, o enunciado n. 7 tratou da improbidade
+no exercício de atuação legislativa lato sensu. O enunciado n. 21, por sua vez, estabeleceu
+interpretação de dispositivo da Lei Anticorrupção (Lei n. 12.846, de 2013) para delimitar o campo
+material de infração nele prevista.
+
+Reflexão final
+            Os breves comentários acima destinam-se a ilustrar a variedade e a relevância dos temas
+abrangidos pelos quarenta Enunciados da I Jornada de Direito Administrativo e convidar o leitor ao
+seu exame minucioso e, principalmente, à sua aplicação concreta na solução dos problemas
+práticos e reais das relações jurídicas envolvendo a Administração Pública.
+            A I Jornada de Direito Administrativo cumpriu com brilho a missão que lhe foi proposta.
+Os desafios próprios do formato telepresencial e do ambiente de incertezas sociais, econômicas e
+jurídicas que caracterizou o momento enfrentado pelo país quando de sua realização, em agosto
+de 2020, foram transformados em oportunidade para reflexão aprofundada e madura sobre o
+Direito Administrativo brasileiro.
+       Em outra passagem, o escritor Wallace Stevens, citado na epígrafe, comenta que “Na
+presença de uma realidade extraordinária, a consciência toma o lugar da imaginação”. A I Jornada
+de Direito Administrativo combinou a consciência precisa da realidade jurídica brasileira com muita
+criatividade e imaginação para produzir debates e conclusões que ficarão na história do Direito
+Administrativo brasileiro e nas memórias de todos os que com ela puderam contribuir. Seus
+coordenadores, ora signatários, não podem senão estar profundamente gratos pelo privilégio de
+testemunhar esta realização.
+
+
+                      Coordenação Geral da I Jornada de Direito Administrativo
+                                      Ministra Assusete Magalhães
+                                 Ministro Tarcísio Vieira de Carvalho Neto
+                               Professor Cesar Augusto Guimarães Pereira
+                                Juiz Federal Daniel Marchionatti Barbosa
+
+
+
+
+                                                    11
+PROGRAMAÇÃO
+
+
+
+
+    12
+                                   ENUNCIADOS APROVADOS
+
+
+
+| Enunciado 1 . A autorização para apresentação de projetos, levantamentos, investigações ou
+estudos no âmbito do Procedimento de Manifestação de Interesse, quando concedida mediante
+restrição ao número de participantes, deve dar-se por meio de seleção imparcial dos interessados,
+com ampla publicidade e critérios objetivos.
+
+| Enunciado 2 . O administrador público está autorizado por lei a valer-se do desforço imediato sem
+necessidade de autorização judicial, solicitando, se necessário, força policial, contanto que o faça
+preventivamente ou logo após a invasão ou ocupação de imóvel público de uso especial, comum
+ou dominical, e não vá além do indispensável à manutenção ou restituição da posse (art. 37 da
+Constituição Federal; art. 1.210, § 1, do Código Civil; art. 79, § 2º, do Decreto-Lei n. 9.760/1946; e
+art. 11 da Lei n. 9.636/1998).
+
+
+| Enunciado 3 . Não constitui ofensa ao art. 9º do Decreto-Lei n. 3.365/1941 o exame por parte do
+Poder Judiciário, no curso do processo de desapropriação, da regularidade do processo
+administrativo de desapropriação e da presença dos elementos de validade do ato de declaração
+de utilidade pública.
+
+| Enunciado 4 . O ato declaratório da desapropriação, por utilidade ou necessidade pública, ou
+por interesse social, deve ser motivado de maneira explícita, clara e congruente, não sendo
+suficiente a mera referência à hipótese legal.
+
+| Enunciado 5 . O conceito de dirigentes de organização da sociedade civil estabelecido no art.
+2º, inc. IV, da Lei n. 13.019/2014 contempla profissionais com a atuação efetiva na gestão executiva
+da entidade, por meio do exercício de funções de administração, gestão, controle e representação
+da pessoa jurídica, e, por isso, não se estende aos membros de órgãos colegiados não executivos,
+independentemente da nomenclatura adotada pelo estatuto social.
+
+| Enunciado 6 . O atraso superior a 90 (noventa) dias dos pagamentos devidos pela Administração
+Pública autoriza o contratado a suspender o cumprimento de suas obrigações até que seja
+normalizada a situação, mesmo sem provimento jurisdicional.
+
+| Enunciado 7 . Configura ato de improbidade administrativa a conduta do agente público que,
+em atuação legislativa lato sensu, recebe vantagem econômica indevida.
+
+| Enunciado 8 . O exercício da função social das empresas estatais é condicionado ao atendimento
+da sua finalidade pública específica e deve levar em conta os padrões de eficiência exigidos
+das sociedades empresárias atuantes no mercado, conforme delimitações e orientações dos §§ 1º
+a 3º do art. 27 da Lei n. 13.303/2016.
+
+| Enunciado 9 . Em respeito ao princípio da autonomia federativa (art. 18 da CF), a vedação ao
+acúmulo dos títulos de OSCIP e OS prevista no art. 2º, inc. IX, c/c art. 18, §§ 1º e 2º, da Lei n.
+9.790/1999 apenas se refere à esfera federal, não abrangendo a qualificação como OS nos Estados,
+no Distrito Federal e nos Municípios.
+
+
+
+
+                                                 13
+| Enunciado 10 . Em contratos administrativos decorrentes de licitações regidas pela Lei n.
+8.666/1993, é facultado à Administração Pública propor aditivo para alterar a cláusula de resolução
+de conflitos entre as partes, incluindo métodos alternativos ao Poder Judiciário como Mediação,
+Arbitragem e Dispute Board.
+
+
+| Enunciado 11 . O contrato de desempenho previsto na Lei n. 13.934/2019, quando celebrado
+entre órgãos que mantêm entre si relação hierárquica, significa a suspensão da hierarquia
+administrativa, por autovinculação do órgão superior, em relação ao objeto acordado, para
+substituí-la por uma regulação contratual, nos termos do art. 3º da referida Lei.
+
+| Enunciado 12 . A decisão administrativa robótica deve ser suficientemente motivada, sendo a
+sua opacidade motivo de invalidação.
+
+| Enunciado 13 . As empresas estatais são organizações públicas pela sua finalidade, portanto,
+submetem-se à aplicabilidade da Lei n. 12.527/2011, “Lei de Acesso à Informação”, de acordo com
+o art. 1º, parágrafo único, inc. II, não cabendo a decretos e outras normas infralegais estabelecer
+outras restrições de acesso a informações não previstas na Lei.
+
+| Enunciado 14 . A demonstração da existência de relevante interesse coletivo ou de imperativo de
+segurança nacional, descrita no § 1º do art. 2º da Lei n. 13.303/2016, será atendida por meio do
+envio ao órgão legislativo competente de estudos/documentos (anexos à exposição de motivos)
+com dados objetivos que justifiquem a decisão pela criação de empresa pública ou de sociedade
+de economia mista cujo objeto é a exploração de atividade econômica.
+
+| Enunciado 15 . A Administração Pública promoverá a publicidade das arbitragens da qual seja
+parte, nos termos da Lei n. 12.527/2011 (Lei de Acesso à Informação).
+
+| Enunciado 16 . As hipóteses de remoção de servidor público a pedido, independentemente do
+interesse da Administração, fixadas no art. 36, parágrafo único, III, da Lei n. 8.112/1990 são taxativas.
+Por esse motivo, a autoridade que indefere a remoção, quando não presentes os requisitos da lei,
+não pratica ato ilegal ou abusivo.
+
+| Enunciado 17 . Os contratos celebrados pelas empresas estatais, regidos pela Lei n. 13.303/2016,
+não possuem aplicação subsidiária da Lei n. 8.666/1993. Em casos de lacuna contratual, aplicam-
+se as disposições daquela Lei e as regras e os princípios de direito privado.
+
+| Enunciado 18 . A ausência de previsão editalícia não afasta a possibilidade de celebração de
+compromisso arbitral em conflitos oriundos de contratos administrativos.
+
+| Enunciado 19 . As controvérsias acerca de equilíbrio econômico-financeiro dos contratos
+administrativos integram a categoria das relativas a direitos patrimoniais disponíveis, para cuja
+solução se admitem meios extrajudiciais adequados de prevenção e resolução de controvérsias,
+notadamente a conciliação, a mediação, o comitê de resolução de disputas (Dispute Board) e a
+arbitragem.
+
+| Enunciado 20 . O exercício da autotutela administrativa, para o desfazimento do ato administrativo
+que produza efeitos concretos favoráveis aos seus destinatários, está condicionado à prévia
+intimação e oportunidade de contraditório aos beneficiários do ato.
+
+
+                                                   14
+| Enunciado 21 . A conduta de apresentação de documentos falsos ou adulterados por pessoa
+jurídica em processo licitatório configura o ato lesivo previsto no art. 5º, IV, “d”, da Lei n. 12.846/2013,
+independentemente de essa sagrar-se vencedora no certame ou ter neste obstada a continuidade
+da sua participação.
+
+
+| Enunciado 22 . A participação de empresa estatal no capital de empresa privada que não integra
+a Administração Pública enquadra-se dentre as hipóteses de “oportunidades de negócio”, prevista
+no art. 28, § 4º, da Lei n. 13.303/2016, devendo a decisão pela referida participação observar os
+ditames legais e os regulamentos editados pela empresa estatal a respeito dessa possibilidade.
+
+
+| Enunciado 23 . O art. 9º, II, c/c art. 10 da Lei n. 8.112 estabelece a nomeação de servidor em
+comissão para cargos de confiança vagos. A existência de processo seletivo por competências
+para escolha de servidor para cargos de confiança vagos não equipara as regras deste processo
+seletivo às de concurso público, nem o regime jurídico de servidor em comissão ao de servidor em
+caráter efetivo, quando se tratar de cargo isolado de provimento efetivo ou de carreira.
+
+| Enunciado 24 . Viola a legalidade o regulamento interno de licitações e contratos editado por
+empresa estatal de qualquer ente da federação que estabelece prazo inferior ao previsto no art.
+83, § 2º, da Lei n. 13.303/2016, referente à apresentação de defesa prévia no âmbito de processo
+administrativo sancionador.
+
+| Enunciado 25 . A ausência de tutela a que se refere o art. 3º, caput, da Lei n. 13.848/2019 impede
+a interposição de recurso hierárquico impróprio contra decisões finais proferidas pela diretoria
+colegiada das agências reguladoras, ressalvados os casos de previsão legal expressa e
+assegurada, em todo caso, a apreciação judicial, em atenção ao disposto no art. 5º, XXXV, da
+Constituição Federal.
+
+| Enunciado 26 . A Lei n. 10.520/2002 define o bem ou serviço comum com base em critérios
+eminentemente mercadológicos, de modo que a complexidade técnica ou a natureza intelectual
+do bem ou serviço não impedem a aplicação do pregão se o mercado possui definições
+usualmente praticadas em relação ao objeto da licitação.
+
+| Enunciado 27 . A contratação para celebração de oportunidade de negócios, conforme prevista
+pelo art. 28, § 3º, II, e § 4º da Lei n. 13.303/2016 deverá ser avaliada de acordo com as práticas do
+setor de atuação da empresa estatal. A menção à inviabilidade de competição para concretização
+da oportunidade de negócios deve ser entendida como impossibilidade de comparação objetiva,
+no caso das propostas de parceria e de reestruturação societária e como desnecessidade de
+procedimento competitivo, quando a oportunidade puder ser ofertada a todos os interessados.
+
+| Enunciado 28 . Na fase interna da licitação para concessões e parcerias público-privadas, o
+Poder Concedente deverá indicar as razões que o levaram a alocar o risco no concessionário ou
+no Poder Concedente, tendo como diretriz a melhor capacidade da parte para gerenciá-lo.
+
+| Enunciado 29 . A Administração Pública pode promover comunicações formais com potenciais
+interessados durante a fase de planejamento das contratações públicas para a obtenção de
+informações técnicas e comerciais relevantes à definição do objeto e elaboração do projeto básico
+ou termo de referência, sendo que este diálogo público-privado deve ser registrado no processo
+
+
+
+                                                    15
+administrativo e não impede o particular colaborador de participar em eventual licitação pública,
+ou mesmo de celebrar o respectivo contrato, tampouco lhe confere a autoria do projeto básico ou
+termo de referência.
+
+| Enunciado 30 . A "inviabilidade de procedimento competitivo" prevista no art. 28, § 3º, inc. II, da
+Lei n. 13.303/2016 não significa que, para a configuração de uma oportunidade de negócio,
+somente poderá haver um interessado em estabelecer uma parceria com a empresa estatal. É
+possível que, mesmo diante de mais de um interessado, esteja configurada a inviabilidade de
+procedimento competitivo.
+
+
+| Enunciado 31 . A avaliação do bem expropriado deve levar em conta as condições
+mercadológicas existentes à época da efetiva perda da posse do bem.
+
+
+| Enunciado 32 . É possível a contratação de seguro de responsabilidade civil aos administradores
+de empresas estatais, na forma do art. 17, § 1º, da Lei n. 13.303/2016, a qual não abrangerá a
+prática de atos fraudulentos de favorecimento pessoal ou práticas dolosas lesivas à companhia e
+ao mercado de capitais.
+
+| Enunciado 33 . O prazo processual, no âmbito do processo administrativo, deverá ser contado em
+dias corridos mesmo com a vigência dos arts. 15 e 219 do CPC, salvo se existir norma específica
+estabelecendo essa forma de contagem.
+
+| Enunciado 34 . Nos contratos de concessão e PPP, o reajuste contratual para reposição do valor
+da moeda no tempo é automático e deve ser aplicado independentemente de alegações do Poder
+Público sobre descumprimentos contratuais ou desequilíbrio econômico-financeiro do contrato, os
+quais devem ser apurados em processos administrativos próprios para este fim, nos quais serão
+garantidos ao parceiro privado os direitos ao contraditório e à ampla defesa.
+
+| Enunciado 35 . Cabe mandado de segurança para pleitear que seja obedecida a ordem
+cronológica para pagamentos em relação a crédito já reconhecido e atestado pela Administração,
+de acordo com o art. 5º, caput, da Lei n. 8.666/1993.
+
+| Enunciado 36 . A responsabilidade solidária das empresas consorciadas pelos atos praticados na
+licitação e na execução do contrato, de que trata o inc. V do art. 33 da Lei n. 8.666/1993, refere-se
+à responsabilidade civil, não se estendendo às penalidades administrativas.
+
+| Enunciado 37 . A estabilidade do servidor titular de cargo público efetivo depende da reunião de
+dois requisitos cumulativos: (i) o efetivo desempenho das atribuições do cargo pelo período de 3
+(três) anos; e (ii) a confirmação do servidor no serviço mediante aprovação pela comissão de
+avaliação responsável (art. 41, caput e § 4º, da CF c/c arts. 20 a 22 da Lei n. 8.112/1990). Assim,
+não há estabilização automática em virtude do tempo, sendo o resultado positivo em avaliação
+especial de desempenho uma condição indispensável para a aquisição da estabilidade.
+
+| Enunciado 38 . A realização de Análise de Impacto Regulatório (AIR) por órgãos e entidades da
+Administração Pública federal deve contemplar a alternativa de não regulação estatal ou
+desregulação, conforme o caso.
+
+
+
+
+                                                 16
+| Enunciado 39 . A indicação e a aceitação de árbitros pela Administração Pública não dependem
+de seleção pública formal, como concurso ou licitação, mas devem ser objeto de fundamentação
+prévia e por escrito, considerando os elementos relevantes.
+
+| Enunciado 40 . Nas ações indenizatórias ajuizadas contra a Fazenda Pública aplica-se o prazo
+prescricional quinquenal previsto no Decreto n. 20.910/1932 (art. 1º), em detrimento do prazo trienal
+estabelecido no Código Civil de 2002 (art. 206, § 3º, V), por se tratar de norma especial que
+prevalece sobre a geral.
+
+
+
+
+                                                 17
+                                     LISTA DE PARTICIPANTES
+
+
+ADONIAS RIBEIRO DE CARVALHO NETO                    ÁVIO MOZAR JOSÉ FERRAZ DE NOVAES
+ADRIANA DA COSTA RICARDO SCHIER                     BERNARDO STROBEL GUIMARÃES
+AGUEDA CRISTINA GALVÃO PAES DE ANDRADE              BERNARDO TINÔCO DE LIMA HORTA
+ALEXANDRE AUGUSTO MUNDIM                            BRUNA BORGHETTI CAMARA FERREIRA ROSA
+ALEXANDRE FERREIRA INFANTE VIEIRA                   BRUNO HERMES LEAL
+ALEXANDRE JORGE CARNEIRO DA CUNHA FILHO             CAIO FARAH RODRIGUEZ
+ALEXANDRE MANIR FIGUEIREDO SARQUIS                  CAIO MAIA XAVIER DE OLIVEIRA
+ALEXANDRE MOREIRA PACHECO                           CAIO MARIO DA SILVA PEREIRA NETO
+ALEXANDRE SANTOS ARAGÃO                             CAMILA BINDILATTI CARLI DE MESQUITA
+ALEXANDRE WAGNER NESTER                             CAMILA MOURA E SILVA
+ALICE BERNARDO VORONOFF                             CARLOS HENRIQUE GARCIA DE OLIVEIRA
+ALINE LAZZARON                                      CARMEN SILVIA LIMA DE ARRUDA
+ALUISIO GONÇALVES DE CASTRO MENDES                  CAROLINA REIS JATOBA COELHO
+AMAEL NOTINI MOREIRA BAHIA                          CAROLINE MARIA VIEIRA LACERDA
+ANA FLÁVIA SANTOS PATRUS DE SOUZA                   CAROLINE MÜLLER BITENCOURT
+ANA FRAZAO                                          CESAR AUGUSTO GUIMARÃES PEREIRA
+ANA KARENINA SILVA RAMALHO                          CHARLES JACOB GIACOMINI
+ANA LIDIA SILVA MELLO MONTEIRO                      CHRISTIANNE DE CARVALHO STROPPA
+ANA LUISA VOGADO DE OLIVEIRA                        CLEBER GONÇALVES FILHO
+ANA LUIZA JACOBY                                    CRISTIANA FORTINI
+ANDRÉ ALMEIDA VILLANI                               CRISTIANE CAMPOS DE FIGUEIREDO SILVA
+ANDRE CYRINO                                        CRISTIANE CONDE CHMATALIK
+ANDRÉ DIAS FERNANDES                                CRISTINA BARBOSA RODRIGUES
+ANDRE GUSKOW CARDOSO                                CYNTHIA DE ARAÚJO LIMA LOPES
+ANDRE JOSE KOZLOWSKI                                DANIEL FÁBIO JACOB NOGUEIRA
+ANDRÉ LUIZ FREIRE                                   DANIEL FERREIRA
+ANDRÉ LUIZ MALUF CHAVES                             DANIEL MARCHIONATTI BARBOSA
+ANDRÉ PRADO DE VASCONCELOS                          DANIEL MARTINS E AVELAR
+ANDRE ROSILHO                                       DANIEL SIQUEIRA BORDA
+ANE ELISA PEREZ                                     DANIELA PEREIRA MADEIRA
+ANSELMO GONÇALVES DA SILVA                          DANIELE RUSSO BARBOSA FEIJÓ
+ANTONIO CESAR BOCHENEK                              DANILO GUERREIRO DE MORAES
+ANTONIO DAVID GUERRA ROLIM DE OLIVIERA              DANTE SILVA TOMAZ
+ARIANE SHERMAM MORAIS VIEIRA                        DÉCIO GABRIEL GIMENEZ
+ARTHUR NOGUEIRA FEIJÓ                               DENIS SOARES FRANÇA
+ASSUSETE MAGALHÃES                                  DERICK DE MENDONCA ROCHA
+AUGUSTO CÉSAR DA COSTA MENDES TEIXEIRA              DILSILEIA MARTINS MONTEIRO
+AUGUSTO SHERMAN CAVALCANTI                          DINORÁ ADELAIDE MUSETTI GROTTI
+
+
+
+
+                                               18
+DIOGO ROSENTHAL COUTINHO                    GIULIA DE ROSSI ANDRADE
+DIRLEY DA CUNHA JUNIOR                      GLÁUCIO FERREIRA MACIEL GONÇALVES
+EDGAR GUIMARÃES                             GUILHERME CARVALHO
+EDILSON PEREIRA NOBRE JUNIOR                GUILHERME FABIANO JULIEN REZENDE
+EDMAR CÉZAR FRANCO FERREIRA                 GUILHERME FREDHERICO DIAS REISDORFER
+EDSON ROSAS NETO                            GUILHERME JANTSCH
+EDUARDO ANDRÉ CARVALHO SCHIEFLER            GUILHERME JARDIM JURKSAITIS
+EDUARDO FERREIRA JORDÃO                     GUSTAVO DA ROCHA SCHMIDT
+EDUARDO MORAIS DA ROCHA                     GUSTAVO FERNANDES
+ÉRICA FEITOSA FORTALEZA                     GUSTAVO HENRIQUE CARVALHO SCHIEFLER
+EUGENIA CRISTINA CLETO MAROLLA              GUSTAVO LEONARDO MAIA PEREIRA
+EURICO BITENCOURT NETO                      GUSTAVO MIRANDA LOURES
+EVALDO DE OLIVEIRA FERNANDES FILHO          HEITOR CASTRO CUNHA
+EVELYN FREIRE DE CARVALHO                   HELENA ELIAS PINTO
+EWERTON GABRIEL PROTÁZIO DE OLIVEIRA        HENRIQUE GOUVEIA DA CUNHA
+FABIANO DE FIGUEIREDO ARAUJO                HENRIQUE MOTTA PINTO
+FABRÍCIO MACEDO MOTTA                       HERMAN BENJAMIN
+FABRÍCIO PINTO WEIBLEN                      HORACIO MONTESCHIO
+FELIPE BARBOSA BRANDT                       HUGO VON ANCKEN ERDMANN AMOROSO
+FELIPE FERREIRA MACHADO MORAES              INÊS DA MATTA ANDREIUOLO
+FELIPE MONTENEGRO VIVIANI GUIMARÃES         INÊS DA TRINDADE CHAVES DE MELO
+FERNANDA PEREIRA                            INGRID ARAGÃO FREITAS PORTO
+FERNANDA SANTOS SCHRAMM                     IRENE PATRÍCIA NOHARA
+FERNANDA TEOTONIA VALE CARVALHO             ISABELLA KAROLLINA ROSSITO
+FERNANDO DIAS MENEZES DE ALMEIDA            JACINTHO ARRUDA CÂMARA
+FERNANDO MÂNICA                             JEISON BAINHA DE OLIVEIRA
+FERNANDO MARCELO MENDES                     JOAO BATISTA GOMES MOREIRA
+FERNANDO QUADROS DA SILVA                   JOÃO MARCELO TORRES CHINELATO
+FERNÃO JUSTEN DE OLIVEIRA                   JOAO PAULO SCHWANDNER FERREIRA
+FLÁVIO AMARAL GARCIA                        JOAO PEDRO GEBRAN NETO
+FLÁVIO DE ARAÚJO WILLEMAN                   JOEL DE MENEZES NIEBUHR
+FLÁVIO GARCIA CABRAL                        JOELMA VENERANDA DE CARVALHO
+FLÁVIO UNES PEREIRA                         JORGE ANTONIO MAURIQUE
+FLORIVALDO DUTRA DE ARAÚJO                  JORGE ARBEX BUENO
+FRANCISCO GLAUBER PESSOA ALVES              JOSÉ ANACLETO ADBUCH
+FRANCISCO ZARDO                             JOSÉ EDUARDO FIGUEIREDO DE ANDRADE MARTINS
+FRIEDMANN WENDPAP                           JOSÉ GERALDO AMARAL FONSECA JÚNIOR
+GEORGES LOUIS HAGE HUMBERT                  JOSÉ GUILHERME DI RIENZO MARREY
+GILBERTO PAGLIA JÚNIOR                      JOSÉ JAIR MARQUES JUNIOR
+GIOVANNA MAYER                              JULIANA BONACORSI DE PALMA
+GIOVANNA MICALI                             JULIANA CRISTINA LUVIZOTTO
+
+
+
+                                       19
+JULIANA DE OLIVEIRA DUARTE FERREIRA                          MARIA ISABEL PEZZI KLEIN
+JULIANA MEUS                                                 MARIA PAULA DALLARI BUCCI
+JULIO CÉSAR MOREIRA BARBOZA                                  MARIANA BUENO RESENDE
+KATIA BALBINO DE CARVALHO FERREIRA                           MARIANA MAGALHÃES AVELAR
+KELLY GASPAR DUARTE NEVES                                    MARILDA DE PAULA SILVEIRA
+KLEBER RLACERDA                                              MARÍLIA BARROS XAVIER
+LEONARDO COELHO RIBEIRO                                      MARINA FERRAZ DE MIRANDA
+LEONARDO HENRIQUE DE CAVALCANTE CARVALHO                     MARINA KUKIELA VIANNA
+LEONARDO OLIVEIRA                                            MARIO-ZAM BELMIRO ROSA
+LEONARDO SILVEIRA ANTOUN NETTO                               MATEUS PIVA ADAMI
+LETICIA OLIVEIRA LINS DE ALENCAR                             MATHEUS LOLLI PAZETO
+LEVY MARCOS MARTINS MADEIRA                                  MATHEUS PEREIRA ROCHA
+LICURGO JOSEPH MOURÃO DE OLIVEIRA                            MAURÍCIO GARCIA PALLARES ZOCKUN
+LINCOLN RODRIGUES DE FARIA                                   MAURICIO PORTUGAL RIBEIRO
+LUCAS DE MOURA RODRIGUES                                     MAURO EVELY VIEIRA DE BORBA
+LUCAS DE SANTANA MÓDOLO                                      MAURO HIANE DE MOURA
+LUCIANA CRISTINA DE JESUS SILVA                              MAURO LUIZ CAMPBELL MARQUES
+LUCIANA LUSO DE CARVALHO                                     MAYARA GASPAROTO TONIN
+LUCIANO BENETTI TIMM                                         MAYARA LOPES CANÇADO
+LUCIANO DE ARAUJO FERRAZ                                     MICHEL CUNHA TANAKA
+LUÍS ROMERO STOPATTO REIS                                    MIRELA MIRÔ ZILIOTTO
+LUIZ EDUARDO ALTENBURG DE ASSIS                              MÔNICA BANDEIRA DE MELLO LEFEVRE
+MARA ELISA ANDRADE                                           MONIQUE SOARES LEITE
+MARÇAL JUSTEN FILHO                                          MURILO MELO VALE
+MARÇAL JUSTEN NETO                                           NATALIE MELAMED GEMIO
+MARCELLA ARAÚJO DA NOVA BRANDÃO                              NEIAN MILHOMEM CRUZ
+MARCELO CARVALHO CAVALCANTE DE OLIVEIRA                      NEWTON PEREIRA RAMOS NETO
+MARCELO EDUARDO ROSSITTO BASSETTO                            OCTAVIO CASCAES DOURADO JUNIOR
+MARCELO HARGER                                               ODILON CAVALLARI DE OLIVEIRA
+MARCELO VELASCO NASCIMENTO ALBERNAZ                          OG NICÉAS MARQUES FERNANDES
+MARCÍLIO BARENCO CORRÊA DE MELLO                             PABLO ZUNIGA DOURADO
+MARCIO SA ARAÚJO                                             PALMIRA CÂNDIDA FARIA SANTIAGO
+MARCO TÚLIO REIS MAGALHÃES                                   PATRÍCIA FERREIRA BAPTISTA
+MARCOS AUGUSTO PEREZ                                         PATRÍCIA REGINA PINHEIRO SAMPAIO
+MARCOS JOSÉ BRITO RIBEIRO                                    PATRICIA RODRIGUES PESSOA VALENTE
+MARCOS MAIRTON DA SILVA                                      PAULO AUGUSTO MOREIRA LIMA
+MARCOS NÔBREGA                                               PAULO EDUARDO GARRIDO MODESTO
+MARIA CRISTINA CESAR DE OLIVEIRA                             PAULO SERGIO DOMINGUES
+MARIA DA CONCEIÇÃO L S SANTOS                                PAULO VINICIUS LIEBL FERNANDES
+MARIA DE LOURDES RODRIGUEZ PEDROZO DE BARROS LUIZELLI        PEDRO AUGUSTO SETTA DIAS
+MARIA FERNANDA PIRES DE CARVALHO PEREIRA                     PEDRO FRANCISCO DA SILVA
+
+
+
+                                                        20
+PEDRO HENRIQUE COLOMBINI DELPINO               ROSIMAYRE GONÇALVES DE CARVALHO
+PEDRO VASQUES SOARES                           SALISE MONTEIRO SANCHOTENE
+RAFAEL ARRUDA OLIVEIRA                         SAMUEL DAL-FARRA NASPOLINI
+RAFAEL CARVALHO REZENDE DE OLIVEIRA            SANDRA MEIRIM CHALU BARBOSA DE CAMPOS
+RAFAEL DE ALENCAR ARARIPE CARNEIRO             SARA MARTINS GOMES LOPES
+RAFAEL FORMOLO                                 SAULO JOSE CASALI BAHIA
+RAFAEL HAMZE ISSA                              SÉRGIO LUIZ KUKINA
+RAFAEL LIMA DA COSTA                           SHAMYL CIPRIANO
+RAFAEL MAFFINI                                 SILVIO DAGOBERTO ORSATTO
+RAFAEL VÉRAS                                   TAIS SCHILLING FERRAZ
+RAFAEL WALLBACH SCHWIND                        TALES KRAUSS QUEIROZ
+RAPHAEL BARBOZA CORREIA                        TARCISIO DE MORAES SOUZA
+RAPHAEL FERNANDES JUNQUEIRA DIAS               TARSO RIZO OLIVEIRA RIBEIRO
+RAQUEL DE BASTOS REZENDE RIBEIRO FREIRE        TATIANA MARTINS DA COSTA CAMARÃO
+REGINA HELENA COSTA                            THAIS BOIA MARÇAL
+RENATA FARIA SILVA LIMA                        THAIS RAMOS ESTRELLA BRANCO
+RENATA PEREZ DANTAS                            THAIS SAMPAIO DA SILVA
+RENATA VAZ MARQUES COSTA RAINHO                THIAGO C ARAÚJO
+RENNAN GUSTAVO ZIEMER DA COSTA                 THIAGO MARRARA DE MATOS
+RICARDO ALBERTO KANAYAMA                       TIAGO BECKERT ISFER
+RICARDO ALESSANDRO KERN                        TICIANE MORAES FRANCO
+RICARDO BARRRETTO DE ANDRADE                   UBIRATAN CAZETTA
+RICARDO NUSKE                                  VALDEMIR REGIS FERREIRA DE OLIVEIRA
+RICARDO SCHNEIDER RODRIGUES                    VALTER SHUENQUENER DE ARAÚJO
+RITA ANDREA REHEM ALMEIDA TOURINHO             VÂNIA HACK DE ALMEIDA
+ROBERTO CARVALHO VELOSO                        VANICE LÍRIO DO VALLE
+RODRIGO CRELIER ZAMBÃO DA SILVA                VANIR FRIDRICZEWSKI
+RODRIGO GOULART DE FREITAS POMBO               VERA MONTEIRO
+RODRIGO JOSE RODRIGUES BEZERRA                 VICTOR AGUIAR JARDIM DE AMORIM
+RODRIGO MASCARENHAS                            VICTOR DE OLIVEIRA MEYER NASCIMENTO
+RODRIGO MEDEIROS DE LIMA                       VIRGÍLIO QUEIROZ DE PAULA
+RODRIGO PAGANI DE SOUZA                        VIRGINIA KIRCHMEYER VIEIRA
+RODRIGO PARENTE PAIVA BENTEMULLER              VITOR RHEIN SCHIRATO
+RODRIGO VALGAS DOS SANTOS                      VITÓRIA COSTA DAMASCENO
+ROGERIO FAVRETO                                VIVIAN CINTRA ATHANAZIO LEAL
+RONALDO LUIZ KOCHEM                            VLADEMIR REGIS
+RONNY TORRES                                   WALLACE PAIVA MARTINS JUNIOT
+ROQUE FABRICIO ANTONIO DE OLIVEIRA VIEL        WILSON ZAUHY FILHO
+
+
+
+
+                                          21
+                                             EDITORAÇÃO E DIVULGAÇÃO
+
+
+                                      Centro de Estudos Judiciários – CEJ
+              Daniel Marchionatti Barbosa – Juiz auxiliar da Corregedoria-Geral da Justiça Federal
+                                    Meirielle Viana Pires – Secretária do CEJ
+
+                                  Divisão de Biblioteca e Editoração – Dibie/CEJ
+                              Maria Aparecida de Assis Marks - Diretora da Dibie/CEJ
+                  Milra de Lucena Machado Amorim - Chefe da Seção de Editoração/Dibie/CEJ
+                         Rayanne Marcelle Gomes Durso - Seção de Editoração/Dibie/CEJ
+
+
+
+
+J82    Jornada de Direito Administrativo (1. : 2020 : Brasília, DF)
+           I Jornada de Direito Administrativo : enunciados aprovados. – Brasília : Conselho da Justiça Federal, Centro de Estudos
+      Judiciários, 2020.
+          22 p.
+
+         Evento realizado pelo Centro de Estudos Judiciários (CEJ) em meio virtual, em Brasília/DF de 3 a 7 de agosto de 2020.
+
+            1. Direito administrativo, estudo e ensino. 2. Enunciado. I. Conselho da Justiça Federal (Brasil). Centro de Estudos Judiciários.
+      II. Título.
+                                                                                                                                    CDU 35
+
+                          Ficha catalográfica elaborada por Lara Pinheiro Fernandes do Prado – CRB 1/1254
+
+
+
+
+                                                                   22
+

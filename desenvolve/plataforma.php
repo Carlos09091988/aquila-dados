@@ -889,3 +889,9 @@ add_action( 'wp_footer', function () {
 	if ( is_admin() ) { return; }
 	echo '<script>document.querySelectorAll(".logo .wm").forEach(function(w){if(w.parentNode.classList.contains("lt"))return;var s=document.createElement("span");s.className="lt";w.parentNode.insertBefore(s,w);s.appendChild(w);var t=document.createElement("span");t.className="tag";t.textContent="Inteligência em licitações";s.appendChild(t)})</script>';
 }, 5 );
+
+/* Pré-lançamento: botões "Assine/Assinar" do topo das páginas levam à lista de espera */
+add_action( 'wp_footer', function () {
+	if ( is_admin() || ! function_exists( 'dv_pre_lancamento' ) || ! dv_pre_lancamento() ) { return; }
+	echo '<script>document.querySelectorAll("a").forEach(function(a){var t=a.textContent.trim();if(/^(Assine|Assinar|Assine já|Assinar agora)$/i.test(t)||/\/assinar\/?(\?|$)/.test(a.getAttribute("href")||"")){if(/^(Assine|Assinar)/i.test(t))a.textContent="Lista de espera";a.setAttribute("href","/#lista")}})</script>';
+}, 80 );

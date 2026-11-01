@@ -24,7 +24,7 @@ function dv_cfg( $k = null ) {
 		'email_remetente'  => 'contato@desenvolveestrategias.com.br',
 		// chave:Nome:preço:créditos por mês:termos no Radar do Diário Oficial
 		'planos'           => 'essencial:Essencial:79:20:1|profissional:Profissional:149:60:5|empresarial:Empresarial:349:200:20',
-		'custos'           => 'raiox:2,comprador:2',
+		'custos'           => 'raiox:5,comprador:2,buscador:0,vencendo:5',
 		'fundador_desc'    => 30,
 		'fundador_vagas'   => 0,
 		'fundador_meses'   => 12,
@@ -35,6 +35,21 @@ function dv_cfg( $k = null ) {
 	return $k ? ( $c[ $k ] ?? null ) : $c;
 }
 
+/* Custos (nov/2026): Buscador sem custo (dado aberto no PNCP), Contratos vencendo 5, Raio-X 5 */
+add_action( 'init', function () {
+	if ( get_option( 'dv_custos_ver' ) === '1' ) { return; }
+	$c = (array) get_option( 'dv_cfg', array() ); $m = array();
+	foreach ( explode( ',', (string) ( $c['custos'] ?? '' ) ) as $x ) { $y = explode( ':', trim( $x ) ); if ( count( $y ) === 2 ) { $m[ sanitize_key( $y[0] ) ] = (int) $y[1]; } }
+	$m = array_merge( $m, array( 'raiox' => 5, 'buscador' => 0, 'vencendo' => 5 ) ); $m += array( 'comprador' => 2 );
+	$c['custos'] = implode( ',', array_map( function ( $k, $v ) { return $k . ':' . $v; }, array_keys( $m ), $m ) );
+	update_option( 'dv_cfg', $c, false ); update_option( 'dv_custos_ver', '1', false );
+}, 6 );
+/* Custos por ferramenta para as telas (rótulos e avisos antes do clique) */
+add_action( 'wp_head', function () {
+	if ( ! is_user_logged_in() ) { return; } $o = array();
+	foreach ( array( 'raiox', 'comprador', 'comparador', 'precos', 'buscador', 'vencendo', 'dossie' ) as $k ) { $o[ $k ] = dv_custo( $k ); }
+	echo '<script>window.DVC=' . wp_json_encode( $o ) . ';</script>';
+}, 1 );
 /* Tabela de preços 3 (out/2026): foco 100% em licitações, R$ 79 / 149 / 349, sem preço de fundador */
 add_action( 'init', function () {
 	if ( get_option( 'dv_cfg_ver' ) === '3' ) { return; }
@@ -75,7 +90,7 @@ function dv_preco_plano( $uid, $k ) {
 }
 function dv_custo( $f ) {
 	if ( $f === 'dossie' ) { return max( 1, (int) dv_cfg( 'creditos_dossie' ) ); }
-	foreach ( explode( ',', (string) dv_cfg( 'custos' ) ) as $x ) { $y = explode( ':', trim( $x ) ); if ( count( $y ) === 2 && sanitize_key( $y[0] ) === $f ) { return max( 1, (int) $y[1] ); } }
+	foreach ( explode( ',', (string) dv_cfg( 'custos' ) ) as $x ) { $y = explode( ':', trim( $x ) ); if ( count( $y ) === 2 && sanitize_key( $y[0] ) === $f ) { return max( 0, (int) $y[1] ); } }
 	return 1;
 }
 /** Pacotes de créditos: quantidade => preço */
@@ -295,6 +310,7 @@ add_action( 'rest_api_init', function () {
 		$f = sanitize_key( $r['ferramenta'] ); $c = (string) $r['chave'];
 		if ( ! $f || $c === '' ) { return new WP_Error( 'dv_param', 'Informe a ferramenta e a consulta.', array( 'status' => 400 ) ); }
 		$uid = get_current_user_id(); $n = dv_custo( $f ); $rot = sanitize_text_field( (string) $r['rotulo'] );
+		if ( $n === 0 ) { if ( dv_status( $uid ) === 'bloqueado' ) { return new WP_Error( 'dv_bloqueado', 'Acesso bloqueado. Fale com a Desenvolve.', array( 'status' => 403 ) ); } return array( 'cobrado' => 0, 'motivo' => 'gratis', 'saldo' => dv_saldo( $uid ) ); }
 		$u = dv_usar( $uid, $f, $c, $rot ); if ( is_wp_error( $u ) || $n <= 1 || empty( $u['cobrado'] ) ) { return $u; }
 		if ( dv_saldo( $uid )['total'] < $n - 1 ) { return new WP_Error( 'dv_sem_credito', 'Esta consulta usa ' . $n . ' créditos e o seu saldo não é suficiente.', array( 'status' => 402 ) ); }
 		for ( $i = 2; $i <= $n; $i++ ) { $u = dv_usar( $uid, $f, $c . '|' . $i, '' ); if ( is_wp_error( $u ) ) { return $u; } }
@@ -492,7 +508,7 @@ function dv_admin_config() {
 	$f( 'planos', 'Planos', 'text', 'chave:Nome:preço:créditos por mês:termos no Radar, separados por |. Ex.: essencial:Essencial:97:20:1|profissional:Profissional:197:60:5' );
 	$f( 'pacotes', 'Pacotes de créditos extras', 'text', 'quantidade:preço, separados por vírgula. Ex.: 10:39,30:99,100:290' );
 	$f( 'creditos_dossie', 'Créditos da Due Diligence completa', 'number' );
-	$f( 'custos', 'Outras ferramentas que usam mais de 1 crédito', 'text', 'ferramenta:créditos. Ex.: raiox:2,comprador:2. As ferramentas de gestão não usam créditos.' );
+	$f( 'custos', 'Créditos por ferramenta (padrão 1)', 'text', 'ferramenta:créditos. Ex.: raiox:5,comprador:2,buscador:0,vencendo:5. Use 0 para sem custo. As ferramentas de gestão não usam créditos.' );
 	$f( 'fundador_desc', 'Desconto de fundador (%)', 'number' );
 	$f( 'fundador_vagas', 'Vagas de fundador', 'number', 'Já usadas: ' . (int) get_option( 'dv_fundadores', 0 ) );
 	$f( 'fundador_meses', 'Meses com preço de fundador', 'number' );
@@ -787,6 +803,7 @@ var GR=[['1','Encontrar oportunidades','Saiba primeiro o que vai ser licitado no
  ['3','Conhecer a concorrência','Conheça quem costuma disputar no seu segmento, com dados públicos e oficiais.',[['raiox','Sanções, dívida ativa, processos e contratos de qualquer CNPJ.','2 créditos'],['comparador','Sócios e vínculos em comum entre licitantes da mesma disputa.','1 crédito'],['dossie','O relatório completo da empresa num PDF só.','10 créditos']]],
  ['4','Habilitação, contratos e garantias em dia','Nenhuma certidão, contrato ou garantia vencendo sem aviso.',[['meuscontratos','Seus contratos e garantias: vencimentos, prorrogações e a licitação que substitui cada um.','Incluso'],['documentos','Validade das certidões da sua empresa, com aviso antes de vencer.','Incluso']]],
  ['5','Contestar e defender','Impugne, recorra e se defenda com fundamento.',[['recursos','Prazo contado e roteiro da peça pronto para a sua IA.','Incluso'],['teses','Jurisprudência e súmulas sobre licitações, por tema, com citação pronta.','Incluso']]]];
+if(window.DVC)GR.forEach(function(g){g[3].forEach(function(t){var c=DVC[t[0]];if(c!==undefined)t[2]=c>0?c+(c>1?' créditos':' crédito'):'Incluso'})});
 H+='<h3 style="color:#F4F2EC;margin-top:28px">Ferramentas</h3><p class="dv-tsub">Organizadas pela ordem de uma licitação: do aviso do edital ao recurso.</p>'+GR.map(function(g){var it=g[3].filter(function(t){return LK[t[0]]&&nomes[t[0]]});if(!it.length)return'';return'<div class="dv-grp"><div class="dv-grh"><span>'+g[0]+'</span><div><b>'+g[1]+'</b><small>'+g[2]+'</small></div></div><div class="dv-tools">'+it.map(function(t){return'<a href="'+LK[t[0]]+'"><b>'+nomes[t[0]]+'</b><small>'+t[1]+'</small><i class="'+(t[2]==='Incluso'?'in':'cr')+'">'+t[2]+'</i></a>'}).join('')+'</div></div>'}).join('');
 H+='<h3 style="color:#F4F2EC;margin-top:28px">Últimos usos</h3><table class="dv-h"><tbody>'+(h.length?h.map(function(x){return'<tr><td>'+e(nomes[x.ferramenta]||x.ferramenta)+(x.rotulo?' · '+e(x.rotulo):'')+'</td><td>'+(x.cobrado==1?'1 crédito':'sem custo')+'</td><td>'+e(x.criado.slice(0,16).replace(/(\d+)-(\d+)-(\d+)/,'$3/$2/$1'))+'</td></tr>'}).join(''):'<tr><td>Nenhum uso ainda.</td></tr>')+'</tbody></table>';
 H+='<p style="margin-top:28px"><a href="'+el.dataset.sair+'">Sair</a></p>';el.innerHTML=H;

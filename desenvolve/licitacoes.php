@@ -393,7 +393,7 @@ carregar().then(function(){var v=location.search.match(/[?&]ver=([a-z0-9]+)/);if
 .pk .er{color:#B04A3A;font-weight:600}
 </style>
 <script>
-(function(){var R=document.getElementById('dv-lic');if(!R)return;var api=R.dataset.api,nonce=R.dataset.nonce,CUSTO={comprador:2,raiox:2,dossie:(window.DV&&DV.cr_dossie)||10};
+(function(){var R=document.getElementById('dv-lic');if(!R)return;var api=R.dataset.api,nonce=R.dataset.nonce,CUSTO={comprador:(window.DVC&&DVC.comprador)||2,raiox:(window.DVC&&DVC.raiox)||5,dossie:(window.DV&&DV.cr_dossie)||10};
  function forn(c,n,info){return'<div class="fo"><b>'+e(n||'CNPJ '+fc(c))+'</b><small>CNPJ '+fc(c)+(info?' · '+e(info):'')+'</small><span class="op"><label><input type="checkbox" data-t="raiox" data-c="'+c+'" data-n="'+e(n||fc(c))+'"> Raio-X · '+CUSTO.raiox+' créd.</label><label><input type="checkbox" data-t="dossie" data-c="'+c+'" data-n="'+e(n||fc(c))+'"> Dossiê completo · '+CUSTO.dossie+' créd.</label></span></div>'}
 function e(s){return String(s==null?'':s).replace(/[&<>"]/g,function(c){return{'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]})}
 function fc(c){c=String(c).replace(/\D/g,'');return c.length===14?c.replace(/^(\d{2})(\d{3})(\d{3})(\d{4})(\d{2})$/,'$1.$2.$3/$4-$5'):c}

@@ -610,7 +610,9 @@ add_shortcode( 'dv_ctx', function ( $a ) {
 		'nome' => $u ? $u->display_name : '', 'doc' => $doc, 'saldo' => $uid ? dv_saldo( $uid )['total'] : 0, 'cr_dossie' => (int) dv_cfg( 'creditos_dossie' ) );
 	$h = '<script>window.DV=' . wp_json_encode( $ctx ) . ';window.DVWM="";</script>';
 	$h .= '<div class="dv-tbar"><a href="/painel/">&larr; Meu painel</a><span id="dv-saldo">' . ( $uid ? ( $ctx['master'] ? 'Créditos: ilimitado' : 'Créditos: ' . (int) $ctx['saldo'] ) : '' ) . '</span></div>';
-	if ( ! $uid ) {
+	if ( ! $uid && function_exists( 'dv_pre_lancamento' ) && dv_pre_lancamento() ) {
+		$h .= '<div class="dv-pw"><h2>Lançamento em breve</h2><p>Esta ferramenta faz parte da Desenvolve, inteligência em licitações. Entre na lista de espera: você recebe os planos antes de todo mundo e ganha ' . (int) get_option( 'dv_bonus_lista', 100 ) . ' créditos de bônus na primeira mensalidade. Planos a partir de R$ ' . number_format( dv_preco_plano( 0, 'essencial' )['valor'], 0, ',', '.' ) . '/mês, sem fidelidade.</p><p><a class="dv-btn" href="/#lista">Entrar na lista de espera</a> <a class="dv-btn g" href="/painel/">Já tenho conta</a></p></div><style>.dv-tool{display:none!important}</style>';
+	} elseif ( ! $uid ) {
 		$td = (int) dv_cfg( 'trial_dias' );
 		$h .= '<div class="dv-pw"><h2>Ferramenta exclusiva para assinantes</h2><p>' . ( $td ? 'Teste ' . $td . ' dias grátis, com ' . (int) dv_cfg( 'trial_creditos' ) . ' créditos, sem cartão. Depois, planos a partir de R$ ' . number_format( dv_preco_plano( 0, 'essencial' )['valor'], 0, ',', '.' ) . '/mês.' : 'Planos a partir de R$ ' . number_format( dv_preco_plano( 0, 'essencial' )['valor'], 0, ',', '.' ) . '/mês.' ) . '</p><p><a class="dv-btn" href="/assinar/">' . ( $td ? 'Começar o teste grátis' : 'Assinar agora' ) . '</a> <a class="dv-btn g" href="/painel/">Já tenho conta</a></p></div><style>.dv-tool{display:none!important}</style>';
 	} elseif ( ! $acesso ) {

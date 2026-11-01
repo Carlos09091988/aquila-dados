@@ -24,7 +24,7 @@ function dv_mc_buscar( $c ) {
 	$desde = ! empty( $c['ini'] ) ? $c['ini'] : gmdate( 'Y-m-d', strtotime( '-2 years' ) );
 	foreach ( (array) ( $j['items'] ?? array() ) as $i ) {
 		$pub = substr( (string) ( $i['data_publicacao_pncp'] ?? '' ), 0, 10 ); $url = (string) ( $i['item_url'] ?? '' );
-		$x = array( 't' => mb_substr( (string) ( $i['description'] ?? $i['title'] ?? '' ), 0, 200 ), 'org' => (string) ( $i['orgao_nome'] ?? '' ), 'uf' => (string) ( $i['uf'] ?? '' ), 'mu' => (string) ( $i['municipio_nome'] ?? '' ), 'pub' => $pub, 'fim' => substr( (string) ( $i['data_fim_recebimento_propostas'] ?? '' ), 0, 10 ), 'url' => $url );
+		$x = array( 't' => mb_substr( (string) ( $i['description'] ?? $i['title'] ?? '' ), 0, 200 ), 'org' => (string) ( $i['orgao_nome'] ?? '' ), 'uf' => (string) ( $i['uf'] ?? '' ), 'mu' => (string) ( $i['municipio_nome'] ?? '' ), 'pub' => $pub, 'fim' => substr( (string) ( $i['data_fim_recebimento_propostas'] ?? $i['data_fim_vigencia'] ?? '' ), 0, 10 ), 'url' => $url );
 		if ( ! empty( $c['oc'] ) && ( $i['orgao_cnpj'] ?? '' ) === $c['oc'] && $pub >= $desde ) { $sub[] = $x; }
 		elseif ( ! empty( $c['uf'] ) && ( $i['uf'] ?? '' ) === $c['uf'] && $x['fim'] >= $hoje && count( $prox ) < 5 ) { $prox[] = $x; }
 	}
@@ -60,13 +60,14 @@ add_action( 'rest_api_init', function () {
 		$out = array();
 		for ( $p = 1; $p <= 3; $p++ ) {
 			$g = wp_remote_get( 'https://pncp.gov.br/api/search/?q=' . $cnpj . '&tipos_documento=contrato&status=vigente&ordenacao=-data&pagina=' . $p . '&tam_pagina=100', array( 'timeout' => 30 ) );
-			if ( is_wp_error( $g ) ) { break; } $j = json_decode( wp_remote_retrieve_body( $g ), true ); $it = (array) ( $j['items'] ?? array() );
+			if ( is_wp_error( $g ) ) { $err = $g->get_error_message(); break; } $cod = wp_remote_retrieve_response_code( $g ); $j = json_decode( wp_remote_retrieve_body( $g ), true ); if ( ! is_array( $j ) ) { $err = 'PNCP respondeu ' . $cod; break; } $it = (array) ( $j['items'] ?? array() );
 			foreach ( $it as $i ) {
 				if ( preg_replace( '/\D/', '', (string) ( $i['fornecedor_ni'] ?? '' ) ) !== $cnpj ) { continue; }
 				$out[] = array( 'orgao' => (string) ( $i['orgao_nome'] ?? '' ), 'oc' => preg_replace( '/\D/', '', (string) ( $i['orgao_cnpj'] ?? '' ) ), 'uf' => (string) ( $i['uf'] ?? '' ), 'mu' => (string) ( $i['municipio_nome'] ?? '' ), 'objeto' => mb_substr( (string) ( $i['description'] ?? '' ), 0, 600 ), 'numero' => (string) ( $i['numero_contrato_empenho'] ?? $i['title'] ?? '' ), 'valor' => (float) ( $i['valor_global'] ?? 0 ), 'ini' => substr( (string) ( $i['data_inicio_vigencia'] ?? '' ), 0, 10 ), 'fim' => substr( (string) ( $i['data_fim_vigencia'] ?? '' ), 0, 10 ), 'pncp' => (string) ( $i['item_url'] ?? '' ), 'origem' => 'pncp' );
 			}
 			if ( count( $it ) < 100 ) { break; }
 		}
+		if ( ! $out && ! empty( $err ) ) { return new WP_Error( 'dv_mc', 'O PNCP não respondeu agora (' . $err . '). Tente de novo em instantes.', array( 'status' => 502 ) ); }
 		return array( 'cnpj' => $cnpj, 'itens' => $out );
 	} ) );
 	register_rest_route( $ns, '/mc/verificar', array( 'methods' => 'POST', 'permission_callback' => $perm, 'callback' => function ( WP_REST_Request $r ) {

@@ -24,7 +24,7 @@ function dv_cfg( $k = null ) {
 		'email_remetente'  => 'contato@desenvolveestrategias.com.br',
 		// chave:Nome:preço:créditos por mês:termos no Radar do Diário Oficial
 		'planos'           => 'essencial:Essencial:79:20:1|profissional:Profissional:149:60:5|empresarial:Empresarial:349:200:20',
-		'custos'           => 'raiox:5,comprador:2,buscador:0,vencendo:5',
+		'custos'           => 'raiox:5,comprador:5,buscador:0,vencendo:5,precos:0',
 		'fundador_desc'    => 30,
 		'fundador_vagas'   => 0,
 		'fundador_meses'   => 12,
@@ -37,12 +37,12 @@ function dv_cfg( $k = null ) {
 
 /* Custos (nov/2026): Buscador sem custo (dado aberto no PNCP), Contratos vencendo 5, Raio-X 5 */
 add_action( 'init', function () {
-	if ( get_option( 'dv_custos_ver' ) === '1' ) { return; }
+	if ( get_option( 'dv_custos_ver' ) === '2' ) { return; }
 	$c = (array) get_option( 'dv_cfg', array() ); $m = array();
 	foreach ( explode( ',', (string) ( $c['custos'] ?? '' ) ) as $x ) { $y = explode( ':', trim( $x ) ); if ( count( $y ) === 2 ) { $m[ sanitize_key( $y[0] ) ] = (int) $y[1]; } }
-	$m = array_merge( $m, array( 'raiox' => 5, 'buscador' => 0, 'vencendo' => 5 ) ); $m += array( 'comprador' => 2 );
+	$m = array_merge( $m, array( 'raiox' => 5, 'buscador' => 0, 'vencendo' => 5, 'comprador' => 5, 'precos' => 0 ) );
 	$c['custos'] = implode( ',', array_map( function ( $k, $v ) { return $k . ':' . $v; }, array_keys( $m ), $m ) );
-	update_option( 'dv_cfg', $c, false ); update_option( 'dv_custos_ver', '1', false );
+	update_option( 'dv_cfg', $c, false ); update_option( 'dv_custos_ver', '2', false );
 }, 6 );
 /* Custos por ferramenta para as telas (rótulos e avisos antes do clique) */
 add_action( 'wp_head', function () {
@@ -508,7 +508,7 @@ function dv_admin_config() {
 	$f( 'planos', 'Planos', 'text', 'chave:Nome:preço:créditos por mês:termos no Radar, separados por |. Ex.: essencial:Essencial:97:20:1|profissional:Profissional:197:60:5' );
 	$f( 'pacotes', 'Pacotes de créditos extras', 'text', 'quantidade:preço, separados por vírgula. Ex.: 10:39,30:99,100:290' );
 	$f( 'creditos_dossie', 'Créditos da Due Diligence completa', 'number' );
-	$f( 'custos', 'Créditos por ferramenta (padrão 1)', 'text', 'ferramenta:créditos. Ex.: raiox:5,comprador:2,buscador:0,vencendo:5. Use 0 para sem custo. As ferramentas de gestão não usam créditos.' );
+	$f( 'custos', 'Créditos por ferramenta (padrão 1)', 'text', 'ferramenta:créditos. Ex.: raiox:5,comprador:5,buscador:0,vencendo:5,precos:0. Use 0 para sem custo. As ferramentas de gestão não usam créditos.' );
 	$f( 'fundador_desc', 'Desconto de fundador (%)', 'number' );
 	$f( 'fundador_vagas', 'Vagas de fundador', 'number', 'Já usadas: ' . (int) get_option( 'dv_fundadores', 0 ) );
 	$f( 'fundador_meses', 'Meses com preço de fundador', 'number' );

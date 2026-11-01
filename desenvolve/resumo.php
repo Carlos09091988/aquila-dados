@@ -133,13 +133,24 @@ function htmlComprador(r){
  '<div class="q w"><b>Próximo passo</b><p>'+e(prev)+'</p><div class="ac"><a class="p" href="/plataforma/buscador/">Ver licitações abertas</a><a href="/plataforma/contratos-vencendo/">Contratos vencendo</a></div></div></div>';
 }
 
-var ult='',tm=null;
+var ult='',tm=null,ts=null,relId=0,est0={};[].forEach.call(document.querySelectorAll('style[id]'),function(x){est0[x.id]=1});
+var TOOL={concorrente:'raiox',comprador:'comprador',dossie:'dossie'}[PG];
+function salvar(){
+ if(window.DVREL_VIEW||!window.DVREL)return;var r=root();if(!r||!document.getElementById('dv-rs'))return;
+ var c='';[].forEach.call(document.querySelectorAll('.dv-tool input'),function(i){var d=String(i.value||'').replace(/\D/g,'');if(!c&&d.length===14)c=d});
+ if(!c)c=(new URLSearchParams(location.search).get('cnpj')||'').replace(/\D/g,'');if(c.length!==14)return;
+ var h2=r.querySelector('.rx-card.ink h2, .rp-hd h2, h2'),rot=h2?h2.textContent.trim().slice(0,180):'';
+ var p=r.parentElement,a=p;while(a&&!a.id)a=a.parentElement;
+ var es=[];[].forEach.call(document.querySelectorAll('style[id]'),function(x){if(!est0[x.id]&&x.id!=='dv-rs-css'&&x.id!=='dv-rel-css')es.push({id:x.id,css:x.textContent})});
+ fetch(window.DVREL.api+'relatorio',{method:'POST',credentials:'same-origin',headers:{'X-WP-Nonce':window.DVREL.nonce,'Content-Type':'application/json'},body:JSON.stringify({id:relId,ferramenta:TOOL,cnpj:c,rotulo:rot,html:r.outerHTML,pai:{id:a?a.id:'',cls:p.className||''},estilos:es})}).then(function(x){return x.json()}).then(function(j){if(j&&j.id){relId=j.id;var L=window.DVREL.lista,k=-1;for(var i=0;i<L.length;i++)if(L[i].cnpj===c)k=i;var it={id:j.id,cnpj:c,rotulo:rot,criado:new Date(Date.now()-new Date().getTimezoneOffset()*60000).toISOString().slice(0,16).replace('T',' '),url:location.pathname+'?rel='+j.id};it.ate=new Date(Date.now()+30*864e5).toISOString().slice(0,10);if(k>=0)L[k]=it;else L.unshift(it)}}).catch(function(){})
+}
 function montar(){
  var r=root();if(!r)return;
  if(PG==='concorrente'&&!r.querySelector('.rx-pts'))return;
  if(PG!=='concorrente'&&!r.querySelector('.rp-sec'))return;
  var h;try{h=PG==='comprador'?htmlComprador(r):htmlEmpresa(sinaisEmpresa(r))}catch(x){return}
  h+='<p class="ft">Leitura automática dos dados públicos deste relatório, na data da consulta. Não constitui parecer jurídico: confirme cada ponto nas fontes oficiais e com o seu especialista.</p>';
+ clearTimeout(ts);ts=setTimeout(salvar,7000);
  if(h===ult&&document.getElementById('dv-rs'))return;ult=h;
  var b=document.getElementById('dv-rs');if(!b){b=document.createElement('section');b.id='dv-rs';b.className='dv-rs'}
  b.innerHTML=h;

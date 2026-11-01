@@ -233,9 +233,10 @@ function dv_usar( $uid, $ferramenta, $chave, $rotulo = '' ) {
 	$chave = substr( hash( 'sha256', $ferramenta . '|' . strtolower( trim( $chave ) ) ), 0, 64 );
 	$base = array( 'user_id' => $uid, 'ferramenta' => $ferramenta, 'chave' => $chave, 'rotulo' => mb_substr( $rotulo, 0, 190 ),
 		'ip' => $_SERVER['REMOTE_ADDR'] ?? '', 'criado' => current_time( 'mysql' ) );
-	$dias = (int) dv_cfg( 'dedupe_dias' );
+	/* Raio-X e Due Diligence ficam salvos por 30 dias: pesquisar de novo cobra (só evita cobrança dupla em 15 min) */
+	$jan = in_array( $ferramenta, array( 'raiox', 'comprador', 'dossie' ), true ) ? 15 * MINUTE_IN_SECONDS : (int) dv_cfg( 'dedupe_dias' ) * DAY_IN_SECONDS;
 	$ja = $wpdb->get_var( $wpdb->prepare( "SELECT id FROM $t WHERE user_id=%d AND chave=%s AND criado > %s LIMIT 1",
-		$uid, $chave, gmdate( 'Y-m-d H:i:s', current_time( 'timestamp' ) - $dias * DAY_IN_SECONDS ) ) );
+		$uid, $chave, gmdate( 'Y-m-d H:i:s', current_time( 'timestamp' ) - $jan ) ) );
 	if ( $ja ) { return array( 'cobrado' => 0, 'motivo' => 'repetido', 'saldo' => dv_saldo( $uid ) ); }
 	if ( dv_is_master( $uid ) ) {
 		$wpdb->insert( $t, $base + array( 'cobrado' => 0, 'origem' => 'master' ) );
@@ -359,7 +360,18 @@ add_action( 'rest_api_init', function () {
 	} ) );
 	register_rest_route( 'desenvolve/v1', '/historico', array( 'methods' => 'GET', 'permission_callback' => $logado, 'callback' => function () {
 		global $wpdb;
-		return $wpdb->get_results( $wpdb->prepare( "SELECT ferramenta, rotulo, cobrado, origem, criado FROM {$wpdb->prefix}dv_uso WHERE user_id=%d ORDER BY id DESC LIMIT 50", get_current_user_id() ), ARRAY_A );
+		$uid = get_current_user_id();
+		$h = $wpdb->get_results( $wpdb->prepare( "SELECT ferramenta, MAX(rotulo) rotulo, SUM(cobrado) cobrado, MIN(origem) origem, MIN(criado) criado FROM {$wpdb->prefix}dv_uso WHERE user_id=%d GROUP BY ferramenta, SUBSTRING(criado,1,16) ORDER BY criado DESC LIMIT 50", $uid ), ARRAY_A );
+		if ( function_exists( 'dv_rel_lista' ) ) {
+			global $wpdb; $lim = gmdate( 'Y-m-d H:i:s', current_time( 'timestamp' ) - 30 * DAY_IN_SECONDS );
+			$rel = $wpdb->get_results( $wpdb->prepare( "SELECT id, ferramenta, criado FROM {$wpdb->prefix}dv_rel WHERE user_id=%d AND criado >= %s ORDER BY id", $uid, $lim ), ARRAY_A );
+			foreach ( $h as &$x ) {
+				$x['cobrado'] = (int) $x['cobrado']; $t0 = strtotime( $x['criado'] );
+				foreach ( $rel as $r ) { $d = strtotime( $r['criado'] ) - $t0; if ( $r['ferramenta'] === $x['ferramenta'] && $d >= -60 && $d <= 1800 ) { $x['rel'] = dv_rel_url( $r['ferramenta'] ) . '?rel=' . $r['id']; break; } }
+			}
+			unset( $x );
+		}
+		return $h;
 	} ) );
 	register_rest_route( 'desenvolve/v1', '/consultor', array( 'methods' => 'POST', 'permission_callback' => $logado, 'callback' => function ( WP_REST_Request $r ) {
 		global $wpdb; $u = wp_get_current_user();
@@ -516,7 +528,7 @@ function dv_admin_config() {
 	$f( 'trial_creditos', 'Créditos no teste grátis', 'number' );
 	$f( 'email_remetente', 'E-mail que envia os avisos aos assinantes', 'email' );
 	$f( 'validade_extra', 'Validade dos créditos extras (meses)', 'number' );
-	$f( 'dedupe_dias', 'Dias em que repetir a mesma consulta não gasta crédito', 'number' );
+	$f( 'dedupe_dias', 'Dias em que repetir a mesma consulta não gasta crédito (exceto Raio-X e Due Diligence, que ficam salvos por 30 dias)', 'number' );
 	$f( 'alerta_hora', 'Alerta quando uma conta passar de X usos em uma hora', 'number' );
 	$f( 'email_alertas', 'E-mail que recebe alertas e pedidos de consultor', 'email' );
 	echo '<tr><th>Ambiente do Asaas</th><td><select name="dv_cfg[asaas_ambiente]"><option value="sandbox"' . selected( $c['asaas_ambiente'], 'sandbox', false ) . '>Testes (sandbox)</option><option value="producao"' . selected( $c['asaas_ambiente'], 'producao', false ) . '>Produção (cobranças reais)</option></select></td></tr>';
@@ -805,7 +817,7 @@ var GR=[['1','Encontrar oportunidades','Saiba primeiro o que vai ser licitado no
  ['5','Contestar e defender','Impugne, recorra e se defenda com fundamento.',[['recursos','Prazo contado e roteiro da peça pronto para a sua IA.','Incluso'],['teses','Jurisprudência e súmulas sobre licitações, por tema, com citação pronta.','Incluso']]]];
 if(window.DVC)GR.forEach(function(g){g[3].forEach(function(t){var c=DVC[t[0]];if(c!==undefined)t[2]=c>0?c+(c>1?' créditos':' crédito'):'Incluso'})});
 H+='<h3 style="color:#F4F2EC;margin-top:28px">Ferramentas</h3><p class="dv-tsub">Organizadas pela ordem de uma licitação: do aviso do edital ao recurso.</p>'+GR.map(function(g){var it=g[3].filter(function(t){return LK[t[0]]&&nomes[t[0]]});if(!it.length)return'';return'<div class="dv-grp"><div class="dv-grh"><span>'+g[0]+'</span><div><b>'+g[1]+'</b><small>'+g[2]+'</small></div></div><div class="dv-tools">'+it.map(function(t){return'<a href="'+LK[t[0]]+'"><b>'+nomes[t[0]]+'</b><small>'+t[1]+'</small><i class="'+(t[2]==='Incluso'?'in':'cr')+'">'+t[2]+'</i></a>'}).join('')+'</div></div>'}).join('');
-H+='<h3 style="color:#F4F2EC;margin-top:28px">Últimos usos</h3><table class="dv-h"><tbody>'+(h.length?h.map(function(x){return'<tr><td>'+e(nomes[x.ferramenta]||x.ferramenta)+(x.rotulo?' · '+e(x.rotulo):'')+'</td><td>'+(x.cobrado==1?'1 crédito':'sem custo')+'</td><td>'+e(x.criado.slice(0,16).replace(/(\d+)-(\d+)-(\d+)/,'$3/$2/$1'))+'</td></tr>'}).join(''):'<tr><td>Nenhum uso ainda.</td></tr>')+'</tbody></table>';
+H+='<h3 style="color:#F4F2EC;margin-top:28px">Últimos usos</h3><p class="dv-tsub">Os relatórios de Raio-X e Due Diligence ficam salvos por 30 dias: abrir não gasta créditos.</p><table class="dv-h"><tbody>'+(h.length?h.map(function(x){return'<tr><td>'+e(nomes[x.ferramenta]||x.ferramenta)+(x.rotulo?' · '+e(x.rotulo):'')+(x.rel?' · <a href="'+e(x.rel)+'" style="color:#C9A45C;font-weight:700">Abrir relatório</a>':'')+'</td><td>'+(x.cobrado>0?x.cobrado+(x.cobrado>1?' créditos':' crédito'):'sem custo')+'</td><td>'+e(x.criado.slice(0,16).replace(/(\d+)-(\d+)-(\d+)/,'$3/$2/$1'))+'</td></tr>'}).join(''):'<tr><td>Nenhum uso ainda.</td></tr>')+'</tbody></table>';
 H+='<p style="margin-top:28px"><a href="'+el.dataset.sair+'">Sair</a></p>';el.innerHTML=H;
  if(m.master||m.situacao==='ativo')g('agenda').then(function(A){var B=[['licitacoes','Agenda de licitações','/plataforma/licitacoes/','Cadastre uma licitação ou crie um alerta de oportunidades.'],['notificacoes','Agenda de impugnações e recursos','/plataforma/recursos/','Nenhum prazo em aberto.'],['documentos','Agenda de documentos','/plataforma/documentos/','Nenhuma certidão vencendo nos próximos 45 dias.']];
   function q(x){if(x.ts){var d=x.ts-Date.now();if(d<0)return'encerrado';var mi=Math.floor(d/60000),dd=Math.floor(mi/1440),h=Math.floor(mi%1440/60);return dd?'em '+dd+'d '+h+'h':'em '+h+'h '+(mi%60)+'min'}return x.n===null||x.n===undefined?'':x.n<0?'há '+(-x.n)+' dia(s)':x.n===0?'HOJE':x.n===1?'amanhã':'em '+x.n+' dias'}

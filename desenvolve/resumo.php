@@ -29,6 +29,7 @@ add_action( 'wp_footer', function () {
 .dv-rs .ac a.p{background:#C9A45C}
 .dv-rs .ft{margin:12px 0 0!important;font-size:.76rem!important;color:#6E6A60!important;line-height:1.4!important}
 @media(max-width:640px){.dv-rs .g{grid-template-columns:1fr}.dv-rs{padding:16px!important}}
+html body #rx-full{display:flex!important;align-items:center;justify-content:center;gap:8px;width:100%!important;max-width:100%!important;box-sizing:border-box!important;white-space:normal!important;text-align:center!important;line-height:1.25!important;font-size:1rem!important;padding:14px 18px!important;height:auto!important;overflow:visible!important}
 @media print{.dv-rs .ac{display:none}.dv-rs{box-shadow:none!important}}
 </style>
 <script>

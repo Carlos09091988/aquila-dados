@@ -270,5 +270,485 @@
     "url": "https://pesquisa.apps.tcu.gov.br/documento/jurisprudencia-selecionada/*/KEY%253AJURISPRUDENCIA-SELECIONADA-109139/score%2520desc/0"
    }
   ]
+ },
+ {
+  "slug": "inabilitado-por-documento",
+  "titulo": "Fui inabilitado por causa de um documento",
+  "tema": "Habilitação",
+  "resumo": "Documento faltando ou com falha formal nem sempre justifica a inabilitação. O TCU admite a juntada de documento em diligência quando ele apenas comprova uma condição que a empresa já tinha antes da abertura da sessão. O que não pode é usar a diligência para apresentar algo que a empresa não tinha naquela data.",
+  "pratica": [
+   "Verifique se a falha é formal ou se o requisito de fato não existia na data da sessão.",
+   "Peça diligência por escrito, juntando o documento que prova a condição preexistente.",
+   "Se a inabilitação já ocorreu, manifeste a intenção de recorrer logo após o julgamento."
+  ],
+  "prazo": "Recurso: 3 dias úteis (art. 165 da Lei 14.133/2021), com a intenção de recorrer manifestada imediatamente.",
+  "dec": [
+   {
+    "ac": "Acórdão 1788/2026 – Plenário",
+    "data": "08/07/2026",
+    "rel": "Bruno Dantas",
+    "txt": "A vedação a documento novo (art. 64 da Lei 14.133) não alcança o documento que, em diligência, comprova condição de habilitação já existente na abertura da sessão.",
+    "enunciado": "A vedação à inclusão de novo documento (art. 64 da Lei 14.133/2021) não alcança aquele, apresentado em resposta a diligência, destinado a atestar condição de habilitação preexistente à abertura da sessão pública (art. 64, inciso I), a exemplo de balanço patrimonial - ainda que seu registro na junta comercial pertinente tenha ocorrido após a abertura do certame -, tendo em vista sua natureza declaratória da situação econômico-financeira da empresa em momento pretérito.",
+    "url": "https://pesquisa.apps.tcu.gov.br/documento/jurisprudencia-selecionada/*/KEY%253AJURISPRUDENCIA-SELECIONADA-205971/score%2520desc/0"
+   },
+   {
+    "ac": "Acórdão 4523/2026 – 1ª Câmara",
+    "data": "11/08/2026",
+    "rel": "Walton Alencar Rodrigues",
+    "txt": "É lícito juntar documentos em diligência, na classificação ou na habilitação, para atestar condição que já existia na abertura da sessão.",
+    "enunciado": "É lícita a admissão da juntada de documentos, em atendimento a diligência, durante as fases de classificação ou de habilitação, que venham a atestar condição pré-existente à abertura da sessão pública do certame (art. 64, inciso I, da Lei 14.133/2021), sem que isso represente afronta aos princípios da isonomia e da igualdade entre as licitantes.",
+    "url": "https://pesquisa.apps.tcu.gov.br/documento/jurisprudencia-selecionada/*/KEY%253AJURISPRUDENCIA-SELECIONADA-207490/score%2520desc/0"
+   },
+   {
+    "ac": "Acórdão 2036/2022 – Plenário",
+    "data": "14/09/2022",
+    "rel": "Bruno Dantas",
+    "txt": "É irregular exigir documentos originais ou autenticados; havendo dúvida, o caminho é a diligência.",
+    "enunciado": "É irregular que o edital exija, para habilitação das licitantes, a apresentação de documentos originais, cópias autenticadas ou cópias acompanhadas dos originais. Em caso de dúvida quanto à veracidade das informações apresentadas, o órgão condutor do certame deve promover as diligências necessárias para esclarecer ou complementar a instrução do processo.",
+    "url": "https://pesquisa.apps.tcu.gov.br/documento/jurisprudencia-selecionada/*/KEY%253AJURISPRUDENCIA-SELECIONADA-140313/score%2520desc/0"
+   },
+   {
+    "ac": "Acórdão 4063/2020 – Plenário",
+    "data": "08/12/2020",
+    "rel": "Raimundo Carreiro",
+    "txt": "É irregular desclassificar por falta de informação que poderia ser saneada por diligência.",
+    "enunciado": "É irregular a desclassificação de proposta em razão de ausência de informações que possam ser saneadas por meio de diligência, facultada pelo art. 43, § 3º, da Lei 8.666/1993, desde que não resulte inserção de documento novo ou afronta à isonomia entre os participantes.",
+    "url": "https://pesquisa.apps.tcu.gov.br/documento/jurisprudencia-selecionada/*/KEY%253AJURISPRUDENCIA-SELECIONADA-104236/score%2520desc/0"
+   }
+  ]
+ },
+ {
+  "slug": "vistoria-obrigatoria",
+  "titulo": "O edital exige vistoria obrigatória",
+  "tema": "Habilitação",
+  "resumo": "A vistoria só pode ser exigida quando for realmente indispensável, e isso precisa estar justificado no processo. Mesmo assim, o edital deve permitir que a empresa troque o atestado de vistoria por uma declaração de que conhece as condições do local (art. 63, §§ 2º e 3º, da Lei 14.133/2021).",
+  "pratica": [
+   "Veja se o edital justifica a vistoria e se aceita a declaração substitutiva.",
+   "Se não aceitar, ou se fixar data única para a visita, impugne o edital.",
+   "Guarde o comprovante de agendamento, caso faça a vistoria."
+  ],
+  "prazo": "Impugnação: até 3 dias úteis antes da abertura (art. 164 da Lei 14.133/2021).",
+  "dec": [
+   {
+    "ac": "Acórdão 138/2024 – Plenário",
+    "data": "07/02/2024",
+    "rel": "Vital Do Rêgo",
+    "txt": "A vistoria só deve ser exigida quando imprescindível, com justificativa demonstrada no processo.",
+    "enunciado": "A vistoria ao local das obras somente deve ser exigida quando for imprescindível ao cumprimento adequado das obrigações contratuais, o que deve ser justificado e demonstrado pela Administração no processo de licitação, devendo o edital prever a possibilidade de substituição do atestado de visita técnica por declaração do responsável técnico de que possui pleno conhecimento do objeto. Sendo imprescindível a visita técnica, restringe a competitividade a exigência de sua realização somente pelo responsável técnico da licitante ou em única data.",
+    "url": "https://pesquisa.apps.tcu.gov.br/documento/jurisprudencia-selecionada/*/KEY%253AJURISPRUDENCIA-SELECIONADA-163660/score%2520desc/0"
+   },
+   {
+    "ac": "Acórdão 12607/2023 – 1ª Câmara",
+    "data": "14/11/2023",
+    "rel": "Jhonatan De Jesus",
+    "txt": "Mesmo quando a vistoria é exigida, o edital deve permitir trocá-la por declaração do responsável técnico.",
+    "enunciado": "A vistoria ao local da prestação dos serviços somente deve ser exigida quando imprescindível, devendo, mesmo nesses casos, o edital prever a possibilidade de substituição do atestado de visita técnica por declaração do responsável da licitante de que possui pleno conhecimento do objeto, das condições e das peculiaridades inerentes à natureza dos trabalhos.",
+    "url": "https://pesquisa.apps.tcu.gov.br/documento/jurisprudencia-selecionada/*/KEY%253AJURISPRUDENCIA-SELECIONADA-160757/score%2520desc/0"
+   },
+   {
+    "ac": "Acórdão 2076/2023 – Plenário",
+    "data": "11/10/2023",
+    "rel": "Jorge Oliveira",
+    "txt": "É irregular complicar a declaração substitutiva, por exemplo exigindo o envio prévio por e-mail ao pregoeiro.",
+    "enunciado": "É irregular a previsão, no edital de licitação, de que as empresas que optarem pela não realização da visita técnica enviem, para o e-mail do pregoeiro, declaração de que possuem pleno conhecimento do objeto, pois tal declaração deve ser juntada aos documentos de habilitação e enviada exclusivamente via sistema (art. 19, inciso II, do Decreto 10.024/2019). Ademais, a previsão de envio de e-mail ao pregoeiro pode permitir o conhecimento prévio dos licitantes, facilitando o conluio e o direcionamento do certame.",
+    "url": "https://pesquisa.apps.tcu.gov.br/documento/jurisprudencia-selecionada/*/KEY%253AJURISPRUDENCIA-SELECIONADA-159320/score%2520desc/0"
+   }
+  ]
+ },
+ {
+  "slug": "indice-contabil",
+  "titulo": "O edital exige índices contábeis ou capital acima do normal",
+  "tema": "Qualificação econômico-financeira",
+  "resumo": "A Lei 14.133/2021 proíbe índices e valores que não sejam os usualmente adotados para avaliar a saúde financeira da empresa (art. 69, § 5º), e o capital ou patrimônio líquido mínimo fica limitado a 10% do valor estimado (art. 69, § 4º). Índice diferente do usual precisa de justificativa específica no processo.",
+  "pratica": [
+   "Compare os índices do edital com os usuais (liquidez geral, liquidez corrente e solvência geral maiores que 1).",
+   "Se o edital exigir índice incomum sem justificativa, impugne.",
+   "Veja se o edital aceita patrimônio líquido ou capital mínimo como alternativa."
+  ],
+  "prazo": "Impugnação: até 3 dias úteis antes da abertura (art. 164 da Lei 14.133/2021).",
+  "dec": [
+   {
+    "ac": "Acórdão 2227/2023 – Plenário",
+    "data": "01/11/2023",
+    "rel": "Aroldo Cedraz",
+    "txt": "É irregular exigir índices contábeis diferentes dos usuais sem justificativa específica no processo.",
+    "enunciado": "É irregular a exigência de índices contábeis diversos dos usuais sem justificativas específicas e plausíveis no processo da licitação que demonstrem sua necessidade e adequação com relação ao objeto do certame (art. 31, § 5º, da Lei 8.666/1993 e Súmula TCU 289), a exemplo de endividamento total (ET) menor ou igual a 0,2 e disponibilidade financeira líquida (DFL) igual ou superior ao total do orçamento do órgão licitante.",
+    "url": "https://pesquisa.apps.tcu.gov.br/documento/jurisprudencia-selecionada/*/KEY%253AJURISPRUDENCIA-SELECIONADA-160255/score%2520desc/0"
+   },
+   {
+    "ac": "Acórdão 5890/2021 – 2ª Câmara",
+    "data": "06/04/2021",
+    "rel": "Marcos Bemquerer",
+    "txt": "É vedado exigir índice de endividamento menor ou igual a 0,50 sem justificativa no processo.",
+    "enunciado": "É vedada a exigência, para fins de qualificação econômico-financeira, de índice de endividamento geral menor ou igual a 0,50, sem justificativa no processo administrativo da licitação, por afronta ao disposto no art. 31, § 5º, da Lei 8.666/1993.",
+    "url": "https://pesquisa.apps.tcu.gov.br/documento/jurisprudencia-selecionada/*/KEY%253AJURISPRUDENCIA-SELECIONADA-109925/score%2520desc/0"
+   },
+   {
+    "ac": "Acórdão 2418/2026 – Plenário",
+    "data": "09/09/2026",
+    "rel": "Benjamin Zymler",
+    "txt": "A referência a dois exercícios no art. 69 não obriga a cumprir todos os índices em cada ano; em regra, vale o último exercício.",
+    "enunciado": "O art. 69, inciso I, da Lei 14.133/2021, ao fazer referência às demonstrações contábeis dos dois últimos exercícios sociais, não impõe que todos os requisitos de habilitação econômico-financeira previstos no edital sejam necessariamente atendidos em cada um dos exercícios. Esses requisitos devem ser definidos de acordo com sua finalidade e devidamente motivados, sendo a aferição com base no último exercício social a solução ordinária para os índices de liquidez, capital circulante e patrimônio líquido, salvo justificativa concreta para estender a análise ao exercício precedente.",
+    "url": "https://pesquisa.apps.tcu.gov.br/documento/jurisprudencia-selecionada/*/KEY%253AJURISPRUDENCIA-SELECIONADA-209007/score%2520desc/0"
+   },
+   {
+    "ac": "Acórdão 2724/2025 – Plenário",
+    "data": "18/11/2025",
+    "rel": "Benjamin Zymler",
+    "txt": "O capital social ou patrimônio líquido mínimo do art. 69, § 4º, pode ser exigido, dentro do limite legal.",
+    "enunciado": "A exigência de capital social ou patrimônio líquido mínimos, disposta no art. 69, § 4º, da Lei 14.133/2021, não está condicionada apenas aos casos em que o licitante apresente índices contábeis iguais ou inferiores a 1 (um). Para fins de habilitação econômico-financeira, a Administração pode exigir dos licitantes, de forma cumulativa: i) declaração de compromissos assumidos (art. 69, § 3º, da mencionada lei); ii) índices de liquidez acima de 1 (um); iii) patrimônio líquido mínimo de até 10% do valor estimado da contratação; e iv) capital circulante mínimo em percentual suficiente para assegurar até dois meses de execução contratual sem nenhum pagamento por parte da Administração, devendo tais exigências ser devidamente motivadas nos atos preparatórios da contratação.",
+    "url": "https://pesquisa.apps.tcu.gov.br/documento/jurisprudencia-selecionada/*/KEY%253AJURISPRUDENCIA-SELECIONADA-193580/score%2520desc/0"
+   }
+  ]
+ },
+ {
+  "slug": "amostra-reprovada",
+  "titulo": "Minha amostra foi reprovada",
+  "tema": "Proposta",
+  "resumo": "Amostra com defeito sanável não deve levar à desclassificação direta: o TCU entende que o órgão precisa fazer diligência e permitir nova amostra. Além disso, os critérios de avaliação têm que estar no edital, de forma objetiva, e a análise deve ser acompanhável pelos licitantes.",
+  "pratica": [
+   "Peça o laudo ou a justificativa da reprovação, com os critérios do edital.",
+   "Se o vício for sanável, peça diligência para apresentar nova amostra.",
+   "Se a desclassificação já ocorreu, registre a intenção de recorrer."
+  ],
+  "prazo": "Recurso: 3 dias úteis (art. 165 da Lei 14.133/2021).",
+  "dec": [
+   {
+    "ac": "Acórdão 884/2026 – Plenário",
+    "data": "08/04/2026",
+    "rel": "Jorge Oliveira",
+    "txt": "É irregular desclassificar por amostra com vícios sanáveis sem diligência para permitir a apresentação de nova amostra.",
+    "enunciado": "É irregular a desclassificação de proposta de licitante em razão da apresentação de amostra com vícios sanáveis, sem a realização de diligência para oportunizar a apresentação de novas amostras (arts. 59, inciso I e § 2º, e 64 da Lei 14.133/2021), ainda que o edital da licitação seja omisso quanto a prever esse tipo de providência saneadora.",
+    "url": "https://pesquisa.apps.tcu.gov.br/documento/jurisprudencia-selecionada/*/KEY%253AJURISPRUDENCIA-SELECIONADA-200452/score%2520desc/0"
+   },
+   {
+    "ac": "Acórdão 529/2018 – Plenário",
+    "data": "14/03/2018",
+    "rel": "Bruno Dantas",
+    "txt": "O edital deve trazer critérios objetivos para apresentação e avaliação da amostra, e as decisões precisam ser fundamentadas.",
+    "enunciado": "Em caso de exigência de amostra, o edital de licitação deve estabelecer critérios objetivos, detalhadamente especificados, para apresentação e avaliação do produto que a Administração deseja adquirir. Além disso, as decisões relativas às amostras apresentadas devem ser devidamente motivadas, a fim de atender aos princípios do julgamento objetivo e da igualdade entre os licitantes.",
+    "url": "https://pesquisa.apps.tcu.gov.br/documento/jurisprudencia-selecionada/*/KEY%253AJURISPRUDENCIA-SELECIONADA-53337/score%2520desc/0"
+   },
+   {
+    "ac": "Acórdão 2640/2019 – Plenário",
+    "data": "30/10/2019",
+    "rel": "Bruno Dantas",
+    "txt": "A amostra só pode ser exigida na fase de classificação e apenas do licitante provisoriamente em primeiro lugar.",
+    "enunciado": "A exigência de apresentação de amostras é admitida apenas na fase de classificação das propostas e somente do licitante provisoriamente classificado em primeiro lugar.",
+    "url": "https://pesquisa.apps.tcu.gov.br/documento/jurisprudencia-selecionada/*/KEY%253AJURISPRUDENCIA-SELECIONADA-80967/score%2520desc/0"
+   },
+   {
+    "ac": "Acórdão 1823/2017 – Plenário",
+    "data": "23/08/2017",
+    "rel": "Walton Alencar Rodrigues",
+    "txt": "A análise de amostras e provas de conceito deve poder ser acompanhada por todos os licitantes.",
+    "enunciado": "Em licitações que requeiram prova de conceito ou apresentação de amostras, deve ser viabilizado o acompanhamento dessas etapas a todos licitantes interessados, em consonância com o princípio da publicidade.",
+    "url": "https://pesquisa.apps.tcu.gov.br/documento/jurisprudencia-selecionada/*/KEY%253AJURISPRUDENCIA-SELECIONADA-44791/score%2520desc/0"
+   }
+  ]
+ },
+ {
+  "slug": "marca-no-edital",
+  "titulo": "O edital pede uma marca específica",
+  "tema": "Edital",
+  "resumo": "Indicar marca só é permitido em situações justificadas, como padronização ou quando só aquela marca atende (art. 41, I, da Lei 14.133/2021). Usar a marca apenas como referência de qualidade é possível, mas o edital tem que aceitar produto \"equivalente\", \"similar\" ou \"de melhor qualidade\".",
+  "pratica": [
+   "Veja se o edital justifica tecnicamente a marca ou se aceita equivalentes.",
+   "Se não aceitar equivalente sem justificativa, impugne.",
+   "Ofereça o produto equivalente com a documentação técnica que comprova a equivalência."
+  ],
+  "prazo": "Impugnação: até 3 dias úteis antes da abertura (art. 164 da Lei 14.133/2021).",
+  "dec": [
+   {
+    "ac": "Acórdão 808/2019 – Plenário",
+    "data": "10/04/2019",
+    "rel": "Walton Alencar Rodrigues",
+    "txt": "Marca de referência é permitida, desde que o edital aceite produto equivalente, similar ou de melhor qualidade.",
+    "enunciado": "Permite-se menção a marca de referência no edital, como forma ou parâmetro de qualidade para facilitar a descrição do objeto, caso em que se deve necessariamente acrescentar expressões do tipo \"ou equivalente\", \"ou similar\", \"ou de melhor qualidade\", podendo a Administração exigir que a empresa participante do certame demonstre desempenho, qualidade e produtividade compatíveis com a marca de referência mencionada.",
+    "url": "https://pesquisa.apps.tcu.gov.br/documento/jurisprudencia-selecionada/*/KEY%253AJURISPRUDENCIA-SELECIONADA-71251/score%2520desc/0"
+   },
+   {
+    "ac": "Acórdão 559/2017 – Plenário",
+    "data": "29/03/2017",
+    "rel": "Benjamin Zymler",
+    "txt": "Indicar ou preferir uma marca só é admissível se ficar comprovado que ela é a única que atende à necessidade.",
+    "enunciado": "A indicação ou a preferência por marca só é admissível se restar comprovado que a escolha é a mais vantajosa e a única que atende às necessidades da Administração. A licitação não tem por objetivo, necessariamente, a escolha do produto ou do serviço de melhor qualidade disponibilizado no mercado.",
+    "url": "https://pesquisa.apps.tcu.gov.br/documento/jurisprudencia-selecionada/*/KEY%253AJURISPRUDENCIA-SELECIONADA-37519/score%2520desc/0"
+   },
+   {
+    "ac": "Acórdão 113/2016 – Plenário",
+    "data": "27/01/2016",
+    "rel": "Bruno Dantas",
+    "txt": "A indicação de marca precisa de justificativa técnica, motivada e documentada.",
+    "enunciado": "A indicação de marca no edital deve estar amparada em razões de ordem técnica, de forma motivada e documentada, que demonstrem ser aquela marca específica a única capaz de satisfazer o interesse público.",
+    "url": "https://pesquisa.apps.tcu.gov.br/documento/jurisprudencia-selecionada/*/KEY%253AJURISPRUDENCIA-SELECIONADA-432/score%2520desc/0"
+   }
+  ]
+ },
+ {
+  "slug": "prazo-proposta-ajustada",
+  "titulo": "Deram um prazo curto demais para a proposta ajustada",
+  "tema": "Proposta",
+  "resumo": "Depois da disputa de lances, o prazo para enviar a proposta e a planilha ajustadas tem que ser compatível com a complexidade do que se pede. Prazo desarrazoado viola a razoabilidade e a proporcionalidade, segundo o TCU.",
+  "pratica": [
+   "Peça a prorrogação do prazo por escrito no chat ou no sistema, antes do vencimento.",
+   "Explique a complexidade (quantidade de itens, composições, BDI).",
+   "Se for desclassificado por isso, registre a intenção de recorrer."
+  ],
+  "prazo": "Recurso: 3 dias úteis (art. 165 da Lei 14.133/2021).",
+  "dec": [
+   {
+    "ac": "Acórdão 1795/2024 – Plenário",
+    "data": "28/08/2024",
+    "rel": "Jhonatan De Jesus",
+    "txt": "Prazo incompatível com a complexidade da planilha para enviar a proposta ajustada viola a razoabilidade.",
+    "enunciado": "Em concorrência eletrônica regida pela Lei 14.133/2021, a fixação de prazo não condizente com a complexidade da planilha orçamentária para fim de encaminhamento, após a fase de lances, da proposta de preço ajustada constitui infração aos princípios da razoabilidade e da proporcionalidade.",
+    "url": "https://pesquisa.apps.tcu.gov.br/documento/jurisprudencia-selecionada/*/KEY%253AJURISPRUDENCIA-SELECIONADA-173197/score%2520desc/0"
+   },
+   {
+    "ac": "Acórdão 122/2012 – Plenário",
+    "data": "25/01/2012",
+    "rel": "Weder De Oliveira",
+    "txt": "Prazo desarrazoado para a proposta ajustada após os lances do pregão afronta a razoabilidade e a proporcionalidade.",
+    "enunciado": "A fixação de prazo desarrazoado para o encaminhamento da proposta de preços ajustada, após a fase de lances do pregão, constitui infração aos princípios da razoabilidade e da proporcionalidade.",
+    "url": "https://pesquisa.apps.tcu.gov.br/documento/jurisprudencia-selecionada/*/KEY%253AJURISPRUDENCIA-SELECIONADA-17896/score%2520desc/0"
+   }
+  ]
+ },
+ {
+  "slug": "consorcio-proibido",
+  "titulo": "O edital proíbe a participação em consórcio",
+  "tema": "Participação",
+  "resumo": "Pela Lei 14.133/2021, o consórcio é permitido, salvo vedação devidamente justificada no processo (art. 15). Para o TCU, se o edital não fala nada, o consórcio está autorizado; e a proibição sem justificativa técnica é irregular.",
+  "pratica": [
+   "Procure no processo a justificativa da vedação.",
+   "Sem justificativa técnica, impugne o edital.",
+   "Se for participar em consórcio, confira as exigências do art. 15 (compromisso, líder, responsabilidade solidária)."
+  ],
+  "prazo": "Impugnação: até 3 dias úteis antes da abertura (art. 164 da Lei 14.133/2021).",
+  "dec": [
+   {
+    "ac": "Acórdão 25/2026 – Plenário",
+    "data": "21/01/2026",
+    "rel": "Benjamin Zymler",
+    "txt": "Vedar consórcio sem justificativa técnica nos autos é irregular.",
+    "enunciado": "A vedação à participação de empresas em consórcio sem a apresentação, nos autos do processo licitatório, de justificativa técnica que demonstre a incompatibilidade dessa forma de associação com as características do objeto demandado afronta o art. 15 da Lei 14.133/2021.",
+    "url": "https://pesquisa.apps.tcu.gov.br/documento/jurisprudencia-selecionada/*/KEY%253AJURISPRUDENCIA-SELECIONADA-195296/score%2520desc/0"
+   },
+   {
+    "ac": "Acórdão 1170/2025 – Plenário",
+    "data": "28/05/2025",
+    "rel": "Jhonatan De Jesus",
+    "txt": "O silêncio do edital sobre consórcio equivale a autorização.",
+    "enunciado": "No âmbito da nova Lei de Licitações e Contratos Administrativos, o silêncio do edital acerca da participação de consórcio de empresas em certame licitatório equivale à sua autorização, ao passo que a decisão quanto à vedação dessa participação, por ser discricionária, deve estar prevista no instrumento convocatório e devidamente motivada no processo administrativo (art. 15 da Lei 14.133/2021).",
+    "url": "https://pesquisa.apps.tcu.gov.br/documento/jurisprudencia-selecionada/*/KEY%253AJURISPRUDENCIA-SELECIONADA-184508/score%2520desc/0"
+   },
+   {
+    "ac": "Acórdão 2218/2026 – Plenário",
+    "data": "19/08/2026",
+    "rel": "Jhonatan De Jesus",
+    "txt": "A saída de uma consorciada não inabilita, por si só, o consórcio, se as remanescentes atendem aos requisitos.",
+    "enunciado": "A exclusão de empresa consorciada no curso da licitação não acarreta, por si só, a inabilitação do consórcio, desde que a composição remanescente continue a atender, por meios próprios e com base em acervo documental preexistente, aos requisitos do edital. A apresentação superveniente de declarações de disponibilidade ou de contratos futuros firmados com profissionais que demonstravam vínculo apenas com a consorciada excluída não configura simples confirmação de acervo, mas constituição posterior de vínculo indispensável à qualificação técnico-profissional, o qual deveria ter sido demonstrado tempestivamente, no momento próprio da habilitação.",
+    "url": "https://pesquisa.apps.tcu.gov.br/documento/jurisprudencia-selecionada/*/KEY%253AJURISPRUDENCIA-SELECIONADA-207842/score%2520desc/0"
+   }
+  ]
+ },
+ {
+  "slug": "recuperacao-judicial",
+  "titulo": "Minha empresa está em recuperação judicial",
+  "tema": "Habilitação",
+  "resumo": "Estar em recuperação judicial não impede, por si só, a participação em licitação. O TCU exige que a empresa demonstre capacidade econômico-financeira para executar o contrato; a certidão positiva não leva automaticamente à inabilitação.",
+  "pratica": [
+   "Separe o plano de recuperação homologado e a certidão do juízo.",
+   "Demonstre os índices e a capacidade financeira exigidos no edital.",
+   "Se o edital proibir a participação, impugne."
+  ],
+  "prazo": "Impugnação: até 3 dias úteis antes da abertura (art. 164). Recurso: 3 dias úteis (art. 165).",
+  "dec": [
+   {
+    "ac": "Acórdão 1697/2023 – Plenário",
+    "data": "16/08/2023",
+    "rel": "Jorge Oliveira",
+    "txt": "A recuperação judicial ou extrajudicial não impede a participação, desde que a empresa demonstre capacidade econômico-financeira.",
+    "enunciado": "A circunstância de a empresa licitante se encontrar em recuperação judicial ou extrajudicial não pode ser impeditiva para a sua participação em licitação, desde que demonstre capacidade econômico-financeira para a execução do contrato.",
+    "url": "https://pesquisa.apps.tcu.gov.br/documento/jurisprudencia-selecionada/*/KEY%253AJURISPRUDENCIA-SELECIONADA-156300/score%2520desc/0"
+   },
+   {
+    "ac": "Acórdão 2265/2020 – Plenário",
+    "data": "26/08/2020",
+    "rel": "Benjamin Zymler",
+    "txt": "A certidão positiva de recuperação judicial não leva à inabilitação imediata.",
+    "enunciado": "A certidão negativa de recuperação judicial é exigível por força do art. 31, inciso II, da Lei 8.666/1993, porém a apresentação de certidão positiva não implica a imediata inabilitação da licitante, cabendo ao pregoeiro ou à comissão de licitação diligenciar no sentido de aferir se a empresa já teve seu plano de recuperação concedido ou homologado judicialmente (Lei 11.101/2005).",
+    "url": "https://pesquisa.apps.tcu.gov.br/documento/jurisprudencia-selecionada/*/KEY%253AJURISPRUDENCIA-SELECIONADA-97954/score%2520desc/0"
+   },
+   {
+    "ac": "Acórdão 1201/2020 – Plenário",
+    "data": "13/05/2020",
+    "rel": "Vital Do Rêgo",
+    "txt": "É admitida a participação de empresa em recuperação amparada em certidão judicial de aptidão econômica e financeira.",
+    "enunciado": "Admite-se a participação, em licitações, de empresas em recuperação judicial, desde que amparadas em certidão emitida pela instância judicial competente afirmando que a interessada está apta econômica e financeiramente a participar de procedimento licitatório.",
+    "url": "https://pesquisa.apps.tcu.gov.br/documento/jurisprudencia-selecionada/*/KEY%253AJURISPRUDENCIA-SELECIONADA-90902/score%2520desc/0"
+   }
+  ]
+ },
+ {
+  "slug": "me-epp-desempate",
+  "titulo": "Sou ME ou EPP: tenho direito de preferência?",
+  "tema": "ME e EPP",
+  "resumo": "Microempresas e empresas de pequeno porte têm preferência no desempate (LC 123/2006, arts. 44 e 45): podem cobrir a melhor oferta quando estão até 5% acima dela no pregão (10% nas demais modalidades). Atenção: pela Lei 14.133/2021, perde o benefício quem já celebrou, no ano, contratos públicos acima do limite de receita da EPP (art. 4º, § 2º).",
+  "pratica": [
+   "Confira se o pregoeiro convocou todas as ME e EPP dentro da faixa.",
+   "Verifique a soma dos seus contratos públicos no ano antes de declarar o enquadramento.",
+   "Se o direito não foi respeitado, registre a intenção de recorrer."
+  ],
+  "prazo": "Recurso: 3 dias úteis (art. 165 da Lei 14.133/2021).",
+  "dec": [
+   {
+    "ac": "Acórdão 533/2026 – Plenário",
+    "data": "11/03/2026",
+    "rel": "Jorge Oliveira",
+    "txt": "Devem ser convocadas todas as ME e EPP classificadas dentro dos intervalos de empate ficto.",
+    "enunciado": "Para fins de exercício do direito de preferência assegurado às microempresas e às empresas de pequeno porte (art. 44 da LC 123/2006), devem ser convocadas todas as ME e EPP classificadas nos intervalos previstos nos §§ 1º e 2º do referido dispositivo, após a fase de lances, independentemente da participação do licitante na etapa aberta ou fechada, conforme o caso, observando-se a metodologia estabelecida no art. 45 da mesma norma.",
+    "url": "https://pesquisa.apps.tcu.gov.br/documento/jurisprudencia-selecionada/*/KEY%253AJURISPRUDENCIA-SELECIONADA-198295/score%2520desc/0"
+   },
+   {
+    "ac": "Acórdão 1766/2025 – Plenário",
+    "data": "06/08/2025",
+    "rel": "Augusto Sherman",
+    "txt": "No modo aberto-fechado, a preferência considera as propostas finais da disputa.",
+    "enunciado": "Em licitação que adota o modo de disputa aberto-fechado, para fins de exercício do direito de preferência assegurado às microempresas e empresas de pequeno porte (arts. 44 e 45 da LC 123/2006), devem ser consideradas as propostas de todas as ME/EPP classificadas após a fase de lances, independentemente de participação na etapa fechada.",
+    "url": "https://pesquisa.apps.tcu.gov.br/documento/jurisprudencia-selecionada/*/KEY%253AJURISPRUDENCIA-SELECIONADA-188014/score%2520desc/0"
+   },
+   {
+    "ac": "Acórdão 1425/2026 – Plenário",
+    "data": "03/06/2026",
+    "rel": "Jorge Oliveira",
+    "txt": "ME ou EPP que já celebrou no ano contratos acima do limite de receita perde o tratamento diferenciado.",
+    "enunciado": "A microempresa (ME) ou empresa de pequeno porte (EPP) que, no ano de realização da licitação, já tenha celebrado contratos com a Administração Pública cujos valores somados ultrapassem o limite de receita bruta fixado para o enquadramento como EPP (art. 3º, inciso II, da LC 123/2006) não faz jus à fruição dos benefícios previstos na mencionada lei complementar, independentemente do momento da receita efetivamente auferida. A nova Lei de Licitações e Contratos Administrativos estabelece critério próprio, objetivo e autônomo para a fruição dos benefícios licitatórios destinados às ME/EPP (art. 4º, § 2º, da Lei 14.133/2021), distinto daquele empregado para o enquadramento tributário ou societário disciplinado pela LC 123/2006.",
+    "url": "https://pesquisa.apps.tcu.gov.br/documento/jurisprudencia-selecionada/*/KEY%253AJURISPRUDENCIA-SELECIONADA-203823/score%2520desc/0"
+   }
+  ]
+ },
+ {
+  "slug": "garantia-de-proposta",
+  "titulo": "Problema com a garantia de proposta",
+  "tema": "Garantia",
+  "resumo": "A garantia de proposta é limitada a 1% do valor estimado (art. 58 da Lei 14.133/2021). Em licitação por lotes, ela deve ser calculada sobre o lote disputado, e não sobre o total. E o atraso no pagamento do prêmio do seguro-garantia não invalida, por si só, a apólice vigente.",
+  "pratica": [
+   "Confira se o percentual e a base de cálculo respeitam o art. 58.",
+   "Em licitação por lotes, impugne se a garantia incidir sobre o valor total.",
+   "Mantenha a apólice vigente durante toda a validade da proposta."
+  ],
+  "prazo": "Impugnação: até 3 dias úteis antes da abertura (art. 164 da Lei 14.133/2021).",
+  "dec": [
+   {
+    "ac": "Acórdão 1410/2026 – 2ª Câmara",
+    "data": "24/03/2026",
+    "rel": "Antonio Anastasia",
+    "txt": "Em licitação por lotes, a garantia de proposta deve ser proporcional ao lote, e não ao valor total.",
+    "enunciado": "Em licitação dividida por lotes, a exigência de garantia de proposta (art. 58 da Lei 14.133/2021) baseada no valor total estimado do certame restringe indevidamente a competitividade, pois tal garantia deve ser proporcional aos lotes de interesse do licitante (Súmula TCU 247).",
+    "url": "https://pesquisa.apps.tcu.gov.br/documento/jurisprudencia-selecionada/*/KEY%253AJURISPRUDENCIA-SELECIONADA-199693/score%2520desc/0"
+   },
+   {
+    "ac": "Acórdão 2518/2026 – Plenário",
+    "data": "16/09/2026",
+    "rel": "Benjamin Zymler",
+    "txt": "É irregular excluir licitante só porque o prêmio do seguro-garantia está em atraso, se a apólice está vigente.",
+    "enunciado": "É irregular a exclusão de licitante com base, apenas, no atraso ou no inadimplemento no pagamento do prêmio associado a seguro-garantia regularmente emitido e vigente apresentado como garantia de proposta, pois a apólice permanece eficaz perante a Administração mesmo quando o licitante tomador deixa de pagar o prêmio nas datas convencionadas, conforme interpretação sistemática dos arts. 58, § 4º, 96, § 1º, e 97, inciso II, da Lei 14.133/2021, conjugados com a disciplina específica aplicável ao seguro-garantia.",
+    "url": "https://pesquisa.apps.tcu.gov.br/documento/jurisprudencia-selecionada/*/KEY%253AJURISPRUDENCIA-SELECIONADA-209110/score%2520desc/0"
+   },
+   {
+    "ac": "Acórdão 1128/2026 – Plenário",
+    "data": "06/05/2026",
+    "rel": "Benjamin Zymler",
+    "txt": "É possível exigir a garantia antes do cadastro da proposta no sistema eletrônico.",
+    "enunciado": "É possível a exigência de apresentação prévia da garantia da proposta (art. 58 da Lei 14.133/2021) como condição para que os licitantes cadastrem suas propostas no sistema eletrônico em que a licitação será processada, a fim de assegurar a seriedade da oferta e evitar comportamentos oportunistas.",
+    "url": "https://pesquisa.apps.tcu.gov.br/documento/jurisprudencia-selecionada/*/KEY%253AJURISPRUDENCIA-SELECIONADA-202171/score%2520desc/0"
+   }
+  ]
+ },
+ {
+  "slug": "esclarecimento-sem-resposta",
+  "titulo": "Pedi esclarecimento ou impugnei e não tive resposta adequada",
+  "tema": "Impugnação e esclarecimento",
+  "resumo": "O órgão deve responder impugnações e pedidos de esclarecimento antes da abertura e, quando a impugnação aponta cláusula restritiva, revisar o edital com cuidado. As respostas aos esclarecimentos vinculam todos os licitantes: o órgão não pode julgar depois de forma diferente do que respondeu.",
+  "pratica": [
+   "Protocole pelo canal oficial e guarde o comprovante.",
+   "Se não houver resposta até a sessão, registre isso no chat e na ata.",
+   "Use a resposta do esclarecimento a seu favor no julgamento e no recurso."
+  ],
+  "prazo": "Pedido: até 3 dias úteis antes da abertura. Resposta: em até 3 dias úteis, até o último dia útil antes da abertura (art. 164 da Lei 14.133/2021).",
+  "dec": [
+   {
+    "ac": "Acórdão 799/2026 – Plenário",
+    "data": "01/04/2026",
+    "rel": "Bruno Dantas",
+    "txt": "Os esclarecimentos prestados pelo órgão vinculam todos os participantes no julgamento.",
+    "enunciado": "Esclarecimentos prestados pela Administração para responder a questionamento de licitante possuem natureza vinculante para todos os participantes do certame, não se podendo admitir, quando da análise da documentação de habilitação, interpretação distinta, sob pena de violação ao instrumento convocatório.",
+    "url": "https://pesquisa.apps.tcu.gov.br/documento/jurisprudencia-selecionada/*/KEY%253AJURISPRUDENCIA-SELECIONADA-199896/score%2520desc/0"
+   },
+   {
+    "ac": "Acórdão 1414/2023 – Plenário",
+    "data": "12/07/2023",
+    "rel": "Jorge Oliveira",
+    "txt": "Diante de impugnação que aponta cláusula restritiva, o órgão tem o dever de revisar criteriosamente o edital.",
+    "enunciado": "É dever do responsável por conduzir licitação no âmbito da Administração, a partir de impugnação ao edital apontando a existência de cláusulas restritivas à competitividade do certame, realizar a revisão criteriosa dessas cláusulas, ainda que a impugnação não seja conhecida, sob pena de violação do princípio da autotutela.",
+    "url": "https://pesquisa.apps.tcu.gov.br/documento/jurisprudencia-selecionada/*/KEY%253AJURISPRUDENCIA-SELECIONADA-154277/score%2520desc/0"
+   },
+   {
+    "ac": "Acórdão 969/2022 – Plenário",
+    "data": "04/05/2022",
+    "rel": "Bruno Dantas",
+    "txt": "Em licitação eletrônica, é irregular limitar a impugnação ao horário de expediente do órgão.",
+    "enunciado": "Em licitação eletrônica, é irregular, por configurar excesso de formalismo, a limitação do prazo de impugnação do edital ao horário de funcionamento da entidade promotora do certame, vez que a impugnação pode ser feita de maneira remota, pela internet, não exige funcionários da entidade de prontidão para o seu recebimento e não interfere no horário de início da análise de impugnação, não havendo razão para que não seja aceita até às 23h59min da data limite.",
+    "url": "https://pesquisa.apps.tcu.gov.br/documento/jurisprudencia-selecionada/*/KEY%253AJURISPRUDENCIA-SELECIONADA-131500/score%2520desc/0"
+   }
+  ]
+ },
+ {
+  "slug": "intencao-de-recurso-recusada",
+  "titulo": "O pregoeiro recusou minha intenção de recurso",
+  "tema": "Recursos",
+  "resumo": "Na fase de intenção de recurso, o pregoeiro só pode verificar os requisitos básicos (sucumbência, tempestividade, legitimidade, interesse e motivação mínima). Ele não pode julgar o mérito antes das razões. A intenção, porém, precisa indicar minimamente o que está sendo contestado.",
+  "pratica": [
+   "Registre a intenção logo após o julgamento, dizendo em uma ou duas frases o que vai contestar.",
+   "Se for recusada sumariamente, registre o protesto e leve a questão ao recurso hierárquico ou à representação.",
+   "Junte prints do chat e da ata."
+  ],
+  "prazo": "Intenção: imediatamente. Razões: 3 dias úteis (art. 165, § 1º, da Lei 14.133/2021).",
+  "dec": [
+   {
+    "ac": "Acórdão 2699/2021 – Plenário",
+    "data": "17/11/2021",
+    "rel": "Raimundo Carreiro",
+    "txt": "Rejeitar sumariamente a intenção de recurso no pregão eletrônico é irregular.",
+    "enunciado": "A rejeição sumária da intenção de recurso no âmbito de pregão eletrônico afronta os arts. 2º, § 1º, e 4º, incisos XVIII e XX, da Lei 10.520/2002, e 44, § 3º, do Decreto 10.024/2019, uma vez que o registro da intenção de recurso deve atender aos requisitos de sucumbência, tempestividade, legitimidade, interesse e motivação, não podendo ter seu mérito julgado de antemão.",
+    "url": "https://pesquisa.apps.tcu.gov.br/documento/jurisprudencia-selecionada/*/KEY%253AJURISPRUDENCIA-SELECIONADA-123891/score%2520desc/0"
+   },
+   {
+    "ac": "Acórdão 1168/2016 – Plenário",
+    "data": "11/05/2016",
+    "rel": "Bruno Dantas",
+    "txt": "O exame da intenção de recurso se limita aos requisitos de admissibilidade, sem julgar o mérito antes das razões.",
+    "enunciado": "No pregão, o exame do registro da intenção de recurso deve limitar-se à verificação dos requisitos de sucumbência, tempestividade, legitimidade, interesse e motivação, não podendo o mérito do recurso ser julgado previamente à apresentação das razões e contrarrazões recursais.",
+    "url": "https://pesquisa.apps.tcu.gov.br/documento/jurisprudencia-selecionada/*/KEY%253AJURISPRUDENCIA-SELECIONADA-7148/score%2520desc/0"
+   },
+   {
+    "ac": "Acórdão 2180/2023 – Plenário",
+    "data": "25/10/2023",
+    "rel": "Marcos Bemquerer",
+    "txt": "A intenção de recurso genérica, sem indicar minimamente a irregularidade, não atende à exigência de motivação.",
+    "enunciado": "No pregão, a apresentação de intenção de recurso genérica, sem descrever minimamente a irregularidade cometida pelo pregoeiro ou por empresa licitante, contraria o art. 44 do Decreto 10.024/2019. A exigência de motivação da intenção recursal pressupõe a indicação do ponto que deve ser revisto e dos dispositivos legais ou do edital infringidos.",
+    "url": "https://pesquisa.apps.tcu.gov.br/documento/jurisprudencia-selecionada/*/KEY%253AJURISPRUDENCIA-SELECIONADA-159996/score%2520desc/0"
+   },
+   {
+    "ac": "Acórdão 37/2026 – Plenário",
+    "data": "21/01/2026",
+    "rel": "Augusto Sherman",
+    "txt": "A decisão de recurso que inabilita sem explicar motivos, documentos e itens do edital é irregular.",
+    "enunciado": "A decisão em recurso administrativo que inabilita licitante sem explicitar os motivos determinantes, os documentos examinados e os itens editalícios considerados afronta o art. 50, inciso V, da Lei 9.784/1999 e o princípio da motivação, previsto no art. 5º da Lei 14.133/2021.",
+    "url": "https://pesquisa.apps.tcu.gov.br/documento/jurisprudencia-selecionada/*/KEY%253AJURISPRUDENCIA-SELECIONADA-195116/score%2520desc/0"
+   }
+  ]
  }
 ]

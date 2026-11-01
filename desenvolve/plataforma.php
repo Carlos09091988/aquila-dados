@@ -329,7 +329,7 @@ add_action( 'rest_api_init', function () {
 		if ( function_exists( 'dv_lic_itens' ) ) { foreach ( dv_lic_itens( $uid ) as $x ) {
 			if ( ! in_array( $x['status'] ?? '', array( 'analise', 'participar', 'proposta', 'disputa', 'recurso' ), true ) || empty( $x['abertura'] ) ) { continue; }
 			$c = dv_lic_calc( $x, $hoje ); $t = trim( ( $x['orgao'] ?? '' ) . ( ! empty( $x['numero'] ) ? ' · ' . $x['numero'] : '' ) );
-			if ( $c['dias_imp'] !== null && ( $tod || $c['dias_imp'] >= 0 ) && in_array( $x['status'], array( 'analise', 'participar', 'proposta' ), true ) ) { $A['licitacoes'][] = array( 'o' => 'Último dia para impugnar', 't' => $t, 'd' => $c['prazo_imp'], 'n' => $c['dias_imp'], 'u' => '/plataforma/licitacoes/?ver=' . $x['id'] ); }
+			if ( $c['dias_imp'] !== null && ( $tod || $c['dias_imp'] >= 0 ) && in_array( $x['status'], array( 'analise', 'participar', 'proposta' ), true ) ) { $A['licitacoes'][] = array( 'o' => 'Último dia para impugnar ou pedir esclarecimento', 't' => $t, 'd' => $c['prazo_imp'], 'n' => $c['dias_imp'], 'u' => '/plataforma/licitacoes/?ver=' . $x['id'] ); }
 			if ( $c['dias_sessao'] !== null && ( $tod || $c['dias_sessao'] >= 0 ) ) { $A['licitacoes'][] = array( 'o' => 'Sessão' . ( strlen( $x['abertura'] ) > 10 ? ' às ' . substr( $x['abertura'], 11, 5 ) : '' ), 't' => $t, 'd' => substr( $x['abertura'], 0, 10 ), 'n' => $c['dias_sessao'], 'u' => '/plataforma/licitacoes/?ver=' . $x['id'] ); }
 		} }
 		/* Caixa de oportunidades: prazo de impugnação e esclarecimento (art. 164) das que ainda não estão na Gestão */

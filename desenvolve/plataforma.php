@@ -150,6 +150,19 @@ function dv_lotes( $uid ) {
 		return ( $x['restante'] ?? 0 ) > 0 && ( $x['expira'] ?? '9999-12-31' ) >= $hoje;
 	} ) );
 }
+/** Avisa por e-mail, uma vez por mês, quando restarem 3 créditos ou menos. */
+function dv_aviso_credito( $uid, $s ) {
+	$t = (int) ( $s['total'] ?? 99 ); if ( $t > 3 ) { return; }
+	$m = current_time( 'Y-m' ); if ( get_user_meta( $uid, 'dv_aviso_cred', true ) === $m ) { return; }
+	update_user_meta( $uid, 'dv_aviso_cred', $m );
+	$u = get_userdata( $uid ); if ( ! $u ) { return; }
+	$from = dv_cfg( 'email_remetente' ) ?: 'contato@desenvolveestrategias.com.br';
+	wp_mail( $u->user_email, 'Seus créditos na Desenvolve estão acabando',
+		'Olá, ' . $u->first_name . "!\n\nRestam " . $t . ' crédito(s) na sua conta Desenvolve. Os créditos do plano renovam na próxima mensalidade.' .
+		"\n\nPara não parar no meio de um Raio-X ou de uma Due Diligence, você pode comprar créditos extras agora:\n" . home_url( '/creditos/' ) .
+		"\n\nPacotes: 10 créditos por R$ 39, 30 por R$ 99 e 100 por R$ 290. Os créditos extras valem por " . (int) dv_cfg( 'validade_extra' ) . " meses.\n\nEquipe Desenvolve",
+		array( 'From: Desenvolve <' . $from . '>' ) );
+}
 function dv_saldo( $uid ) {
 	$st = dv_status( $uid );
 	$mes = $st === 'ativo' ? (int) get_user_meta( $uid, 'dv_mes_saldo', true ) : 0;
@@ -233,7 +246,8 @@ function dv_usar( $uid, $ferramenta, $chave, $rotulo = '' ) {
 	}
 	$wpdb->insert( $t, $base + array( 'cobrado' => 1, 'origem' => $origem ) );
 	dv_alerta_uso( $uid );
-	return array( 'cobrado' => 1, 'motivo' => $origem, 'saldo' => dv_saldo( $uid ) );
+	$sd = dv_saldo( $uid ); dv_aviso_credito( $uid, $sd );
+	return array( 'cobrado' => 1, 'motivo' => $origem, 'saldo' => $sd );
 }
 
 /** Alerta de uso fora do padrão: muitas consultas por hora ou muitos IPs no dia. */
@@ -730,6 +744,7 @@ add_action( 'wp_footer', function () {
 .dv-cald{margin-top:14px}.dv-cald>b{color:var(--fg)}
 @media(max-width:700px){.dv-dd{min-height:46px;padding:4px}.dv-dd small{display:none}}
 .dv-tools a{background:var(--sf);border:1px solid var(--ln);border-radius:14px;padding:16px;color:var(--fg);text-decoration:none;display:flex;flex-direction:column;gap:6px}.dv-tools a b{font-weight:700;font-size:1.02rem}.dv-tools a small{color:var(--mu);font-size:.84rem;line-height:1.45;font-weight:400}.dv-tools a i{font-style:normal;font-size:.72rem;font-weight:700;margin-top:auto;align-self:flex-start;border-radius:99px;padding:2px 9px}.dv-tools a i.in{background:rgba(143,189,163,.14);color:#8FBDA3}.dv-tools a i.cr{background:rgba(201,164,92,.14);color:var(--gd)}
+.dv-low{display:flex;gap:14px;align-items:center;justify-content:space-between;flex-wrap:wrap;border:1px solid rgba(229,154,138,.5);background:rgba(229,154,138,.08);border-radius:14px;padding:14px 18px;margin:12px 0}.dv-low b{color:#F4F2EC;display:block}.dv-low span{color:var(--mu);font-size:.88rem}
 .dv-tsub{color:var(--mu);font-size:.9rem;margin:-4px 0 6px}.dv-grp{margin:22px 0 4px}.dv-grh{display:flex;gap:12px;align-items:center}.dv-grh>span{width:28px;height:28px;border-radius:50%;border:1px solid var(--gd);color:var(--gd);display:grid;place-items:center;font-weight:700;font-size:.85rem;flex-shrink:0}.dv-grh b{color:var(--fg);display:block}.dv-grh small{color:var(--mu);font-size:.84rem}.dv-grp .dv-tools{margin:10px 0 0}
 .dv-tools a:hover{border-color:var(--gd)}
 .dv-h{width:100%;border-collapse:collapse;font-size:.92rem}.dv-h td{padding:10px 8px;border-bottom:1px solid var(--ln);color:var(--mu)}.dv-h td:first-child{color:var(--fg)}
@@ -746,6 +761,7 @@ var sit={ativo:m.teste?'Teste grátis':'Plano '+((m.plano&&m.plano.nome)||''),pe
 var H='<h2>Olá, '+e((m.nome||'').split(' ')[0])+'</h2>';
 if(/bem-vindo/.test(location.search))H+=m.teste&&m.situacao==='ativo'?'<p class="dv-ok">Conta criada. Seu teste grátis já está ativo, com '+(s.total||0)+' créditos e todas as ferramentas de gestão. Aproveite!</p>':'<p class="dv-ok">Conta criada. Escolha um plano para liberar as ferramentas.</p>';
 H+='<div class="dv-g"><div class="dv-c"><span>Créditos disponíveis</span><b>'+(m.master?'Ilimitado':(s.total||0))+'</b></div><div class="dv-c"><span>Situação</span><b style="font-size:1.25rem">'+(m.master?'Conta Master':e(sit))+'</b></div><div class="dv-c"><span>'+(m.vence?'Renova em':'Detalhe do saldo')+'</span><b style="font-size:1.25rem">'+(m.vence?e(m.vence.split('-').reverse().join('/')):('Mês '+(s.mes||0)+' · extra '+(s.extra||0)))+'</b></div></div>';
+if(!m.master&&m.situacao==='ativo'&&(s.total||0)<=3)H+='<div class="dv-low"><div><b>'+((s.total||0)?'Seus créditos estão acabando: resta(m) '+s.total+'.':'Seus créditos acabaram.')+'</b><span>Os créditos do plano renovam na próxima mensalidade. Para não parar agora, compre um pacote extra.</span></div><a class="dv-btn" href="/creditos/">Comprar créditos</a></div>';
 if(!m.master&&(m.situacao!=='ativo'||m.teste))H+='<p><a class="dv-btn" href="/assinar/">'+(m.teste&&m.situacao==='ativo'?'Ver planos e assinar':'Escolher um plano')+'</a></p>';
 else if(!m.master)H+='<p><a class="dv-btn g" href="/creditos/">Comprar créditos extras</a> <a class="dv-btn g" href="/assinar/">Mudar de plano</a></p>';
 H+='<div class="dv-ag" id="dv-ag"><p style="color:#8E938F">Carregando a agenda…</p></div>';

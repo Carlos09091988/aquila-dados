@@ -111,7 +111,7 @@ function dv_part_vencidas( $cnpj ) {
 	arsort( $orgs ); arsort( $ufs );
 	$r = array( 'total' => count( $o ), 'valor' => round( $tot, 2 ), 'desconto_medio' => $descs ? round( array_sum( $descs ) / count( $descs ), 1 ) : null,
 		'orgaos' => array_slice( $orgs, 0, 5, true ), 'ufs' => array_slice( $ufs, 0, 6, true ), 'itens' => $o, 'incompleto' => $falhou > 0 );
-	set_transient( $ck, $r, $falhou ? HOUR_IN_SECONDS : DAY_IN_SECONDS );
+	set_transient( $ck, $r, ( $falhou || ( $ui && ! $descs ) ) ? HOUR_IN_SECONDS : DAY_IN_SECONDS );
 	return $r;
 }
 

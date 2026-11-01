@@ -137,7 +137,7 @@ add_action( 'rest_api_init', function () {
 				delete_user_meta( $uid, 'dv_trial' );
 				$due = $pg['dueDate'] ?? current_time( 'Y-m-d' );
 				$dias = max( 1, (int) round( ( strtotime( $due . ' +1 month' ) - strtotime( current_time( 'Y-m-d' ) ) ) / DAY_IN_SECONDS ) + 3 );
-				dv_renovar( $uid, 'Mensalidade paga (Asaas ' . $pid . ')', $dias );
+				dv_renovar( $uid, 'Mensalidade paga (Asaas ' . $pid . ')', $dias ); if ( function_exists( 'dv_bonus_lista' ) ) { dv_bonus_lista( $uid ); }
 				delete_user_meta( $uid, 'dv_cancelado' );
 			}
 			$feitos[] = $pid; update_user_meta( $uid, 'dv_asaas_feitos', array_slice( $feitos, -200 ) );

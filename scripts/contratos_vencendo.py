@@ -180,15 +180,28 @@ def main():
         ini = data(estado.get('carga_ate')) or CARGA_DESDE
         while ini <= HOJE and time.time() - t0 < LIMITE_SEG:
             fim = min(ini + dt.timedelta(days=JANELA - 1), HOJE)
-            n = janela(base, ini, fim)
+            n = None
+            for t in range(3):
+                n = janela(base, ini, fim)
+                if n is not None:
+                    break
+                time.sleep(30 * (t + 1))
             if n is None:
-                print('PNCP não respondeu em', ini, '- parando para retomar depois')
-                break
+                print('PNCP não respondeu em', ini, '- anotado para reprocessar', flush=True)
+                estado.setdefault('falhas', []).append(ini.isoformat())
+                n = 0
             print(ini, fim, 'contratos no radar:', n, flush=True)
             estado['carga_ate'] = (fim + dt.timedelta(days=1)).isoformat()
             ini = fim + dt.timedelta(days=1)
             if ini > HOJE:
                 estado['carga_concluida'] = HOJE.isoformat()
+        if ini > HOJE and estado.get('falhas'):
+            pend = []
+            for f in estado['falhas']:
+                d0 = data(f)
+                if time.time() - t0 > LIMITE_SEG or janela(base, d0, min(d0 + dt.timedelta(days=JANELA - 1), HOJE)) is None:
+                    pend.append(f)
+            estado['falhas'] = pend
     else:
         ini = HOJE - dt.timedelta(days=10)
         n1 = janela(base, ini, HOJE)

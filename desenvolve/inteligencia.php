@@ -516,3 +516,15 @@ new MutationObserver(function(){clearTimeout(tm);tm=setTimeout(tenta,1500)}).obs
 </script>
 	<?php
 }, 96 );
+
+/* Comparador: endereço antigo (/comparador-de-licitantes/) leva à página da plataforma, já com os CNPJs */
+add_action( 'template_redirect', function () {
+	$p = (string) wp_parse_url( (string) ( $_SERVER['REQUEST_URI'] ?? '' ), PHP_URL_PATH );
+	if ( ! preg_match( '#^/comparador-de-licitantes/?$#', $p ) ) { return; }
+	$c = preg_replace( '/[^0-9,]/', '', (string) ( $_GET['cnpjs'] ?? $_GET['cnpj'] ?? '' ) );
+	wp_safe_redirect( home_url( '/plataforma/comparador/' . ( $c ? '?cnpjs=' . $c : '' ) ), 301 ); exit;
+}, 1 );
+add_action( 'wp_footer', function () {
+	if ( ! is_page( 'comparador' ) ) { return; }
+	echo '<script>(function(){var q=new URLSearchParams(location.search),c=(q.get("cnpjs")||"").split(",").map(function(x){return x.replace(/\D/g,"")}).filter(function(x){return x.length===14});if(!c.length)return;var t=document.getElementById("cp-in");if(!t||t.value.trim())return;t.value=c.map(function(x){return x.replace(/^(\d{2})(\d{3})(\d{3})(\d{4})(\d{2})$/,"$1.$2.$3/$4-$5")}).join("\n");t.dispatchEvent(new Event("input",{bubbles:true}));var b=document.getElementById("cp-go");if(b){b.scrollIntoView({block:"center"});b.focus()}})();</script>';
+}, 99 );

@@ -32,3 +32,12 @@ add_action( 'wp_footer', function () {
 	global $post; if ( ! is_user_logged_in() || ! $post || ! has_shortcode( $post->post_content, 'dv_ctx' ) ) { return; }
 	echo '<script>window.DVIA=' . wp_json_encode( dv_ia_cfg( 'prompt' ) ) . ';</script>';
 }, 5 );
+
+/* O texto levado à IA do cliente não cita a marca: troca a linha "gerado pela plataforma Desenvolve" por "consultado em" */
+add_action( 'wp_footer', function () {
+	if ( ! is_user_logged_in() ) { return; }
+	echo '<script>(function(){var R=/ — gerado pela plataforma Desenvolve em /g,S=" — consultado em ";function f(t){return typeof t==="string"?t.replace(R,S).replace(/gerado%20pela%20plataforma%20Desenvolve%20em/g,"consultado%20em").replace(/gerado\+pela\+plataforma\+Desenvolve\+em/g,"consultado+em"):t}
+if(navigator.clipboard&&navigator.clipboard.writeText){var w=navigator.clipboard.writeText.bind(navigator.clipboard);navigator.clipboard.writeText=function(t){return w(f(t))}}
+var o=window.open;window.open=function(u){var a=[].slice.call(arguments);if(typeof u==="string"){try{a[0]=f(decodeURIComponent(u))===decodeURIComponent(u)?u:u.split("?")[0]+"?"+u.split("?").slice(1).join("?").split("&").map(function(p){var k=p.split("=");return k[0]+(k.length>1?"="+encodeURIComponent(f(decodeURIComponent(k.slice(1).join("=").replace(/\+/g," ")))):"")}).join("&")}catch(e){}}return o.apply(window,a)};
+document.addEventListener("copy",function(){},true);document.querySelectorAll("textarea").forEach(function(t){if(R.test(t.value)){t.value=f(t.value)}R.lastIndex=0})})();</script>';
+}, 1 );

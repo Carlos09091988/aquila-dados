@@ -123,13 +123,13 @@ function htmlComprador(r){
  if(ntl)M.push(ntl+' notícia(s) negativa(s) de licitações');if(ger||ntg)M.push('gestor com '+(ger?ger+' processo(s)':'')+(ger&&ntg?' e ':'')+(ntg?ntg+' notícia(s)':''));if(grev)M.push(grev+' notícia(s) de greve');
  var nv=A.length?['a','Atenção alta']:M.length?['m','Atenção moderada']:['b','Atenção baixa'];
  var paga=pts==null?'<em>Sem dados fiscais do ente.</em> Confira as notícias e as cobranças na Justiça abaixo.':pts>=80?'<em>Sim, risco baixo.</em> Nota '+pts+'/100.':pts>=55?'<em>Com atenção.</em> Nota '+pts+'/100: há sinais de atraso.':'<em>Risco alto de atraso.</em> Nota '+pts+'/100.';
- if(cobv)paga+=' Cobranças na Justiça (12 meses): '+e(cobv)+'.';
+ if(cobv)paga+=' Cobranças na Justiça (12 meses): '+e(cobv.replace(/publ\.?$/,'publicações'))+'.';
  var op=[];if(at)op.push('contratos ativos: '+at);if(item)op.push('do seu item: '+item);if(ab)op.push('licitações abertas: '+ab);
  var prev=pts!=null&&pts<55||atr>=3?'Coloque na proposta o custo de capital de giro para atrasos. Se o atraso passar de 2 meses da nota fiscal, o contratado pode suspender a execução ou pedir a extinção (art. 137, § 2º, IV, e § 3º, II).':grav||proc?'Leia os processos sobre licitações abaixo antes de participar: mostram onde o órgão costuma errar e o que impugnar.':'Nada impede a participação. Confira o edital e o preço que o órgão já pagou.';
  return '<div class="h"><small>Resumo executivo</small><h3>Vale participar?</h3><span class="nv '+nv[0]+'">'+nv[1]+'</span></div>'+
  '<div class="g"><div class="q w"><b>Nível de atenção</b><p>'+(A.concat(M).length?e(A.concat(M).join(' · '))+'.':'Nenhum sinal relevante nas fontes consultadas.')+'</p></div>'+
  '<div class="q"><b>Paga em dia?</b><p>'+paga+'</p></div>'+
- '<div class="q"><b>Tamanho da oportunidade</b><p>'+e(op.join(' · ')||'Sem contratos encontrados no PNCP.')+'.</p></div>'+
+ '<div class="q"><b>Tamanho da oportunidade</b><p>'+e(cap1(op.join(' · '))||'Sem contratos encontrados no PNCP')+'.</p></div>'+
  '<div class="q w"><b>Próximo passo</b><p>'+e(prev)+'</p><div class="ac"><a class="p" href="/plataforma/buscador/">Ver licitações abertas</a><a href="/plataforma/contratos-vencendo/">Contratos vencendo</a></div></div></div>';
 }
 

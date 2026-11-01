@@ -332,6 +332,18 @@ add_action( 'rest_api_init', function () {
 			if ( $c['dias_imp'] !== null && ( $tod || $c['dias_imp'] >= 0 ) && in_array( $x['status'], array( 'analise', 'participar', 'proposta' ), true ) ) { $A['licitacoes'][] = array( 'o' => 'Último dia para impugnar', 't' => $t, 'd' => $c['prazo_imp'], 'n' => $c['dias_imp'], 'u' => '/plataforma/licitacoes/?ver=' . $x['id'] ); }
 			if ( $c['dias_sessao'] !== null && ( $tod || $c['dias_sessao'] >= 0 ) ) { $A['licitacoes'][] = array( 'o' => 'Sessão' . ( strlen( $x['abertura'] ) > 10 ? ' às ' . substr( $x['abertura'], 11, 5 ) : '' ), 't' => $t, 'd' => substr( $x['abertura'], 0, 10 ), 'n' => $c['dias_sessao'], 'u' => '/plataforma/licitacoes/?ver=' . $x['id'] ); }
 		} }
+		/* Caixa de oportunidades: prazo de impugnação e esclarecimento (art. 164) das que ainda não estão na Gestão */
+		if ( function_exists( 'dv_al_caixa' ) && function_exists( 'dv_lic_calc' ) ) {
+			$naG = array(); if ( function_exists( 'dv_lic_itens' ) ) { foreach ( dv_lic_itens( $uid ) as $g ) { if ( ! empty( $g['pncp'] ) ) { $naG[ $g['pncp'] ] = 1; } } }
+			$cxA = array();
+			foreach ( dv_al_caixa( $uid ) as $ref => $x ) {
+				if ( ( $x['st'] ?? '' ) === 'desc' || isset( $naG[ $ref ] ) || empty( $x['encerra'] ) ) { continue; }
+				$c = dv_lic_calc( array( 'abertura' => $x['encerra'] ), $hoje ); if ( $c['dias_imp'] === null || $c['dias_imp'] < 0 || $c['dias_imp'] > 10 ) { continue; }
+				$cxA[] = array( 'o' => 'Impugnar ou pedir esclarecimento até', 't' => trim( ( $x['orgao'] ?? '' ) . ' · ' . mb_substr( (string) ( $x['objeto'] ?? '' ), 0, 70 ) ), 'd' => $c['prazo_imp'], 'n' => $c['dias_imp'], 'u' => '/plataforma/alertas/' );
+			}
+			usort( $cxA, function ( $a, $b ) { return $a['n'] <=> $b['n']; } );
+			$A['licitacoes'] = array_merge( $A['licitacoes'], array_slice( $cxA, 0, 15 ) );
+		}
 		if ( false && function_exists( 'dv_ct_itens' ) ) { foreach ( dv_ct_itens( $uid ) as $x ) {
 			$c = dv_ct_calc( $x, $hoje ); $t = trim( ( $x['orgao'] ?? '' ) . ( ! empty( $x['numero'] ) ? ' · ' . $x['numero'] : '' ) );
 			if ( ! empty( $c['verificar'] ) ) { $A['contratos'][] = array( 'o' => 'Confirmar se foi prorrogado', 't' => $t, 'd' => $x['fim'], 'n' => $c['dias_fim'], 'id' => $x['id'], 'u' => '/plataforma/contratos/?ficha=' . $x['id'] ); continue; }

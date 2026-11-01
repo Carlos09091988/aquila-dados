@@ -110,7 +110,8 @@ add_filter( 'rest_request_after_callbacks', function ( $resp, $handler, $req ) {
 	}
 	if ( $req->get_method() === 'GET' && $req->get_route() === '/desenvolve/v1/alertas' && is_array( $resp ) && isset( $resp['caixa'] ) ) {
 		$uid = get_current_user_id(); $M = dv_ap_modelo( $uid );
-		foreach ( $resp['caixa'] as &$x ) { $n = dv_ap_nota( $M, $x ); if ( $n ) { $x['ap'] = $n; } } unset( $x );
+		$hj = current_time( 'Y-m-d' );
+		foreach ( $resp['caixa'] as &$x ) { $n = dv_ap_nota( $M, $x ); if ( $n ) { $x['ap'] = $n; } if ( ! empty( $x['encerra'] ) && function_exists( 'dv_lic_calc' ) ) { $c = dv_lic_calc( array( 'abertura' => $x['encerra'] ), $hj ); $x['imp'] = $c['prazo_imp']; $x['dias_imp'] = $c['dias_imp']; } } unset( $x );
 		$resp['ap'] = array( 'quero' => (int) round( $M['Q'] ), 'desc' => (int) $M['D'], 'ganhas' => $M['ganhas'], 'ativo' => ( $M['Q'] + $M['D'] >= 5 && $M['Q'] && $M['D'] ), 'sugestoes' => dv_ap_sugestoes( $uid ) );
 	}
 	return $resp;
@@ -135,6 +136,7 @@ add_action( 'wp_footer', function () {
 <style id="dv-ap-css">
 .al-ap{display:inline-block;border-radius:6px;padding:2px 8px;font-size:.76rem;font-weight:700;margin-right:6px;cursor:help}
 .al-ap.a{background:#EAF5EE;color:#1F5A3B}.al-ap.m{background:#F3F0E8;color:#4A4F55}.al-ap.b{background:#FDEDEA;color:#9A3524}
+.al-imp{font-weight:700}.al-imp.r{background:#FDEDEA!important;color:#9A3524!important}.al-imp.a{background:#FBF1DC!important;color:#7A5410!important}.al-imp.x{opacity:.7}
 .al-apw{font-size:.8rem;color:#6E6A60;margin:4px 0 0}
 .al-aps{background:#FBF6EA;border:1px solid #E8D7AE;border-radius:12px;padding:10px 14px;margin:8px 0 12px;font-size:.9rem}
 .al-aps b{color:#16191E}.al-aps button{border:1px solid #C9A45C;background:#fff;border-radius:8px;padding:4px 10px;margin:4px 6px 0 0;font:inherit;font-size:.82rem;font-weight:700;cursor:pointer}
@@ -143,15 +145,16 @@ add_action( 'wp_footer', function () {
 <script>
 /* DV_AP_V1 — decora a caixa depois de cada renderização */
 (function(){
-var R=document.querySelector('.al-cx');if(!R)return;var AP=null,MAP={};
+var R=document.querySelector('.al-cx');if(!R)return;var AP=null,MAP={},IMP={};
 var nonce=(window.wpApiSettings&&wpApiSettings.nonce)||((document.querySelector('[data-nonce]')||{}).dataset||{}).nonce||(window.DV&&DV.nonce)||'';
 var api=(window.DV&&DV.api)||'/wp-json/desenvolve/v1/';
 function e(s){return String(s==null?'':s).replace(/[&<>"]/g,function(c){return{'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]})}
-function carrega(){return fetch(api+'alertas',{credentials:'same-origin',headers:{'X-WP-Nonce':nonce}}).then(function(r){return r.json()}).then(function(j){AP=j.ap||null;MAP={};(j.caixa||[]).forEach(function(x){if(x.ap)MAP[x.ref]=x.ap});decora()}).catch(function(){})}
+function carrega(){return fetch(api+'alertas',{credentials:'same-origin',headers:{'X-WP-Nonce':nonce}}).then(function(r){return r.json()}).then(function(j){AP=j.ap||null;MAP={};IMP={};(j.caixa||[]).forEach(function(x){if(x.ap)MAP[x.ref]=x.ap;if(x.imp)IMP[x.ref]=[x.imp,x.dias_imp,x.st]});decora()}).catch(function(){})}
 var ocupado=false;
 function decora(){if(ocupado)return;ocupado=true;try{
  var L=R.querySelector('.al-cxl');if(!L)return;var tab=(R.querySelector('.al-tabs .on')||{}).dataset||{},novas=(tab.cx||'')==='';
  var it=[].slice.call(L.querySelectorAll('.al-i'));
+ it.forEach(function(c){var p=IMP[c.dataset.r],ch=c.querySelector('.al-ch');if(!p||!ch||ch.querySelector('.al-imp'))return;var d=p[1],m=String(p[0]).match(/(\d{4})-(\d{2})-(\d{2})/),dt=m?m[3]+'/'+m[2]:'',sp=document.createElement('span');sp.className='al-imp '+(d<0?'x':d<=2?'r':d<=5?'a':'');sp.title='Lei 14.133, art. 164: até 3 dias úteis antes da abertura. '+(p[2]==='desc'?'':'O prazo entra sozinho na agenda do seu painel nos 10 dias anteriores.');sp.textContent=d<0?'⚖️ Prazo de impugnação encerrado':'⚖️ Impugnar ou esclarecer até '+dt+(d===0?' (hoje)':d===1?' (amanhã)':' ('+d+' dias)')+((p[2]==='desc'||d>10)?'':' · na agenda');ch.insertBefore(sp,ch.children[1]||null)});
  it.forEach(function(c){if(c.querySelector('.al-ap'))return;var a=MAP[c.dataset.r];if(!a)return;var cl=a.nota>=65?'a':a.nota<=35?'b':'m',lb=a.nota>=65?'⭐ Parecido com o que você aproveita':a.nota<=35?'Parecido com o que você descarta':'Afinidade média';
   var tt='Nota de afinidade '+a.nota+'/100.'+(a.mais.length?' A favor: '+a.mais.join(', ')+'.':'')+(a.menos.length?' Contra: '+a.menos.join(', ')+'.':'');var m=c.querySelector('.m');if(!m)return;
   var s=document.createElement('div');s.innerHTML='<span class="al-ap '+cl+'" title="'+e(tt)+'">'+lb+' · '+a.nota+'</span>'+(a.mais.length||a.menos.length?'<span class="al-apw">'+e((a.mais.length?'a favor: '+a.mais.join(', '):'')+(a.mais.length&&a.menos.length?' · ':'')+(a.menos.length?'contra: '+a.menos.join(', '):''))+'</span>':'');m.parentNode.insertBefore(s,m)});

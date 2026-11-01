@@ -163,7 +163,21 @@ if(PG==='concorrente'){(function(){var _open=window.open;window.open=function(u)
  if(_p)w.print=function(){try{melhora(w.document)}catch(e){}return _p()}}catch(e){}return w}})()}
 window.DVXM=function(D){return melhora(D)};
 function melhora(D){if(!D||!D.body||D.body.getAttribute('data-dvx')||!/EMPRESA ANALISADA|RAIO-X/i.test(D.body.textContent))return;D.body.setAttribute('data-dvx','1');var r=root();
- var css=[].map.call(document.querySelectorAll('#dv-rs-css,#dv-pv-css,#dv-int-css'),function(s){return s.textContent}).join('\n')+'\n@page{margin:12mm 10mm}body{-webkit-print-color-adjust:exact;print-color-adjust:exact}.dvx{margin:18px 0;break-inside:auto}.dvx,.dvx *{font-family:'Hanken Grotesk',Arial,sans-serif!important}.dvx h2{font-size:15pt;margin:0 0 8px}.dvx .pj{display:flex;flex-wrap:wrap;gap:8px;margin:6px 0 10px}.dvx .pj span{border:1px solid #E3DED2;border-radius:8px;padding:6px 10px;font-size:10pt}.dvx .pj b{font-size:12pt;margin-right:4px}.dvx ol{margin:6px 0 0 18px;padding:0}.dvx li{font-size:9.5pt;margin:0 0 6px}.dvx li small{color:#555}.dv-rs .ac,.dv-ix .bt,.dv-ix .calc,.dv-ix .c-out,.dv-pv .rv a{display:none!important}';
+ var css=[].map.call(document.querySelectorAll('#dv-rs-css,#dv-pv-css,#dv-int-css'),function(s){return s.textContent}).join('\n')+'\n@page{margin:12mm 10mm}body{-webkit-print-color-adjust:exact;print-color-adjust:exact}.dvx{margin:18px 0;break-inside:auto}.dvx,.dvx *{font-family:"Hanken Grotesk",Arial,sans-serif!important}.dvx h2{font-size:15pt;margin:0 0 8px}.dvx .pj{display:flex;flex-wrap:wrap;gap:8px;margin:6px 0 10px}.dvx .pj span{border:1px solid #E3DED2;border-radius:8px;padding:6px 10px;font-size:10pt}.dvx .pj b{font-size:12pt;margin-right:4px}.dvx ol{margin:6px 0 0 18px;padding:0}.dvx li{font-size:9.5pt;margin:0 0 6px}.dvx li small{color:#555}.dv-rs .ac,.dv-ix .bt,.dv-ix .calc,.dv-ix .c-out,.dv-pv .rv a{display:none!important}';
+ var lk=D.createElement('link');lk.rel='stylesheet';lk.href='https://fonts.googleapis.com/css2?family=Hanken+Grotesk:wght@400;600;700;800&display=swap';(D.head||D.body).appendChild(lk);
+ css+='\nbody{font-family:"Hanken Grotesk",Arial,sans-serif!important;color:#16191E!important}'+
+  '.hd{background:#16191E!important;border-bottom:3px solid #C9A45C!important;border-radius:10px 10px 0 0}.hd div{color:#B9BDB8!important}.hd b{color:#C9A45C!important}'+
+  'h1{font:800 22pt "Hanken Grotesk",Arial,sans-serif!important;letter-spacing:-.02em;color:#16191E}'+
+  'h2{font:700 13pt "Hanken Grotesk",Arial,sans-serif!important;color:#16191E!important;border-bottom:2px solid #C9A45C!important;padding-bottom:5px!important;margin-top:24px!important}'+
+  '.k{color:#8A6A2E!important;letter-spacing:.14em}.g dt,.n,.ft{color:#6E6A60!important}'+
+  'th{background:#16191E!important;color:#F4F2EC!important;font-weight:600!important;-webkit-print-color-adjust:exact;print-color-adjust:exact}td{border-color:#E3DED2!important}'+
+  '.pt{background:#FAF8F3!important;border-left-color:#C9A45C!important;border-radius:0 8px 8px 0}.pt.n3{background:#FDEDEA!important;border-left-color:#9A3524!important}'+
+  'a{color:#8A6A2E!important}.ft{border-top:2px solid #C9A45C!important}'+
+  '.bar button{font:700 11pt "Hanken Grotesk",Arial,sans-serif!important;background:#C9A45C!important;color:#241A06!important;border-radius:999px!important;padding:10px 22px!important}'+
+  '.dv-rs,.dv-ix,.dv-pv{box-shadow:none!important;border:1px solid #E3DED2!important;border-radius:12px!important;padding:14px 16px!important;margin:14px 0!important;break-inside:auto!important;page-break-inside:auto!important}'+
+  '.dv-rs{border-left:5px solid #C9A45C!important}.dv-rs .q,.dv-pv .n div,.dv-ix .n div{break-inside:avoid}'+
+  '.dv-pv .n,.dv-ix .n{font-size:inherit!important;color:inherit!important}.dv-pv .n b,.dv-ix .n b{font-size:14pt!important}'+
+  '.dv-rs .h h3,.dv-pv h3,.dv-ix h3{font-size:13pt!important}.dv-pv table,.dv-ix table{font-size:9pt!important}';
  var st=D.createElement('style');st.textContent=css;(D.head||D.body).appendChild(st);
  /* textos antigos */
  var tw=D.createTreeWalker(D.body,4),n;while(n=tw.nextNode()){var t=n.nodeValue;if(/raio-x-do-fornecedor/.test(t))n.nodeValue=t.replace(/desenvolveestrategias\.com\.br\/raio-x-do-fornecedor\/?/,'desenvolveestrategias.com.br/plataforma/raio-x');if(/RAIO-X DE CONCORRENTES/.test(t))n.nodeValue=t.replace('RAIO-X DE CONCORRENTES','RAIO-X DO CONCORRENTE');if(/^\s*google\.com\s*$/.test(t))n.nodeValue='site da prefeitura'}

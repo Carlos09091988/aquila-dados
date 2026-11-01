@@ -186,7 +186,7 @@ R.addEventListener('click',function(ev){var t=ev.target.closest('button,a,span[d
  if(D.ia){ia();return}
  if(D.ai!=null){var box=t.closest('.ts-ia');copiar(prompt(box));var m=box.querySelector('.ts-iam');if(D.ai==='c'){m.textContent='Copiado! Cole na IA que você preferir.';return}var a=IAS[+D.ai];window.open(a[1],'_blank','noopener');m.textContent='Copiado! Na aba do '+a[0]+', cole (Ctrl+V ou ⌘+V) e envie.';return}
 });
-barra();inicio();
+barra();(function(){var q=new URLSearchParams(location.search).get('q');if(q){Q=q;R.querySelector('[name=q]').value=q;buscar();history.replaceState(null,'',location.pathname)}else inicio()})();
 })();
 </script>
 	<?php return ob_get_clean();

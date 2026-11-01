@@ -53,7 +53,7 @@ function dv_part_get( $urls, $timeout = 25 ) {
 
 /** Licitações vencidas pelo CNPJ (resultados homologados no PNCP, Lei 14.133, últimos 3 anos). */
 function dv_part_vencidas( $cnpj ) {
-	$ck = 'dv_venc3_' . $cnpj; $c = get_transient( $ck ); if ( $c !== false ) { return $c; }
+	$ck = 'dv_venc4_' . $cnpj; $c = get_transient( $ck ); if ( $c !== false ) { return $c; }
 	$B = 'https://dadosabertos.compras.gov.br/modulo-contratacoes/3_consultarResultadoItensContratacoes_PNCP_14133?tamanhoPagina=500&niFornecedor=' . $cnpj;
 	$t = current_time( 'timestamp' ); $u = array();
 	for ( $a = 0; $a < 3; $a++ ) {
@@ -100,6 +100,10 @@ function dv_part_vencidas( $cnpj ) {
 			$est = (float) $ij['valorUnitarioEstimado'] * ( $i['q'] ?: (float) ( $ij['quantidade'] ?? 0 ) );
 			if ( $est > 0 && $i['v'] > 0 ) { $d = ( 1 - $i['v'] / $est ) * 100; if ( $d > -50 && $d < 95 ) { $ds[] = $d; } }
 		}
+		if ( ! $ds && $cj ) { /* sem o estimado por item: usa o total da licitação quando ela levou tudo */
+			$te = (float) ( $cj['valorTotalEstimado'] ?? 0 ); $th = (float) ( $cj['valorTotalHomologado'] ?? 0 ); $sig = (int) ( $cj['orcamentoSigilosoCodigo'] ?? 1 );
+			if ( $te > 0 && $th > 0 && $sig <= 1 && abs( $th - $l['valor'] ) <= 0.02 * $th ) { $d = ( 1 - $th / $te ) * 100; if ( $d > -50 && $d < 95 ) { $ds[] = $d; } }
+		}
 		$desc = $ds ? array_sum( $ds ) / count( $ds ) : null; if ( $desc !== null ) { $descs[] = $desc; }
 		$org = $cj['orgaoEntidade']['razaoSocial'] ?? ''; $mun = $cj['unidadeOrgao']['municipioNome'] ?? '';
 		$o[] = array( 'ref' => $ref, 'orgao' => $org, 'municipio' => $mun, 'uf' => $l['uf'], 'objeto' => mb_substr( trim( (string) ( $cj['objetoCompra'] ?? '' ) ), 0, 220 ),
@@ -111,7 +115,7 @@ function dv_part_vencidas( $cnpj ) {
 	arsort( $orgs ); arsort( $ufs );
 	$r = array( 'total' => count( $o ), 'valor' => round( $tot, 2 ), 'desconto_medio' => $descs ? round( array_sum( $descs ) / count( $descs ), 1 ) : null,
 		'orgaos' => array_slice( $orgs, 0, 5, true ), 'ufs' => array_slice( $ufs, 0, 6, true ), 'itens' => $o, 'incompleto' => $falhou > 0 );
-	set_transient( $ck, $r, ( $falhou || ( $ui && ! $descs ) ) ? HOUR_IN_SECONDS : DAY_IN_SECONDS );
+	set_transient( $ck, $r, $falhou ? HOUR_IN_SECONDS : ( ( $ui && ! $descs ) ? 6 * HOUR_IN_SECONDS : DAY_IN_SECONDS ) );
 	return $r;
 }
 

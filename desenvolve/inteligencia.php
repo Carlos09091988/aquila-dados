@@ -56,7 +56,7 @@ function dv_int_postos( $t ) {
 function dv_int_meses( $a, $b ) { $x = strtotime( (string) $a ); $y = strtotime( (string) $b ); return ( $x && $y && $y > $x ) ? (int) round( ( $y - $x ) / ( 30.44 * DAY_IN_SECONDS ) ) : 0; }
 
 function dv_int_concorrente( $cnpj ) {
-	$ck = 'dv_ic3_' . $cnpj; $c = get_transient( $ck ); if ( $c !== false ) { return $c; }
+	$ck = 'dv_ic4_' . $cnpj; $c = get_transient( $ck ); if ( $c !== false ) { return $c; }
 	$V = function_exists( 'dv_part_vencidas' ) ? dv_part_vencidas( $cnpj ) : array( 'itens' => array() );
 	$cad = dv_int_cad( $cnpj ); $nome = $cad['cadastro']['razao_social'] ?? '';
 	$P = function_exists( 'dv_ds_pncp' ) ? dv_ds_pncp( $cnpj, '' ) : array( 'itens' => array() );
@@ -231,7 +231,7 @@ add_action( 'dv_int_mon_cron', function () {
 		$snaps = json_decode( (string) get_user_meta( $uid, 'dv_mon_snap', true ), true ) ?: array(); $msg = array();
 		foreach ( dv_int_mon_lista( $uid ) as $c ) {
 			if ( ++$feitos > 300 ) { break 2; }
-			delete_transient( 'dv_venc3_' . $c ); $n = dv_int_snap( $c ); $o = $snaps[ $c ] ?? null; $snaps[ $c ] = $n; if ( ! $o ) { continue; }
+			delete_transient( 'dv_venc4_' . $c ); $n = dv_int_snap( $c ); $o = $snaps[ $c ] ?? null; $snaps[ $c ] = $n; if ( ! $o ) { continue; }
 			$nm = $n['nome'] ?: $c; $L = array();
 			foreach ( $n['vitorias'] as $v ) { if ( ! in_array( $v[0], (array) $o['refs'], true ) ) { $L[] = 'Venceu licitação: ' . ( $v[1] ?: $v[0] ) . ' (R$ ' . number_format( (float) $v[2], 0, ',', '.' ) . ') ' . $v[3]; } }
 			if ( $n['sancoes'] > $o['sancoes'] ) { $L[] = 'Nova sanção registrada em cadastro público (CEIS, CNEP ou TCU).'; }

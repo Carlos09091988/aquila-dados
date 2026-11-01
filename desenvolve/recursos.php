@@ -69,7 +69,7 @@ add_action( 'rest_api_init', function () {
 	register_rest_route( $ns, '/recursos', array( 'methods' => 'GET', 'permission_callback' => $perm, 'callback' => function () {
 		$uid = get_current_user_id(); $hoje = current_time( 'Y-m-d' ); $T = dv_rc_tipos(); $tipos = array();
 		foreach ( $T as $k => $t ) { $tipos[] = array( 'k' => $k, 'nome' => $t[0], 'dias' => $t[1], 'base' => $t[2], 'roteiro' => dv_rc_roteiro( $k ) ); }
-		$lic = function_exists( 'dv_lic_itens' ) ? array_map( function ( $x ) { return array( 'id' => $x['id'], 'rot' => trim( $x['orgao'] . ' · ' . $x['numero'] ), 'objeto' => $x['objeto'], 'link' => $x['link'] ?? '' ); }, dv_lic_itens( $uid ) ) : array();
+		$lic = function_exists( 'dv_lic_itens' ) ? array_map( function ( $x ) { return array( 'id' => $x['id'], 'rot' => trim( $x['orgao'] . ' · ' . $x['numero'] ), 'objeto' => $x['objeto'], 'link' => $x['link'] ?? '', 'orgao' => $x['orgao'] ?? '', 'numero' => $x['numero'] ?? '', 'abertura' => substr( (string) ( $x['abertura'] ?? '' ), 0, 10 ), 'modalidade' => $x['modalidade'] ?? '', 'pncp' => $x['pncp'] ?? '' ); }, dv_lic_itens( $uid ) ) : array();
 		$ct = false && function_exists( 'dv_ct_itens' ) ? array_map( function ( $x ) { return array( 'id' => $x['id'], 'rot' => trim( ( $x['numero'] ?? '' ) . ' · ' . ( $x['orgao'] ?? '' ), ' ·' ), 'objeto' => mb_substr( (string) ( $x['objeto'] ?? '' ), 0, 200 ), 'cnpj' => $x['cnpj'] ?? '' ); }, dv_ct_itens( $uid ) ) : array();
 		return array( 'itens' => array_map( function ( $x ) use ( $hoje ) { return dv_rc_calc( $x, $hoje ); }, dv_rc_itens( $uid ) ), 'tipos' => $tipos, 'lic' => $lic, 'contratos' => $ct, 'hoje' => $hoje );
 	} ) );
@@ -165,6 +165,7 @@ add_shortcode( 'dv_recursos', function () {
 <style>
 .rc{--ln:#E3DED2;--mu:#6E6A60;--gd:#A8843F;--rd:#B04A3A;--gr:#2F7A55;--am:#9A6B12;color:#16191E;font-family:"Hanken Grotesk",-apple-system,sans-serif;padding:28px}
 .rc button{background:#C9A45C;color:#241A06;border:0;border-radius:10px;padding:11px 18px;font:inherit;font-weight:700;cursor:pointer}.rc button.g{background:#fff;border:1px solid var(--ln);color:#16191E;font-weight:600;padding:8px 14px}
+.rc-auto{background:#F8F6F0;border:1px solid var(--ln,#E3DED2);border-radius:12px;padding:12px 14px;margin:6px 0 12px}.rc-auto .rc-res{font-size:.9rem;margin-top:4px}.rc-adv{margin:0 0 12px}.rc-adv summary{cursor:pointer;font-weight:600;color:#6E6A60;font-size:.88rem;margin-bottom:8px}
 .rc input,.rc select,.rc textarea{border:1px solid #CFC8B8;border-radius:10px;padding:10px 12px;font:inherit;background:#fff;width:100%;box-sizing:border-box}.rc small{color:var(--mu);font-weight:500}
 .rc-h{color:var(--mu);font-size:.86rem;margin:6px 0 0}
 .rc-c{border:1px solid var(--ln);border-radius:14px;background:#fff;padding:14px 16px;margin-top:10px;display:grid;grid-template-columns:1fr auto;gap:10px}.rc-c .o{font-weight:700}.rc-c .m{color:var(--mu);font-size:.82rem;margin-top:3px}
@@ -224,6 +225,43 @@ R.addEventListener('click',function(ev){var t=ev.target,x;
  if(t.dataset.ia){x=S.itens.filter(function(y){return y.id===t.dataset.ia})[0];abrirIA(x);return}
  if(t.dataset.x){if(confirm('Excluir este caso?'))req('POST','recursos/excluir',{id:t.dataset.x}).then(carregar)}});
 R.querySelector('.rc-fc').addEventListener('change',function(){FC=this.value;pintar()});
+
+/* ===== Preenchimento automático: escolha a licitação (ou cole o link do PNCP) e o resto se preenche ===== */
+(function(){
+ function pas(y){var a=y%19,b=Math.floor(y/100),c=y%100,d=Math.floor(b/4),e2=b%4,f=Math.floor((b+8)/25),g=Math.floor((b-f+1)/3),h=(19*a+b-d-g+15)%30,i=Math.floor(c/4),k=c%4,l=(32+2*e2+2*i-h-k)%7,m=Math.floor((a+11*h+22*l)/451),mo=Math.floor((h+l-7*m+114)/31),di=((h+l-7*m+114)%31)+1;return new Date(Date.UTC(y,mo-1,di))}
+ function isoU(d){return d.toISOString().slice(0,10)}
+ function util(d){var w=d.getUTCDay();if(w===0||w===6)return false;var k=isoU(d).slice(5);if(['01-01','04-21','05-01','09-07','10-12','11-02','11-15','11-20','12-25'].indexOf(k)>=0)return false;var sx=pas(d.getUTCFullYear());sx.setUTCDate(sx.getUTCDate()-2);return isoU(sx)!==isoU(d)}
+ function antes(ab,n){var d=new Date(ab+'T00:00:00Z'),c=0;while(c<n){d.setUTCDate(d.getUTCDate()-1);if(util(d))c++}return isoU(d)}
+ var $=function(n){return F.querySelector('[name='+n+']')},AUTO=true,LK=null;
+ // 1) Licitação no topo + campo de link do PNCP
+ var lic=$('lic').closest('label'),tp=$('tipo').closest('label'),bx=document.createElement('div');bx.className='rc-auto';
+ bx.innerHTML='<div class="rc-2"></div><label class="rc-lk">Ou cole o link do PNCP<span style="display:flex;gap:6px"><input class="rc-url" placeholder="pncp.gov.br/app/editais/…"><button type="button" class="g rc-pux">Puxar</button></span></label><div class="rc-res"></div>';
+ tp.after(bx);bx.querySelector('.rc-2').appendChild(lic);lic.firstChild.textContent='Licitação';
+ // 2) Campos de dados e prazo ficam recolhidos
+ var det=document.createElement('details');det.className='rc-adv';det.innerHTML='<summary>Ajustar nome, órgão, número e prazo</summary>';
+ [$('titulo').closest('.rc-2'),$('numero_doc').closest('.rc-2'),$('intimacao').closest('.rc-3'),$('prazo_manual').closest('label')].forEach(function(n){if(n)det.appendChild(n)});
+ bx.after(det);
+ function curto(){var t=tipo($('tipo').value).nome;return t.split(' (')[0]}
+ function resumo(){var r=bx.querySelector('.rc-res'),t=tipo($('tipo').value),pz=$('prazo_manual').value,it=$('intimacao').value,lim='';
+  if(pz)lim=pz;else if(it&&t.dias){var d=new Date(it+'T00:00:00Z'),c=0;while(c<t.dias){d.setUTCDate(d.getUTCDate()+1);if(util(d))c++}lim=isoU(d)}
+  r.innerHTML=($('orgao').value||$('numero_doc').value?'<b>'+e($('titulo').value||'')+'</b><br>':'')+(lim?'Prazo: até <b>'+br(lim)+'</b>'+(pz&&!it?' (3 dias úteis antes da abertura, art. 164)':t.dias?' ('+t.dias+' dias úteis a partir de '+br(it)+', '+(t.base.split(' (')[0])+')':''):'<span class="rc-h">Escolha a licitação para calcularmos o prazo.</span>')}
+ function preencher(l){if(!l)return;LK=l;var t=$('tipo').value,num=(l.numero||'').split(' · ')[0];if(l.orgao)$('orgao').value=l.orgao;if(num&&!$('numero_doc').value)$('numero_doc').value=num;
+  if(AUTO)$('titulo').value=curto()+(num?' · '+num:'')+(l.orgao?' · '+l.orgao.slice(0,40):'');
+  if((t==='impugnacao'||t==='esclarecimento')&&l.abertura){$('prazo_manual').value=antes(l.abertura,3);$('intimacao').value=''}
+  else if(tipo(t).dias&&!$('intimacao').value){$('intimacao').value=new Date().toISOString().slice(0,10);$('prazo_manual').value=''}
+  resumo()}
+ $('lic').addEventListener('change',function(){var v=this.value;preencher(S.lic.filter(function(l){return l.id===v})[0])});
+ $('tipo').addEventListener('change',function(){if(LK)preencher(LK);else{if(tipo(this.value).dias&&!$('intimacao').value)$('intimacao').value=new Date().toISOString().slice(0,10);resumo()}});
+ $('titulo').addEventListener('input',function(){AUTO=false});
+ ['intimacao','prazo_manual','orgao','numero_doc','prazo_qtd','prazo_un'].forEach(function(n){var i=$(n);if(i)i.addEventListener('change',resumo)});
+ bx.querySelector('.rc-pux').onclick=function(){var b=this,u=bx.querySelector('.rc-url').value.trim(),r=bx.querySelector('.rc-res');if(!u)return;b.disabled=true;b.textContent='Puxando…';
+  req('GET','lic/pncp?ref='+encodeURIComponent(u)).then(function(j){b.disabled=false;b.textContent='Puxar';preencher({orgao:j.orgao,numero:j.numero,abertura:(j.abertura||'').slice(0,10)});
+   // guarda também na Gestão de licitações, para conectar prazos e conferência do edital
+   req('POST','lic/salvar',j).then(function(){return req('GET','recursos')}).then(function(x){S.lic=x.lic;var m=S.lic.filter(function(l){return l.pncp===j.pncp})[0];$('lic').innerHTML='<option value="">—</option>'+S.lic.map(function(l){return'<option value="'+l.id+'">'+e(l.rot.slice(0,80))+'</option>'}).join('');if(m)$('lic').value=m.id}).catch(function(){})})
+  .catch(function(j){b.disabled=false;b.textContent='Puxar';r.innerHTML='<span class="rc-h" style="color:#B04A3A">'+e((j&&j.message)||'Não conseguimos puxar agora. Escolha a licitação ou preencha em “Ajustar”.')+'</span>'})};
+ // ao abrir o formulário
+ var _f=form;form=function(x){AUTO=!(x&&x.id);LK=null;bx.querySelector('.rc-url').value='';_f(x);det.open=!!(x&&x.id);if(!(x&&x.id)){var v=$('lic').value;if(v)preencher(S.lic.filter(function(l){return l.id===v})[0]);else{if(tipo($('tipo').value).dias&&!$('intimacao').value)$('intimacao').value=new Date().toISOString().slice(0,10);resumo()}}else resumo()};
+})();
 var VER=(location.search.match(/[?&]ver=([a-z0-9]+)/)||[])[1];if(VER)history.replaceState(null,'',location.pathname);
 carregar().then(function(){if(VER){var x=S.itens.filter(function(y){return y.id===VER})[0];if(x){form(x);return}}if(PRE)form(null)});setInterval(function(){if(S&&!document.querySelector('.rc-dlg[open]'))pintar()},60000);
 })();

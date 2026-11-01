@@ -268,7 +268,8 @@ add_action( 'rest_api_init', function () {
 	register_rest_route( 'desenvolve/v1', '/int/concorrente', array( 'methods' => 'GET', 'permission_callback' => $logado, 'callback' => function ( WP_REST_Request $r ) use ( $cn ) {
 		$c = $cn( $r ); if ( ! $c ) { return new WP_Error( 'dv_cnpj', 'CNPJ inválido.', array( 'status' => 400 ) ); }
 		$uid = get_current_user_id(); @set_time_limit( 150 );
-		$o = dv_int_concorrente( $c ); $meu = preg_replace( '/\D/', '', (string) get_user_meta( $uid, 'dv_doc', true ) );
+		$o = dv_int_concorrente( $c ); $nm = preg_replace( '/\D/', '', (string) $r['meu'] ); if ( strlen( $nm ) === 14 && function_exists( 'dv_part_cnpj_ok' ) && dv_part_cnpj_ok( $nm ) ) { update_user_meta( $uid, 'dv_cnpj_empresa', $nm ); }
+		$meu = preg_replace( '/\D/', '', (string) ( get_user_meta( $uid, 'dv_cnpj_empresa', true ) ?: get_user_meta( $uid, 'dv_doc', true ) ) );
 		$o['meu'] = ( strlen( $meu ) === 14 && $meu !== $c ) ? $meu : '';
 		$o['monitorado'] = in_array( $c, dv_int_mon_lista( $uid ), true );
 		if ( ! empty( $r['comparar'] ) && $o['meu'] ) { $m = dv_int_concorrente( $o['meu'] ); $o['eu'] = array( 'nome' => $m['nome'], 'resumo' => $m['resumo'], 'perfil' => $m['perfil'] ); }
@@ -402,7 +403,7 @@ function htmlC(J,c){var h='<p class="k">Experiência, preço e acompanhamento</p
  else h+='<p>Sem licitações vencidas com valor estimado aberto para calcular o desconto.</p>';
  h+='<h4>Acompanhar e comparar</h4><p>Receba um e-mail quando esta empresa vencer uma licitação, sofrer sanção, mudar de situação na Receita ou passar a ter dívida ativa em cobrança.</p>';
  h+='<button type="button" class="bt '+(J.monitorado?'on':'p')+' c-mon">'+(J.monitorado?'✓ Monitorando · parar':'Monitorar este concorrente')+'</button>';
- h+=J.meu?'<button type="button" class="bt c-cmp">Comparar com a minha empresa</button>':'<span class="m"> Cadastre o CNPJ da sua empresa no painel para comparar.</span>';
+ h+='<button type="button" class="bt c-cmp">Comparar com a minha empresa</button>'+(J.meu?'':'<span class="c-meu" style="display:none"> <input class="c-mi" inputmode="numeric" placeholder="CNPJ da sua empresa" style="border:1px solid #D9D3C4;border-radius:8px;padding:7px 9px;font:inherit;width:190px"></span>');
  h+='<a class="bt" href="/plataforma/captador/">Monitorar nos diários oficiais</a><div class="c-out"></div>';
  return h}
 function ligaC(b,J,c){var E=J.experiencia||[];var q=b.querySelector('.c-q'),v=b.querySelector('.c-v'),r=b.querySelector('.c-r');
@@ -412,7 +413,7 @@ function ligaC(b,J,c){var E=J.experiencia||[];var q=b.querySelector('.c-q'),v=b.
   r.textContent=o.join(' ')}
  if(q){q.oninput=calc;v.oninput=calc}
  var m=b.querySelector('.c-mon');if(m)m.onclick=function(){m.disabled=true;var on=m.classList.contains('on');post('int/monitor',{cnpj:c,acao:on?'del':'add'}).then(function(){m.disabled=false;m.classList.toggle('on',!on);m.classList.toggle('p',on);m.textContent=on?'Monitorar este concorrente':'✓ Monitorando · parar'}).catch(function(x){m.disabled=false;alert((x&&x.message)||'Não foi possível agora.')})};
- var k=b.querySelector('.c-cmp');if(k)k.onclick=function(){var o=b.querySelector('.c-out');o.innerHTML='<p>Comparando…</p>';get('int/concorrente?cnpj='+c+'&comparar=1').then(function(X){if(!X.eu){o.innerHTML='<p>Não foi possível comparar.</p>';return}var a=X.eu.resumo,z=X.resumo;
+ var k=b.querySelector('.c-cmp');if(k)k.onclick=function(){var o=b.querySelector('.c-out'),mw=b.querySelector('.c-meu'),mi=b.querySelector('.c-mi'),mv='';if(mi){mw.style.display='inline';mv=String(mi.value).replace(/\D/g,'');if(mv.length!==14){o.innerHTML='<p>Digite o CNPJ da sua empresa e clique de novo.</p>';mi.focus();return}}o.innerHTML='<p>Comparando…</p>';get('int/concorrente?cnpj='+c+'&comparar=1'+(mv?'&meu='+mv:'')).then(function(X){if(!X.eu){o.innerHTML='<p>Não foi possível comparar.</p>';return}var a=X.eu.resumo,z=X.resumo;
   function an(d){var t=Date.parse(d);return t?Math.floor((Date.now()-t)/31557600000)+' anos':'—'}
   var L=[['Licitações vencidas (3 anos)',a.vitorias,z.vitorias],['Valor homologado',mc(a.valor),mc(z.valor)],['Desconto médio',pc(a.desconto),pc(z.desconto)],['Contratos no PNCP',a.contratos,z.contratos],['Valor dos contratos',mc(a.contratos_valor),mc(z.contratos_valor)],['Capital social',mc(a.capital),mc(z.capital)],['Tempo de atividade',an(a.abertura),an(z.abertura)],['Porte',a.porte||'—',z.porte||'—']];
   o.innerHTML='<div class="tw" style="margin-top:12px"><table><tr><th></th><th>Sua empresa</th><th>'+e(X.nome||'Concorrente')+'</th></tr>'+L.map(function(l){return'<tr><td>'+l[0]+'</td><td><b>'+e(l[1])+'</b></td><td><b>'+e(l[2])+'</b></td></tr>'}).join('')+'</table></div>'}).catch(function(){o.innerHTML='<p>Não foi possível comparar agora.</p>'})}}

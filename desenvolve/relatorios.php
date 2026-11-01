@@ -135,11 +135,11 @@ if(REL){fetch(R.api+'relatorio/'+encodeURIComponent(REL),{credentials:'same-orig
  if(x.s>=400||!j.html){bn.innerHTML='<span>'+e((j&&j.message)||'Não foi possível abrir este relatório.')+'</span>';tool.parentNode.insertBefore(bn,tool);return}
  (j.estilos||[]).forEach(function(s){if(s.id&&document.getElementById(s.id))return;var st=document.createElement('style');if(s.id)st.id=s.id;st.textContent=s.css;document.head.appendChild(st)});
  var anc=(j.pai&&j.pai.id&&document.getElementById(j.pai.id))||tool,c1=j.pai&&j.pai.cls?String(j.pai.cls).split(/\s+/)[0]:'',par=c1?(anc.classList.contains(c1)?anc:anc.querySelector('.'+c1.replace(/[^\w-]/g,''))||anc):anc;
- var tmp=document.createElement('div');tmp.innerHTML=j.html;var rt=tmp.firstElementChild;if(!rt)return;var rc=rt.classList[0];if(rc)[].forEach.call(par.querySelectorAll(':scope > .'+rc),function(o){o.remove()});
+ tool.querySelectorAll('input').forEach(function(i){if(!i.value&&/cnpj|00\.000/i.test((i.name||'')+(i.id||'')+(i.placeholder||'')))i.value=fc(j.cnpj)});
+ var tmp=document.createElement('div');tmp.innerHTML=j.html;[].forEach.call(tmp.querySelectorAll('.dv-ia'),function(x){x.removeAttribute('data-v2')});var rt=tmp.firstElementChild;if(!rt)return;var rc=rt.classList[0];if(rc)[].forEach.call(par.querySelectorAll(':scope > .'+rc),function(o){o.remove()});
  par.appendChild(rt);
  bn.innerHTML='<span>📄 <b>Relatório salvo</b> de '+dt(j.criado)+'. Disponível sem custo até '+dt(j.ate)+'.</span><button type="button">Pesquisar de novo ('+cr()+')</button>';
  bn.querySelector('button').onclick=function(){location.href=urlNova(j.cnpj)};rt.parentNode.insertBefore(bn,rt);
- tool.querySelectorAll('input').forEach(function(i){if(!i.value&&/cnpj|00\.000/i.test((i.name||'')+(i.placeholder||'')))i.value=fc(j.cnpj)});
  var impresso=false;window.addEventListener('beforeprint',function(){impresso=true});
  rt.addEventListener('click',function(ev){var b=ev.target.closest('button');if(!b||!/pdf/i.test(b.textContent+' '+b.className))return;impresso=false;setTimeout(function(){if(!impresso)window.print()},300)});
  bn.scrollIntoView({block:'start'});

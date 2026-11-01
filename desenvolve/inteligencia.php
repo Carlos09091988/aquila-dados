@@ -511,7 +511,7 @@ if(lt){var T=lt.querySelector('textarea'),go=lt.querySelector('.lt-go'),cu=+lt.d
 var tm=null;function tenta(){var r=root();if(!r||!pronto(r))return;var c=cnpj();if(!c)return;
  if(PG==='comprador'){comprador(c);return}
  if(!document.getElementById('dv-pv'))return;concorrente(c);if(PG==='dossie')dossie(c)}
-new MutationObserver(function(){clearTimeout(tm);tm=setTimeout(tenta,1500)}).observe(document.body,{childList:true,subtree:true});
+new MutationObserver(function(){clearTimeout(tm);tm=setTimeout(tenta,1500)}).observe(document.body,{childList:true,subtree:true});var nv=0,iv=setInterval(function(){if(++nv>60)clearInterval(iv);tenta()},3000);
 })();
 </script>
 	<?php

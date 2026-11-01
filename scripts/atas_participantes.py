@@ -100,33 +100,36 @@ def main():
     novos = json.load(open(pn)) if os.path.exists(pn) else []
     corte = (HOJE - dt.timedelta(days=30)).isoformat()
     novos = [x for x in novos if x.get('d', '') >= corte]
-    ini, fim = (HOJE - dt.timedelta(days=40)).isoformat(), (HOJE - dt.timedelta(days=2)).isoformat()
+    RAMOS = re.compile(r'vigil[aâ]ncia|seguran[cç]a patrimonial|limpeza|conserva[cç][aã]o|higieniza|portaria|recep[cç][aã]o|controle de acesso|alimenta[cç][aã]o|merenda|refei[cç]|manuten[cç][aã]o predial|apoio administrativo|m[aã]o de obra|copeir|jardinagem|ro[cç]ada|transporte escolar|coleta de (lixo|res[ií]duos)|lavanderia', re.I)
+    EXCL = re.compile(r'aquisi[cç][aã]o de|material de limpeza|produtos de limpeza|g[eê]neros aliment', re.I)
     alvo = {}
-    for termo in TERMOS:
-        for pg in range(1, 6):
-            if not tempo():
-                break
-            q = urllib.parse.urlencode({'q': termo, 'tipos_documento': 'edital', 'ordenacao': '-data', 'pagina': pg, 'tam_pagina': 100})
-            j = get('https://pncp.gov.br/api/search/?' + q)
-            if not j or not j.get('items'):
-                break
-            velho = 0
-            for it in j['items']:
-                m = re.search(r'/editais/(\d{14})/(\d{4})/(\d+)', it.get('item_url', '') or '')
-                fv = (it.get('data_fim_vigencia') or '')[:10]
-                if not m or it.get('cancelado'):
-                    continue
-                if (it.get('data_publicacao_pncp') or '')[:10] < (HOJE - dt.timedelta(days=150)).isoformat():
-                    velho += 1
-                if not (ini <= fv <= fim):
-                    continue
-                ref = f'{m.group(1)}/{m.group(2)}/{int(m.group(3))}'
-                e = estado.get(ref, {})
-                if e.get('ok') or e.get('t', 0) >= 6:
-                    continue
-                alvo[ref] = {'objeto': (it.get('description') or '')[:250], 'orgao': (it.get('orgao_nome') or '')[:190]}
-            if velho > 60:
-                break
+    # pendentes de dias anteriores (ata ainda não publicada)
+    for ref, e in estado.items():
+        if not e.get('ok') and e.get('t', 0) < 6 and e.get('objeto'):
+            alvo[ref] = {'objeto': e['objeto'], 'orgao': e.get('orgao', '')}
+    # pregões eletrônicos publicados há 21 dias (sessão já deve ter ocorrido)
+    dia = (HOJE - dt.timedelta(days=21)).strftime('%Y%m%d')
+    for pg in range(1, 200):
+        if not tempo():
+            break
+        q = urllib.parse.urlencode({'dataInicial': dia, 'dataFinal': dia, 'codigoModalidadeContratacao': 6, 'pagina': pg, 'tamanhoPagina': 50})
+        j = get('https://pncp.gov.br/api/consulta/v1/contratacoes/publicacao?' + q)
+        if not j or not j.get('data'):
+            break
+        for c in j['data']:
+            obj = c.get('objetoCompra') or ''
+            if not RAMOS.search(obj) or EXCL.search(obj):
+                continue
+            enc = (c.get('dataEncerramentoProposta') or '')[:10]
+            if enc and enc > (HOJE - dt.timedelta(days=2)).isoformat():
+                continue
+            oe = c.get('orgaoEntidade') or {}
+            ref = f"{oe.get('cnpj', '')}/{c.get('anoCompra')}/{c.get('sequencialCompra')}"
+            if not re.fullmatch(r'\d{14}/\d{4}/\d+', ref) or estado.get(ref, {}).get('ok'):
+                continue
+            alvo[ref] = {'objeto': obj[:250], 'orgao': (oe.get('razaoSocial') or '')[:190]}
+        if pg >= (j.get('totalPaginas') or 1):
+            break
     print('licitações com sessão encerrada a verificar:', len(alvo))
     feitos = achou = 0
     for ref, info in alvo.items():
@@ -135,6 +138,7 @@ def main():
         cnpj, ano, seq = ref.split('/')
         e = estado.setdefault(ref, {'t': 0})
         e['t'] = e.get('t', 0) + 1
+        e['objeto'], e['orgao'] = info['objeto'], info['orgao']
         arqs = get(f'https://pncp.gov.br/api/pncp/v1/orgaos/{cnpj}/compras/{ano}/{seq}/arquivos')
         feitos += 1
         if not isinstance(arqs, list):
@@ -158,7 +162,7 @@ def main():
             achou += 1
             novos.append({'ref': ref, 'd': HOJE.isoformat(), 'objeto': info['objeto'], 'orgao': info['orgao'], 'participantes': list(P.values())[:80]})
         time.sleep(0.3)
-    # estado: descarta o que tem mais de 120 dias de tentativa
+    estado = {k: v for k, v in estado.items() if v.get('ok') or v.get('t', 0) < 6}
     json.dump(estado, open(pe, 'w'), ensure_ascii=False)
     json.dump(novos, open(pn, 'w'), ensure_ascii=False)
     print(f'verificadas: {feitos} · com participantes: {achou} · na janela de 30 dias: {len(novos)}')

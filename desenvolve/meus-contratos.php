@@ -15,20 +15,25 @@ function dv_mc_tokens( $t ) {
 	$w = array_filter( preg_split( '/[^a-z0-9]+/', $t ), function ( $x ) use ( $stop ) { return strlen( $x ) > 4 && ! isset( $stop[ $x ] ); } );
 	return array_slice( array_values( array_unique( $w ) ), 0, 3 );
 }
-/** Procura no PNCP a licitação de substituição (mesmo órgão) e oportunidades do mesmo objeto na UF */
+/** Servidor: procura a licitação de substituição pela API de consulta do PNCP (contratações do mesmo órgão nos últimos 45 dias) */
 function dv_mc_buscar( $c ) {
-	$tk = dv_mc_tokens( $c['objeto'] ?? '' ); if ( ! $tk ) { return null; }
-	$u = 'https://pncp.gov.br/api/search/?q=' . rawurlencode( implode( ' ', $tk ) ) . '&tipos_documento=edital&ordenacao=-data&pagina=1&tam_pagina=60';
-	$g = wp_remote_get( $u, array( 'timeout' => 25 ) ); if ( is_wp_error( $g ) || wp_remote_retrieve_response_code( $g ) >= 400 ) { return null; }
-	$j = json_decode( wp_remote_retrieve_body( $g ), true ); $sub = array(); $prox = array(); $hoje = current_time( 'Y-m-d' );
-	$desde = ! empty( $c['ini'] ) ? $c['ini'] : gmdate( 'Y-m-d', strtotime( '-2 years' ) );
-	foreach ( (array) ( $j['items'] ?? array() ) as $i ) {
-		$pub = substr( (string) ( $i['data_publicacao_pncp'] ?? '' ), 0, 10 ); $url = (string) ( $i['item_url'] ?? '' );
-		$x = array( 't' => mb_substr( (string) ( $i['description'] ?? $i['title'] ?? '' ), 0, 200 ), 'org' => (string) ( $i['orgao_nome'] ?? '' ), 'uf' => (string) ( $i['uf'] ?? '' ), 'mu' => (string) ( $i['municipio_nome'] ?? '' ), 'pub' => $pub, 'fim' => substr( (string) ( $i['data_fim_recebimento_propostas'] ?? $i['data_fim_vigencia'] ?? '' ), 0, 10 ), 'url' => $url );
-		if ( ! empty( $c['oc'] ) && ( $i['orgao_cnpj'] ?? '' ) === $c['oc'] && $pub >= $desde ) { $sub[] = $x; }
-		elseif ( ! empty( $c['uf'] ) && ( $i['uf'] ?? '' ) === $c['uf'] && $x['fim'] >= $hoje && count( $prox ) < 5 ) { $prox[] = $x; }
+	$tk = dv_mc_tokens( $c['objeto'] ?? '' ); if ( ! $tk || strlen( (string) ( $c['oc'] ?? '' ) ) !== 14 ) { return null; }
+	$ini = gmdate( 'Ymd', strtotime( '-45 days' ) ); $fim = gmdate( 'Ymd' ); $sub = array(); $ok = false;
+	foreach ( array( 6, 4, 8 ) as $mod ) {
+		$g = wp_remote_get( 'https://pncp.gov.br/api/consulta/v1/contratacoes/publicacao?dataInicial=' . $ini . '&dataFinal=' . $fim . '&codigoModalidadeContratacao=' . $mod . '&cnpj=' . $c['oc'] . '&pagina=1&tamanhoPagina=50', array( 'timeout' => 40 ) );
+		if ( is_wp_error( $g ) ) { continue; } $ok = true; $j = json_decode( wp_remote_retrieve_body( $g ), true );
+		foreach ( (array) ( $j['data'] ?? array() ) as $x ) {
+			$ob = strtolower( remove_accents( (string) ( $x['objetoCompra'] ?? '' ) ) ); $hit = 0; foreach ( $tk as $t ) { if ( strpos( $ob, $t ) !== false ) { $hit++; } }
+			if ( $hit < min( 2, count( $tk ) ) ) { continue; }
+			$ctl = (string) ( $x['numeroControlePNCP'] ?? '' ); $url = preg_match( '#^(\d{14})-\d-(\d+)/(\d{4})$#', $ctl, $m ) ? '/editais/' . $m[1] . '/' . $m[3] . '/' . (int) $m[2] : '';
+			$sub[] = array( 't' => mb_substr( (string) ( $x['objetoCompra'] ?? '' ), 0, 200 ), 'org' => (string) ( $x['orgaoEntidade']['razaoSocial'] ?? '' ), 'uf' => (string) ( $x['unidadeOrgao']['ufSigla'] ?? '' ), 'mu' => (string) ( $x['unidadeOrgao']['municipioNome'] ?? '' ), 'pub' => substr( (string) ( $x['dataPublicacaoPncp'] ?? '' ), 0, 10 ), 'fim' => substr( (string) ( $x['dataEncerramentoProposta'] ?? '' ), 0, 10 ), 'url' => $url );
+		}
 	}
-	return array( 'sub' => array_slice( $sub, 0, 5 ), 'prox' => $prox, 'em' => $hoje );
+	return $ok ? array( 'sub' => array_slice( $sub, 0, 5 ), 'em' => current_time( 'Y-m-d' ) ) : null;
+}
+function dv_mc_limpa_busca( $b ) {
+	$f = function ( $l ) { $o = array(); foreach ( array_slice( (array) $l, 0, 6 ) as $x ) { $o[] = array( 't' => mb_substr( sanitize_text_field( (string) ( $x['t'] ?? '' ) ), 0, 200 ), 'org' => mb_substr( sanitize_text_field( (string) ( $x['org'] ?? '' ) ), 0, 150 ), 'uf' => substr( sanitize_text_field( (string) ( $x['uf'] ?? '' ) ), 0, 2 ), 'mu' => mb_substr( sanitize_text_field( (string) ( $x['mu'] ?? '' ) ), 0, 80 ), 'pub' => dv_mc_data( substr( (string) ( $x['pub'] ?? '' ), 0, 10 ) ), 'fim' => dv_mc_data( substr( (string) ( $x['fim'] ?? '' ), 0, 10 ) ), 'url' => preg_replace( '#[^a-z0-9/._-]#i', '', (string) ( $x['url'] ?? '' ) ) ); } return $o; };
+	return array( 'sub' => $f( $b['sub'] ?? array() ), 'prox' => $f( $b['prox'] ?? array() ), 'em' => current_time( 'Y-m-d' ) );
 }
 add_action( 'rest_api_init', function () {
 	$ns = 'desenvolve/v1'; $perm = function () { return is_user_logged_in(); };
@@ -53,26 +58,9 @@ add_action( 'rest_api_init', function () {
 		$uid = get_current_user_id(); $d = dv_mc_get( $uid ); $k = $r['tipo'] === 'g' ? 'g' : 'c'; $id = sanitize_key( (string) $r['id'] );
 		$d[ $k ] = array_filter( $d[ $k ], function ( $x ) use ( $id ) { return $x['id'] !== $id; } ); dv_mc_put( $uid, $d ); return dv_mc_get( $uid );
 	} ) );
-	/* Contratos vigentes da empresa no PNCP (busca pelo CNPJ do fornecedor) */
-	register_rest_route( $ns, '/mc/importar', array( 'methods' => 'GET', 'permission_callback' => $perm, 'callback' => function ( WP_REST_Request $r ) {
-		$cnpj = preg_replace( '/\D/', '', (string) ( $r['cnpj'] ?: get_user_meta( get_current_user_id(), 'dv_doc', true ) ) );
-		if ( strlen( $cnpj ) !== 14 ) { return new WP_Error( 'dv_mc', 'Informe o CNPJ da empresa.', array( 'status' => 400 ) ); }
-		$out = array();
-		for ( $p = 1; $p <= 3; $p++ ) {
-			$g = wp_remote_get( 'https://pncp.gov.br/api/search/?q=' . $cnpj . '&tipos_documento=contrato&status=vigente&ordenacao=-data&pagina=' . $p . '&tam_pagina=100', array( 'timeout' => 30 ) );
-			if ( is_wp_error( $g ) ) { $err = $g->get_error_message(); break; } $cod = wp_remote_retrieve_response_code( $g ); $j = json_decode( wp_remote_retrieve_body( $g ), true ); if ( ! is_array( $j ) ) { $err = 'PNCP respondeu ' . $cod; break; } $it = (array) ( $j['items'] ?? array() );
-			foreach ( $it as $i ) {
-				if ( preg_replace( '/\D/', '', (string) ( $i['fornecedor_ni'] ?? '' ) ) !== $cnpj ) { continue; }
-				$out[] = array( 'orgao' => (string) ( $i['orgao_nome'] ?? '' ), 'oc' => preg_replace( '/\D/', '', (string) ( $i['orgao_cnpj'] ?? '' ) ), 'uf' => (string) ( $i['uf'] ?? '' ), 'mu' => (string) ( $i['municipio_nome'] ?? '' ), 'objeto' => mb_substr( (string) ( $i['description'] ?? '' ), 0, 600 ), 'numero' => (string) ( $i['numero_contrato_empenho'] ?? $i['title'] ?? '' ), 'valor' => (float) ( $i['valor_global'] ?? 0 ), 'ini' => substr( (string) ( $i['data_inicio_vigencia'] ?? '' ), 0, 10 ), 'fim' => substr( (string) ( $i['data_fim_vigencia'] ?? '' ), 0, 10 ), 'pncp' => (string) ( $i['item_url'] ?? '' ), 'origem' => 'pncp' );
-			}
-			if ( count( $it ) < 100 ) { break; }
-		}
-		if ( ! $out && ! empty( $err ) ) { return new WP_Error( 'dv_mc', 'O PNCP não respondeu agora (' . $err . '). Tente de novo em instantes.', array( 'status' => 502 ) ); }
-		return array( 'cnpj' => $cnpj, 'itens' => $out );
-	} ) );
-	register_rest_route( $ns, '/mc/verificar', array( 'methods' => 'POST', 'permission_callback' => $perm, 'callback' => function ( WP_REST_Request $r ) {
+	register_rest_route( $ns, '/mc/busca', array( 'methods' => 'POST', 'permission_callback' => $perm, 'callback' => function ( WP_REST_Request $r ) {
 		$uid = get_current_user_id(); $d = dv_mc_get( $uid ); $id = sanitize_key( (string) $r['id'] );
-		foreach ( $d['c'] as &$x ) { if ( $x['id'] === $id ) { $b = dv_mc_buscar( $x ); if ( $b === null ) { return new WP_Error( 'dv_mc', 'O PNCP não respondeu agora. Tente de novo.', array( 'status' => 502 ) ); } $x['busca'] = $b; } } unset( $x );
+		foreach ( $d['c'] as &$x ) { if ( $x['id'] === $id ) { $x['busca'] = dv_mc_limpa_busca( (array) $r['busca'] ); } } unset( $x );
 		dv_mc_put( $uid, $d ); return dv_mc_get( $uid );
 	} ) );
 } );
@@ -91,7 +79,7 @@ add_action( 'dv_mc_diario', function () {
 			$byid[ $c['id'] ] = $c; $n = $dd( $c['fim'] );
 			foreach ( array( 180, 120, 90, 60, 30, 15 ) as $m ) { if ( $n <= $m && $n >= 0 && empty( $c['avisos'][ 'v' . $m ] ) ) { $c['avisos'][ 'v' . $m ] = $hoje; $mud = true; $L[] = '⏳ Contrato com <b>' . esc_html( $c['orgao'] ) . '</b> vence em <b>' . $n . ' dias</b> (' . esc_html( implode( '/', array_reverse( explode( '-', $c['fim'] ) ) ) ) . '). ' . esc_html( mb_substr( $c['objeto'], 0, 120 ) ); break; } }
 			if ( $seg && $n >= -30 && $n <= 365 ) {
-				$b = dv_mc_buscar( $c ); if ( $b !== null ) { $ant = array_column( (array) ( $c['busca']['sub'] ?? array() ), 'url' ); $c['busca'] = $b; $mud = true;
+				$b = dv_mc_buscar( $c ); if ( $b !== null ) { $ant = array_column( (array) ( $c['busca']['sub'] ?? array() ), 'url' ); $b['prox'] = (array) ( $c['busca']['prox'] ?? array() ); $b['sub'] = array_merge( $b['sub'], array_filter( (array) ( $c['busca']['sub'] ?? array() ), function ( $z ) use ( $b ) { return ! in_array( $z['url'], array_column( $b['sub'], 'url' ), true ); } ) ); $c['busca'] = $b; $mud = true;
 					foreach ( $b['sub'] as $s ) { if ( ! in_array( $s['url'], $ant, true ) ) { $L[] = '🔔 <b>Saiu licitação no mesmo órgão</b> (' . esc_html( $c['orgao'] ) . '), parecida com o seu contrato: ' . esc_html( mb_substr( $s['t'], 0, 140 ) ) . ' · <a href="https://pncp.gov.br/app' . esc_attr( $s['url'] ) . '">ver no PNCP</a>'; } } }
 			}
 		} unset( $c );
@@ -152,6 +140,11 @@ function dias(d){if(!d)return null;var a=new Date(d+'T12:00:00'),h=new Date();h.
 function cls(n,u,m){return n==null?'':n<0?'u':n<=u?'u':n<=m?'m':'ok'}
 function req(m,p,b){return fetch(api+p,{method:m,credentials:'same-origin',headers:{'X-WP-Nonce':nonce,'Content-Type':'application/json'},body:b?JSON.stringify(b):undefined}).then(function(r){return r.json().then(function(j){if(r.status>=400)throw j;return j})})}
 function ed(u){var m=/\/editais\/(\d{14})\/(\d{4})\/(\d+)/.exec(u||'');return m?m[1]+'/'+m[2]+'/'+m[3]:''}
+var PN='https://pncp.gov.br/api/search/?';
+function toks(t){var st='contratacao empresa empresas prestacao servico servicos continuos continuo fornecimento aquisicao especializada especializado objeto registro precos eventual futura atender atendimento necessidades secretaria municipal estadual federal mediante conforme demais especificacoes termo referencia anexo edital inclusive incluindo diversos diversas forma regime execucao unidades unidade publica publico durante periodo meses quantidade materiais equipamentos insumos dedicacao exclusiva obra para pelo pela com dos das nos nas sob lei'.split(' ');return String(t||'').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'').split(/[^a-z0-9]+/).filter(function(w,i,a){return w.length>4&&st.indexOf(w)<0&&a.indexOf(w)===i}).slice(0,3)}
+function procurar(c){var tk=toks(c.objeto);if(!tk.length)return Promise.reject({message:'Objeto curto demais para procurar.'});var hoje=new Date().toISOString().slice(0,10),desde=c.ini||'2000-01-01';
+ return fetch(PN+'q='+encodeURIComponent(tk.join(' '))+'&tipos_documento=edital&ordenacao=-data&pagina=1&tam_pagina=80').then(function(r){if(!r.ok)throw{message:'O PNCP não respondeu agora. Tente de novo.'};return r.json()}).then(function(j){var sub=[],prox=[];(j.items||[]).forEach(function(i){var x={t:(i.description||i.title||'').slice(0,200),org:i.orgao_nome||'',uf:i.uf||'',mu:i.municipio_nome||'',pub:String(i.data_publicacao_pncp||'').slice(0,10),fim:String(i.data_fim_vigencia||'').slice(0,10),url:i.item_url||''};if(c.oc&&i.orgao_cnpj===c.oc&&x.pub>=desde)sub.push(x);else if(c.uf&&i.uf===c.uf&&x.fim>=hoje&&prox.length<5)prox.push(x)});return req('POST','mc/busca',{id:c.id,busca:{sub:sub.slice(0,5),prox:prox}})})}
+function importar(cn){var out=[],p=1;function pg(){return fetch(PN+'q='+cn+'&tipos_documento=contrato&status=vigente&ordenacao=-data&pagina='+p+'&tam_pagina=100').then(function(r){if(!r.ok)throw{message:'O PNCP não respondeu agora. Tente de novo.'};return r.json()}).then(function(j){var it=j.items||[];it.forEach(function(i){if(String(i.fornecedor_ni||'').replace(/\D/g,'')!==cn)return;out.push({orgao:i.orgao_nome||'',oc:String(i.orgao_cnpj||'').replace(/\D/g,''),uf:i.uf||'',mu:i.municipio_nome||'',objeto:String(i.description||'').slice(0,600),numero:i.numero_contrato_empenho||i.title||'',valor:+i.valor_global||0,ini:String(i.data_inicio_vigencia||'').slice(0,10),fim:String(i.data_fim_vigencia||'').slice(0,10),pncp:i.item_url||'',origem:'pncp'})});if(it.length===100&&p<3){p++;return pg()}return{cnpj:cn,itens:out}})}return pg()}
 function gsOf(c){return S.g.filter(function(g){return g.cid===c.id})}
 function kp(){var v90=S.c.filter(function(c){var n=dias(c.fim);return n!=null&&n>=0&&n<=90}).length,g30=S.g.filter(function(g){var n=dias(g.venc);return n!=null&&n>=0&&n<=30}).length,sub=S.c.filter(function(c){return c.busca&&c.busca.sub&&c.busca.sub.length}).length;
  R.querySelector('.mc-kp').innerHTML='<div><b>'+S.c.length+'</b><span>contratos acompanhados</span></div><div><b style="color:'+(v90?'#B04A3A':'inherit')+'">'+v90+'</b><span>vencem em até 90 dias</span></div><div><b style="color:'+(g30?'#B04A3A':'inherit')+'">'+g30+'</b><span>garantias vencem em até 30 dias</span></div><div><b style="color:'+(sub?'#9A6B12':'inherit')+'">'+sub+'</b><span>com licitação de substituição encontrada</span></div>'}
@@ -168,7 +161,7 @@ function pintar(){kp();R.querySelectorAll('.mc-tabs span').forEach(function(s){s
    return'<div class="mc-i"><div class="d"><div><div class="o">'+e(T[x.tipo]||'Garantia')+' · '+e(M[x.mod]||'')+'</div><div class="s">'+e(c?c.orgao:(x.orgao||'Sem contrato vinculado'))+(x.seguradora?' · '+e(x.seguradora):'')+(x.apolice?' · nº '+e(x.apolice):'')+(x.valor?' · '+moeda(x.valor):'')+'</div></div><div class="mc-v '+cls(n,30,60)+'">'+(n==null?'':n<0?'Vencida há '+(-n)+' dias':'Vence em '+n+' dias')+'<div class="s">'+br(x.venc)+'</div></div></div>'+
     (c&&x.venc<c.fim?'<div class="mc-al r">⚠️ Vence antes do fim do contrato ('+br(c.fim)+'). Renove ou endosse a apólice para não ficar descoberto.</div>':'')+(x.notas?'<div class="s">📝 '+e(x.notas)+'</div>':'')+
     '<div class="a"><a class="p" href="'+WA+encodeURIComponent('Olá! Quero cotar a renovação do '+(T[x.tipo]||'seguro garantia')+(x.apolice?' nº '+x.apolice:'')+' de '+(c?c.orgao:(x.orgao||''))+', que vence em '+br(x.venc)+'.')+'" target="_blank" rel="noopener">Renovar / cotar com a Desenvolve</a><button type="button" data-ged="'+x.id+'">Editar</button><button type="button" data-gex="'+x.id+'">Excluir</button></div></div>'}).join(''):'<p class="mc-h">Nenhuma garantia cadastrada. Cadastre as apólices e cartas de fiança para receber os avisos antes de vencer.</p>'}}
-function carregar(){return req('GET','mc').then(function(j){S=j;pintar()}).catch(function(){R.querySelector('.mc-l').innerHTML='<p class="mc-h">Não foi possível carregar agora.</p>'})}
+function carregar(){return req('GET','mc').then(function(j){S=j;pintar();var hj=new Date(),lim=new Date(hj.getTime()-7*864e5).toISOString().slice(0,10),q=Promise.resolve();S.c.filter(function(c){var n=dias(c.fim);return n!=null&&n>=-30&&n<=365&&(!c.busca||!c.busca.em||c.busca.em<lim)}).slice(0,8).forEach(function(c){q=q.then(function(){return procurar(c).then(function(j){S=j;pintar()}).catch(function(){})})})}).catch(function(){R.querySelector('.mc-l').innerHTML='<p class="mc-h">Não foi possível carregar agora.</p>'})}
 function abrir(k,x){var D=R.querySelector(k==='c'?'.mc-dc':'.mc-dg'),F=D.querySelector('form');F.reset();F.querySelector('.mc-fm').textContent='';if(k==='g'){F.querySelector('[name=cid]').innerHTML='<option value="">— sem contrato vinculado —</option>'+S.c.map(function(c){return'<option value="'+c.id+'">'+e(c.orgao.slice(0,50))+' · até '+br(c.fim)+'</option>'}).join('')}
  if(x)Object.keys(x).forEach(function(n){var i=F.querySelector('[name='+(n==='tipo'&&k==='g'?'gtipo':n)+']');if(i&&typeof x[n]!=='object')i.value=x[n]});D.showModal()}
 R.addEventListener('click',function(ev){var t=ev.target.closest('button,span');if(!t)return;
@@ -178,9 +171,9 @@ R.addEventListener('click',function(ev){var t=ev.target.closest('button,span');i
  if(t.dataset.ed){abrir('c',S.c.filter(function(c){return c.id===t.dataset.ed})[0]);return}
  if(t.dataset.ged){abrir('g',S.g.filter(function(g){return g.id===t.dataset.ged})[0]);return}
  if(t.dataset.ex||t.dataset.gex){if(!confirm('Excluir?'))return;req('POST','mc/excluir',{tipo:t.dataset.gex?'g':'c',id:t.dataset.ex||t.dataset.gex}).then(function(j){S=j;pintar()});return}
- if(t.dataset.ver){t.disabled=true;t.textContent='Procurando no PNCP…';req('POST','mc/verificar',{id:t.dataset.ver}).then(function(j){S=j;pintar()}).catch(function(j){t.disabled=false;t.textContent=(j&&j.message)||'Tente de novo'});return}
+ if(t.dataset.ver){t.disabled=true;t.textContent='Procurando no PNCP…';procurar(S.c.filter(function(c){return c.id===t.dataset.ver})[0]).then(function(j){S=j;pintar()}).catch(function(j){t.disabled=false;t.textContent=(j&&j.message)||'Tente de novo'});return}
  if(t.classList.contains('mc-ok')){var k=t.dataset.k,F=t.closest('form'),o={tipo:k};new FormData(F).forEach(function(v,n){o[n]=v});o.valor=String(o.valor||'').replace(/\./g,'').replace(',','.');F.querySelector('.mc-fm').textContent='Salvando…';req('POST','mc/salvar',o).then(function(j){S=j;t.closest('dialog').close();aba=k;pintar()}).catch(function(j){F.querySelector('.mc-fm').textContent=(j&&j.message)||'Não foi possível salvar.'});return}
- if(t.classList.contains('mc-imp')){var I=R.querySelector('.mc-im'),cn=S.doc&&S.doc.length===14?S.doc:prompt('CNPJ da empresa (14 números):');if(!cn)return;I.innerHTML='<p class="mc-h">Buscando no PNCP os contratos vigentes do CNPJ…</p>';req('GET','mc/importar?cnpj='+cn.replace(/\D/g,'')).then(function(j){var ja={};S.c.forEach(function(c){if(c.pncp)ja[c.pncp]=1});CAND=j.itens.filter(function(x){return!ja[x.pncp]});
+ if(t.classList.contains('mc-imp')){var I=R.querySelector('.mc-im'),cn=S.doc&&S.doc.length===14?S.doc:prompt('CNPJ da empresa (14 números):');if(!cn)return;I.innerHTML='<p class="mc-h">Buscando no PNCP os contratos vigentes do CNPJ…</p>';importar(cn.replace(/\D/g,'')).then(function(j){var ja={};S.c.forEach(function(c){if(c.pncp)ja[c.pncp]=1});CAND=j.itens.filter(function(x){return!ja[x.pncp]});
   I.innerHTML=CAND.length?'<div class="mc-i"><b>'+CAND.length+' contrato(s) vigente(s) encontrado(s) no PNCP</b><div class="s">Marque os que quer acompanhar.</div>'+CAND.map(function(x,i){return'<label><input type="checkbox" data-c="'+i+'" checked><span><b>'+e(x.orgao)+'</b> · '+e(x.mu+'/'+x.uf)+' · até '+br(x.fim)+(x.valor?' · '+moeda(x.valor):'')+'<br><span class="s">'+e(x.objeto.slice(0,150))+'</span></span></label>'}).join('')+'<div class="a"><button type="button" class="p mc-add">Acompanhar os marcados</button><button type="button" class="g" data-fim>Fechar</button></div></div>':'<p class="mc-h">Nenhum contrato vigente novo encontrado no PNCP para o CNPJ '+e(j.cnpj)+'. Você pode cadastrar manualmente.</p>'}).catch(function(j){I.innerHTML='<p class="mc-h">'+e((j&&j.message)||'O PNCP não respondeu agora. Tente de novo.')+'</p>'});return}
  if(t.dataset.fim!=null){R.querySelector('.mc-im').innerHTML='';return}
  if(t.classList.contains('mc-add')){var sel=[].slice.call(R.querySelectorAll('.mc-im [data-c]:checked')).map(function(i){return CAND[+i.dataset.c]});t.disabled=true;t.textContent='Salvando…';var q=Promise.resolve();sel.forEach(function(x){q=q.then(function(){return req('POST','mc/salvar',Object.assign({tipo:'c'},x)).then(function(j){S=j})})});q.then(function(){R.querySelector('.mc-im').innerHTML='<p class="mc-h">'+sel.length+' contrato(s) adicionados. Cadastre as garantias de cada um para receber os avisos.</p>';aba='c';pintar()});return}});

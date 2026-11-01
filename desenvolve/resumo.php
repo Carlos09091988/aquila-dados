@@ -45,7 +45,7 @@ function pares(r){var o={};[].forEach.call(r.querySelectorAll('div'),function(d)
 function val(P,re){for(var k in P)if(re.test(k))return P[k];return null}
 
 function sinaisEmpresa(r){
- var T=r.innerText,P=pares(r),S={};
+ var T=r.innerText,P=pares(r),S={},X=document.getElementById('dv-rs');if(X&&r.contains(X))T=T.replace(X.innerText,'');
  var sit=T.match(/Situa[çc][ãa]o(?: cadastral)?:?\s*\n?\s*(ATIVA|BAIXADA|INAPTA|SUSPENSA|NULA)/i);S.sit=sit?sit[1].toUpperCase():'';
  var cap=T.match(/Capital social\s*\n?\s*(R\$\s*[\d.,]+(?:\s*(?:mi|mil))?)/i);S.capital=cap?brl(cap[1]):0;
  var ab=T.match(/Abertura\s*\n?\s*(\d{2})\/(\d{2})\/(\d{4})/);S.anos=ab?Math.floor((Date.now()-new Date(+ab[3],+ab[2]-1,+ab[1]))/31557600000):null;
@@ -109,7 +109,7 @@ function htmlEmpresa(S){
 }
 
 function htmlComprador(r){
- var P=pares(r),T=r.innerText;
+ var P=pares(r);
  var pg=val(P,/^Paga em dia\?$/)||val(P,/^Paga em dia \(nota\)/)||'',pts=/\d/.test(pg)?num(pg):null;
  var proc=num(val(P,/^Processos sobre licita/)),grav=num(val(P,/graves/)),ntl=num(val(P,/^Not[íi]cias negativas de licita/)),ger=num(val(P,/^Processos d[oa] /)),ntg=num(val(P,/^Not[íi]cias sobre o gestor/)),grev=num(val(P,/^Greves/)),atr=num(val(P,/^Not[íi]cias de atraso/));
  var cobv=val(P,/^Cobran[çc]as na Justi/)||'',cob=num(cobv),at=val(P,/^Contratos ativos/)||'',ab=val(P,/^Licita[çc][õo]es abertas/)||'',item=val(P,/^Seu item: contratos ativos/);

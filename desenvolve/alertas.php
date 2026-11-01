@@ -22,6 +22,15 @@ function dv_al_relevante( $termo, $nd ) {
 	}
 	return true;
 }
+/** Serviço ou compra, pelo texto do objeto (mesma regra do Buscador) */
+function dv_al_tipo( $desc ) {
+	$n = strtolower( remove_accents( (string) $desc ) );
+	$serv = (bool) preg_match( '/servic|prestacao de|contratacao de empresa|locacao|manutencao|obra|engenharia|terceiriz|mao de obra|limpeza e conservacao|vigilancia|seguranca patrimonial|transporte de|fornecimento de alimentacao|refeic|coleta de/', $n );
+	$comp = (bool) preg_match( '/^(aquisicao|compra|fornecimento|registro de precos para (a )?(eventual |futura )*(aquisicao|compra|fornecimento))|aquisicao de|materia(l|is) (de|para|medic|hospitalar|permanente|consumo)|equipamentos? |generos|medicament|insumos/', $n );
+	if ( $serv && ! preg_match( '/^(aquisicao|compra)/', $n ) ) { return 'servico'; }
+	if ( $comp ) { return 'compra'; }
+	return $serv ? 'servico' : 'compra';
+}
 function dv_al_buscar( $a, $desde ) {
 	$termos = array_slice( array_filter( array_map( 'trim', preg_split( '/[,;\n]+/', (string) $a['termos'] ) ) ), 0, 6 );
 	$excl = array_filter( array_map( function ( $x ) { return dv_al_norm( trim( $x ) ); }, preg_split( '/[,;\n]+/', (string) ( $a['excluir'] ?? '' ) ) ) );
@@ -46,6 +55,7 @@ function dv_al_buscar( $a, $desde ) {
 			$desc = (string) ( $i['description'] ?? '' ); $nd = dv_al_norm( $desc . ' ' . ( $i['title'] ?? '' ) );
 			if ( ! dv_al_relevante( $termo, $nd ) ) { continue; }
 			$pula = false; foreach ( $excl as $x ) { if ( $x !== '' && strpos( $nd, $x ) !== false ) { $pula = true; } } if ( $pula ) { continue; }
+			if ( ! empty( $a['tipo'] ) && dv_al_tipo( $desc ) !== $a['tipo'] ) { continue; }
 			$v = (float) ( $i['valor_global'] ?? 0 );
 			if ( ! empty( $a['vmin'] ) && $v && $v < (float) $a['vmin'] ) { continue; }
 			if ( ! empty( $a['vmax'] ) && $v && $v > (float) $a['vmax'] ) { continue; }
@@ -73,7 +83,7 @@ add_action( 'rest_api_init', function () {
 		if ( mb_strlen( trim( $termos ) ) < 3 ) { return new WP_Error( 'dv_al', 'Informe pelo menos uma palavra ou expressão.', array( 'status' => 400 ) ); }
 		$ufs = array_values( array_intersect( array_map( 'strtoupper', (array) $r['ufs'] ), array( 'AC','AL','AP','AM','BA','CE','DF','ES','GO','MA','MT','MS','MG','PA','PB','PR','PE','PI','RJ','RN','RS','RO','RR','SC','SP','SE','TO' ) ) );
 		$a = array( 'nome' => mb_substr( sanitize_text_field( (string) $r['nome'] ), 0, 80 ) ?: mb_substr( $termos, 0, 40 ), 'termos' => $termos, 'excluir' => mb_substr( sanitize_textarea_field( (string) $r['excluir'] ), 0, 300 ),
-			'ufs' => $ufs, 'vmin' => max( 0, (float) $r['vmin'] ), 'vmax' => max( 0, (float) $r['vmax'] ), 'ativo' => ( isset( $r['ativo'] ) && ! $r['ativo'] ) ? 0 : 1 );
+			'ufs' => $ufs, 'vmin' => max( 0, (float) $r['vmin'] ), 'vmax' => max( 0, (float) $r['vmax'] ), 'tipo' => in_array( $r['tipo'], array( 'servico', 'compra' ), true ) ? $r['tipo'] : '', 'ativo' => ( isset( $r['ativo'] ) && ! $r['ativo'] ) ? 0 : 1 );
 		$achou = false; foreach ( $l as &$x ) { if ( $x['id'] === $id ) { $x = array_merge( $x, $a ); $achou = true; } } unset( $x );
 		if ( ! $achou ) { if ( count( $l ) >= DV_AL_MAX ) { return new WP_Error( 'dv_al', 'Limite de ' . DV_AL_MAX . ' alertas.', array( 'status' => 400 ) ); } $id = substr( md5( uniqid( '', true ) ), 0, 10 ); $l[] = $a + array( 'id' => $id, 'criado' => current_time( 'Y-m-d' ) ); }
 		dv_al_salvar_lista( $uid, $l ); return array( 'ok' => true, 'id' => $id );
@@ -94,7 +104,7 @@ add_action( 'rest_api_init', function () {
 	} ) );
 	/* Prévia: o que o alerta encontra nas licitações abertas publicadas nos últimos 15 dias */
 	register_rest_route( $ns, '/alertas/testar', array( 'methods' => 'POST', 'permission_callback' => $perm, 'callback' => function ( WP_REST_Request $r ) {
-		$a = array( 'termos' => (string) $r['termos'], 'excluir' => (string) $r['excluir'], 'ufs' => (array) $r['ufs'], 'vmin' => (float) $r['vmin'], 'vmax' => (float) $r['vmax'] );
+		$a = array( 'termos' => (string) $r['termos'], 'excluir' => (string) $r['excluir'], 'ufs' => (array) $r['ufs'], 'vmin' => (float) $r['vmin'], 'vmax' => (float) $r['vmax'], 'tipo' => in_array( $r['tipo'], array( 'servico', 'compra' ), true ) ? $r['tipo'] : '' );
 		$it = dv_al_buscar( $a, gmdate( 'Y-m-d', strtotime( current_time( 'Y-m-d' ) . ' -15 days' ) ) );
 		return array( 'itens' => array_slice( $it, 0, 80 ), 'total' => count( $it ) );
 	} ) );
@@ -173,7 +183,8 @@ add_shortcode( 'dv_alertas', function () {
 	<form class="al-f" autocomplete="off">
 		<h3 class="al-ft">Novo alerta</h3>
 		<label>O que você vende? <small>Palavras ou expressões separadas por vírgula. Cada uma vira uma busca.</small><input name="termos" placeholder="limpeza predial, conservação, serviços de higienização"></label>
-		<div class="al-2"><label>Nome do alerta<input name="nome" placeholder="Ex.: Limpeza em SP"></label><label>Excluir quando aparecer<input name="excluir" placeholder="Ex.: veículos, piscina"></label></div>
+		<div class="al-2"><label>Tipo<select name="tipo"><option value="">Serviços e compras</option><option value="servico">Só serviços</option><option value="compra">Só compras</option></select></label><label>Nome do alerta<input name="nome" placeholder="Ex.: Limpeza em SP"></label></div>
+		<div class="al-2" style="grid-template-columns:1fr"><label>Excluir quando aparecer<input name="excluir" placeholder="Ex.: veículos, piscina"></label></div>
 		<label>Estados <small>(nenhum marcado = Brasil todo)</small><div class="al-ufs"></div></label>
 		<div class="al-2"><label>Valor mínimo (R$)<input name="vmin" inputmode="decimal" placeholder="opcional"></label><label>Valor máximo (R$)<input name="vmax" inputmode="decimal" placeholder="opcional"></label></div>
 		<input type="hidden" name="id">
@@ -187,6 +198,7 @@ add_shortcode( 'dv_alertas', function () {
 .al{--ln:#E3DED2;--mu:#6E6A60;--gd:#A8843F;--rd:#B04A3A;--gr:#2F7A55;color:#16191E;font-family:"Hanken Grotesk",-apple-system,sans-serif;padding:28px}
 .al h3{font-size:1.05rem;margin:22px 0 10px}.al-ft{margin-top:0!important}.al small{color:var(--mu);font-weight:500}
 .al button{background:#C9A45C;color:#241A06;border:0;border-radius:10px;padding:11px 18px;font:inherit;font-weight:700;cursor:pointer}.al button.g{background:#fff;border:1px solid var(--ln);color:#16191E;font-weight:600;padding:9px 14px}
+.al select{border:1px solid #CFC8B8;border-radius:10px;padding:10px 12px;font:inherit;background:#fff;width:100%;box-sizing:border-box}
 .al input{border:1px solid #CFC8B8;border-radius:10px;padding:10px 12px;font:inherit;background:#fff;width:100%;box-sizing:border-box}
 .al-f{border:1px solid var(--ln);border-radius:16px;padding:18px 20px;background:#fff;display:grid;gap:12px}.al-f label{font-weight:600;font-size:.88rem;display:grid;gap:5px}
 .al-2{display:grid;grid-template-columns:1fr 1fr;gap:12px}.al-ufs{display:flex;flex-wrap:wrap;gap:5px}.al-ufs span{border:1px solid var(--ln);border-radius:8px;padding:5px 8px;font-size:.8rem;cursor:pointer;font-weight:600;background:#fff}.al-ufs span.on{background:#0C0F13;color:#F4F2EC;border-color:#0C0F13}
@@ -230,7 +242,7 @@ R.querySelector('.al-cx').addEventListener('click',function(ev){var t=ev.target;
  else if(t.hasAttribute('data-an')){var go=function(id){location.href='/plataforma/licitacoes/?ver='+id+'&analisar=1'};var g=x.lic||GEST[x.ref];if(g)go(g);else gestao(x,t,go)}
  else if(t.dataset.st!=null)marca(x.ref,t.dataset.st)});
 req('GET','lic').then(function(j){(j.itens||[]).forEach(function(y){if(y.pncp)GEST[y.pncp]=y.id});caixa()}).catch(function(){});
-function carregar(){return req('GET','alertas').then(function(j){S=j;CX=j.caixa||[];caixa();R.querySelector('.al-lista').innerHTML=j.alertas.length?j.alertas.map(function(a){return'<div class="al-a"><div><b>'+e(a.nome)+(a.ativo?'':' <span class="al-tag">pausado</span>')+'</b><span>'+e(a.termos)+' · '+(a.ufs&&a.ufs.length?a.ufs.join(', '):'Brasil todo')+(a.vmin?' · a partir de '+moeda(a.vmin):'')+(a.vmax?' · até '+moeda(a.vmax):'')+(a.excluir?' · sem: '+e(a.excluir):'')+'</span></div><div class="x"><button class="g" data-v="'+a.id+'">Ver agora</button><button class="g" data-ed="'+a.id+'">Editar</button><button class="g" data-p="'+a.id+'">'+(a.ativo?'Pausar':'Ativar')+'</button><button class="g" data-x="'+a.id+'">Excluir</button></div></div>'}).join(''):'<p class="al-h">Nenhum alerta ainda. Crie o primeiro acima: em segundos você vê quantas licitações abertas ele encontra.</p>'})}
+function carregar(){return req('GET','alertas').then(function(j){S=j;CX=j.caixa||[];caixa();R.querySelector('.al-lista').innerHTML=j.alertas.length?j.alertas.map(function(a){return'<div class="al-a"><div><b>'+e(a.nome)+(a.ativo?'':' <span class="al-tag">pausado</span>')+'</b><span>'+e(a.termos)+' · '+(a.ufs&&a.ufs.length?a.ufs.join(', '):'Brasil todo')+(a.vmin?' · a partir de '+moeda(a.vmin):'')+(a.vmax?' · até '+moeda(a.vmax):'')+(a.excluir?' · sem: '+e(a.excluir):'')+(a.tipo?' · só '+(a.tipo==='servico'?'serviços':'compras'):'')+'</span></div><div class="x"><button class="g" data-v="'+a.id+'">Ver agora</button><button class="g" data-ed="'+a.id+'">Editar</button><button class="g" data-p="'+a.id+'">'+(a.ativo?'Pausar':'Ativar')+'</button><button class="g" data-x="'+a.id+'">Excluir</button></div></div>'}).join(''):'<p class="al-h">Nenhum alerta ainda. Crie o primeiro acima: em segundos você vê quantas licitações abertas ele encontra.</p>'})}
 function mostrar(j,titulo){var Rr=R.querySelector('.al-res');Rr.innerHTML='<h3>'+e(titulo)+': '+j.total+' licitação(ões) aberta(s) nos últimos 15 dias</h3>'+(j.itens.length?j.itens.map(function(x){return'<div class="al-i"><div class="m"><b>'+e(x.orgao)+'</b> · '+e(x.municipio+'/'+x.uf)+' · '+e(x.modalidade)+' · publicado em '+br(x.publicado)+(x.valor?' · <b>'+moeda(x.valor)+'</b>':'')+'</div><p>'+e(x.objeto)+'</p><div class="k"><a href="'+e(x.link)+'" target="_blank" rel="noopener">Ver no PNCP</a><button data-imp="'+e(x.ref)+'">Levar para a minha gestão</button>'+x.termos.map(function(t){return'<span class="al-tag">'+e(t)+'</span>'}).join('')+'</div></div>'}).join(''):'<p class="al-h">Nada encontrado. Tente palavras mais gerais ou mais estados.</p>');Rr.scrollIntoView({behavior:'smooth'})}
 function testar(o,t){M.className='al-m al-h';M.textContent='Buscando no PNCP…';return req('POST','alertas/testar',o).then(function(j){M.textContent='';mostrar(j,t)}).catch(function(j){M.className='al-m al-h e';M.textContent=(j&&j.message)||'O PNCP não respondeu agora. Tente de novo.'})}
 F.addEventListener('submit',function(ev){ev.preventDefault();M.className='al-m al-h';M.textContent='Salvando…';req('POST','alertas/salvar',dados()).then(function(){M.className='al-m al-h o';M.textContent='Alerta salvo. Amanhã cedo chega o primeiro e-mail.';limpar();carregar()}).catch(function(j){M.className='al-m al-h e';M.textContent=(j&&j.message)||'Erro ao salvar.'})});
@@ -240,11 +252,11 @@ R.addEventListener('click',function(ev){var t=ev.target,a;
  if(t.matches('.al-novo')){limpar();return}
  a=S&&S.alertas.filter(function(x){return x.id===(t.dataset.v||t.dataset.ed||t.dataset.p||t.dataset.x)})[0];
  if(t.dataset.v&&a){testar(a,a.nome);return}
- if(t.dataset.ed&&a){limpar();['nome','termos','excluir','id'].forEach(function(k){F.querySelector('[name='+k+']').value=a[k]||''});F.querySelector('[name=vmin]').value=a.vmin||'';F.querySelector('[name=vmax]').value=a.vmax||'';(a.ufs||[]).forEach(function(u){ufs[u]=true});pUfs();R.querySelector('.al-ft').textContent='Editar alerta';R.querySelector('.al-novo').hidden=false;F.scrollIntoView({behavior:'smooth'});return}
+ if(t.dataset.ed&&a){limpar();F.querySelector('[name=tipo]').value=a.tipo||'';['nome','termos','excluir','id'].forEach(function(k){F.querySelector('[name='+k+']').value=a[k]||''});F.querySelector('[name=vmin]').value=a.vmin||'';F.querySelector('[name=vmax]').value=a.vmax||'';(a.ufs||[]).forEach(function(u){ufs[u]=true});pUfs();R.querySelector('.al-ft').textContent='Editar alerta';R.querySelector('.al-novo').hidden=false;F.scrollIntoView({behavior:'smooth'});return}
  if(t.dataset.p&&a){var o=Object.assign({},a,{ativo:a.ativo?0:1});req('POST','alertas/salvar',o).then(carregar);return}
  if(t.dataset.x&&a){if(confirm('Excluir o alerta "'+a.nome+'"?'))req('POST','alertas/excluir',{id:a.id}).then(carregar);return}
  if(t.dataset.imp){t.disabled=true;t.textContent='Importando…';req('GET','lic/pncp?ref='+encodeURIComponent(t.dataset.imp)).then(function(j){return req('POST','lic/salvar',j)}).then(function(){t.textContent='Na sua gestão ✓';var cn=String(t.dataset.imp||'').slice(0,14);if(/^\d{14}$/.test(cn)&&!t.nextElementSibling?.classList?.contains('al-rx')){var a=document.createElement('a');a.className='g al-rx';a.href='/plataforma/raio-x-comprador/?cnpj='+cn;a.textContent='Raio-X do órgão →';a.style.cssText='font-size:.85rem;font-weight:600;color:#16191E;border:1px solid #E3DED2;border-radius:10px;padding:8px 12px;text-decoration:none';t.after(a)}}).catch(function(j){t.disabled=false;t.textContent=(j&&j.message)?'Tentar de novo':'Erro'})}});
-(function(){var q=new URLSearchParams(location.search);if(q.get('termos')){F.querySelector('[name=termos]').value=q.get('termos');if(q.get('nome'))F.querySelector('[name=nome]').value=q.get('nome');(q.get('uf')||'').split(',').forEach(function(u){if(u)ufs[u.toUpperCase()]=1});M.className='al-m al-h o';M.textContent='Alerta pré-preenchido com a sua busca. Confira e salve.';history.replaceState(null,'',location.pathname)}})();
+(function(){var q=new URLSearchParams(location.search);if(q.get('termos')){F.querySelector('[name=termos]').value=q.get('termos');if(q.get('nome'))F.querySelector('[name=nome]').value=q.get('nome');if(q.get('tipo'))F.querySelector('[name=tipo]').value=q.get('tipo');(q.get('uf')||'').split(',').forEach(function(u){if(u)ufs[u.toUpperCase()]=1});M.className='al-m al-h o';M.textContent='Alerta pré-preenchido com a sua busca. Confira e salve.';history.replaceState(null,'',location.pathname)}})();
 pUfs();carregar();
 })();
 </script>

@@ -41,3 +41,31 @@ if(navigator.clipboard&&navigator.clipboard.writeText){var w=navigator.clipboard
 var o=window.open;window.open=function(u){var a=[].slice.call(arguments);if(typeof u==="string"){try{a[0]=f(decodeURIComponent(u))===decodeURIComponent(u)?u:u.split("?")[0]+"?"+u.split("?").slice(1).join("?").split("&").map(function(p){var k=p.split("=");return k[0]+(k.length>1?"="+encodeURIComponent(f(decodeURIComponent(k.slice(1).join("=").replace(/\+/g," ")))):"")}).join("&")}catch(e){}}return o.apply(window,a)};
 document.addEventListener("copy",function(){},true);document.querySelectorAll("textarea").forEach(function(t){if(R.test(t.value)){t.value=f(t.value)}R.lastIndex=0})})();</script>';
 }, 1 );
+
+/* "Analisar com a sua IA" no Raio-X e na Due Diligence: separa as IAs que recebem o relatório completo direto das que precisam colar; copia antes de abrir a IA */
+add_action( 'wp_footer', function () {
+	global $post; if ( ! is_user_logged_in() || ! $post || ! has_shortcode( $post->post_content, 'dv_ctx' ) ) { return; } ?>
+<script>(function(){var tool=document.querySelector('.dv-tool');if(!tool)return;var dossie=!!document.getElementById('ds');
+var IAS=[['ChatGPT','https://chatgpt.com/','https://chatgpt.com/?q=','chatgpt.com',7500],['Claude','https://claude.ai/new','https://claude.ai/new?q=','claude.ai',30000],['Perplexity','https://www.perplexity.ai/','https://www.perplexity.ai/search?q=','perplexity.ai',7500],['Grok','https://grok.com/','https://grok.com/?q=','grok.com',7500],['DeepSeek','https://chat.deepseek.com/','','deepseek.com',0]];
+function cnpj(){var m=location.search.match(/cnpj=(\d{14})/);if(m)return m[1];var i=tool.querySelector('input');var d=i?String(i.value).replace(/\D/g,''):'';return d.length===14?d:''}
+function relatorio(){var base=dossie?tool.querySelector('.rp'):tool;if(!base)return'';var c=base.cloneNode(true);c.querySelectorAll('.dv-ia,script,style,form,button,.rp-bar').forEach(function(x){x.remove()});return c.innerText.replace(/[ \t]+\n/g,'\n').replace(/\n{3,}/g,'\n\n').trim()}
+function texto(){return(window.DVIA||'Analise o relatório abaixo e aponte os riscos.')+'\n\n=====\nRELATÓRIO '+(dossie?'(Due Diligence completa)':'(Raio-X de concorrentes)')+' — CNPJ '+cnpj()+' — consultado em '+new Date().toLocaleDateString('pt-BR')+'\n=====\n\n'+relatorio()}
+function direto(a,t){return!!a[2]&&encodeURIComponent(t).length<a[4]}
+function copiar(t){var a=document.createElement('textarea');a.value=t;a.setAttribute('readonly','');a.style.cssText='position:fixed;top:0;left:0;opacity:0';document.body.appendChild(a);a.select();try{document.execCommand('copy')}catch(x){}a.remove();var c=navigator.clipboard;return c&&window.isSecureContext?Promise.race([c.writeText(t).catch(function(){}),new Promise(function(r){setTimeout(r,1500)})]):Promise.resolve()}
+function baixar(t){var b=new Blob([t],{type:'text/plain;charset=utf-8'}),a=document.createElement('a');a.href=URL.createObjectURL(b);a.download='relatorio-'+(dossie?'due-diligence':'raio-x')+'-'+cnpj()+'.txt';document.body.appendChild(a);a.click();setTimeout(function(){URL.revokeObjectURL(a.href);a.remove()},500)}
+var bl='background:#fff;color:#16191E;border:1px solid #E3DED2;border-radius:10px;padding:9px 14px;font-weight:700;cursor:pointer;margin:4px 6px 4px 0;display:inline-flex;align-items:center';
+function bt(a,i){return'<button type="button" data-i="'+i+'" style="'+bl+'"><img src="https://www.google.com/s2/favicons?domain='+a[3]+'&sz=64" alt="" width="20" height="20" style="width:20px;height:20px;border-radius:4px;margin-right:8px">'+a[0]+'</button>'}
+function grupos(c){var t=texto(),D=[],C=[];IAS.forEach(function(a,i){(direto(a,t)?D:C).push(bt(a,i))});var g=function(tit,sub,l){return l.length?'<div style="margin:6px 0 10px"><b style="display:block">'+tit+'</b><small style="display:block;color:#6E6A60;margin:2px 0 4px">'+sub+'</small>'+l.join('')+'</div>':''};
+ c.querySelector('.dv-ia-g').innerHTML=g('✅ Levam o relatório completo direto','A IA abre com o relatório e o roteiro já escritos (algumas já enviam sozinhas).',D)+g('📋 Precisa copiar e colar','Copiamos o relatório completo ao clicar; na IA, cole (Ctrl+V ou ⌘+V) e envie.',C)+'<button type="button" data-c style="'+bl+'">Só copiar</button><button type="button" data-d style="'+bl+'">Baixar arquivo</button>'}
+function refaz(old){var c=document.createElement('div');c.className='dv-ia';c.dataset.v2=1;c.style.cssText=old.style.cssText;
+ c.innerHTML='<div style="color:#A8843F;font-weight:700;letter-spacing:.14em;font-size:.78rem;text-transform:uppercase">Analisar com a sua IA</div><div style="color:#6E6A60;font-size:.9rem;margin:6px 0 8px">Leve este relatório, com um roteiro de análise de risco, para a inteligência artificial que você já usa. Funciona nas versões gratuitas.</div><div class="dv-ia-g"></div><p class="dv-ia-m" style="margin:10px 0 0;font-weight:600"></p><p style="color:#6E6A60;font-size:.78rem;margin:8px 0 0">O relatório vai para a conta de IA que você escolher e segue as regras de privacidade dela. Se a IA não aceitar um texto tão longo, use "Baixar arquivo" e anexe o arquivo na conversa.</p>';
+ old.replaceWith(c);grupos(c);var m=c.querySelector('.dv-ia-m');
+ c.addEventListener('click',function(ev){var b=ev.target.closest('button');if(!b)return;if(!cnpj()){m.textContent='Consulte um CNPJ primeiro.';return}var t=texto();m.style.color='#2F7A55';
+  if(b.hasAttribute('data-d')){baixar(t);m.textContent='Arquivo baixado. Anexe na conversa com a sua IA.';return}
+  var a=b.hasAttribute('data-i')?IAS[+b.dataset.i]:null;m.textContent='Copiando o relatório…';
+  copiar(t).then(function(){if(!a){m.textContent='Copiado! Cole na sua IA (Ctrl+V ou ⌘+V).';return}var d=direto(a,t);window.open(d?a[2]+encodeURIComponent(t):a[1],'_blank','noopener');
+   m.textContent=d?'Abrimos o '+a[0]+' com o relatório completo. Se o texto não aparecer lá (por exemplo, quando abre no aplicativo), é só colar: está copiado.':'Copiado! Na aba do '+a[0]+', cole (Ctrl+V ou ⌘+V) e envie.'})})}
+function olha(){tool.querySelectorAll('.dv-ia:not([data-v2])').forEach(refaz)}
+var tm=null;new MutationObserver(function(){clearTimeout(tm);tm=setTimeout(olha,200)}).observe(tool,{childList:true,subtree:true});olha()})();</script>
+	<?php
+}, 99 );

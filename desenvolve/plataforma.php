@@ -325,6 +325,7 @@ add_action( 'rest_api_init', function () {
 		} }
 		if ( function_exists( 'dv_rc_itens' ) ) { $T = dv_rc_tipos(); foreach ( dv_rc_itens( $uid ) as $x ) {
 			if ( ( $x['status'] ?? 'aberto' ) !== 'aberto' ) { continue; } $c = dv_rc_calc( $x, $hoje );
+			if ( ! $tod && ( ! empty( $c['prazo_ts'] ) ? $c['prazo_ts'] < time() * 1000 : ( $c['dias'] !== null && $c['dias'] < 0 ) ) ) { continue; } // prazo já encerrado sai da agenda
 			$A['notificacoes'][] = array( 'o' => $T[ $x['tipo'] ][0] ?? 'Prazo', 't' => trim( ( $x['titulo'] ?: $x['orgao'] ) . ( ! empty( $x['numero_doc'] ) ? ' · ' . $x['numero_doc'] : '' ) ), 'd' => $c['prazo'], 'h' => $c['prazo_hora'] ?? '', 'ts' => $c['prazo_ts'] ?? null, 'n' => $c['dias'], 'u' => '/plataforma/recursos/?ver=' . $x['id'] );
 		} }
 		if ( function_exists( 'dv_docs_lista' ) ) { $emp = array(); foreach ( dv_docs_emps( $uid ) as $e ) { $emp[ $e['cnpj'] ] = $e['nome']; }

@@ -15,7 +15,7 @@ import urllib.request, urllib.parse, urllib.error
 BASE = 'https://pncp.gov.br/api/consulta/v1'
 OUT = os.path.join(os.path.dirname(__file__), '..', 'data', 'contratos')
 CARGA_DESDE = dt.date(2021, 4, 1)          # início da Lei 14.133 / PNCP
-JANELA = 10                                 # dias por consulta
+JANELA = 3                                 # dias por consulta
 LIMITE_SEG = int(os.environ.get('LIMITE_SEG', 5 * 3600))
 HOJE = dt.date.today()
 MIN_FIM = HOJE - dt.timedelta(days=15)
@@ -141,23 +141,30 @@ def salvar(base, estado):
 
 
 def janela(base, ini, fim, rota='contratos'):
-    p, novos, total = 1, 0, None
-    while True:
+    from concurrent.futures import ThreadPoolExecutor
+    def url(p):
         q = urllib.parse.urlencode({'dataInicial': ini.strftime('%Y%m%d'), 'dataFinal': fim.strftime('%Y%m%d'), 'pagina': p, 'tamanhoPagina': 500})
-        j = get(f'{BASE}/{rota}?{q}')
-        if j is None:
-            return None  # PNCP fora: tenta de novo na próxima rodada
-        for c in j.get('data') or []:
+        return f'{BASE}/{rota}?{q}'
+    j = get(url(1))
+    if j is None:
+        return None  # PNCP fora: tenta de novo na proxima rodada
+    pags = [j]
+    total = j.get('totalPaginas') or 0
+    if total > 1:
+        with ThreadPoolExecutor(max_workers=4) as ex:
+            res = list(ex.map(lambda p: get(url(p)), range(2, total + 1)))
+        if any(r is None for r in res):
+            return None
+        pags += res
+    novos = 0
+    for pg in pags:
+        for c in pg.get('data') or []:
             r = item(c)
             if r:
                 uf, ctrl, x = r
                 base[ctrl] = (uf, x)
                 novos += 1
-        total = j.get('totalPaginas') or 0
-        if p >= total:
-            return novos
-        p += 1
-        time.sleep(0.3)
+    return novos
 
 
 def main():

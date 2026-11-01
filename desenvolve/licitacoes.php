@@ -145,6 +145,29 @@ add_action( 'rest_api_init', function () {
 		$cd = wp_remote_retrieve_header( $g, 'content-disposition' );
 		nocache_headers(); header( 'Content-Type: ' . $ct ); if ( $cd ) { header( 'X-Arquivo: ' . rawurlencode( $cd ) ); } header( 'Content-Length: ' . strlen( $b ) ); echo $b; exit;
 	} ) );
+	/* Vencedores homologados de cada item (PNCP) */
+	register_rest_route( $ns, '/lic/vencedores', array( 'methods' => 'GET', 'permission_callback' => $perm, 'callback' => function ( WP_REST_Request $r ) {
+		if ( ! preg_match( '#^(\d{14})/(\d{4})/(\d+)$#', (string) $r['ref'], $m ) ) { return new WP_Error( 'dv_lic', 'Licitação sem referência do PNCP.', array( 'status' => 400 ) ); }
+		$ck = 'dv_venc_' . md5( $r['ref'] ); $c = get_transient( $ck ); if ( $c !== false ) { return $c; }
+		$B = 'https://pncp.gov.br/api/pncp/v1/orgaos/' . $m[1] . '/compras/' . $m[2] . '/' . $m[3] . '/itens';
+		$g = wp_remote_get( $B . '?pagina=1&tamanhoPagina=100', array( 'timeout' => 30 ) );
+		$it = is_wp_error( $g ) ? array() : (array) json_decode( wp_remote_retrieve_body( $g ), true );
+		$u = array(); foreach ( $it as $i ) { if ( ! empty( $i['temResultado'] ) && isset( $i['numeroItem'] ) ) { $u[ $i['numeroItem'] ] = $B . '/' . $i['numeroItem'] . '/resultados'; } }
+		$u = array_slice( $u, 0, 60, true ); $res = array();
+		if ( $u && function_exists( 'dv_ds_multi' ) ) { $res = dv_ds_multi( $u, array(), 30 ); } else { foreach ( $u as $k => $x ) { $gg = wp_remote_get( $x, array( 'timeout' => 20 ) ); $res[ $k ] = is_wp_error( $gg ) ? null : wp_remote_retrieve_body( $gg ); } }
+		$F = array();
+		foreach ( $res as $num => $body ) {
+			$j = is_string( $body ) ? json_decode( $body, true ) : $body;
+			foreach ( (array) $j as $v ) {
+				$ni = preg_replace( '/\D/', '', (string) ( $v['niFornecedor'] ?? '' ) ); if ( strlen( $ni ) !== 14 ) { continue; }
+				if ( ! isset( $F[ $ni ] ) ) { $F[ $ni ] = array( 'cnpj' => $ni, 'nome' => $v['nomeRazaoSocialFornecedor'] ?? '', 'itens' => 0, 'valor' => 0 ); }
+				$F[ $ni ]['itens']++; $F[ $ni ]['valor'] += (float) ( $v['valorTotalHomologado'] ?? 0 );
+			}
+		}
+		usort( $F, function ( $a, $b ) { return $b['valor'] <=> $a['valor']; } );
+		$o = array( 'vencedores' => array_slice( array_values( $F ), 0, 15 ), 'itens_com_resultado' => count( $u ) );
+		set_transient( $ck, $o, 6 * HOUR_IN_SECONDS ); return $o;
+	} ) );
 } );
 
 /* Avisos por e-mail: prazo de impugnação (2 dias antes e no último dia) e sessão (véspera e dia) */
@@ -254,7 +277,7 @@ function pintar(){var T={ativas:'Ativas',ganhou:'Ganhas',perdeu:'Perdidas',desis
  var l=S.itens.filter(function(x){if(aba==='todas')return true;if(aba==='ativas')return['ganhou','perdeu','desistiu'].indexOf(x.status)<0;return x.status===aba});
  l.sort(function(a,b){return String(a.abertura||'9999').localeCompare(String(b.abertura||'9999'))});
  if(aba==='ativas'){var h=S.hoje;l.sort(function(a,b){var fa=(a.abertura||'9999')<h,fb=(b.abertura||'9999')<h;return fa-fb||String(a.abertura||'9999').localeCompare(String(b.abertura||'9999'))})}
- R.querySelector('.lc-list').innerHTML=l.length?l.map(function(x){return'<div class="lc-c"><div><div class="o">'+e(x.orgao||'Órgão não informado')+(x.uf?' · '+e(x.municipio?x.municipio+'/':'')+e(x.uf):'')+'</div><div class="m">'+e([x.modalidade,x.numero].filter(Boolean).join(' · '))+' · '+e((S.cats[x.categoria]||'').split(' (')[0])+'</div><div class="ob">'+e(String(x.objeto||'').slice(0,320))+'</div><div class="lc-ch">'+chip(x)+'</div>'+(x.notas?'<div class="m" style="margin-top:6px">📝 '+e(x.notas.slice(0,200))+'</div>':'')+'</div><div class="ac"><button data-ia="'+x.id+'">Analisar edital</button>'+(String(x.pncp||'').match(/^\d{14}/)?'<a class="g lc-lk" href="/plataforma/raio-x-comprador/?cnpj='+String(x.pncp).slice(0,14)+'&item='+encodeURIComponent(String(x.objeto||'').split(/[,.;]/)[0].slice(0,60))+'">Raio-X do órgão</a>':'')+(['analise','participar','proposta'].indexOf(x.status)>=0?'<a class="g lc-lk" href="/plataforma/recursos/?tipo=impugnacao&lic='+x.id+'&orgao='+encodeURIComponent(x.orgao||'')+'&titulo='+encodeURIComponent('Impugnação '+(x.numero||''))+'">Impugnar o edital</a>':'<a class="g lc-lk" href="/plataforma/recursos/?tipo=recurso&lic='+x.id+'&orgao='+encodeURIComponent(x.orgao||'')+'&titulo='+encodeURIComponent('Recurso '+(x.numero||''))+'">Recorrer</a>')+'<button class="g" data-ed="'+x.id+'">Editar / situação</button>'+(['analise','participar','proposta'].indexOf(x.status)>=0?'<a class="g" style="text-align:center;font-size:.82rem;color:#F4F2EC;background:#0C0F13;font-weight:700;border-radius:10px;padding:8px 12px;text-decoration:none" target="_blank" rel="noopener" href="https://wa.me/5511993500950?text='+encodeURIComponent('Olá! Quero cotar seguro garantia de proposta/contrato para a licitação '+(x.numero||'')+' de '+(x.orgao||'')+(x.valor?' (valor estimado '+moeda(x.valor)+')':'')+', sessão em '+brh(x.abertura)+'.')+'">Cotar seguro garantia</a>':'')+(x.link?'<a class="g" style="text-align:center;font-size:.82rem;color:#8A6A2C;font-weight:700;border:1px solid var(--ln);border-radius:10px;padding:8px 12px;text-decoration:none" href="'+e(x.link)+'" target="_blank" rel="noopener">Abrir no portal</a>':'')+'<button class="g" data-x="'+x.id+'">Excluir</button></div></div>'}).join(''):'<div class="lc-vazio">'+(S.itens.length?'Nada nesta aba.':'Cole acima o link de um edital no PNCP para começar. Você recebe por e-mail o aviso do último dia de impugnação e da véspera da sessão.')+'</div>'}
+ R.querySelector('.lc-list').innerHTML=l.length?l.map(function(x){return'<div class="lc-c"><div><div class="o">'+e(x.orgao||'Órgão não informado')+(x.uf?' · '+e(x.municipio?x.municipio+'/':'')+e(x.uf):'')+'</div><div class="m">'+e([x.modalidade,x.numero].filter(Boolean).join(' · '))+' · '+e((S.cats[x.categoria]||'').split(' (')[0])+'</div><div class="ob">'+e(String(x.objeto||'').slice(0,320))+'</div><div class="lc-ch">'+chip(x)+'</div>'+(x.notas?'<div class="m" style="margin-top:6px">📝 '+e(x.notas.slice(0,200))+'</div>':'')+'</div><div class="ac"><button data-ia="'+x.id+'">Analisar edital</button>'+(String(x.pncp||'').match(/^\d{14}/)?'<button class="g lc-pac" data-pac="'+e(x.pncp)+'" data-item="'+e(String(x.objeto||'').split(/[,.;]/)[0].slice(0,60))+'" data-st="'+e(x.status||'')+'">🔎 Concorrentes e Raio-X</button>':'')+''+(String(x.pncp||'').match(/^\d{14}/)?'<a class="g lc-lk" href="/plataforma/raio-x-comprador/?cnpj='+String(x.pncp).slice(0,14)+'&item='+encodeURIComponent(String(x.objeto||'').split(/[,.;]/)[0].slice(0,60))+'">Raio-X do órgão</a>':'')+(['analise','participar','proposta'].indexOf(x.status)>=0?'<a class="g lc-lk" href="/plataforma/recursos/?tipo=impugnacao&lic='+x.id+'&orgao='+encodeURIComponent(x.orgao||'')+'&titulo='+encodeURIComponent('Impugnação '+(x.numero||''))+'">Impugnar o edital</a>':'<a class="g lc-lk" href="/plataforma/recursos/?tipo=recurso&lic='+x.id+'&orgao='+encodeURIComponent(x.orgao||'')+'&titulo='+encodeURIComponent('Recurso '+(x.numero||''))+'">Recorrer</a>')+'<button class="g" data-ed="'+x.id+'">Editar / situação</button>'+(['analise','participar','proposta'].indexOf(x.status)>=0?'<a class="g" style="text-align:center;font-size:.82rem;color:#F4F2EC;background:#0C0F13;font-weight:700;border-radius:10px;padding:8px 12px;text-decoration:none" target="_blank" rel="noopener" href="https://wa.me/5511993500950?text='+encodeURIComponent('Olá! Quero cotar seguro garantia de proposta/contrato para a licitação '+(x.numero||'')+' de '+(x.orgao||'')+(x.valor?' (valor estimado '+moeda(x.valor)+')':'')+', sessão em '+brh(x.abertura)+'.')+'">Cotar seguro garantia</a>':'')+(x.link?'<a class="g" style="text-align:center;font-size:.82rem;color:#8A6A2C;font-weight:700;border:1px solid var(--ln);border-radius:10px;padding:8px 12px;text-decoration:none" href="'+e(x.link)+'" target="_blank" rel="noopener">Abrir no portal</a>':'')+'<button class="g" data-x="'+x.id+'">Excluir</button></div></div>'}).join(''):'<div class="lc-vazio">'+(S.itens.length?'Nada nesta aba.':'Cole acima o link de um edital no PNCP para começar. Você recebe por e-mail o aviso do último dia de impugnação e da véspera da sessão.')+'</div>'}
 var F=R.querySelector('.lc-dlg .lc-f'),D1=F.closest('dialog');
 function form(x){F.reset();F.querySelector('.lc-fm').textContent='';
  F.querySelector('[name=status]').innerHTML=Object.keys(ST).map(function(k){return'<option value="'+k+'">'+ST[k]+'</option>'}).join('');
@@ -296,6 +319,45 @@ R.addEventListener('click',function(ev){var t=ev.target,x;
  if(t.dataset.ia){x=S.itens.filter(function(y){return y.id===t.dataset.ia})[0];abrirIA(x);return}
  if(t.dataset.x){if(confirm('Excluir esta licitação da lista?'))req('POST','lic/excluir',{id:t.dataset.x}).then(carregar)}});
 carregar().then(function(){var v=location.search.match(/[?&]ver=([a-z0-9]+)/);if(v){history.replaceState(null,'',location.pathname);var x=S.itens.filter(function(y){return y.id===v[1]})[0];if(x){aba='todas';pintar();form(x)}return}var m=location.search.match(/[?&]importar=([0-9]{14}\/[0-9]{4}\/[0-9]+)/);if(!m)return;history.replaceState(null,'',location.pathname);var f=R.querySelector('.lc-imp');f.querySelector('input').value=m[1];f.requestSubmit()});
+})();
+</script>
+<style>
+.lc .lc-pac{font-weight:700}
+.pk-bg{position:fixed;inset:0;background:rgba(0,0,0,.55);z-index:99999;display:flex;align-items:flex-start;justify-content:center;overflow:auto;padding:40px 12px}
+.pk{background:#fff;color:#16191E;border-radius:18px;max-width:720px;width:100%;padding:24px 26px;font-family:"Hanken Grotesk",sans-serif;box-shadow:0 20px 60px rgba(0,0,0,.35)}
+.pk h3{margin:0 0 4px;font-size:1.25rem}.pk .h{color:#6E6A60;font-size:.88rem;margin:0 0 12px}.pk h4{margin:16px 0 6px;font-size:.95rem}
+.pk label{display:flex;gap:10px;align-items:flex-start;border:1px solid #E3DED2;border-radius:12px;padding:10px 12px;margin:6px 0;cursor:pointer}.pk label small{display:block;color:#6E6A60}
+.pk .tot{display:flex;justify-content:space-between;align-items:center;gap:10px;margin-top:16px;padding-top:14px;border-top:1px solid #E3DED2;flex-wrap:wrap}
+.pk button{background:#C9A45C;color:#241A06;border:0;border-radius:10px;padding:11px 18px;font:inherit;font-weight:700;cursor:pointer}.pk button.g{background:#fff;border:1px solid #E3DED2;color:#16191E}
+.pk .ok a{display:block;border:1px solid #E3DED2;border-radius:12px;padding:10px 12px;margin:6px 0;color:#16191E;text-decoration:none;font-weight:600}.pk .ok a:hover{border-color:#C9A45C}
+.pk .er{color:#B04A3A;font-weight:600}
+</style>
+<script>
+(function(){var R=document.getElementById('dv-lic');if(!R)return;var api=R.dataset.api,nonce=R.dataset.nonce,CUSTO={comprador:2,raiox:2};
+function e(s){return String(s==null?'':s).replace(/[&<>"]/g,function(c){return{'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]})}
+function fc(c){c=String(c).replace(/\D/g,'');return c.length===14?c.replace(/^(\d{2})(\d{3})(\d{3})(\d{4})(\d{2})$/,'$1.$2.$3/$4-$5'):c}
+function moeda(v){return v?Number(v).toLocaleString('pt-BR',{style:'currency',currency:'BRL',maximumFractionDigits:0}):''}
+function g(u){return fetch(u,{credentials:'same-origin',headers:{'X-WP-Nonce':nonce}}).then(function(r){return r.json().then(function(j){if(r.status>=400)throw j;return j})})}
+function usar(f,k,rot){return fetch(api+'usar',{method:'POST',credentials:'same-origin',headers:{'X-WP-Nonce':nonce,'Content-Type':'application/json'},body:JSON.stringify({ferramenta:f,chave:k,rotulo:rot})}).then(function(r){return r.json().then(function(j){if(r.status>=400)throw j;return j})})}
+function toks(t){return String(t||'').toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g,'').split(/[^a-z0-9]+/).filter(function(w){return w.length>4}).slice(0,4)}
+R.addEventListener('click',function(ev){var b=ev.target.closest('[data-pac]');if(!b)return;ev.preventDefault();abrir(b.dataset.pac,b.dataset.item||'',b.dataset.st||'')},true);
+function abrir(ref,item,st){var cnpj=ref.slice(0,14),bg=document.createElement('div');bg.className='pk-bg';bg.innerHTML='<div class="pk"><h3>Concorrentes e Raio-X desta licitação</h3><p class="h">Buscando no PNCP os vencedores desta licitação e quem mais fornece esse objeto para o órgão… pode levar até um minuto.</p></div>';document.body.appendChild(bg);bg.addEventListener('click',function(ev){if(ev.target===bg||ev.target.dataset.f)bg.remove()});var P=bg.querySelector('.pk');
+ Promise.all([g(api.replace('desenvolve/v1/','desenvolve/v1/')+'lic/vencedores?ref='+encodeURIComponent(ref)).catch(function(){return{vencedores:[]}}),g('/wp-json/dvtools/v1/comprador?cnpj='+cnpj+'&item='+encodeURIComponent(item)).catch(function(){return null})]).then(function(a){var V=a[0].vencedores||[],C=a[1],T=toks(item),F={};
+  ((C&&C.contratos&&C.contratos.itens)||[]).forEach(function(x){var ni=String(x.fornecedor_ni||'').replace(/\D/g,'');if(ni.length!==14)return;var ob=String(x.objeto||'').toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g,'');if(T.length&&!T.some(function(t){return ob.indexOf(t)>=0}))return;F[ni]=F[ni]||{cnpj:ni,nome:x.fornecedor,n:0,valor:0};F[ni].n++;F[ni].valor+=x.valor||0});
+  var vs={};V.forEach(function(v){vs[v.cnpj]=1});var FO=Object.keys(F).map(function(k){return F[k]}).filter(function(x){return!vs[x.cnpj]}).sort(function(a,b){return b.valor-a.valor}).slice(0,5);
+  var h='<h3>Concorrentes e Raio-X desta licitação</h3><p class="h">Marque o que você quer analisar. Cada relatório abre completo na ferramenta, já pago, e fica disponível por 30 dias sem nova cobrança.</p>';
+  h+='<label><input type="checkbox" data-t="comprador" checked><span><b>Raio-X do órgão</b> · '+CUSTO.comprador+' créditos<small>Se paga em dia, processos, notícias e contratos'+(C&&C.cadastro?' de '+e(C.cadastro.razao_social):'')+'</small></span></label>';
+  if(V.length)h+='<h4>Vencedores desta licitação (resultado homologado no PNCP)</h4>'+V.slice(0,6).map(function(v,i){return'<label><input type="checkbox" data-t="raiox" data-c="'+v.cnpj+'" data-n="'+e(v.nome)+'"'+(i<2?' checked':'')+'><span><b>'+e(v.nome)+'</b> · '+CUSTO.raiox+' créditos<small>CNPJ '+fc(v.cnpj)+' · '+v.itens+' item(ns) · '+moeda(v.valor)+'</small></span></label>'}).join('');
+  else if(/disputa|recurso|ganha|perdida/.test(st))h+='<p class="h">O resultado desta licitação ainda não está homologado no PNCP.</p>';
+  if(FO.length)h+='<h4>Quem mais fornece esse objeto para este órgão (contratos dos últimos anos)</h4>'+FO.map(function(v,i){return'<label><input type="checkbox" data-t="raiox" data-c="'+v.cnpj+'" data-n="'+e(v.nome)+'"'+(!V.length&&i<2?' checked':'')+'><span><b>'+e(v.nome)+'</b> · '+CUSTO.raiox+' créditos<small>CNPJ '+fc(v.cnpj)+' · '+v.n+' contrato(s) · '+moeda(v.valor)+'</small></span></label>'}).join('');
+  if(!V.length&&!FO.length)h+='<p class="h">Não encontramos fornecedores anteriores desse objeto para este órgão. Você ainda pode gerar o Raio-X do órgão.</p>';
+  h+='<div class="tot"><b class="tt"></b><span><button class="g" data-f="1">Cancelar</button> <button class="go">Gerar relatórios</button></span></div><p class="h msg"></p>';P.innerHTML=h;
+  function soma(){var t=0;P.querySelectorAll('input:checked').forEach(function(i){t+=CUSTO[i.dataset.t]});P.querySelector('.tt').textContent='Total: '+t+' crédito(s)';P.querySelector('.go').disabled=!t}soma();P.addEventListener('change',soma);
+  P.querySelector('.go').onclick=function(){var go=this;go.disabled=true;go.textContent='Gerando…';var sel=[].slice.call(P.querySelectorAll('input:checked')),links=[],q=Promise.resolve();
+   sel.forEach(function(i){q=q.then(function(){if(i.dataset.t==='comprador'){var k='cp2-c='+fc(cnpj)+(item?'|cp2-i='+item:'');return usar('comprador',k,'Pacote: '+(C&&C.cadastro?C.cadastro.razao_social:cnpj)).then(function(){links.push(['Raio-X do órgão'+(C&&C.cadastro?' · '+C.cadastro.razao_social:''),'/plataforma/raio-x-comprador/?cnpj='+cnpj+'&item='+encodeURIComponent(item)])})}
+    var c=i.dataset.c;return usar('raiox','rx-cnpj='+fc(c),'Pacote: '+i.dataset.n).then(function(){links.push(['Raio-X · '+i.dataset.n,'/plataforma/raio-x/?cnpj='+c])})})});
+   q.then(function(){P.innerHTML='<h3>Relatórios prontos</h3><p class="h">Clique para abrir cada um (abrem em nova aba, sem nova cobrança por 30 dias).</p><div class="ok">'+links.map(function(l){return'<a href="'+l[1]+'" target="_blank" rel="noopener">'+e(l[0])+' →</a>'}).join('')+'</div><div class="tot"><span></span><button class="g" data-f="1">Fechar</button></div>'}).catch(function(j){P.querySelector('.msg').innerHTML='<span class="er">'+e((j&&j.message)||'Não foi possível concluir.')+'</span>'+(links.length?' Os relatórios já gerados: '+links.map(function(l){return'<a href="'+l[1]+'" target="_blank">'+e(l[0])+'</a>'}).join(' · '):'')+' <a href="/creditos/">Comprar créditos</a>';go.disabled=false;go.textContent='Tentar de novo'})}
+ })}
 })();
 </script>
 	<?php return ob_get_clean();

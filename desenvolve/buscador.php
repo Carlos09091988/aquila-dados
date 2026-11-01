@@ -29,7 +29,7 @@ add_shortcode( 'dv_buscador', function () {
 <p class="bq2-h bq2-foot">Fonte: Portal Nacional de Contratações Públicas (PNCP), em tempo real. Confira sempre o edital antes de participar.</p>
 </div>
 <style>
-.bq2{--ln:#E3DED2;--mu:#6E6A60;--gd:#A8843F;color:#16191E;font-family:"Hanken Grotesk",-apple-system,sans-serif;padding:28px}
+.bq2{--ln:#E3DED2;--mu:#6E6A60;--gd:#A8843F;color:#16191E;font-family:"Hanken Grotesk",-apple-system,sans-serif;padding:28px;background:#FAF8F3;border-radius:22px}
 .bq2 label{display:block;font-weight:700;margin:0 0 12px}.bq2 small{color:var(--mu);font-weight:500;font-size:.8rem}.bq2 label>small{display:block;margin-top:4px}
 .bq2 input,.bq2 select{border:1px solid #CFC8B8;border-radius:10px;padding:10px 12px;font:inherit;background:#fff;width:100%;box-sizing:border-box;margin-top:5px;color:#16191E}
 .bq2-g{display:grid;grid-template-columns:1fr 300px;gap:14px}.bq2-g3{display:grid;grid-template-columns:200px 1fr 260px;gap:14px}

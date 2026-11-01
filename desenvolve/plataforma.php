@@ -628,7 +628,7 @@ add_action( 'wp_footer', function () {
 .dv-tbar a{color:#CBA55C;text-decoration:none}.dv-tbar span{color:#8E938F}
 .dv-th h1,.dv-th h2,.dv-tool h1,.dv-tool h2,.rp-hd h2,.dv-tool .nv b{font-family:"Hanken Grotesk",-apple-system,sans-serif!important;font-weight:800!important;letter-spacing:-.03em!important}
 .dv-tool .aq{background:#FFFFFF!important;font-family:"Hanken Grotesk",-apple-system,sans-serif!important;border:1px solid rgba(203,165,92,.28)!important;border-radius:18px!important}
-.dv-tool .aq h2,.dv-tool .aq h3,.dv-tool .aq h4{font-family:"Hanken Grotesk",-apple-system,sans-serif!important}
+body .dv-tool .aq h2,body .dv-tool .aq h3,body .dv-tool .aq h4,body .dv-tool .aq .ts h3,body .rp h2,body .rp h3,body .rp h4{font-family:"Hanken Grotesk",-apple-system,sans-serif!important}
 .dv-next{max-width:1180px;margin:18px auto 0;padding:16px 22px;border-radius:16px;border:1px solid rgba(203,165,92,.3);background:#151A20;color:#F4F2EC;display:flex;gap:10px;align-items:center;flex-wrap:wrap;font-family:"Hanken Grotesk",sans-serif}
 .dv-next b{color:#CBA55C;font-size:.78rem;letter-spacing:.14em;text-transform:uppercase;margin-right:6px}.dv-next a{color:#F4F2EC;text-decoration:none;border:1px solid rgba(255,255,255,.18);border-radius:999px;padding:8px 14px;font-size:.9rem;font-weight:600}.dv-next a:hover{border-color:#CBA55C;color:#CBA55C}
 .dv-pw{max-width:720px;margin:60px auto;padding:36px;border:1px solid rgba(203,165,92,.35);border-radius:20px;background:#151A20;color:#F4F2EC;font-family:"Hanken Grotesk",sans-serif;text-align:center}

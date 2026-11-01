@@ -8,7 +8,7 @@
 define( 'DV_TS_URL', 'https://raw.githubusercontent.com/Carlos09091988/aquila-dados/main/aquila/jur/' );
 
 function dv_ts_arquivo( $nome ) {
-	$up = wp_upload_dir(); $dir = trailingslashit( $up['basedir'] ) . 'dv-teses-v3';
+	$up = wp_upload_dir(); $dir = trailingslashit( $up['basedir'] ) . 'dv-teses-v4';
 	if ( ! is_dir( $dir ) ) { wp_mkdir_p( $dir ); @file_put_contents( $dir . '/index.html', '' ); }
 	$f = $dir . '/' . $nome;
 	if ( ! file_exists( $f ) || filemtime( $f ) < time() - 7 * DAY_IN_SECONDS ) {

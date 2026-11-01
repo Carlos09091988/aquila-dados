@@ -879,3 +879,13 @@ add_action( 'admin_post_dv_lista_csv', function () {
 	foreach ( dv_lista() as $x ) { echo implode( ';', array_map( function ( $v ) { return '"' . str_replace( '"', '""', (string) $v ) . '"'; }, array( $x['data'], $x['nome'], $x['email'], $x['whats'], $x['empresa'] ?? '', $x['ramo'], $x['bonus'] ? 'sim' : '' ) ) ) . "\n"; }
 	exit;
 } );
+
+/* Slogan junto do logo em todas as páginas */
+add_action( 'wp_head', function () {
+	if ( is_admin() ) { return; }
+	echo '<style>.logo .lt{display:inline-flex;flex-direction:column;align-items:flex-start}.logo .lt .tag{font-size:.68rem!important;letter-spacing:.2em!important;text-transform:uppercase;color:var(--muted,#8A857A);font-weight:500;margin-top:5px;white-space:nowrap}@media(max-width:600px){.logo .lt .tag{font-size:.5rem!important;letter-spacing:.14em!important;margin-top:3px}}</style>';
+}, 99 );
+add_action( 'wp_footer', function () {
+	if ( is_admin() ) { return; }
+	echo '<script>document.querySelectorAll(".logo .wm").forEach(function(w){if(w.parentNode.classList.contains("lt"))return;var s=document.createElement("span");s.className="lt";w.parentNode.insertBefore(s,w);s.appendChild(w);var t=document.createElement("span");t.className="tag";t.textContent="Inteligência em licitações";s.appendChild(t)})</script>';
+}, 5 );

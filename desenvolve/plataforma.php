@@ -922,3 +922,17 @@ add_action( 'wp_footer', function () {
 	if ( is_admin() || ! function_exists( 'dv_pre_lancamento' ) || ! dv_pre_lancamento() ) { return; }
 	echo '<script>document.querySelectorAll("a").forEach(function(a){var t=a.textContent.trim();if(/^(Assine|Assinar|Assine já|Assinar agora)$/i.test(t)||/\/assinar\/?(\?|$)/.test(a.getAttribute("href")||"")){if(/^(Assine|Assinar)/i.test(t))a.textContent="Lista de espera";a.setAttribute("href","/#lista")}})</script>';
 }, 80 );
+
+/* Processos judiciais nas ferramentas (Raio-X, Due Diligence, comprador): além da publicação, link para o processo no tribunal e para todas as publicações dele */
+add_action( 'wp_footer', function () {
+	if ( ! is_user_logged_in() ) { return; } ?>
+<script>(function(){var RX=/(\d{7})-(\d{2})\.(\d{4})\.(\d)\.(\d{2})\.(\d{4})/;
+function urlTrib(m){var n=m[0],j=m[4],tr=m[5];if(j==='5'&&tr!=='00')return['no TRT-'+(+tr),'https://pje.trt'+(+tr)+'.jus.br/consultaprocessual/detalhe-processo/'+n];if(j==='8'&&tr==='26')return['no TJSP','https://esaj.tjsp.jus.br/cpopg/search.do?cbPesquisa=NUMPROC&dadosConsulta.tipoNuProcesso=UNIFICADO&numeroDigitoAnoUnificado='+m[1]+'-'+m[2]+'.'+m[3]+'&foroNumeroUnificado='+m[6]+'&dadosConsulta.valorConsultaNuUnificado='+n];return null}
+function caixa(el){var w=document.createTreeWalker(el,NodeFilter.SHOW_TEXT),t;while(t=w.nextNode()){var v=t.nodeValue.replace(/[A-Za-zÀ-ÿ]+/g,function(x){return/[à-ÿ]/.test(x)&&!/[a-z]/.test(x)&&/[A-Z]/.test(x)?x.toUpperCase():x});if(v!==t.nodeValue)t.nodeValue=v}}
+function liga(root){(root.querySelectorAll?root:document).querySelectorAll('a').forEach(function(a){if(a.dataset.dvp||a.textContent.trim()!=='abrir')return;var box=a.closest('li,tr,div');if(!box)return;var m=RX.exec(box.textContent);if(!m)return;a.dataset.dvp=1;a.textContent='publicação';caixa(box);
+ var f=document.createDocumentFragment(),u=urlTrib(m),mk=function(txt,href){var b=document.createElement('a');b.href=href;b.target='_blank';b.rel='noopener';b.textContent=txt;b.dataset.dvp=1;b.style.color=getComputedStyle(a).color;return b};
+ if(u){f.appendChild(mk('ver processo '+u[0],u[1]));f.appendChild(document.createTextNode(' · '))}
+ f.appendChild(mk('todas as publicações','https://comunica.pje.jus.br/consulta?numeroProcesso='+m[0].replace(/\D/g,'')));f.appendChild(document.createTextNode(' · '));a.parentNode.insertBefore(f,a)})}
+liga(document);new MutationObserver(function(ms){ms.forEach(function(x){x.addedNodes.forEach(function(n){if(n.nodeType===1)liga(n)})})}).observe(document.body,{childList:true,subtree:true})})();</script>
+	<?php
+}, 99 );

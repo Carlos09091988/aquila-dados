@@ -861,8 +861,8 @@ add_action( 'rest_api_init', function () {
 		$from = dv_cfg( 'email_remetente' ) ?: 'contato@desenvolveestrategias.com.br'; $h = array( 'From: Desenvolve <' . $from . '>' );
 		$b = (int) get_option( 'dv_bonus_lista', 100 );
 		wp_mail( $em, 'Você está na lista da Desenvolve', 'Olá, ' . $nome . "!\n\nSeu nome está na lista de espera da Desenvolve Estratégias, inteligência em licitações.\n\nVocê vai receber os planos antes de todo mundo, no dia do lançamento, e ganha " . $b . " créditos de bônus para usar como quiser: Raio-X de concorrentes, Due Diligence e as demais ferramentas. Para receber o bônus, assine com este mesmo e-mail: os créditos entram junto com a primeira mensalidade.\n\nAté breve!\nEquipe Desenvolve", $h );
-		wp_mail( get_option( 'admin_email' ), 'Lista de espera: ' . $nome, "Nome: $nome\nE-mail: $em\nWhatsApp: $whats\nEmpresa: $emp\nRamo: $ramo\n\nTotal na lista: " . count( $l ), $h );
-		return array( 'ok' => true, 'total' => count( $l ) );
+		wp_mail( get_option( 'admin_email' ), 'Lista de espera: ' . $nome, "Nome: $nome\nE-mail: $em\nWhatsApp: $whats\nEmpresa: $emp\nRamo: $ramo\n\nVeja a lista completa no painel: " . admin_url( 'admin.php?page=dv-lista' ), $h );
+		return array( 'ok' => true );
 	} ) );
 } );
 /* Bônus da lista de espera: entra junto com a PRIMEIRA mensalidade paga (chamado pelo webhook do Asaas) */

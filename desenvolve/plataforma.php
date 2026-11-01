@@ -838,8 +838,8 @@ add_action( 'rest_api_init', function () {
 		$l[ $em ] = array( 'nome' => mb_substr( $nome, 0, 120 ), 'email' => $em, 'whats' => mb_substr( $whats, 0, 30 ), 'empresa' => mb_substr( $emp, 0, 120 ), 'ramo' => mb_substr( $ramo, 0, 120 ), 'data' => current_time( 'mysql' ), 'bonus' => 0 );
 		update_option( 'dv_lista', $l, false );
 		$from = dv_cfg( 'email_remetente' ) ?: 'contato@desenvolveestrategias.com.br'; $h = array( 'From: Desenvolve <' . $from . '>' );
-		$b = (int) get_option( 'dv_bonus_lista', 10 );
-		wp_mail( $em, 'Você está na lista da Desenvolve', 'Olá, ' . $nome . "!\n\nSeu nome está na lista de espera da Desenvolve Estratégias, inteligência em licitações.\n\nVocê vai receber os planos antes de todo mundo, no dia do lançamento, e ganha " . $b . " créditos de bônus para usar no Raio-X de concorrentes, na Due Diligence e nas demais ferramentas. Para receber o bônus, crie sua conta com este mesmo e-mail.\n\nAté breve!\nEquipe Desenvolve", $h );
+		$b = (int) get_option( 'dv_bonus_lista', 100 );
+		wp_mail( $em, 'Você está na lista da Desenvolve', 'Olá, ' . $nome . "!\n\nSeu nome está na lista de espera da Desenvolve Estratégias, inteligência em licitações.\n\nVocê vai receber os planos antes de todo mundo, no dia do lançamento, e ganha " . $b . " créditos de bônus para usar como quiser: Raio-X de concorrentes, Due Diligence e as demais ferramentas. Para receber o bônus, crie sua conta com este mesmo e-mail.\n\nAté breve!\nEquipe Desenvolve", $h );
 		wp_mail( get_option( 'admin_email' ), 'Lista de espera: ' . $nome, "Nome: $nome\nE-mail: $em\nWhatsApp: $whats\nEmpresa: $emp\nRamo: $ramo\n\nTotal na lista: " . count( $l ), $h );
 		return array( 'ok' => true, 'total' => count( $l ) );
 	} ) );
@@ -849,7 +849,7 @@ add_action( 'user_register', function ( $uid ) {
 	$u = get_userdata( $uid ); if ( ! $u ) { return; }
 	$l = dv_lista(); $em = strtolower( $u->user_email );
 	if ( empty( $l[ $em ] ) || ! empty( $l[ $em ]['bonus'] ) ) { return; }
-	dv_dar_creditos( $uid, (int) get_option( 'dv_bonus_lista', 10 ), 'Bônus da lista de espera', true );
+	dv_dar_creditos( $uid, (int) get_option( 'dv_bonus_lista', 100 ), 'Bônus da lista de espera', true );
 	$l[ $em ]['bonus'] = $uid; update_option( 'dv_lista', $l, false );
 }, 30 );
 /* Enquanto for pré-lançamento, a assinatura leva à lista (administrador continua acessando) */
@@ -865,7 +865,7 @@ add_action( 'admin_menu', function () {
 		echo '<div class="wrap"><h1>Lista de espera (' . count( $l ) . ')</h1>';
 		echo '<form method="post" style="background:#fff;padding:12px 16px;border:1px solid #ddd;margin:12px 0">'; wp_nonce_field( 'dv_lanc' );
 		echo '<p><label><input type="radio" name="dv_lanc" value="1"' . checked( $pre, true, false ) . '> <b>Pré-lançamento</b> (assinatura leva à lista)</label> &nbsp; <label><input type="radio" name="dv_lanc" value="0"' . checked( $pre, false, false ) . '> <b>Lançado</b> (assinatura aberta)</label></p>';
-		echo '<p>Bônus para quem está na lista: <input type="number" name="dv_bonus" value="' . (int) get_option( 'dv_bonus_lista', 10 ) . '" style="width:70px"> créditos</p><p><button class="button button-primary">Salvar</button> &nbsp; <a class="button" href="' . esc_url( wp_nonce_url( admin_url( 'admin-post.php?action=dv_lista_csv' ), 'dv_lista_csv' ) ) . '">Baixar planilha</a></p></form>';
+		echo '<p>Bônus para quem está na lista: <input type="number" name="dv_bonus" value="' . (int) get_option( 'dv_bonus_lista', 100 ) . '" style="width:70px"> créditos</p><p><button class="button button-primary">Salvar</button> &nbsp; <a class="button" href="' . esc_url( wp_nonce_url( admin_url( 'admin-post.php?action=dv_lista_csv' ), 'dv_lista_csv' ) ) . '">Baixar planilha</a></p></form>';
 		echo '<table class="widefat striped"><thead><tr><th>Data</th><th>Nome</th><th>E-mail</th><th>WhatsApp</th><th>Empresa</th><th>Ramo</th><th>Conta criada</th></tr></thead><tbody>';
 		foreach ( $l as $x ) { echo '<tr><td>' . esc_html( mysql2date( 'd/m/Y H:i', $x['data'] ) ) . '</td><td>' . esc_html( $x['nome'] ) . '</td><td>' . esc_html( $x['email'] ) . '</td><td>' . esc_html( $x['whats'] ) . '</td><td>' . esc_html( $x['empresa'] ?? '' ) . '</td><td>' . esc_html( $x['ramo'] ) . '</td><td>' . ( $x['bonus'] ? 'sim (bônus dado)' : '—' ) . '</td></tr>'; }
 		if ( ! $l ) { echo '<tr><td colspan="7">Ninguém ainda.</td></tr>'; }

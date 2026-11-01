@@ -156,6 +156,27 @@ function pdfRecurso(){var X=window.DVRS;if(!X)return;var r=root(),S=X.S,h2=r.que
   '<h2>Fontes oficiais para conferência</h2><ul>'+F.map(function(f){return'<li>'+f[0]+': '+f[1]+'</li>'}).join('')+'</ul>'+
   '<p class="n">Levantamento de dados públicos e oficiais, na data indicada. Cada fato deve ser confirmado na fonte e instruído com a respectiva certidão ou documento. Não constitui parecer jurídico.</p></body></html>';
  var w=window.open('','_blank');if(!w){alert('Permita a abertura de janelas para gerar o PDF.');return}w.document.open();w.document.write(H);w.document.close();setTimeout(function(){w.focus();w.print()},400)}
+
+/* Relatório completo (PDF): leva o resumo executivo, os processos, as licitações vencidas e a experiência; corrige textos antigos */
+if(PG==='concorrente'){(function(){var _open=window.open;window.open=function(u){var w=_open.apply(window,arguments);if(!w||(u&&u!=='about:blank'))return w;try{var d=w.document,_w=d.write.bind(d),_p=w.print?w.print.bind(w):null;
+ d.write=function(h){try{if(/RAIO-X|Raio-X|raio-x/.test(h)&&/<html|<body|<div/i.test(h)){var x=new DOMParser().parseFromString(h,'text/html');melhora(x);h='<!doctype html>'+x.documentElement.outerHTML}}catch(e){}return _w(h)};
+ if(_p)w.print=function(){try{melhora(w.document)}catch(e){}return _p()}}catch(e){}return w}})()}
+function melhora(D){if(!D||!D.body||D.body.getAttribute('data-dvx')||!/EMPRESA ANALISADA|RAIO-X/i.test(D.body.textContent))return;D.body.setAttribute('data-dvx','1');var r=root();
+ var css=[].map.call(document.querySelectorAll('#dv-rs-css,#dv-pv-css,#dv-int-css'),function(s){return s.textContent}).join('\n')+'\n@page{margin:12mm 10mm}body{-webkit-print-color-adjust:exact;print-color-adjust:exact}.dvx{margin:18px 0;break-inside:auto}.dvx h2{font-size:15pt;margin:0 0 8px}.dvx .pj{display:flex;flex-wrap:wrap;gap:8px;margin:6px 0 10px}.dvx .pj span{border:1px solid #E3DED2;border-radius:8px;padding:6px 10px;font-size:10pt}.dvx .pj b{font-size:12pt;margin-right:4px}.dvx ol{margin:6px 0 0 18px;padding:0}.dvx li{font-size:9.5pt;margin:0 0 6px}.dvx li small{color:#555}.dv-rs .ac,.dv-ix .bt,.dv-ix .calc,.dv-ix .c-out,.dv-pv .rv a{display:none!important}';
+ var st=D.createElement('style');st.textContent=css;(D.head||D.body).appendChild(st);
+ /* textos antigos */
+ var tw=D.createTreeWalker(D.body,4),n;while(n=tw.nextNode()){var t=n.nodeValue;if(/raio-x-do-fornecedor/.test(t))n.nodeValue=t.replace(/desenvolveestrategias\.com\.br\/raio-x-do-fornecedor\/?/,'desenvolveestrategias.com.br/plataforma/raio-x');if(/RAIO-X DE CONCORRENTES/.test(t))n.nodeValue=t.replace('RAIO-X DE CONCORRENTES','RAIO-X DO CONCORRENTE');if(/^\s*google\.com\s*$/.test(t))n.nodeValue='site da prefeitura'}
+ [].forEach.call(D.querySelectorAll('p,div'),function(el){if(el.children.length<=2&&/^\s*Quer apoio para decidir\?/.test(el.textContent))el.remove()});
+ /* diários oficiais: trecho resumido */
+ [].forEach.call(D.querySelectorAll('td,p,div'),function(el){if(el.children.length===0&&el.textContent.length>700&&/CNPJ|Contrat/i.test(el.textContent)){var t=el.textContent.replace(/https?:\/\/\S+/g,'').replace(/\s+/g,' ').trim(),i=Math.max(0,t.search(/Objeto|Contrat/i)-60);el.textContent=(i?'… ':'')+t.slice(i,i+600)+'…'}});
+ /* blocos novos antes de "Pontos de atenção" */
+ var alvo=[].filter.call(D.querySelectorAll('h1,h2,h3,h4,p,div'),function(el){return el.children.length===0&&/^\s*Pontos de atenção\s*$/i.test(el.textContent)})[0];
+ var H='',rs=document.getElementById('dv-rs');if(rs)H+='<section class="dv-rs">'+rs.innerHTML+'</section>';
+ var pj=r&&r.querySelector('.pj-card');if(pj){var P=[];[].forEach.call(pj.querySelectorAll('div'),function(dv){var b=dv.querySelector(':scope > b'),sp=dv.querySelector(':scope > span');if(b&&sp&&dv.children.length===2)P.push('<span><b>'+e(b.textContent)+'</b>'+e(sp.textContent)+'</span>')});
+  var dest=[],vis={};[].forEach.call(pj.querySelectorAll('a[href^="http"]'),function(a){var bx=a.closest('div');var tx=String(bx?bx.innerText:'').split('\n')[0].trim();if(!tx||vis[tx]||dest.length>=12)return;vis[tx]=1;dest.push('<li>'+e(tx.replace(/\s*·?\s*(ver processo.*|todas as publica.*|publicação)$/i,''))+'<br><small>'+e(a.href)+'</small></li>')});
+  var tot=(pj.querySelector('p b')||{}).textContent||'';H+='<section class="dvx"><h2>Processos judiciais</h2><p>'+e(tot)+' com a empresa como parte (Diário de Justiça Eletrônico Nacional · CNJ).</p><div class="pj">'+P.join('')+'</div>'+(dest.length?'<p><b>Processos que merecem atenção</b></p><ol>'+dest.join('')+'</ol>':'')+'</section>'}
+ ['dv-pv','dv-ic'].forEach(function(id){var x=document.getElementById(id);if(x)H+='<section class="'+x.className+'">'+x.innerHTML+'</section>'});
+ if(H){var box=D.createElement('div');box.innerHTML=H;if(alvo&&alvo.parentNode)alvo.parentNode.insertBefore(box,alvo);else D.body.insertBefore(box,D.body.firstChild?D.body.firstChild.nextSibling:null)}}
 document.addEventListener('click',function(ev){var a=ev.target.closest&&ev.target.closest('[data-pdfr]');if(!a)return;ev.preventDefault();pdfRecurso()});
 var ult='',tm=null,ts=null,relId=0,est0={};[].forEach.call(document.querySelectorAll('style[id]'),function(x){est0[x.id]=1});
 var TOOL={concorrente:'raiox',comprador:'comprador',dossie:'dossie'}[PG];

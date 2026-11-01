@@ -62,12 +62,13 @@ function dv_rc_juris( $x, $uid ) {
 		}
 	} }
 	uasort( $pool, function ( $a, $b ) { return $b['sc'] <=> $a['sc']; } );
-	$out = array(); $porf = array(); $min = count( $kw ) >= 4 ? 2 : 1;
+	$out = array(); $porf = array(); $vci = array(); $min = count( $kw ) >= 4 ? 2 : 1;
 	foreach ( $pool as $y ) {
 		if ( count( $out ) >= 8 || $y['sc'] < $min ) { continue; } $f = $y['_f']; if ( ( $porf[ $f ] ?? 0 ) >= ( $f === $fontes[0] ? 5 : 3 ) ) { continue; } $porf[ $f ] = ( $porf[ $f ] ?? 0 ) + 1; $sr = $y['src'] ?? '';
 		$col = array( 'Plenário' => 'Plenário', 'Primeira Câmara' => '1ª Câmara', 'Segunda Câmara' => '2ª Câmara' );
 		$ci = ! empty( $y['ci'] ) ? $y['ci'] : ( $sr === 'tcesp' ? 'Súmula nº ' . $y['n'] . ' do TCE-SP' : ( $sr === 'tcusum' ? 'Súmula nº ' . $y['n'] . ' do TCU' : 'Acórdão ' . $y['n'] . '/' . $y['a'] . ' – TCU – ' . ( $col[ $y['c'] ] ?? $y['c'] ) . ( $y['rel'] ? ', Rel. Min. ' . mb_convert_case( mb_strtolower( $y['rel'] ), MB_CASE_TITLE ) : '' ) ) );
 		$u = $y['u'] ?? ''; if ( ! $u && $sr !== 'tcesp' && ! empty( $y['n'] ) && ! empty( $y['a'] ) && strpos( $sr, 'tcu' ) === 0 ) { $u = 'https://pesquisa.apps.tcu.gov.br/pesquisa/acordao-completo?q=NUMACORDAO:' . $y['n'] . '%20ANOACORDAO:' . $y['a']; }
+		if ( isset( $vci[ $ci ] ) ) { $porf[ $f ]--; continue; } $vci[ $ci ] = 1;
 		$out[] = array( 'k' => $y['k'], 'tema' => $y['_t'], 'fonte' => strpos( $sr, 'tcesp' ) === 0 ? 'TCE-SP' : ( $sr === 'stj' ? 'STJ' : 'TCU' ), 'e' => mb_substr( wp_strip_all_tags( $y['ementa'] ?? $y['e'] ), 0, 600 ), 'ci' => $ci, 'u' => $u );
 	}
 	$nota = $fed ? 'Órgão federal: precedentes do TCU, que fiscaliza o órgão, e do STJ.' : ( $uf === 'SP' ? 'Órgão estadual ou municipal de São Paulo: primeiro o TCE-SP, que fiscaliza o órgão; depois o TCU (Súmula 222 do TCU) e o STJ.' : 'Órgão estadual ou municipal' . ( $uf ? ' de ' . $uf : '' ) . ': o tribunal de contas do estado ainda não está na nossa base. Sugerimos TCU (Súmula 222 do TCU: suas decisões sobre normas gerais de licitação valem como referência para estados e municípios) e STJ; vale citar também precedentes do TCE local, se você tiver.' );

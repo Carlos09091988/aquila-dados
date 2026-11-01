@@ -252,7 +252,7 @@ add_action( 'dv_int_mon_cron', function () {
 		$snaps = json_decode( (string) get_user_meta( $uid, 'dv_mon_snap', true ), true ) ?: array(); $msg = array();
 		foreach ( dv_int_mon_lista( $uid ) as $c ) {
 			if ( ++$feitos > 300 ) { break 2; }
-			delete_transient( 'dv_venc4_' . $c ); $n = dv_int_snap( $c ); $o = $snaps[ $c ] ?? null; $snaps[ $c ] = $n; if ( ! $o ) { continue; }
+			delete_transient( 'dv_venc5_' . $c ); $n = dv_int_snap( $c ); $o = $snaps[ $c ] ?? null; $snaps[ $c ] = $n; if ( ! $o ) { continue; }
 			$nm = $n['nome'] ?: $c; $L = array();
 			foreach ( $n['vitorias'] as $v ) { if ( ! in_array( $v[0], (array) $o['refs'], true ) ) { $L[] = 'Venceu licitação: ' . ( $v[1] ?: $v[0] ) . ' (R$ ' . number_format( (float) $v[2], 0, ',', '.' ) . ') ' . $v[3]; } }
 			if ( $n['sancoes'] > $o['sancoes'] ) { $L[] = 'Nova sanção registrada em cadastro público (CEIS, CNEP ou TCU).'; }

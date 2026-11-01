@@ -53,7 +53,7 @@ function dv_part_get( $urls, $timeout = 25 ) {
 
 /** Licitações vencidas pelo CNPJ (resultados homologados no PNCP, Lei 14.133, últimos 3 anos). */
 function dv_part_vencidas( $cnpj ) {
-	$ck = 'dv_venc4_' . $cnpj; $c = get_transient( $ck ); if ( $c !== false ) { return $c; }
+	$ck = 'dv_venc5_' . $cnpj; $c = get_transient( $ck ); if ( $c !== false ) { return $c; }
 	$B = 'https://dadosabertos.compras.gov.br/modulo-contratacoes/3_consultarResultadoItensContratacoes_PNCP_14133?tamanhoPagina=500&niFornecedor=' . $cnpj;
 	$t = current_time( 'timestamp' ); $u = array();
 	for ( $a = 0; $a < 3; $a++ ) {

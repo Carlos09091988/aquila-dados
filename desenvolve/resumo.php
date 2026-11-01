@@ -39,6 +39,7 @@ function e(s){return String(s==null?'':s).replace(/[&<>"]/g,function(c){return{'
 function num(v){if(v==null)return 0;v=String(v);if(/^\s*[—-]\s*$/.test(v))return 0;var m=v.replace(/\./g,'').match(/\d+/);return m?parseInt(m[0],10):0}
 function brl(t){if(!t)return 0;var m=String(t).match(/R\$\s*([\d.]+(?:,\d+)?)\s*(mi|mil|bi)?/i);if(!m)return 0;var v=parseFloat(m[1].replace(/\./g,'').replace(',','.'));var u=(m[2]||'').toLowerCase();return v*(u==='mil'?1e3:u==='mi'?1e6:u==='bi'?1e9:1)}
 function mc(v){return v>=1e6?'R$ '+(v/1e6).toLocaleString('pt-BR',{maximumFractionDigits:1})+' mi':v>=1e3?'R$ '+Math.round(v/1e3).toLocaleString('pt-BR')+' mil':'R$ '+Math.round(v).toLocaleString('pt-BR')}
+function cap1(t){return t.charAt(0).toUpperCase()+t.slice(1)}
 function root(){return PG==='concorrente'?document.querySelector('.rx-out'):document.querySelector('.rp')}
 /* pares número/rótulo (contagens) e rótulo/valor (quadros) */
 function pares(r){var o={};[].forEach.call(r.querySelectorAll('div'),function(d){var b=null,s=null;for(var i=0;i<d.children.length;i++){var c=d.children[i];if(c.tagName==='B'&&!b)b=c;else if(c.tagName==='SPAN'&&!s)s=c}if(!b||!s||d.children.length>3)return;var bt=b.textContent.trim(),st=s.textContent.trim();if(/^(≥\s*)?[\d.]+$|^[—-]$/.test(bt))o[st]=bt;else o[bt]=st});return o}
@@ -48,7 +49,7 @@ function sinaisEmpresa(r){
  var T=r.innerText,P=pares(r),S={},X=document.getElementById('dv-rs');if(X&&r.contains(X))T=T.replace(X.innerText,'');
  var sit=T.match(/Situa[çc][ãa]o(?: cadastral)?:?\s*\n?\s*(ATIVA|BAIXADA|INAPTA|SUSPENSA|NULA)/i);S.sit=sit?sit[1].toUpperCase():'';
  var cap=T.match(/Capital social\s*\n?\s*(R\$\s*[\d.,]+(?:\s*(?:mi|mil))?)/i);S.capital=cap?brl(cap[1]):0;
- var ab=T.match(/Abertura\s*\n?\s*(\d{2})\/(\d{2})\/(\d{4})/);S.anos=ab?Math.floor((Date.now()-new Date(+ab[3],+ab[2]-1,+ab[1]))/31557600000):null;
+ var ab=T.match(/Abertura\s*\n?\s*(\d{2})\/(\d{2})\/(\d{4})/i);S.anos=ab?Math.floor((Date.now()-new Date(+ab[3],+ab[2]-1,+ab[1]))/31557600000):null;
  S.porte=(T.match(/Porte\s*\n?\s*([A-ZÇÃÉ ]{2,30})\n/)||[])[1]||'';
  /* sanções */
  S.sanc=[];
@@ -61,13 +62,14 @@ function sinaisEmpresa(r){
  /* dívida ativa */
  var tot=T.match(/R\$\s*([\d.,]+(?:\s*(?:mi|mil))?)\s*inscritos em d[íi]vida ativa/i);S.pgfn=tot?brl('R$ '+tot[1]):brl(val(P,/^D[íi]vida ativa da Uni/));
  var cob=T.match(/(\d+)\s+(?:inscri[çc][ãa]o\(?õ?e?s?\)?\s+)?em cobran[çc]a/i);S.cobranca=/nenhuma em cobran/i.test(T)?0:cob?+cob[1]:(S.pgfn>0&&/ajuizad/i.test(T)?1:(S.pgfn>0&&PG==='dossie'?-1:0));
- S.parcelada=/parcelad|garantid|suspens/i.test(T)&&S.pgfn>0&&S.cobranca===0;
- S.fgts=/D[ée]bito de FGTS inscrito/i.test(T);
+ var ec=T.match(/EM COBRAN[ÇC]A\s*\n\s*(R\$\s*[\d.,]+)/i);if(ec)S.cobranca=brl(ec[1])>0?1:0;
+ S.parcelada=S.pgfn>0&&S.cobranca===0&&(!!ec||/parcelad|garantid|suspens/i.test(T));
+ var fg=T.match(/\nFGTS\s*\n\s*(R\$\s*[\d.,]+)/i);S.fgts=fg?brl(fg[1])>0:/D[ée]bito de FGTS inscrito/i.test(T);
  /* processos */
  S.impr=num(val(P,/^Improbidade/));S.crim=num(val(P,/^Criminal/));S.colet=num(val(P,/^A[çc][õo]es coletivas/));S.falen=num(val(P,/^Fal[êe]ncia/));
  S.trab=num(val(P,/^(Processos )?[Tt]rabalhistas$/));S.trabEx=num(val(P,/^Execu[çc][õo]es trabalhistas/));
  /* grupo */
- var gc=T.match(/(\d+)\s+com telefone, e-mail ou endere[çc]o em comum/i);S.comum=gc?+gc[1]:(T.match(/CONTATO EM COMUM/g)||[]).length;
+ var gc=T.match(/(\d+)\s+com telefone, e-mail ou endere[çc]o em comum/i);S.comum=gc?+gc[1]:Math.max((T.match(/CONTATO EM COMUM/g)||[]).length,(T.match(/\tMesmo (endere[çc]o|telefone|e-mail)/gi)||[]).length);
  /* contratos */
  var pn=T.match(/(\d+)\s*\n?\s*contratos no PNCP/i),ca=val(P,/^Contratos ativos/);S.contratos=pn?+pn[1]:num(ca);
  var un=T.match(/(R\$\s*[\d.,]+(?:\s*(?:mi|mil))?)\s*\n?\s*recebidos da Uni/i);S.uniao=un?brl(un[1]):0;S.vAtivos=ca?brl(ca):0;
@@ -91,10 +93,10 @@ function htmlEmpresa(S){
  if(S.noticias)M.push(S.noticias+' notícia(s) negativa(s)');
  var nv=A.length?['a','Atenção alta']:M.length?['m','Atenção moderada']:['b','Atenção baixa'];
  var mot=A.concat(M);
- var pode=A.length?'<em>Pode, sim.</em> Pontos que atingem a habilitação: '+e(inab.slice(0,3).join('; '))+'.':inab.length?'<em>Depende das certidões.</em> '+e(inab.join('; '))+'. Confira as que foram apresentadas.':S.parcelada?'<em>Pouco provável.</em> A dívida está parcelada ou garantida; a certidão positiva com efeito de negativa vale para a habilitação.':'<em>Pelos dados públicos, não.</em> Nenhum impedimento encontrado nas fontes consultadas.';
+ var pode=A.length?'<em>Pode, sim.</em> Pontos que atingem a habilitação: '+e(inab.slice(0,3).join('; '))+'.':inab.length?'<em>Depende das certidões.</em> '+e(cap1(inab.join('; ')))+'. Confira as que foram apresentadas.':S.parcelada?'<em>Pouco provável.</em> A dívida está parcelada ou garantida; a certidão positiva com efeito de negativa vale para a habilitação.':'<em>Pelos dados públicos, não.</em> Nenhum impedimento encontrado nas fontes consultadas.';
  arg.sort(function(a,b){return b[1]-a[1]});
  var forte=arg.length?e(arg[0][0]):'Nenhum argumento forte nos dados públicos. Concentre o recurso nos documentos apresentados no certame (atestados, proposta e exequibilidade).';
- var cap=[];if(S.contratos)cap.push(S.contratos+' contrato(s) público(s)');if(S.uniao)cap.push(mc(S.uniao)+' recebidos da União no ano');if(S.vAtivos)cap.push(mc(S.vAtivos)+' em contratos ativos');if(S.capital)cap.push('capital social de '+mc(S.capital));if(S.anos!=null)cap.push(S.anos+' ano(s) de atividade');
+ var cap=[];if(S.contratos)cap.push(S.contratos+(PG==='dossie'?' contrato(s) ativo(s)':' contrato(s) público(s)'));if(S.uniao)cap.push(mc(S.uniao)+' recebidos da União no ano');if(S.vAtivos)cap.push(mc(S.vAtivos)+(PG==='dossie'?' em valor':' em contratos ativos'));if(S.capital)cap.push('capital social de '+mc(S.capital));if(S.anos!=null)cap.push(S.anos+' ano(s) de atividade');
  var fol=(S.contratos>=3&&(S.anos==null||S.anos>=3))?'<em>Tem histórico de execução.</em> ':S.contratos?'<em>Histórico curto.</em> Vale exigir com rigor os atestados (art. 67). ':'<em>Sem contratos públicos encontrados.</em> Vale exigir com rigor os atestados (art. 67). ';
  fol+=e(cap.join(' · ')||'Sem dados de contratos.')+'.';if(S.trab>=50)fol+=' '+S.trab.toLocaleString('pt-BR')+' ações trabalhistas: compare o volume com o porte da empresa.';
  var ac='<a class="p" href="/plataforma/recursos/">Usar no recurso</a>';

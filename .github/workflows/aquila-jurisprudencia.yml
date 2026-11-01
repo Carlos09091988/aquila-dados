@@ -14,4 +14,4 @@ jobs:
       - run: python3 scripts/tcu_jur.py
       - run: |
           git config user.name "github-actions"; git config user.email "actions@github.com"
-          git add aquila/jur && (git diff --cached --quiet || (git commit -m "Jurisprudencia TCU: atualizacao" && git push))
+          git add aquila/jur && (git diff --cached --quiet || (git commit -m "Jurisprudencia TCU: atualizacao" && git pull --rebase && git push))

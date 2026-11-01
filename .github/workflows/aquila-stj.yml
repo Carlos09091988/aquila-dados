@@ -15,4 +15,4 @@ jobs:
       - run: |
           git config user.name "github-actions"; git config user.email "actions@github.com"
           git pull -q --rebase || true
-          git add aquila/jur && (git diff --cached --quiet || (git commit -m "STJ: atualizacao" && git push))
+          git add aquila/jur && (git diff --cached --quiet || (git commit -m "STJ: atualizacao" && git pull --rebase && git push))

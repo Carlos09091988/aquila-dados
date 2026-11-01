@@ -145,6 +145,22 @@ add_action( 'rest_api_init', function () {
 		$cd = wp_remote_retrieve_header( $g, 'content-disposition' );
 		nocache_headers(); header( 'Content-Type: ' . $ct ); if ( $cd ) { header( 'X-Arquivo: ' . rawurlencode( $cd ) ); } header( 'Content-Length: ' . strlen( $b ) ); echo $b; exit;
 	} ) );
+	/* Fornecedores do órgão no mesmo objeto (contratos no PNCP), mais leve que o Raio-X completo */
+	register_rest_route( $ns, '/lic/fornecedores', array( 'methods' => 'GET', 'permission_callback' => $perm, 'callback' => function ( WP_REST_Request $r ) {
+		$cnpj = preg_replace( '/\D/', '', (string) $r['cnpj'] ); if ( strlen( $cnpj ) !== 14 ) { return new WP_Error( 'dv_lic', 'CNPJ inválido.', array( 'status' => 400 ) ); }
+		$ck = 'dv_forn_' . $cnpj; $c = get_transient( $ck );
+		if ( $c === false ) {
+			$x = wp_remote_get( 'https://brasilapi.com.br/api/cnpj/v1/' . $cnpj, array( 'timeout' => 15 ) ); $cad = is_wp_error( $x ) ? array() : (array) json_decode( wp_remote_retrieve_body( $x ), true );
+			$B = 'https://pncp.gov.br/api/consulta/v1/contratos?cnpjOrgao=' . $cnpj . '&tamanhoPagina=500&pagina=1'; $ano = (int) current_time( 'Y' ); $u = array();
+			for ( $a = $ano; $a >= $ano - 2; $a-- ) { $u[ $a ] = $B . '&dataInicial=' . $a . '0101&dataFinal=' . ( $a === $ano ? current_time( 'Ymd' ) : $a . '1231' ); }
+			$res = function_exists( 'dv_ds_multi' ) ? dv_ds_multi( $u, array(), 25 ) : array(); $it = array();
+			foreach ( $res as $body ) { $j = is_string( $body ) ? json_decode( $body, true ) : $body; foreach ( (array) ( $j['data'] ?? array() ) as $i ) {
+				$it[] = array( 'ni' => preg_replace( '/\D/', '', (string) ( $i['niFornecedor'] ?? '' ) ), 'nome' => $i['nomeRazaoSocialFornecedor'] ?? '', 'objeto' => mb_substr( (string) ( $i['objetoContrato'] ?? '' ), 0, 200 ), 'valor' => (float) ( $i['valorGlobal'] ?? $i['valorInicial'] ?? 0 ) );
+			} }
+			$c = array( 'orgao' => $cad['razao_social'] ?? '', 'contratos' => $it ); set_transient( $ck, $c, 12 * HOUR_IN_SECONDS );
+		}
+		return $c;
+	} ) );
 	/* Vencedores homologados de cada item (PNCP) */
 	register_rest_route( $ns, '/lic/vencedores', array( 'methods' => 'GET', 'permission_callback' => $perm, 'callback' => function ( WP_REST_Request $r ) {
 		if ( ! preg_match( '#^(\d{14})/(\d{4})/(\d+)$#', (string) $r['ref'], $m ) ) { return new WP_Error( 'dv_lic', 'Licitação sem referência do PNCP.', array( 'status' => 400 ) ); }
@@ -341,12 +357,12 @@ function g(u){return fetch(u,{credentials:'same-origin',headers:{'X-WP-Nonce':no
 function usar(f,k,rot){return fetch(api+'usar',{method:'POST',credentials:'same-origin',headers:{'X-WP-Nonce':nonce,'Content-Type':'application/json'},body:JSON.stringify({ferramenta:f,chave:k,rotulo:rot})}).then(function(r){return r.json().then(function(j){if(r.status>=400)throw j;return j})})}
 function toks(t){return String(t||'').toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g,'').split(/[^a-z0-9]+/).filter(function(w){return w.length>4}).slice(0,4)}
 R.addEventListener('click',function(ev){var b=ev.target.closest('[data-pac]');if(!b)return;ev.preventDefault();abrir(b.dataset.pac,b.dataset.item||'',b.dataset.st||'')},true);
-function abrir(ref,item,st){var cnpj=ref.slice(0,14),bg=document.createElement('div');bg.className='pk-bg';bg.innerHTML='<div class="pk"><h3>Concorrentes e Raio-X desta licitação</h3><p class="h">Buscando no PNCP os vencedores desta licitação e quem mais fornece esse objeto para o órgão… pode levar até um minuto.</p></div>';document.body.appendChild(bg);bg.addEventListener('click',function(ev){if(ev.target===bg||ev.target.dataset.f)bg.remove()});var P=bg.querySelector('.pk');
- Promise.all([g(api.replace('desenvolve/v1/','desenvolve/v1/')+'lic/vencedores?ref='+encodeURIComponent(ref)).catch(function(){return{vencedores:[]}}),g('/wp-json/dvtools/v1/comprador?cnpj='+cnpj+'&item='+encodeURIComponent(item)).catch(function(){return null})]).then(function(a){var V=a[0].vencedores||[],C=a[1],T=toks(item),F={};
-  ((C&&C.contratos&&C.contratos.itens)||[]).forEach(function(x){var ni=String(x.fornecedor_ni||'').replace(/\D/g,'');if(ni.length!==14)return;var ob=String(x.objeto||'').toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g,'');if(T.length&&!T.some(function(t){return ob.indexOf(t)>=0}))return;F[ni]=F[ni]||{cnpj:ni,nome:x.fornecedor,n:0,valor:0};F[ni].n++;F[ni].valor+=x.valor||0});
+function abrir(ref,item,st){var cnpj=ref.slice(0,14),bg=document.createElement('div');bg.className='pk-bg';bg.innerHTML='<div class="pk"><h3>Concorrentes e Raio-X desta licitação</h3><p class="h">Buscando no PNCP os vencedores desta licitação e quem mais fornece esse objeto para o órgão… leva alguns segundos.</p></div>';document.body.appendChild(bg);bg.addEventListener('click',function(ev){if(ev.target===bg||ev.target.dataset.f)bg.remove()});var P=bg.querySelector('.pk');
+ Promise.all([g(api.replace('desenvolve/v1/','desenvolve/v1/')+'lic/vencedores?ref='+encodeURIComponent(ref)).catch(function(){return{vencedores:[]}}),g(api+'lic/fornecedores?cnpj='+cnpj).catch(function(){return null})]).then(function(a){var V=a[0].vencedores||[],C=a[1],T=toks(item),F={};
+  ((C&&C.contratos)||[]).forEach(function(x){var ni=String(x.ni||'');if(ni.length!==14)return;var ob=String(x.objeto||'').toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g,'');if(T.length&&!T.some(function(t){return ob.indexOf(t)>=0}))return;F[ni]=F[ni]||{cnpj:ni,nome:x.nome,n:0,valor:0};F[ni].n++;F[ni].valor+=x.valor||0});
   var vs={};V.forEach(function(v){vs[v.cnpj]=1});var FO=Object.keys(F).map(function(k){return F[k]}).filter(function(x){return!vs[x.cnpj]}).sort(function(a,b){return b.valor-a.valor}).slice(0,5);
   var h='<h3>Concorrentes e Raio-X desta licitação</h3><p class="h">Marque o que você quer analisar. Cada relatório abre completo na ferramenta, já pago, e fica disponível por 30 dias sem nova cobrança.</p>';
-  h+='<label><input type="checkbox" data-t="comprador" checked><span><b>Raio-X do órgão</b> · '+CUSTO.comprador+' créditos<small>Se paga em dia, processos, notícias e contratos'+(C&&C.cadastro?' de '+e(C.cadastro.razao_social):'')+'</small></span></label>';
+  h+='<label><input type="checkbox" data-t="comprador" checked><span><b>Raio-X do órgão</b> · '+CUSTO.comprador+' créditos<small>Se paga em dia, processos, notícias e contratos'+(C&&C.orgao?' de '+e(C.orgao):'')+'</small></span></label>';
   if(V.length)h+='<h4>Vencedores desta licitação (resultado homologado no PNCP)</h4>'+V.slice(0,6).map(function(v,i){return'<label><input type="checkbox" data-t="raiox" data-c="'+v.cnpj+'" data-n="'+e(v.nome)+'"'+(i<2?' checked':'')+'><span><b>'+e(v.nome)+'</b> · '+CUSTO.raiox+' créditos<small>CNPJ '+fc(v.cnpj)+' · '+v.itens+' item(ns) · '+moeda(v.valor)+'</small></span></label>'}).join('');
   else if(/disputa|recurso|ganha|perdida/.test(st))h+='<p class="h">O resultado desta licitação ainda não está homologado no PNCP.</p>';
   if(FO.length)h+='<h4>Quem mais fornece esse objeto para este órgão (contratos dos últimos anos)</h4>'+FO.map(function(v,i){return'<label><input type="checkbox" data-t="raiox" data-c="'+v.cnpj+'" data-n="'+e(v.nome)+'"'+(!V.length&&i<2?' checked':'')+'><span><b>'+e(v.nome)+'</b> · '+CUSTO.raiox+' créditos<small>CNPJ '+fc(v.cnpj)+' · '+v.n+' contrato(s) · '+moeda(v.valor)+'</small></span></label>'}).join('');
@@ -354,7 +370,7 @@ function abrir(ref,item,st){var cnpj=ref.slice(0,14),bg=document.createElement('
   h+='<div class="tot"><b class="tt"></b><span><button class="g" data-f="1">Cancelar</button> <button class="go">Gerar relatórios</button></span></div><p class="h msg"></p>';P.innerHTML=h;
   function soma(){var t=0;P.querySelectorAll('input:checked').forEach(function(i){t+=CUSTO[i.dataset.t]});P.querySelector('.tt').textContent='Total: '+t+' crédito(s)';P.querySelector('.go').disabled=!t}soma();P.addEventListener('change',soma);
   P.querySelector('.go').onclick=function(){var go=this;go.disabled=true;go.textContent='Gerando…';var sel=[].slice.call(P.querySelectorAll('input:checked')),links=[],q=Promise.resolve();
-   sel.forEach(function(i){q=q.then(function(){if(i.dataset.t==='comprador'){var k='cp2-c='+fc(cnpj)+(item?'|cp2-i='+item:'');return usar('comprador',k,'Pacote: '+(C&&C.cadastro?C.cadastro.razao_social:cnpj)).then(function(){links.push(['Raio-X do órgão'+(C&&C.cadastro?' · '+C.cadastro.razao_social:''),'/plataforma/raio-x-comprador/?cnpj='+cnpj+'&item='+encodeURIComponent(item)])})}
+   sel.forEach(function(i){q=q.then(function(){if(i.dataset.t==='comprador'){var k='cp2-c='+fc(cnpj)+(item?'|cp2-i='+item:'');return usar('comprador',k,'Pacote: '+(C&&C.orgao?C.orgao:cnpj)).then(function(){links.push(['Raio-X do órgão'+(C&&C.orgao?' · '+C.orgao:''),'/plataforma/raio-x-comprador/?cnpj='+cnpj+'&item='+encodeURIComponent(item)])})}
     var c=i.dataset.c;return usar('raiox','rx-cnpj='+fc(c),'Pacote: '+i.dataset.n).then(function(){links.push(['Raio-X · '+i.dataset.n,'/plataforma/raio-x/?cnpj='+c])})})});
    q.then(function(){P.innerHTML='<h3>Relatórios prontos</h3><p class="h">Clique para abrir cada um (abrem em nova aba, sem nova cobrança por 30 dias).</p><div class="ok">'+links.map(function(l){return'<a href="'+l[1]+'" target="_blank" rel="noopener">'+e(l[0])+' →</a>'}).join('')+'</div><div class="tot"><span></span><button class="g" data-f="1">Fechar</button></div>'}).catch(function(j){P.querySelector('.msg').innerHTML='<span class="er">'+e((j&&j.message)||'Não foi possível concluir.')+'</span>'+(links.length?' Os relatórios já gerados: '+links.map(function(l){return'<a href="'+l[1]+'" target="_blank">'+e(l[0])+'</a>'}).join(' · '):'')+' <a href="/creditos/">Comprar créditos</a>';go.disabled=false;go.textContent='Tentar de novo'})}
  })}

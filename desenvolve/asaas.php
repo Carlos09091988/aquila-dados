@@ -191,7 +191,7 @@ add_shortcode( 'dv_creditos', function () {
 	$h = $css . '<div class="dvp dvk" id="dv-cred" data-api="' . esc_attr( rest_url( 'desenvolve/v1/' ) ) . '" data-nonce="' . esc_attr( wp_create_nonce( 'wp_rest' ) ) . '">';
 	$h .= '<div class="hd"><div><h2>Comprar créditos</h2><p>Para não parar no meio de uma análise quando os créditos do mês acabarem. Os créditos entram assim que o pagamento é confirmado.</p></div>';
 	$h .= '<div class="sd">' . ( $master ? '<div class="t"><small>Seu saldo</small><b>Ilimitado</b></div>' : '<div class="t"><small>Seu saldo</small><b>' . (int) $s['total'] . '</b></div><div><small>Do mês</small><b>' . (int) $s['mes'] . '</b></div><div><small>Comprados</small><b>' . (int) ( $s['extra'] + $s['cortesia'] ) . '</b></div>' ) . '</div></div>';
-	if ( ! $ativo ) { return $h . '<div class="bx"><h3>Créditos extras são para assinantes</h3><p>Ative a assinatura para receber os créditos do mês e poder comprar mais quando precisar.</p><p><a class="dv-btn" href="/painel/#dv-planos">Ver a assinatura</a></p></div></div>'; }
+	if ( ! $ativo ) { return $h . '<div class="bx"><h3>Créditos extras são para assinantes</h3><p>Ative a assinatura para receber os créditos do mês e poder comprar mais quando precisar.</p><p><a class="dv-btn" href="/assinar/">Ver a assinatura</a></p></div></div>'; }
 	$ks = array_keys( $pac ); $dest = count( $ks ) >= 3 ? $ks[1] : 0;
 	$h .= '<div class="pk">';
 	foreach ( $pac as $q => $v ) {

@@ -8,7 +8,9 @@ if ( ! defined( 'ABSPATH' ) ) { exit; }
 function dv_app_pagina() {
 	if ( ! is_user_logged_in() || is_admin() || ! is_page() ) { return false; }
 	global $post; if ( ! $post ) { return false; }
-	return is_page( 'painel' ) || has_shortcode( (string) $post->post_content, 'dv_ctx' ) || has_shortcode( (string) $post->post_content, 'dv_creditos' );
+	if ( is_page( 'painel' ) ) { return true; }
+	foreach ( array( 'dv_ctx', 'dv_creditos', 'dv_lote', 'dv_cadastro' ) as $sc ) { if ( has_shortcode( (string) $post->post_content, $sc ) ) { return true; } }
+	return false;
 }
 function dv_app_menu() {
 	return array(
@@ -18,7 +20,7 @@ function dv_app_menu() {
 		array( 'Analisar e disputar', array( array( 'Gestão de licitações', '/plataforma/licitacoes/', '📋', 'sessoes' ), array( 'Banco de preços', '/plataforma/banco-de-precos/', '💲' ) ) ),
 		array( 'Habilitação e garantias', array( array( 'Documentos e certidões', '/plataforma/documentos/', '🗂️', 'docs' ), array( 'Meus contratos e garantias', '/plataforma/meus-contratos/', '🛡️' ) ) ),
 		array( 'Contestar', array( array( 'Impugnações e recursos', '/plataforma/recursos/', '⚖️', 'prazos' ) ) ),
-		array( 'Minha conta', array( array( 'Comprar créditos', '/creditos/', '💳' ), array( 'Minha assinatura', '/painel/#dv-planos', '⭐' ) ) ),
+		array( 'Minha conta', array( array( 'Comprar créditos', '/creditos/', '💳' ), array( 'Minha assinatura', '/assinar/', '⭐' ) ) ),
 	);
 }
 add_filter( 'body_class', function ( $c ) { if ( dv_app_pagina() ) { $c[] = 'dv-app'; } return $c; } );

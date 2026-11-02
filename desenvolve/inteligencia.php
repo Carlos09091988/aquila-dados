@@ -322,7 +322,7 @@ add_action( 'rest_api_init', function () {
 	/* Raio-X em lote: preço fixo por lote de até 20 CNPJs (cobra uma vez ao abrir; depois um CNPJ por chamada) */
 	register_rest_route( 'desenvolve/v1', '/int/lote/abrir', array( 'methods' => 'POST', 'permission_callback' => $logado, 'callback' => function ( WP_REST_Request $r ) {
 		$L = array(); foreach ( (array) $r['cnpjs'] as $x ) { $x = preg_replace( '/\D/', '', (string) $x ); if ( strlen( $x ) === 14 ) { $L[ $x ] = 1; } }
-		$L = array_keys( $L ); if ( ! $L ) { return new WP_Error( 'dv_cnpj', 'Cole pelo menos um CNPJ válido.', array( 'status' => 400 ) ); }
+		$L = array_map( 'strval', array_keys( $L ) ); if ( ! $L ) { return new WP_Error( 'dv_cnpj', 'Cole pelo menos um CNPJ válido.', array( 'status' => 400 ) ); }
 		if ( count( $L ) > 20 ) { return new WP_Error( 'dv_cnpj', 'O lote aceita até 20 CNPJs.', array( 'status' => 400 ) ); }
 		sort( $L ); $h = substr( hash( 'sha256', implode( ',', $L ) ), 0, 16 ); $uid = get_current_user_id();
 		$n = function_exists( 'dv_custo' ) ? dv_custo( 'lote' ) : 15;

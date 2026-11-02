@@ -146,7 +146,7 @@ if(REL){fetch(R.api+'relatorio/'+encodeURIComponent(REL),{credentials:'same-orig
  bn.querySelector('button').onclick=function(){location.href=urlNova(j.cnpj)};rt.parentNode.insertBefore(bn,rt);
  var impresso=false;window.addEventListener('beforeprint',function(){impresso=true});
  rt.addEventListener('click',function(ev){var b=ev.target.closest('button');if(!b||!/pdf/i.test(b.textContent+' '+b.className))return;impresso=false;setTimeout(function(){if(!impresso)window.print()},300)});
- bn.scrollIntoView({block:'start'});
+
 }).catch(function(){})}
 })();
 </script>

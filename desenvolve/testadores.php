@@ -33,7 +33,7 @@ add_shortcode( 'dv_teste', function () {
 				if ( function_exists( 'dv_extrato' ) ) { dv_extrato( $uid, DV_TS_CREDITOS, 'teste', 'Teste de especialista (' . DV_TS_DIAS . ' dias)' ); }
 				$C[ $cod ]['uid'] = $uid; $C[ $cod ]['ativado'] = current_time( 'mysql' ); $C[ $cod ]['nome'] = $nome; $C[ $cod ]['email'] = $email; update_option( 'dv_testers', $C, false );
 				$from = function_exists( 'dv_cfg' ) && dv_cfg( 'email_remetente' ) ? dv_cfg( 'email_remetente' ) : 'contato@desenvolveestrategias.com.br';
-				wp_mail( $email, 'Seu teste de especialista na Desenvolve começou', "Olá, $nome!\n\nObrigado por aceitar testar a Desenvolve. Você tem " . DV_TS_DIAS . " dias de acesso completo e " . DV_TS_CREDITOS . " créditos para usar o Raio-X, a Due Diligence e as demais ferramentas.\n\nAo final, preencha a avaliação (leva uns 10 minutos):\n" . home_url( '/plataforma/avaliacao/' ) . "\n\nAssim que você enviar, liberamos automaticamente 1 mês de assinatura, com 60 créditos.\n\nEquipe Desenvolve", array( 'From: Desenvolve <' . $from . '>' ) );
+				wp_mail( $email, 'Seu teste de especialista na Desenvolve começou', "Olá, $nome!\n\nObrigado por aceitar testar a Desenvolve. Você tem " . DV_TS_DIAS . " dias de acesso completo e " . DV_TS_CREDITOS . " créditos para usar o Raio-X, a Due Diligence e as demais ferramentas.\n\nAo final, preencha a avaliação (leva uns 10 minutos):\n" . home_url( '/plataforma/avaliacao/' ) . "\n\nAssim que você enviar, liberamos automaticamente 1 mês de assinatura, com 80 créditos.\n\nEquipe Desenvolve", array( 'From: Desenvolve <' . $from . '>' ) );
 				wp_mail( get_option( 'admin_email' ), 'Testador ativou o convite: ' . $nome, "Convite: $cod\nNome: $nome\nE-mail: $email\nAtuação: $atua", array( 'From: Desenvolve <' . $from . '>' ) );
 				wp_set_current_user( $uid ); wp_set_auth_cookie( $uid, true ); wp_safe_redirect( home_url( '/plataforma/?teste=1' ) ); exit;
 			}
@@ -42,7 +42,7 @@ add_shortcode( 'dv_teste', function () {
 	ob_start(); ?>
 <form class="ts" method="post"><?php wp_nonce_field( 'dv_ts', '_dvts' ); ?><input type="hidden" name="dv_ts" value="1"><input type="hidden" name="convite" value="<?php echo esc_attr( $cod ); ?>">
 	<span class="ts-k">Convite de especialista</span><h2><?php echo ! empty( $C[ $cod ]['rotulo'] ) ? esc_html( $C[ $cod ]['rotulo'] ) . ', teste' : 'Teste'; ?> a Desenvolve antes de todo mundo</h2>
-	<ul class="ts-l"><li><b><?php echo DV_TS_DIAS; ?> dias</b> de acesso completo, com <b><?php echo DV_TS_CREDITOS; ?> créditos</b> para usar o Raio-X, a Due Diligence e as demais ferramentas</li><li>No fim, uma <b>avaliação rápida</b> (cerca de 10 minutos) com as suas sugestões</li><li>Enviou a avaliação: ganha <b>1 mês de assinatura</b> (60 créditos), liberado na hora</li></ul>
+	<ul class="ts-l"><li><b><?php echo DV_TS_DIAS; ?> dias</b> de acesso completo, com <b><?php echo DV_TS_CREDITOS; ?> créditos</b> para usar o Raio-X, a Due Diligence e as demais ferramentas</li><li>No fim, uma <b>avaliação rápida</b> (cerca de 10 minutos) com as suas sugestões</li><li>Enviou a avaliação: ganha <b>1 mês de assinatura</b> (80 créditos), liberado na hora</li></ul>
 	<?php if ( $err ) { echo '<p class="ts-err">' . esc_html( $err ) . '</p>'; } ?>
 	<label>Nome completo<input name="nome" required value="<?php echo esc_attr( $_POST['nome'] ?? ( $C[ $cod ]['rotulo'] ?? '' ) ); ?>"></label>
 	<div class="ts-2"><label>E-mail<input type="email" name="email" required value="<?php echo esc_attr( $_POST['email'] ?? '' ); ?>"></label><label>WhatsApp<input name="tel" value="<?php echo esc_attr( $_POST['tel'] ?? '' ); ?>"></label></div>
@@ -60,7 +60,7 @@ add_shortcode( 'dv_avaliacao', function () {
 	if ( ! is_user_logged_in() ) { return '<div class="ts"><h2>Entre na sua conta</h2><p>A avaliação é para quem está no teste de especialista. <a href="/painel/">Entrar</a>.</p></div>' . dv_ts_css(); }
 	$uid = get_current_user_id(); $cod = dv_ts_e_testador( $uid ); $F = dv_ts_ferramentas();
 	if ( ! $cod ) { return '<div class="ts"><h2>Avaliação de especialistas</h2><p>Esta página é para quem recebeu um convite de teste.</p></div>' . dv_ts_css(); }
-	if ( get_user_meta( $uid, 'dv_tester_av', true ) ) { return '<div class="ts"><h2>Obrigado pela avaliação!</h2><p class="ts-ok">Seu mês de assinatura está ativo, com 60 créditos, até ' . esc_html( date_i18n( 'd/m/Y', strtotime( (string) get_user_meta( $uid, 'dv_vence', true ) ) ) ) . '.</p><p><a class="ts-b" href="/plataforma/">Ir para as ferramentas</a></p></div>' . dv_ts_css(); }
+	if ( get_user_meta( $uid, 'dv_tester_av', true ) ) { return '<div class="ts"><h2>Obrigado pela avaliação!</h2><p class="ts-ok">Seu mês de assinatura está ativo, com 80 créditos, até ' . esc_html( date_i18n( 'd/m/Y', strtotime( (string) get_user_meta( $uid, 'dv_vence', true ) ) ) ) . '.</p><p><a class="ts-b" href="/plataforma/">Ir para as ferramentas</a></p></div>' . dv_ts_css(); }
 	$err = '';
 	if ( 'POST' === $_SERVER['REQUEST_METHOD'] && isset( $_POST['dv_av'] ) && wp_verify_nonce( $_POST['_dvav'] ?? '', 'dv_av' ) ) {
 		$notas = array(); foreach ( $F as $k => $n ) { $v = $_POST['n_' . $k] ?? ''; $notas[ $k ] = $v === '' ? null : max( 0, min( 10, (int) $v ) ); }
@@ -87,7 +87,7 @@ add_shortcode( 'dv_avaliacao', function () {
 	ob_start(); ?>
 <form class="ts" method="post"><?php wp_nonce_field( 'dv_av', '_dvav' ); ?><input type="hidden" name="dv_av" value="1">
 	<span class="ts-k">Avaliação de especialista</span><h2>Sua opinião vale 1 mês de assinatura</h2>
-	<p><?php echo $dl >= 0 ? 'Seu teste vai até <b>' . esc_html( date_i18n( 'd/m/Y', strtotime( $v ) ) ) . '</b>. ' : ''; ?>Responda com sinceridade: o que você disser vai direto para a melhoria da plataforma. Ao enviar, liberamos na hora 1 mês de assinatura, com 60 créditos.</p>
+	<p><?php echo $dl >= 0 ? 'Seu teste vai até <b>' . esc_html( date_i18n( 'd/m/Y', strtotime( $v ) ) ) . '</b>. ' : ''; ?>Responda com sinceridade: o que você disser vai direto para a melhoria da plataforma. Ao enviar, liberamos na hora 1 mês de assinatura, com 80 créditos.</p>
 	<?php if ( $err ) { echo '<p class="ts-err">' . esc_html( $err ) . '</p>'; } ?>
 	<label>Nota de 0 a 10 para cada ferramenta que você usou <small>(deixe em branco o que não usou)</small></label>
 	<table><?php foreach ( $F as $k => $n ) { echo '<tr><td>' . esc_html( $n ) . '</td><td style="text-align:right"><select name="n_' . esc_attr( $k ) . '"><option value="">—</option>'; for ( $i = 10; $i >= 0; $i-- ) { echo '<option' . ( isset( $_POST[ 'n_' . $k ] ) && $_POST[ 'n_' . $k ] === (string) $i ? ' selected' : '' ) . '>' . $i . '</option>'; } echo '</select></td></tr>'; } ?></table><br>
@@ -120,7 +120,7 @@ add_action( 'dv_ts_diario', function () {
 		if ( empty( $c['uid'] ) || ! empty( $c['avaliado'] ) ) { continue; } $uid = (int) $c['uid']; $u = get_userdata( $uid ); if ( ! $u ) { continue; }
 		$v = (string) get_user_meta( $uid, 'dv_vence', true ); $dl = (int) round( ( strtotime( $v ) - strtotime( $hoje ) ) / DAY_IN_SECONDS ); $env = (array) get_user_meta( $uid, 'dv_tester_lemb', true );
 		foreach ( array( 2, 0, -3 ) as $m ) { if ( $dl === $m && empty( $env[ $m ] ) ) { $env[ $m ] = $hoje; update_user_meta( $uid, 'dv_tester_lemb', $env );
-			wp_mail( $u->user_email, $m > 0 ? 'Faltam 2 dias do seu teste: avalie e ganhe 1 mês grátis' : ( $m === 0 ? 'Último dia do seu teste na Desenvolve' : 'Ainda dá tempo: sua avaliação vale 1 mês grátis' ), 'Olá, ' . $u->first_name . "!\n\n" . ( $m >= 0 ? 'Seu teste de especialista na Desenvolve está acabando.' : 'Seu teste terminou, mas a avaliação continua aberta.' ) . " Conte o que achou (uns 10 minutos) e liberamos na hora 1 mês de assinatura, com 60 créditos:\n" . home_url( '/plataforma/avaliacao/' ) . "\n\nObrigado!\nEquipe Desenvolve", array( 'From: Desenvolve <' . $from . '>' ) ); } }
+			wp_mail( $u->user_email, $m > 0 ? 'Faltam 2 dias do seu teste: avalie e ganhe 1 mês grátis' : ( $m === 0 ? 'Último dia do seu teste na Desenvolve' : 'Ainda dá tempo: sua avaliação vale 1 mês grátis' ), 'Olá, ' . $u->first_name . "!\n\n" . ( $m >= 0 ? 'Seu teste de especialista na Desenvolve está acabando.' : 'Seu teste terminou, mas a avaliação continua aberta.' ) . " Conte o que achou (uns 10 minutos) e liberamos na hora 1 mês de assinatura, com 80 créditos:\n" . home_url( '/plataforma/avaliacao/' ) . "\n\nObrigado!\nEquipe Desenvolve", array( 'From: Desenvolve <' . $from . '>' ) ); } }
 	}
 } );
 

@@ -189,9 +189,9 @@ function dv_lotes( $uid ) {
 		return ( $x['restante'] ?? 0 ) > 0 && ( $x['expira'] ?? '9999-12-31' ) >= $hoje;
 	} ) );
 }
-/** Avisa por e-mail, uma vez por mês, quando restarem 3 créditos ou menos. */
+/** Avisa por e-mail, uma vez por mês, quando o saldo não der mais para um Raio-X. */
 function dv_aviso_credito( $uid, $s ) {
-	$t = (int) ( $s['total'] ?? 99 ); if ( $t > 3 ) { return; }
+	$t = (int) ( $s['total'] ?? 99 ); if ( $t >= max( 1, (int) dv_custo( 'raiox' ) ) ) { return; }
 	$m = current_time( 'Y-m' ); if ( get_user_meta( $uid, 'dv_aviso_cred', true ) === $m ) { return; }
 	update_user_meta( $uid, 'dv_aviso_cred', $m );
 	$u = get_userdata( $uid ); if ( ! $u ) { return; }
@@ -199,7 +199,7 @@ function dv_aviso_credito( $uid, $s ) {
 	wp_mail( $u->user_email, 'Seus créditos na Desenvolve estão acabando',
 		'Olá, ' . $u->first_name . "!\n\nRestam " . $t . ' crédito(s) na sua conta Desenvolve. Os créditos do plano renovam na próxima mensalidade.' .
 		"\n\nPara não parar no meio de um Raio-X ou de uma Due Diligence, você pode comprar créditos extras agora:\n" . home_url( '/creditos/' ) .
-		"\n\nPacotes: 10 créditos por R$ 39, 30 por R$ 99 e 100 por R$ 290. Os créditos extras valem por " . (int) dv_cfg( 'validade_extra' ) . " meses.\n\nEquipe Desenvolve",
+		"\n\nCada crédito extra custa R$ " . dv_rs( dv_cfg( 'preco_extra' ) ) . ", em pacotes de " . implode( ', ', array_keys( dv_pacotes() ) ) . " créditos. Os créditos extras valem por " . (int) dv_cfg( 'validade_extra' ) . " meses.\n\nEquipe Desenvolve",
 		array( 'From: Desenvolve <' . $from . '>' ) );
 }
 function dv_saldo( $uid ) {
@@ -559,7 +559,7 @@ function dv_admin_config() {
 	$c = dv_cfg(); $tem = (bool) get_option( 'dv_asaas_key' );
 	$f = function ( $k, $l, $tipo = 'text', $ajuda = '' ) use ( $c ) { echo '<tr><th><label>' . esc_html( $l ) . '</label></th><td><input type="' . $tipo . '" name="dv_cfg[' . $k . ']" value="' . esc_attr( $c[ $k ] ) . '" class="regular-text"' . ( $tipo === 'number' ? ' step="1"' : '' ) . '>' . ( $ajuda ? '<p class="description">' . esc_html( $ajuda ) . '</p>' : '' ) . '</td></tr>'; };
 	echo '<div class="wrap dv-w"><h1>Configurações da plataforma</h1><form method="post">' . wp_nonce_field( 'dv_cfg', '_wpnonce', true, false ) . '<input type="hidden" name="dv_cfg[_]" value="1"><table class="form-table">';
-	$f( 'planos', 'Planos', 'text', 'chave:Nome:preço:créditos por mês:termos no Radar, separados por |. Ex.: essencial:Essencial:97:20:1|profissional:Profissional:197:60:5' );
+	$f( 'planos', 'Planos', 'text', 'chave:Nome:preço:créditos por mês:termos no Radar, separados por |. Ex.: desenvolve:Desenvolve:79.90:80:5' );
 	$f( 'pacotes', 'Pacotes de créditos extras', 'text', 'quantidade:preço, separados por vírgula. Ex.: 10:39,30:99,100:290' );
 	$f( 'creditos_dossie', 'Créditos da Due Diligence completa', 'number' );
 	$f( 'custos', 'Créditos por ferramenta (padrão 1)', 'text', 'ferramenta:créditos. Ex.: raiox:5,comprador:5,buscador:0,vencendo:5,precos:0. Use 0 para sem custo. As ferramentas de gestão não usam créditos.' );
@@ -685,7 +685,7 @@ add_shortcode( 'dv_ctx', function ( $a ) {
 		$h .= '<div class="dv-pw"><h2>Lançamento em breve</h2><p>Esta ferramenta faz parte da Desenvolve, inteligência em licitações. Entre na lista de espera: você recebe os planos antes de todo mundo e ganha ' . (int) get_option( 'dv_bonus_lista', 100 ) . ' créditos de bônus no primeiro mês. Assinatura de R$ ' . dv_rs( dv_preco_plano( 0, array_key_first( dv_planos() ) )['valor'] ) . '/mês, sem fidelidade.</p><p><a class="dv-btn" href="/#lista">Entrar na lista de espera</a> <a class="dv-btn g" href="/painel/">Já tenho conta</a></p></div><style>.dv-tool{display:none!important}</style>';
 	} elseif ( ! $uid ) {
 		$td = (int) dv_cfg( 'trial_dias' );
-		$h .= '<div class="dv-pw"><h2>Ferramenta exclusiva para assinantes</h2><p>' . ( $td ? 'Teste ' . $td . ' dias grátis, com ' . (int) dv_cfg( 'trial_creditos' ) . ' créditos, sem cartão. Depois, planos a partir de R$ ' . dv_rs( dv_preco_plano( 0, array_key_first( dv_planos() ) )['valor'] ) . '/mês.' : 'Planos a partir de R$ ' . dv_rs( dv_preco_plano( 0, array_key_first( dv_planos() ) )['valor'] ) . '/mês.' ) . '</p><p><a class="dv-btn" href="/assinar/">' . ( $td ? 'Começar o teste grátis' : 'Assinar agora' ) . '</a> <a class="dv-btn g" href="/painel/">Já tenho conta</a></p></div><style>.dv-tool{display:none!important}</style>';
+		$h .= '<div class="dv-pw"><h2>Ferramenta exclusiva para assinantes</h2><p>' . ( $td ? 'Teste ' . $td . ' dias grátis, com ' . (int) dv_cfg( 'trial_creditos' ) . ' créditos, sem cartão. Depois, assinatura de R$ ' . dv_rs( dv_preco_plano( 0, array_key_first( dv_planos() ) )['valor'] ) . '/mês.' : 'Assinatura de R$ ' . dv_rs( dv_preco_plano( 0, array_key_first( dv_planos() ) )['valor'] ) . '/mês.' ) . '</p><p><a class="dv-btn" href="/assinar/">' . ( $td ? 'Começar o teste grátis' : 'Assinar agora' ) . '</a> <a class="dv-btn g" href="/painel/">Já tenho conta</a></p></div><style>.dv-tool{display:none!important}</style>';
 	} elseif ( ! $acesso ) {
 		$h .= '<div class="dv-pw"><h2>Escolha um plano para continuar</h2><p>' . ( get_user_meta( $uid, 'dv_trial', true ) ? 'O seu teste grátis terminou. ' : '' ) . 'A assinatura custa R$ ' . dv_rs( dv_preco_plano( $uid, array_key_first( dv_planos() ) )['valor'] ) . '/mês, com créditos todo mês e as ferramentas de gestão sem limite.</p><p><a class="dv-btn" href="/assinar/">Ver os planos</a></p></div><style>.dv-tool{display:none!important}</style>';
 	}

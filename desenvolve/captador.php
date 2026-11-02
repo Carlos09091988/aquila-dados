@@ -268,7 +268,7 @@ add_shortcode( 'dv_captador', function () {
 	<form class="cp-add" autocomplete="off">
 		<label for="cp-v">CNPJ ou nome a monitorar</label>
 		<div class="cp-row"><input id="cp-v" placeholder="00.000.000/0000-00 ou NOME DA EMPRESA / PESSOA" maxlength="150"><button type="submit">Monitorar</button></div>
-		<p class="cp-h">Ao informar um CNPJ, monitoramos também todas as filiais e a razão social. O seu plano inclui termos sem custo (Essencial 1, Profissional 5, Empresarial 20); os demais usam 1 crédito por mês. Ao cadastrar, buscamos os últimos 6 meses; depois, verificamos todo dia e avisamos por e-mail quando sair publicação nova.</p>
+		<p class="cp-h">Ao informar um CNPJ, monitoramos também todas as filiais e a razão social. A assinatura inclui <?php echo (int) dv_plano_info( dv_plano( get_current_user_id() ) )['radar']; ?> termos sem custo; os demais usam 1 crédito por mês. Ao cadastrar, buscamos os últimos 6 meses; depois, verificamos todo dia e avisamos por e-mail quando sair publicação nova.</p>
 		<p class="cp-msg"></p>
 	</form>
 	<details class="cp-pref"><summary>Onde receber o resumo diário</summary>

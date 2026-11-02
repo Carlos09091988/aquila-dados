@@ -22,6 +22,16 @@ function dv_asaas( $metodo, $rota, $dados = null ) {
 	return $j;
 }
 /** Cria (uma vez) o cliente do assinante no Asaas. */
+/* CPF (11) ou CNPJ (14) com dígitos verificadores; o Asaas exige um deles para emitir a cobrança */
+function dv_doc_valido( $d ) {
+	if ( ! preg_match( '/^(\d{11}|\d{14})$/', $d ) || preg_match( '/^(\d)\1+$/', $d ) ) { return false; }
+	if ( strlen( $d ) === 11 ) {
+		for ( $t = 9; $t < 11; $t++ ) { $s = 0; for ( $i = 0; $i < $t; $i++ ) { $s += $d[ $i ] * ( $t + 1 - $i ); } if ( (int) $d[ $t ] !== ( ( 10 * $s ) % 11 ) % 10 ) { return false; } }
+		return true;
+	}
+	foreach ( array( 12, 13 ) as $n ) { $s = 0; $p = $n - 7; for ( $i = 0; $i < $n; $i++ ) { $s += $d[ $i ] * $p--; if ( $p < 2 ) { $p = 9; } } $r = $s % 11 < 2 ? 0 : 11 - $s % 11; if ( (int) $d[ $n ] !== $r ) { return false; } }
+	return true;
+}
 function dv_asaas_cliente( $uid ) {
 	$id = get_user_meta( $uid, 'dv_asaas_cliente', true );
 	if ( $id ) { return $id; }
@@ -97,7 +107,15 @@ function dv_asaas_uid( $pg ) {
 add_action( 'rest_api_init', function () {
 	$logado = function () { return is_user_logged_in(); };
 	register_rest_route( 'desenvolve/v1', '/checkout', array( 'methods' => 'POST', 'permission_callback' => $logado, 'callback' => function ( WP_REST_Request $r ) {
-		return dv_checkout( get_current_user_id(), sanitize_key( $r['tipo'] ), (int) $r['qtd'], sanitize_key( (string) $r['plano'] ) );
+		$uid = get_current_user_id(); $doc = preg_replace( '/\D/', '', (string) $r['doc'] );
+		if ( $doc !== '' ) {
+			if ( ! dv_doc_valido( $doc ) ) { return new WP_Error( 'dv_doc', 'CPF ou CNPJ inválido. Confira os números.', array( 'status' => 400 ) ); }
+			update_user_meta( $uid, 'dv_doc', $doc );
+			$cli = get_user_meta( $uid, 'dv_asaas_cliente', true );
+			if ( $cli ) { $up = dv_asaas( 'POST', '/customers/' . rawurlencode( $cli ), array( 'cpfCnpj' => $doc ) ); if ( is_wp_error( $up ) ) { delete_user_meta( $uid, 'dv_asaas_cliente' ); } }
+		}
+		if ( strlen( (string) get_user_meta( $uid, 'dv_doc', true ) ) < 11 ) { return new WP_Error( 'dv_doc', 'Informe o CPF ou CNPJ de quem vai pagar. Ele é exigido para emitir a cobrança.', array( 'status' => 400 ) ); }
+		return dv_checkout( $uid, sanitize_key( $r['tipo'] ), (int) $r['qtd'], sanitize_key( (string) $r['plano'] ) );
 	} ) );
 	register_rest_route( 'desenvolve/v1', '/cancelar', array( 'methods' => 'POST', 'permission_callback' => $logado, 'callback' => function () {
 		$uid = get_current_user_id(); $sub = get_user_meta( $uid, 'dv_asaas_assinatura', true );
@@ -170,12 +188,14 @@ add_action( 'wp_footer', function () {
 	if ( ! is_user_logged_in() ) { return; } ?>
 <script>
 (function(){
-function pagar(api,n,dados,btn,msg){var t=btn.textContent;btn.disabled=true;btn.textContent='Abrindo pagamento…';
-fetch(api+'checkout',{method:'POST',credentials:'same-origin',headers:{'X-WP-Nonce':n,'Content-Type':'application/json'},body:JSON.stringify(dados)}).then(function(r){return r.json()}).then(function(j){if(j&&j.url){location.href=j.url}else{btn.disabled=false;btn.textContent=t;if(msg){msg.className='dv-err';msg.textContent=(j&&j.message)||'Não foi possível abrir o pagamento.'}else alert((j&&j.message)||'Não foi possível abrir o pagamento.')}})}
+function pedeDoc(onde,txt,cb){var w=onde.querySelector('.dv-doc');if(!w){w=document.createElement('div');w.className='dv-doc';w.style.cssText='margin:14px 0;padding:14px 16px;border:1px solid #C9A45C;border-radius:12px;background:#FFFCF5;max-width:460px';w.innerHTML='<p style="margin:0 0 8px;font-weight:700"></p><input inputmode="numeric" placeholder="CPF ou CNPJ" style="width:100%;box-sizing:border-box;padding:10px 12px;border:1px solid #CFCAC0;border-radius:8px;font:inherit"><button type="button" style="margin-top:10px">Continuar para o pagamento</button>';onde.appendChild(w)}w.querySelector('p').textContent=txt;var i=w.querySelector('input'),b=w.querySelector('button');i.focus();b.onclick=function(){var v=i.value.replace(/\D/g,'');if(v.length!==11&&v.length!==14){w.querySelector('p').textContent='Digite os 11 números do CPF ou os 14 do CNPJ.';return}cb(v,b)}}
+function pagar(api,n,dados,btn,msg,onde){var t=btn.textContent;btn.disabled=true;btn.textContent='Abrindo pagamento…';
+fetch(api+'checkout',{method:'POST',credentials:'same-origin',headers:{'X-WP-Nonce':n,'Content-Type':'application/json'},body:JSON.stringify(dados)}).then(function(r){return r.json()}).then(function(j){if(j&&j.url){location.href=j.url;return}btn.disabled=false;btn.textContent=t;if(j&&j.code==='dv_doc'){pedeDoc(onde||btn.parentNode,j.message,function(v,b2){dados.doc=v;pagar(api,n,dados,b2,msg,onde)});return}if(msg){msg.className='dv-err';msg.textContent=(j&&j.message)||'Não foi possível abrir o pagamento.'}else{pedeDoc(onde||btn.parentNode,(j&&j.message)||'Não foi possível abrir o pagamento.',function(){location.reload()})}}).catch(function(){btn.disabled=false;btn.textContent=t})}
+window.dvPagar=pagar;
 var c=document.getElementById('dv-cred');
-if(c){var m=c.querySelector('.dv-msg');c.addEventListener('click',function(e){var b=e.target.closest('button[data-q]');if(b)pagar(c.dataset.api,c.dataset.nonce,{tipo:'creditos',qtd:+b.dataset.q},b,m)})}
+if(c){var m=c.querySelector('.dv-msg');c.addEventListener('click',function(e){var b=e.target.closest('button[data-q]');if(b)pagar(c.dataset.api,c.dataset.nonce,{tipo:'creditos',qtd:+b.dataset.q},b,m,c)})}
 var p=document.getElementById('dv-painel');
-if(p){document.addEventListener('click',function(e){var a=e.target.closest('a[href="/assinar/"]');if(!a||!p.contains(a))return;e.preventDefault();pagar(p.dataset.api,p.dataset.nonce,{tipo:'assinatura'},a,null)})}
+if(p){document.addEventListener('click',function(e){var a=e.target.closest('a[href="/assinar/"]');if(!a||!p.contains(a))return;e.preventDefault();pagar(p.dataset.api,p.dataset.nonce,{tipo:'assinatura'},a,null,a.parentNode)})}
 })();
 </script>
 <?php }, 80 );

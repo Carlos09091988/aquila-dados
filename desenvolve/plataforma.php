@@ -697,7 +697,7 @@ function dv_planos_html( $uid ) {
 	}
 	$h .= '</div><p class="dv-msg"></p><p style="color:var(--mu);font-size:.85rem">Pix, boleto ou cartão. Cancele quando quiser: o acesso continua até o fim do período pago. Créditos extras: ';
 	$pk = array(); foreach ( dv_pacotes() as $q => $v ) { $pk[] = $q . ' créditos por R$ ' . dv_rs( $v ); } $h .= esc_html( implode( ' · ', $pk ) ) . '.</p></div>';
-	$h .= '<script>(function(){var R=document.getElementById("dv-planos");if(!R)return;R.addEventListener("click",function(e){var b=e.target.closest("[data-plano]");if(!b)return;var m=R.querySelector(".dv-msg");b.disabled=true;m.className="dv-msg";m.textContent="Gerando a cobrança…";fetch(R.dataset.api+"checkout",{method:"POST",credentials:"same-origin",headers:{"X-WP-Nonce":R.dataset.nonce,"Content-Type":"application/json"},body:JSON.stringify({tipo:"assinatura",plano:b.dataset.plano})}).then(function(r){return r.json()}).then(function(j){if(j.url){location.href=j.url}else{b.disabled=false;m.className="dv-err";m.textContent=j.message||"Não foi possível gerar a cobrança."}}).catch(function(){b.disabled=false;m.className="dv-err";m.textContent="Não foi possível gerar a cobrança agora."})})})()</script>';
+	$h .= '<script>(function(){var R=document.getElementById("dv-planos");if(!R)return;R.addEventListener("click",function(e){var b=e.target.closest("[data-plano]");if(!b||!window.dvPagar)return;window.dvPagar(R.dataset.api,R.dataset.nonce,{tipo:"assinatura",plano:b.dataset.plano},b,R.querySelector(".dv-msg"),R)})})()</script>';
 	return $h;
 }
 

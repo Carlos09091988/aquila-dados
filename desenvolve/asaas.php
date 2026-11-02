@@ -155,13 +155,13 @@ add_shortcode( 'dv_creditos', function () {
 	$uid = get_current_user_id(); $s = dv_saldo( $uid ); $ativo = dv_status( $uid ) === 'ativo' || dv_is_master( $uid );
 	$pac = dv_pacotes();
 	$h = '<div class="dvp" id="dv-cred" data-api="' . esc_attr( rest_url( 'desenvolve/v1/' ) ) . '" data-nonce="' . esc_attr( wp_create_nonce( 'wp_rest' ) ) . '"><h2>Créditos extras</h2>';
-	$h .= '<p>Saldo atual: <b>' . ( dv_is_master( $uid ) ? 'ilimitado' : (int) $s['total'] ) . '</b>. Os créditos extras valem por ' . (int) dv_cfg( 'validade_extra' ) . ' meses e são usados depois dos créditos do mês.</p>';
+	$h .= '<p>Saldo atual: <b>' . ( dv_is_master( $uid ) ? 'ilimitado' : (int) $s['total'] ) . '</b>.</p><p><b>Os créditos comprados acumulam e valem por ' . (int) dv_cfg( 'validade_extra' ) . ' meses a partir da compra.</b> Eles são usados depois dos créditos do mês. Se você cancelar a assinatura, eles ficam guardados e voltam a valer se você reativar dentro desse prazo.</p>';
 	if ( ! $ativo ) { return $h . '<p class="dv-err">Créditos extras são exclusivos para assinantes ativos.</p><p><a class="dv-btn" href="/painel/">Ativar assinatura</a></p></div>'; }
 	$h .= '<div class="dv-g">';
 	$ks = array_keys( $pac ); $ref = $ks ? $pac[ $ks[0] ] / $ks[0] : 0; $meio = count( $ks ) >= 3 ? $ks[1] : 0;
 	foreach ( $pac as $q => $v ) {
 		$eco = $ref ? round( ( 1 - ( $v / $q ) / $ref ) * 100 ) : 0; $dest = $q === $meio;
-		$h .= '<div class="dv-c"' . ( $dest ? ' style="border-color:#C9A45C;box-shadow:0 0 0 1px #C9A45C"' : '' ) . '><span>' . ( $dest ? '<b style="display:inline-block;font-size:.72rem;background:#C9A45C;color:#241A06;border-radius:99px;padding:2px 9px;margin:0">Mais vendido</b>' : 'Pacote' ) . '</span><b>' . $q . ' créditos</b><p>R$ ' . number_format( $v, 2, ',', '.' ) . ' <small style="color:#8E938F">(R$ ' . number_format( $v / $q, 2, ',', '.' ) . ' por crédito)</small></p>' . ( $eco > 0 ? '<p style="margin:-4px 0 8px;color:#8FBDA3;font-size:.85rem;font-weight:700">Economia de ' . $eco . '% por crédito</p>' : '' ) . '<button type="button" data-q="' . $q . '">Comprar</button></div>';
+		$h .= '<div class="dv-c"' . ( $dest ? ' style="border-color:#C9A45C;box-shadow:0 0 0 1px #C9A45C"' : '' ) . '><span>' . ( $dest ? 'Pacote' : 'Pacote' ) . '</span><b>' . $q . ' créditos</b><p>R$ ' . number_format( $v, 2, ',', '.' ) . ' <small style="color:#8E938F">(R$ ' . number_format( $v / $q, 2, ',', '.' ) . ' por crédito)</small></p><p style="margin:4px 0 0;font-size:.85rem;color:#6E6A60">Válidos por ' . (int) dv_cfg( 'validade_extra' ) . ' meses</p>' . ( $eco > 0 ? '<p style="margin:-4px 0 8px;color:#8FBDA3;font-size:.85rem;font-weight:700">Economia de ' . $eco . '% por crédito</p>' : '' ) . '<button type="button" data-q="' . $q . '">Comprar</button></div>';
 	}
 	return $h . '</div><p class="dv-msg"></p></div>';
 } );

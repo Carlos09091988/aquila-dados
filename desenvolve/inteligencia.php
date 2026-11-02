@@ -528,3 +528,31 @@ add_action( 'wp_footer', function () {
 	if ( ! is_page( 'comparador' ) ) { return; }
 	echo '<script>(function(){var q=new URLSearchParams(location.search),c=(q.get("cnpjs")||"").split(",").map(function(x){return x.replace(/\D/g,"")}).filter(function(x){return x.length===14});if(!c.length)return;var t=document.getElementById("cp-in");if(!t||t.value.trim())return;t.value=c.map(function(x){return x.replace(/^(\d{2})(\d{3})(\d{3})(\d{4})(\d{2})$/,"$1.$2.$3/$4-$5")}).join("\n");t.dispatchEvent(new Event("input",{bubbles:true}));var b=document.getElementById("cp-go");if(b){b.scrollIntoView({block:"center"});b.focus()}})();</script>';
 }, 99 );
+
+/* Sessão pública e documentos de habilitação: leva ao sistema onde a licitação aconteceu (Compras.gov.br ou o portal de origem) */
+function dv_int_sessao_url( $ref ) {
+	if ( ! preg_match( '#^(\d{14})/(\d{4})/(\d+)$#', $ref, $m ) ) { return ''; }
+	$ck = 'dv_ses_' . md5( $ref ); $c = get_transient( $ck ); if ( $c !== false ) { return $c; }
+	$g = wp_remote_get( 'https://pncp.gov.br/api/consulta/v1/orgaos/' . $m[1] . '/compras/' . $m[2] . '/' . (int) $m[3], array( 'timeout' => 20 ) );
+	$j = is_wp_error( $g ) ? null : json_decode( wp_remote_retrieve_body( $g ), true ); $u = (array) ( $j['unidadeOrgao'] ?? array() ); $url = '';
+	if ( $j && stripos( (string) ( $j['usuarioNome'] ?? '' ), 'compras.gov' ) !== false && (int) ( $j['modalidadeId'] ?? 0 ) === 6 && ! empty( $u['codigoUnidade'] ) ) {
+		$url = 'https://cnetmobile.estaleiro.serpro.gov.br/comprasnet-web/public/compras/acompanhamento-compra?compra=' . sprintf( '%06d05%05d%04d', (int) $u['codigoUnidade'], (int) preg_replace( '/\D/', '', (string) $j['numeroCompra'] ), (int) $j['anoCompra'] );
+	} elseif ( $j && ! empty( $j['linkSistemaOrigem'] ) && preg_match( '#^https?://#', $j['linkSistemaOrigem'] ) ) { $url = esc_url_raw( $j['linkSistemaOrigem'] ); }
+	if ( ! $url ) { $url = 'https://pncp.gov.br/app/editais/' . $ref; }
+	set_transient( $ck, $url, $j ? 7 * DAY_IN_SECONDS : HOUR_IN_SECONDS ); return $url;
+}
+add_action( 'rest_api_init', function () {
+	register_rest_route( 'desenvolve/v1', '/int/sessao', array( 'methods' => 'GET', 'permission_callback' => '__return_true', 'callback' => function ( WP_REST_Request $r ) {
+		$ref = preg_replace( '/[^0-9\/]/', '', (string) $r['ref'] ); $url = dv_int_sessao_url( $ref );
+		if ( ! $url ) { return new WP_Error( 'dv_ref', 'Licitação inválida.', array( 'status' => 400 ) ); }
+		$x = new WP_REST_Response( null, 302 ); $x->header( 'Location', $url ); return $x;
+	} ) );
+} );
+/* Link "Sessão e habilitação" ao lado de cada link do PNCP nas listas de licitações */
+add_action( 'wp_footer', function () {
+	if ( ! is_user_logged_in() || ! is_page( array( 'raio-x', 'raio-x-comprador', 'dossie', 'alertas', 'raio-x-lote' ) ) ) { return; }
+	$api = esc_url( rest_url( 'desenvolve/v1/int/sessao' ) );
+	echo '<script>/* DV_SESSAO */(function(){var API=' . wp_json_encode( $api ) . ',TT="Abre a sessão pública no sistema onde a licitação aconteceu. No Compras.gov.br, depois da fase de habilitação, os documentos de habilitação e as propostas de cada licitante ficam no item da sessão.";'
+		. 'function liga(){[].forEach.call(document.querySelectorAll(\'a[href*="pncp.gov.br/app/editais/"]:not([data-ses]), .al-i:not([data-ses])\'),function(a){var ref="",alvo=a;if(a.classList.contains("al-i")){a.setAttribute("data-ses","1");ref=a.dataset.r||"";alvo=a.querySelector(\'.al-ba a[href*="pncp.gov.br"]\');if(!alvo)return}else{a.setAttribute("data-ses","1");if(a.closest(".al-i"))return;var m=a.href.match(/editais\/(\d{14})\/(\d{4})\/(\d+)/);if(!m)return;ref=m[1]+"/"+m[2]+"/"+(+m[3])}if(!/^\d{14}\/\d{4}\/\d+$/.test(ref))return;var l=document.createElement("a");l.href=API+"?ref="+encodeURIComponent(ref);l.target="_blank";l.rel="noopener";l.title=TT;l.textContent=alvo.closest(".al-ba")?"Sessão e habilitação":"sessão e habilitação";l.setAttribute("data-ses","1");if(alvo.closest(".al-ba")){alvo.parentNode.insertBefore(l,alvo.nextSibling)}else{alvo.parentNode.insertBefore(document.createTextNode(" · "),alvo.nextSibling);alvo.parentNode.insertBefore(l,alvo.nextSibling.nextSibling)}})}'
+		. 'var t=null;new MutationObserver(function(){clearTimeout(t);t=setTimeout(liga,400)}).observe(document.body,{childList:true,subtree:true});liga()})();</script>';
+}, 100 );

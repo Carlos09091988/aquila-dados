@@ -43,6 +43,9 @@ body.admin-bar .dv-side{top:32px}
 .dv-side .hp{display:block;color:#8E938F;text-decoration:none;font-size:.8rem;margin-top:8px}.dv-side .hp:hover{color:#fff}
 /* barra superior (celular) */
 .dv-topm{display:none}
+.dv-sld{position:fixed;top:14px;right:24px;z-index:9980;display:flex;align-items:center;gap:4px;background:#fff;border:1px solid var(--ln);border-radius:999px;padding:5px 5px 5px 16px;box-shadow:0 6px 20px rgba(22,25,30,.08);font-family:"Hanken Grotesk",sans-serif;font-size:.88rem;color:var(--ink)}
+body.admin-bar .dv-sld{top:46px}.dv-sld span{color:var(--mu);margin-right:2px}.dv-sld b{font-weight:800;margin-right:10px}.dv-sld a{background:var(--ink);color:#F4F2EC!important;text-decoration:none;border-radius:999px;padding:8px 14px;font-weight:700;font-size:.82rem}.dv-sld a:hover{background:var(--gold2)}.dv-sld.low{border-color:#E8B4A8}.dv-sld.low b{color:#9A3524}
+body.dv-app .dv-th{padding-right:280px!important}
 /* área de trabalho */
 body.dv-app .dv-th{background:none!important;max-width:1180px;margin:0 auto!important;padding:30px 32px 6px!important;color:var(--ink)!important}
 body.dv-app .dv-th *{color:inherit}
@@ -74,7 +77,7 @@ body.dv-app #ht-ctc-chat{bottom:18px!important}
  body.dv-app{padding-left:0!important;padding-top:56px!important}
  .dv-side{transform:translateX(-100%);transition:transform .2s ease;width:280px;box-shadow:0 0 40px rgba(0,0,0,.4)}
  body.dv-side-on .dv-side{transform:none}
- .dv-topm{display:flex;position:fixed;top:0;left:0;right:0;height:56px;background:var(--side);z-index:9989;align-items:center;justify-content:space-between;padding:0 14px;color:#F4F2EC;font-family:"Hanken Grotesk",sans-serif}
+ .dv-sld{display:none} body.dv-app .dv-th{padding-right:16px!important} .dv-topm{display:flex;position:fixed;top:0;left:0;right:0;height:56px;background:var(--side);z-index:9989;align-items:center;justify-content:space-between;padding:0 14px;color:#F4F2EC;font-family:"Hanken Grotesk",sans-serif}
  body.admin-bar .dv-topm{top:46px}
  .dv-topm button{background:none;border:0;color:#F4F2EC;font-size:1.5rem;cursor:pointer;padding:6px}
  .dv-topm b{font-weight:600}.dv-topm b i{font-style:normal;color:var(--gold)}.dv-topm a{color:var(--gold);font-weight:700;font-size:.85rem;text-decoration:none}
@@ -101,7 +104,8 @@ add_action( 'wp_footer', function () {
 	$uri = strtok( (string) ( $_SERVER['REQUEST_URI'] ?? '' ), '?' );
 	$logo = '<svg aria-hidden="true"><use href="#mark" width="100%" height="100%"/></svg>';
 	ob_start();
-	echo '<div class="dv-topm"><button type="button" class="dv-burg" aria-label="Abrir menu">☰</button><b>desenvolve <i>estratégias</i></b><a href="/creditos/">' . ( $master ? '∞' : (int) $saldo ) . ' créditos</a></div><div class="dv-veil"></div>';
+	echo '<div class="dv-topm"><button type="button" class="dv-burg" aria-label="Abrir menu">☰</button><b>desenvolve <i>estratégias</i></b><a href="/creditos/">' . ( $master ? '∞' : (int) $saldo ) . ' créditos · Comprar</a></div><div class="dv-veil"></div>';
+	if ( rtrim( $uri, '/' ) !== '/creditos' ) { $low = ! $master && function_exists( 'dv_custo' ) && (int) $saldo < dv_custo( 'raiox' ); echo '<div class="dv-sld' . ( $low ? ' low' : '' ) . '"><span>Saldo</span><b>' . ( $master ? 'Ilimitado' : (int) $saldo . ' crédito' . ( (int) $saldo === 1 ? '' : 's' ) ) . '</b><a href="/creditos/">+ Comprar créditos</a></div>'; }
 	echo '<aside class="dv-side" aria-label="Menu da plataforma"><a class="lg" href="/painel/">' . $logo . '<span><b>desenvolve <i>estratégias</i></b><small>Inteligência em licitações</small></span></a><nav>';
 	foreach ( dv_app_menu() as $g ) {
 		if ( $g[0] ) { echo '<div class="gt">' . esc_html( $g[0] ) . '</div>'; }

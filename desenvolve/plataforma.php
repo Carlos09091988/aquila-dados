@@ -29,7 +29,7 @@ function dv_cfg( $k = null ) {
 		'fundador_vagas'   => 0,
 		'fundador_meses'   => 12,
 		'trial_dias'       => 7,
-		'trial_creditos'   => 20,
+		'trial_creditos'   => 25,
 	);
 	$c = wp_parse_args( (array) get_option( 'dv_cfg', array() ), $d );
 	return $k ? ( $c[ $k ] ?? null ) : $c;
@@ -45,9 +45,10 @@ add_action( 'init', function () {
 	update_option( 'dv_cfg', $c, false ); update_option( 'dv_custos_ver', '2', false );
 }, 6 );
 if ( ! function_exists( 'dv_rs' ) ) { function dv_rs( $v ) { $v = (float) $v; return number_format( $v, floor( $v ) == $v ? 0 : 2, ',', '.' ); } }
+add_action( 'init', function () { if ( get_option( 'dv_precos_ver' ) !== '3' ) { return; } $c = (array) get_option( 'dv_cfg', array() ); $c['trial_creditos'] = 25; update_option( 'dv_cfg', $c, false ); update_option( 'dv_precos_ver', '4', false ); }, 9 );
 /* Preços (nov/2026): plano único de R$ 79,90 com 80 créditos; crédito avulso a R$ 1; consultas reprecificadas */
 add_action( 'init', function () {
-	if ( get_option( 'dv_precos_ver' ) === '3' ) { return; }
+	if ( (int) get_option( 'dv_precos_ver' ) >= 3 ) { return; }
 	$c = (array) get_option( 'dv_cfg', array() ); $m = array();
 	foreach ( explode( ',', (string) ( $c['custos'] ?? '' ) ) as $x ) { $y = explode( ':', trim( $x ) ); if ( count( $y ) === 2 ) { $m[ sanitize_key( $y[0] ) ] = (int) $y[1]; } }
 	$m = array_merge( $m, array( 'raiox' => 10, 'comprador' => 10, 'vencendo' => 5, 'comparador' => 3, 'habilitacao' => 5, 'buscador' => 0, 'precos' => 0 ) );
@@ -55,7 +56,7 @@ add_action( 'init', function () {
 	$c['planos'] = 'desenvolve:Desenvolve:79.90:80:5';
 	$c['preco_assinatura'] = '79.90'; $c['creditos_mes'] = 80;
 	$c['preco_extra'] = '1.00'; $c['pacotes'] = '20:20,50:50,100:100,300:300';
-	$c['creditos_dossie'] = 25; $c['trial_creditos'] = 20;
+	$c['creditos_dossie'] = 25; $c['trial_creditos'] = 25;
 	update_option( 'dv_cfg', $c, false ); foreach ( get_users( array( 'meta_key' => 'dv_plano', 'fields' => 'ID' ) ) as $u ) { update_user_meta( $u, 'dv_plano', 'desenvolve' ); } update_option( 'dv_precos_ver', '3', false );
 }, 8 );
 /* Custos por ferramenta para as telas (rótulos e avisos antes do clique) */

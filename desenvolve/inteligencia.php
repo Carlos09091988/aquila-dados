@@ -222,7 +222,7 @@ function dv_int_fachada( $D ) {
 	$end = 0; $tel = 0; foreach ( (array) ( $D['grupo'] ?? array() ) as $g ) { foreach ( (array) ( $g['vias'] ?? array() ) as $v ) { if ( strpos( $v, 'Mesmo endereço' ) === 0 ) { $end++; } if ( strpos( $v, 'Mesmo telefone' ) === 0 ) { $tel++; } } }
 	if ( $end >= 3 ) { $si[] = $end . ' outras empresas registradas no mesmo endereço.'; }
 	if ( $tel >= 3 ) { $si[] = $tel . ' outras empresas com o mesmo telefone de cadastro.'; }
-	$soc = (array) ( $cad['qsa'] ?? array() ); if ( ! $soc ) { $si[] = 'Quadro de sócios não informado na Receita.'; }
+	$soc = (array) ( $cad['qsa'] ?? array() ); $ind = preg_match( '/EMPRES[AÁ]RIO|INDIVIDUAL|MEI/i', (string) ( $cad['natureza_juridica'] ?? '' ) . ' ' . ( ! empty( $cad['opcao_pelo_mei'] ) ? 'MEI' : '' ) ); if ( ! $soc && ! $ind ) { $si[] = 'Quadro de sócios não informado na Receita.'; }
 	$sit = strtoupper( (string) ( $cad['descricao_situacao_cadastral'] ?? '' ) ); if ( $sit && $sit !== 'ATIVA' ) { $si[] = 'Situação na Receita: ' . $sit . '.'; }
 	if ( preg_match( '/^(ME|MICRO|EPP|EMPRESA DE PEQUENO)/i', (string) ( $cad['porte'] ?? '' ) ) && $vc > 4800000 ) { $si[] = 'Porte de micro ou pequena empresa com mais de R$ 4,8 milhões em contratos públicos.'; }
 	return array( 'sinais' => $si, 'nivel' => count( $si ) >= 3 ? 'alto' : ( count( $si ) >= 1 ? 'medio' : 'baixo' ) );

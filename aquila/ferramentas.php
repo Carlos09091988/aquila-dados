@@ -20,23 +20,62 @@ add_action( 'init', function () {
 	}
 	update_option( 'aq_fr_ver', '1', false );
 }, 20 );
+/* As páginas usam o mesmo cabeçalho, rodapé e estilo das páginas do site (lidos da página de atuação),
+   no modelo Elementor Canvas, para não aparecer o cabeçalho do tema. */
+function aq_fr_hero() {
+	return array(
+		'ferramentas'                 => array( 'Ferramentas gratuitas', 'Ferramentas gratuitas para empresas que contratam com o Poder Público. Elas dão uma primeira orientação; cada caso merece análise própria.' ),
+		'calculadora-de-prazos'       => array( 'Calculadora de prazos em licitações', 'Prazos da Lei 14.133/2021 contados em dias úteis, excluindo o dia do começo e incluindo o do vencimento (art. 183). Já considera os feriados nacionais, o Carnaval, a Sexta-feira Santa e Corpus Christi.' ),
+		'analise-de-inabilitacao'     => array( 'Fui inabilitado. Cabe recurso?', 'Responda em um minuto e veja os caminhos para contestar a decisão, os fundamentos mais usados e o prazo para recorrer.' ),
+		'calculadora-de-reequilibrio' => array( 'Reequilíbrio e repactuação do contrato', 'Estime quanto o seu contrato pode estar deixando de receber com o dissídio da categoria e a inflação desde a data-base.' ),
+		'consulta-de-penalidades'     => array( 'Consulta de penalidades por CNPJ', 'Confira se a empresa tem penalidade registrada nos cadastros oficiais de empresas punidas (CEIS e CNEP, da CGU) e busque o CNPJ nos diários oficiais, onde aparecem as notificações e os processos de penalidade.' ),
+	);
+}
+add_action( 'init', function () {
+	if ( get_option( 'aq_fr_tpl' ) === '1' ) { return; }
+	foreach ( array_keys( aq_fr_paginas() ) as $slug ) { $e = get_page_by_path( $slug ); if ( $e ) { update_post_meta( $e->ID, '_wp_page_template', 'elementor_canvas' ); } }
+	update_option( 'aq_fr_tpl', '1', false );
+}, 21 );
+function aq_fr_moldura() {
+	static $m = null; if ( $m !== null ) { return $m; }
+	$m = false;
+	$fonte = get_page_by_path( 'atuacao/ppps-e-concessoes' );
+	$raw = $fonte ? $fonte->post_content : get_post_field( 'post_content', 1809 );
+	if ( ! $raw ) { return $m; }
+	$raw = preg_replace( '/<!--\s*\/?wp:[^>]*-->/', '', $raw );
+	$i = strpos( $raw, '<section class="phero' ); $j = strpos( $raw, '<section class="blk contato' );
+	if ( $i === false || $j === false ) { return $m; }
+	$m = array( str_replace( ' aria-current="page"', '', substr( $raw, 0, $i ) ), substr( $raw, $j ) );
+	return $m;
+}
+add_filter( 'the_content', function ( $c ) {
+	if ( ! is_page() || ! in_the_loop() || ! is_main_query() ) { return $c; }
+	$slug = get_post_field( 'post_name', get_the_ID() ); $H = aq_fr_hero();
+	if ( ! isset( $H[ $slug ] ) || strpos( $c, 'class="aqf' ) === false ) { return $c; }
+	$m = aq_fr_moldura(); if ( ! $m ) { return $c; }
+	$cr = '<a href="/">Início</a>' . ( $slug === 'ferramentas' ? '' : ' / <a href="/ferramentas/">Ferramentas</a>' );
+	$hero = '<section class="phero on-ink"><div class="wrap"><nav class="crumbs" aria-label="Você está em">' . $cr . '</nav><p class="kicker">' . ( $slug === 'ferramentas' ? 'Ferramentas' : 'Ferramenta gratuita' ) . '</p><h1>' . esc_html( $H[ $slug ][0] ) . '</h1><p class="lead">' . esc_html( $H[ $slug ][1] ) . '</p></div></section>';
+	return $m[0] . $hero . '<section class="blk aqf-blk"><div class="wrap">' . $c . '</div></section>' . $m[1];
+}, 99 );
 
 function aq_fr_wa( $t ) { return 'https://wa.me/5511993500950?text=' . rawurlencode( $t ); }
 function aq_fr_css() {
 	static $ja = false; if ( $ja ) { return ''; } $ja = true;
 	return '<style>
-.aqf{--n:#1A202C;--a:#215387;--c:#F8F7F3;--l:#E2DED3;--m:#5A6170;font-family:"Public Sans",system-ui,sans-serif;color:var(--n);max-width:860px;margin:0 auto 40px;line-height:1.55}
-.aqf h2,.aqf h3{font-family:"Libre Caslon Text",Georgia,serif;font-weight:700;color:var(--n);margin:0 0 10px}
-.aqf .bx{background:#fff;border:1px solid var(--l);border-radius:14px;padding:22px 24px;margin:18px 0}
-.aqf label{display:block;font-weight:600;margin:12px 0 6px}.aqf small{color:var(--m)}
-.aqf input,.aqf select,.aqf textarea{width:100%;box-sizing:border-box;border:1px solid #CFCAC0;border-radius:10px;padding:11px 12px;font:inherit;background:#fff}
-.aqf textarea{min-height:110px}.aqf .g2{display:grid;grid-template-columns:1fr 1fr;gap:14px}@media(max-width:640px){.aqf .g2{grid-template-columns:1fr}}
-.aqf button{background:var(--a);color:#fff;border:0;border-radius:999px;padding:12px 24px;font:inherit;font-weight:700;cursor:pointer;margin-top:16px}
-.aqf .r{display:none}.aqf .r.on{display:block}.aqf .big{font-family:"Libre Caslon Text",Georgia,serif;font-size:30px;font-weight:700;color:var(--a)}
-.aqf .tag{display:inline-block;border-radius:8px;padding:4px 10px;font-size:14px;font-weight:700;margin:2px 6px 2px 0}.aqf .ok{background:#E8F4EC;color:#13612e}.aqf .at{background:#FBF1DC;color:#7A5410}.aqf .rv{background:#FBEAE7;color:#a90707}
-.aqf .cta{background:var(--n);color:#F8F7F3;border-radius:14px;padding:20px 24px;margin-top:18px}.aqf .cta b{color:#fff}.aqf .cta a{display:inline-block;margin-top:10px;background:#F8F7F3;color:var(--n);border-radius:999px;padding:10px 20px;font-weight:700;text-decoration:none}
-.aqf ul{padding-left:20px}.aqf li{margin:6px 0}.aqf .nt{font-size:13px;color:var(--m);margin-top:14px}
-.aqf .cards{display:grid;grid-template-columns:1fr 1fr;gap:16px}@media(max-width:640px){.aqf .cards{grid-template-columns:1fr}}.aqf .cards a{display:block;background:#fff;border:1px solid var(--l);border-radius:14px;padding:20px 22px;text-decoration:none;color:var(--n)}.aqf .cards a b{display:block;font-family:"Libre Caslon Text",Georgia,serif;font-size:19px;margin-bottom:6px}.aqf .cards a span{color:var(--m);font-size:15px}
+.aqf-blk{padding:56px 0 80px!important}
+.aqf{--n:#0F1B2D;--a:#0F1B2D;--g:#B8924F;--c:#F8F7F3;--l:#D9D5CC;--m:#4A5668;font-family:"Public Sans",system-ui,sans-serif;color:var(--n);max-width:880px;line-height:1.6;font-size:17px}
+.aqf p{margin:0 0 10px}.aqf h2,.aqf h3{font-family:"EB Garamond",Georgia,serif;font-weight:500;color:var(--n);margin:0 0 10px;font-size:28px;line-height:1.2}
+.aqf .bx{background:#fff;border:1px solid var(--l);border-radius:4px;padding:26px 28px;margin:0 0 20px}
+.aqf label{display:block;font-weight:600;font-size:15px;margin:14px 0 6px}.aqf label:first-child{margin-top:0}.aqf small{color:var(--m);font-size:13px}
+.aqf input,.aqf select,.aqf textarea{width:100%;box-sizing:border-box;border:1px solid #CFCAC0;border-radius:2px;padding:12px 14px;font:inherit;font-size:16px;background:#fff;color:var(--n)}
+.aqf input:focus,.aqf select:focus,.aqf textarea:focus{outline:2px solid var(--g);outline-offset:1px;border-color:var(--g)}
+.aqf textarea{min-height:110px}.aqf .g2{display:grid;grid-template-columns:1fr 1fr;gap:16px}@media(max-width:640px){.aqf .g2{grid-template-columns:1fr}.aqf .bx{padding:20px}}
+.aqf button{background:var(--n);color:var(--c);border:0;border-radius:2px;min-height:48px;padding:0 26px;font:inherit;font-size:15px;font-weight:600;cursor:pointer;margin-top:18px}.aqf button:hover{background:#1B2A40}
+.aqf .r{display:none}.aqf .r.on{display:block}.aqf .big{font-family:"EB Garamond",Georgia,serif;font-size:40px;font-weight:500;line-height:1.1;color:var(--n)}
+.aqf .tag{display:inline-block;border-radius:2px;padding:4px 10px;font-size:14px;font-weight:600;margin:2px 6px 2px 0}.aqf .ok{background:#E8F4EC;color:#13612e}.aqf .at{background:#FBF1DC;color:#7A5410}.aqf .rv{background:#FBEAE7;color:#a90707}
+.aqf .cta{background:var(--n);color:#C9D0D9;border-radius:4px;padding:26px 28px;margin-top:20px}.aqf .cta b{color:#F8F7F3;font-family:"EB Garamond",Georgia,serif;font-weight:500;font-size:22px}.aqf .cta a{display:inline-flex;align-items:center;min-height:46px;margin-top:14px;background:var(--g);color:var(--n);border-radius:2px;padding:0 22px;font-weight:600;font-size:15px;text-decoration:none}.aqf .cta a:hover{background:#D4B77E}
+.aqf ul{padding-left:20px;margin:6px 0 12px}.aqf li{margin:6px 0}.aqf .nt{font-size:13px;color:var(--m);margin-top:14px}.aqf .bx a{color:var(--n);text-decoration:underline;text-decoration-color:var(--g);text-underline-offset:3px}
+.aqf .cards{display:grid;grid-template-columns:1fr 1fr;gap:18px}@media(max-width:640px){.aqf .cards{grid-template-columns:1fr}}.aqf .cards a{display:block;background:#fff;border:1px solid var(--l);border-top:3px solid var(--g);border-radius:4px;padding:24px 26px;text-decoration:none;color:var(--n);transition:border-color .2s,transform .2s}.aqf .cards a:hover{border-color:var(--g);transform:translateY(-2px)}.aqf .cards a b{display:block;font-family:"EB Garamond",Georgia,serif;font-weight:500;font-size:24px;line-height:1.2;margin-bottom:8px}.aqf .cards a span{color:var(--m);font-size:15px}.aqf .cards a i{display:block;font-style:normal;color:var(--g);font-weight:600;font-size:14px;margin-top:14px}
 </style>';
 }
 function aq_fr_cta( $txt, $wa ) {
@@ -65,15 +104,15 @@ add_shortcode( 'aq_ferramentas', function () {
 		array( 'analise-de-inabilitacao', 'Fui inabilitado. Cabe recurso?', 'Conte o motivo da inabilitação e veja os caminhos, os fundamentos e o prazo para recorrer.' ),
 		array( 'calculadora-de-reequilibrio', 'Reequilíbrio e repactuação', 'Veja quanto o seu contrato pode estar deixando de receber com o dissídio e a inflação do período.' ),
 		array( 'consulta-de-penalidades', 'Consulta de penalidades por CNPJ', 'Confira se a empresa tem sanção registrada no CEIS ou no CNEP e busque o CNPJ nos diários oficiais.' ) );
-	$h = aq_fr_css() . '<div class="aqf"><p>Ferramentas gratuitas para empresas que contratam com o Poder Público. Elas dão uma primeira orientação; cada caso merece análise própria.</p><div class="cards">';
-	foreach ( $c as $x ) { $h .= '<a href="/' . $x[0] . '/"><b>' . esc_html( $x[1] ) . '</b><span>' . esc_html( $x[2] ) . '</span></a>'; }
+	$h = aq_fr_css() . '<div class="aqf"><div class="cards">';
+	foreach ( $c as $x ) { $h .= '<a href="/' . $x[0] . '/"><b>' . esc_html( $x[1] ) . '</b><span>' . esc_html( $x[2] ) . '</span><i>Abrir ferramenta →</i></a>'; }
 	return $h . '</div></div>';
 } );
 
 /* ---------- Calculadora de prazos ---------- */
 add_shortcode( 'aq_prazos', function () {
 	ob_start(); echo aq_fr_css() . aq_fr_js_base(); ?>
-<div class="aqf" id="aq-pz"><p>Prazos da Lei 14.133/2021 contados em dias úteis, excluindo o dia do começo e incluindo o do vencimento (art. 183). Já considera os feriados nacionais, o Carnaval, a Sexta-feira Santa e Corpus Christi.</p>
+<div class="aqf" id="aq-pz">
 <div class="bx"><label for="pz-t">O que você precisa fazer?</label><select id="pz-t">
 <option value="imp">Impugnar o edital ou pedir esclarecimento</option><option value="rec">Apresentar as razões do recurso</option><option value="con">Apresentar contrarrazões</option>
 <option value="def">Defesa em processo de penalidade</option><option value="rsa">Recurso contra penalidade (advertência, multa ou impedimento)</option><option value="rei">Pedido de reconsideração contra declaração de inidoneidade</option></select>
@@ -91,7 +130,7 @@ r.className="r on";r.innerHTML="<div class=bx><p>"+c[4]+"</p><div class=big>"+A.
 /* ---------- Fui inabilitado. Cabe recurso? ---------- */
 add_shortcode( 'aq_inabilitacao', function () {
 	ob_start(); echo aq_fr_css() . aq_fr_js_base(); ?>
-<div class="aqf" id="aq-in"><p>Responda em um minuto e veja os caminhos para contestar a decisão, os fundamentos mais usados e o prazo para recorrer.</p>
+<div class="aqf" id="aq-in">
 <div class="bx"><label for="in-m">Qual foi o motivo da inabilitação ou desclassificação?</label><select id="in-m">
 <option value="cert">Certidão vencida, faltando ou com pendência</option><option value="atest">Atestado de capacidade técnica insuficiente</option><option value="bal">Balanço ou índices contábeis</option>
 <option value="doc">Documento faltando ou com erro formal</option><option value="inex">Proposta considerada inexequível</option><option value="plan">Erro na planilha de custos</option><option value="outro">Outro motivo</option></select>
@@ -119,7 +158,7 @@ r.className="r on";r.innerHTML=h+<?php echo wp_json_encode( aq_fr_cta( 'Quer con
 /* ---------- Reequilíbrio e repactuação ---------- */
 add_shortcode( 'aq_reequilibrio', function () {
 	ob_start(); echo aq_fr_css() . aq_fr_js_base(); ?>
-<div class="aqf" id="aq-rq"><p>Estime quanto o seu contrato pode estar deixando de receber com o dissídio da categoria e a inflação desde a data-base.</p>
+<div class="aqf" id="aq-rq">
 <div class="bx"><div class="g2"><div><label for="rq-v">Valor mensal do contrato (R$)</label><input id="rq-v" inputmode="decimal" placeholder="Ex.: 150.000,00"></div>
 <div><label for="rq-p">Parte do custo que é mão de obra (%)</label><input id="rq-p" inputmode="decimal" value="70"><small>Em contratos de limpeza e vigilância costuma ficar entre 60% e 80%.</small></div>
 <div><label for="rq-b">Data-base (proposta ou último reajuste)</label><input type="date" id="rq-b"></div>
@@ -142,7 +181,7 @@ r.innerHTML=x+<?php echo wp_json_encode( aq_fr_cta( 'Quer receber o que é seu? 
 /* ---------- Consulta de penalidades por CNPJ ---------- */
 add_shortcode( 'aq_penalidades', function () {
 	ob_start(); echo aq_fr_css() . aq_fr_js_base(); ?>
-<div class="aqf" id="aq-pn"><p>Confira se a empresa tem penalidade registrada nos cadastros oficiais de empresas punidas (CEIS e CNEP, da CGU) e busque o CNPJ nos diários oficiais, onde aparecem as notificações e os processos de penalidade.</p>
+<div class="aqf" id="aq-pn">
 <div class="bx"><label for="pn-c">CNPJ da empresa</label><input id="pn-c" inputmode="numeric" placeholder="00.000.000/0000-00"><button type="button" id="pn-b">Consultar</button></div><div class="r" id="pn-r"></div></div>
 <script>(function(){var A=window.AQ,U="https://raw.githubusercontent.com/Carlos09091988/aquila-dados/main/data/sancoes/";
 function fc(c){return c.replace(/^(\d{2})(\d{3})(\d{3})(\d{4})(\d{2})$/,"$1.$2.$3/$4-$5")}function vd(c){if(!/^\d{14}$/.test(c)||/^(\d)\1+$/.test(c))return false;var s=function(n){var t=0,p=n-7;for(var i=0;i<n;i++){t+=c[i]*p--;if(p<2)p=9}var r=t%11<2?0:11-t%11;return r==c[n]};return s(12)&&s(13)}

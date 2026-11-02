@@ -47,7 +47,7 @@ add_action( 'init', function () {
 /* Custos por ferramenta para as telas (rótulos e avisos antes do clique) */
 add_action( 'wp_head', function () {
 	if ( ! is_user_logged_in() ) { return; } $o = array();
-	foreach ( array( 'raiox', 'comprador', 'comparador', 'precos', 'buscador', 'vencendo', 'dossie' ) as $k ) { $o[ $k ] = dv_custo( $k ); }
+	foreach ( array( 'raiox', 'comprador', 'comparador', 'precos', 'buscador', 'vencendo', 'dossie', 'habilitacao' ) as $k ) { $o[ $k ] = dv_custo( $k ); }
 	echo '<script>window.DVC=' . wp_json_encode( $o ) . ';</script>';
 }, 1 );
 /* Tabela de preços 3 (out/2026): foco 100% em licitações, R$ 79 / 149 / 349, sem preço de fundador */

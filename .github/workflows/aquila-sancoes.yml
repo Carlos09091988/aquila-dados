@@ -1,0 +1,17 @@
+name: Aquila - sancoes (CEIS e CNEP)
+on:
+  schedule:
+    - cron: '17 8 * * 1'   # toda segunda, 05:17 em Brasilia
+  workflow_dispatch:
+permissions:
+  contents: write
+jobs:
+  sancoes:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+      - run: python3 scripts/sancoes.py
+      - run: |
+          git config user.name "github-actions"; git config user.email "actions@github.com"
+          git add data/sancoes && (git diff --cached --quiet || (git commit -q -m "Sancoes: CEIS e CNEP" && git pull -q --rebase && git push))

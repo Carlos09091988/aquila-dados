@@ -26,7 +26,7 @@ add_filter( 'body_class', function ( $c ) { if ( dv_app_pagina() ) { $c[] = 'dv-
 add_action( 'wp_head', function () {
 	if ( ! dv_app_pagina() ) { return; } ?>
 <style id="dv-app-css">
-body.dv-app{--side:#0C0F13;--side2:#16191E;--bg:#F4F2EC;--card:#fff;--ln:#E6E1D6;--ink:#16191E;--mu:#6E6A60;--gold:#C9A45C;--gold2:#A8843F;background:var(--bg)!important;padding-left:264px!important;font-family:"Hanken Grotesk",-apple-system,BlinkMacSystemFont,sans-serif}
+body.dv-app{--side:#0C0F13;--side2:#16191E;--bg:#F4F2EC;--card:#fff;--ln:#E6E1D6;--ink:#16191E;--mu:#6E6A60;--gold:#C9A45C;--gold2:#86621F;background:var(--bg)!important;padding-left:264px!important;font-family:"Hanken Grotesk",-apple-system,BlinkMacSystemFont,sans-serif}
 body.dv-app>header.nav,body.dv-app>footer.band,body.dv-app>.dv-tbar,body.dv-app .kadence-scroll-to-top{display:none!important}
 /* menu lateral */
 .dv-side{position:fixed;top:0;left:0;bottom:0;width:264px;background:var(--side);color:#C9CDC8;display:flex;flex-direction:column;z-index:9990;font-family:"Hanken Grotesk",sans-serif;border-right:1px solid #1F242B}
@@ -59,8 +59,9 @@ body.dv-app .dv-cons,body.dv-app .dv-next{max-width:1116px;margin:0 auto 18px!im
 body.dv-app .dv-next{background:#fff!important;border:1px solid var(--ln)!important;border-radius:14px!important;color:var(--ink)!important}
 body.dv-app .dv-next a{color:var(--gold2)!important}
 /* painel em tema claro */
-body.dv-app .dvp{--sf:#fff;--ln:#E6E1D6;--fg:#16191E;--mu:#6E6A60;--gd:#A8843F;max-width:1180px;padding:0 32px;margin:26px auto}
+body.dv-app .dvp{--sf:#fff;--ln:#E6E1D6;--fg:#16191E;--mu:#5E5A52;--gd:#86621F;max-width:1180px;padding:0 32px;margin:26px auto}
 body.dv-app .dvp [style*="color:#F4F2EC"]{color:#16191E!important}
+body.dv-app .dvp a:not(.dv-btn):not(.dv-agi){font-weight:600}body.dv-app .dvp [style*="color:#C9A45C"]{color:#86621F!important}
 body.dv-app .dvp .dv-c,body.dv-app .dvp .dv-tools a{box-shadow:0 1px 2px rgba(22,25,30,.04)}
 /* consulta rápida de CNPJ no painel */
 .dv-cnpj{max-width:1116px;margin:26px auto 16px;background:#fff;border:1px solid var(--ln);border-radius:18px;padding:18px 20px;box-shadow:0 8px 28px rgba(22,25,30,.05);font-family:"Hanken Grotesk",sans-serif;color:var(--ink)}

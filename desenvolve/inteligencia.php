@@ -198,6 +198,35 @@ function dv_int_base_orgao( $cnpj, $refs ) {
 }
 
 /* ---------------- Due Diligence: sócios e linha do tempo ---------------- */
+/* Bases públicas de compliance publicadas pelo robô no GitHub (lista suja do trabalho escravo e embargos do Ibama) */
+function dv_int_comp( $arq ) {
+	$k = 'dv_comp_' . md5( $arq ); $c = get_transient( $k ); if ( $c !== false ) { return $c; }
+	$r = wp_remote_get( 'https://raw.githubusercontent.com/Carlos09091988/aquila-dados/main/data/compliance/' . $arq, array( 'timeout' => 25 ) );
+	$c = ( ! is_wp_error( $r ) && wp_remote_retrieve_response_code( $r ) === 200 ) ? json_decode( wp_remote_retrieve_body( $r ), true ) : null;
+	set_transient( $k, is_array( $c ) ? $c : array(), is_array( $c ) ? DAY_IN_SECONDS : HOUR_IN_SECONDS ); return is_array( $c ) ? $c : array();
+}
+function dv_int_compliance( $cnpj, $grupo ) {
+	$E = (array) ( dv_int_comp( 'escravo.json' )['itens'] ?? array() ); $meta = dv_int_comp( 'meta.json' ); $o = array( 'escravo' => array(), 'embargos' => array(), 'atualizado' => $meta['atualizado'] ?? '' );
+	$alvos = array( $cnpj => 'a própria empresa' ); foreach ( (array) $grupo as $g ) { $c = preg_replace( '/\D/', '', (string) ( $g['cnpj'] ?? '' ) ); if ( strlen( $c ) === 14 && count( $alvos ) < 40 ) { $alvos[ $c ] = $g['razao'] ?? 'empresa do grupo'; } }
+	foreach ( $E as $doc => $x ) { if ( strlen( $doc ) !== 14 ) { continue; } foreach ( $alvos as $c => $quem ) { if ( substr( $doc, 0, 8 ) === substr( $c, 0, 8 ) ) { $o['escravo'][] = array( 'cnpj' => $doc, 'nome' => $x['nome'] ?? '', 'uf' => $x['uf'] ?? '', 'trabalhadores' => $x['trabalhadores'] ?? '', 'inclusao' => $x['inclusao'] ?? '', 'quem' => $c === $cnpj ? 'a própria empresa' : $quem ); } } }
+	foreach ( $alvos as $c => $quem ) { $L = (array) ( dv_int_comp( 'embargos/' . substr( $c, 0, 2 ) . '.json' )[ substr( $c, 0, 8 ) ] ?? array() ); foreach ( array_slice( $L, 0, 8 ) as $x ) { $x['quem'] = $c === $cnpj ? 'a própria empresa' : $quem; $o['embargos'][] = $x; } if ( count( $o['embargos'] ) >= 20 ) { break; } }
+	return $o;
+}
+/* Sinais de empresa de fachada (indícios, não conclusão) */
+function dv_int_fachada( $D ) {
+	$cad = (array) ( $D['cadastro'] ?? array() ); $si = array();
+	$cap = (float) ( $cad['capital_social'] ?? 0 ); $vc = 0; foreach ( (array) ( $D['pncp']['itens'] ?? array() ) as $x ) { $vc += (float) ( $x['valor'] ?? 0 ); }
+	$ab = strtotime( (string) ( $cad['data_inicio_atividade'] ?? '' ) ); $anos = $ab ? ( current_time( 'timestamp' ) - $ab ) / ( 365 * DAY_IN_SECONDS ) : null;
+	if ( $cap > 0 && $cap < 10000 && $vc > 500000 ) { $si[] = 'Capital social de R$ ' . number_format( $cap, 0, ',', '.' ) . ' para R$ ' . number_format( $vc, 0, ',', '.' ) . ' em contratos públicos.'; }
+	if ( $anos !== null && $anos < 1 ) { $si[] = 'Empresa aberta há menos de 1 ano.'; }
+	$end = 0; $tel = 0; foreach ( (array) ( $D['grupo'] ?? array() ) as $g ) { foreach ( (array) ( $g['vias'] ?? array() ) as $v ) { if ( strpos( $v, 'Mesmo endereço' ) === 0 ) { $end++; } if ( strpos( $v, 'Mesmo telefone' ) === 0 ) { $tel++; } } }
+	if ( $end >= 3 ) { $si[] = $end . ' outras empresas registradas no mesmo endereço.'; }
+	if ( $tel >= 3 ) { $si[] = $tel . ' outras empresas com o mesmo telefone de cadastro.'; }
+	$soc = (array) ( $cad['qsa'] ?? array() ); if ( ! $soc ) { $si[] = 'Quadro de sócios não informado na Receita.'; }
+	$sit = strtoupper( (string) ( $cad['descricao_situacao_cadastral'] ?? '' ) ); if ( $sit && $sit !== 'ATIVA' ) { $si[] = 'Situação na Receita: ' . $sit . '.'; }
+	if ( preg_match( '/^(ME|MICRO|EPP|EMPRESA DE PEQUENO)/i', (string) ( $cad['porte'] ?? '' ) ) && $vc > 4800000 ) { $si[] = 'Porte de micro ou pequena empresa com mais de R$ 4,8 milhões em contratos públicos.'; }
+	return array( 'sinais' => $si, 'nivel' => count( $si ) >= 3 ? 'alto' : ( count( $si ) >= 1 ? 'medio' : 'baixo' ) );
+}
 function dv_int_dossie( $cnpj ) {
 	$D = get_transient( 'dv_ds9_' . $cnpj ); if ( ! $D || ! is_array( $D ) ) { return null; }
 	$cad = (array) ( $D['cadastro'] ?? array() ); $S = array();
@@ -231,7 +260,10 @@ function dv_int_dossie( $cnpj ) {
 	$ultC = ''; foreach ( (array) ( $D['pncp']['itens'] ?? array() ) as $x ) { if ( ( $x['assinatura'] ?? '' ) > $ultC ) { $ultC = substr( $x['assinatura'], 0, 10 ); } }
 	if ( $ent && strtotime( $ent[0] ) > current_time( 'timestamp' ) - 730 * DAY_IN_SECONDS ) { $al[] = 'Mudança no quadro societário nos últimos 2 anos (' . date_i18n( 'd/m/Y', strtotime( $ent[0] ) ) . ').'; }
 	$ab = strtotime( (string) ( $cad['data_inicio_atividade'] ?? '' ) ); if ( $ab && $ab > current_time( 'timestamp' ) - 3 * 365 * DAY_IN_SECONDS ) { $al[] = 'Empresa com menos de 3 anos de atividade.'; }
-	return array( 'socios' => $S, 'timeline' => array_slice( $T, 0, 80 ), 'alertas' => $al );
+	$NT = array( 'execucao' => 'Execuções e cobranças', 'execucao_fiscal' => 'Execuções fiscais', 'trab_execucao' => 'Execuções trabalhistas', 'trabalhista' => 'Trabalhistas', 'falencia' => 'Falência ou recuperação judicial', 'criminal' => 'Criminais', 'improbidade' => 'Improbidade', 'coletiva' => 'Ações coletivas', 'outros' => 'Outros' );
+	$PT = array(); foreach ( $pr as $p ) { $tp = $p['tipo'] ?? 'outros'; $tp = isset( $NT[ $tp ] ) ? $tp : 'outros'; $PT[ $tp ] = ( $PT[ $tp ] ?? 0 ) + 1; }
+	$ptipos = array(); foreach ( $NT as $k => $n ) { if ( ! empty( $PT[ $k ] ) ) { $ptipos[] = array( 'tipo' => $k, 'nome' => $n, 'n' => $PT[ $k ] ); } }
+	return array( 'socios' => $S, 'timeline' => array_slice( $T, 0, 80 ), 'alertas' => $al, 'processos_tipo' => $ptipos, 'compliance' => dv_int_compliance( $cnpj, $D['grupo'] ?? array() ), 'fachada' => dv_int_fachada( $D ) );
 }
 
 /* ---------------- Monitoramento de concorrentes ---------------- */
@@ -511,6 +543,10 @@ function concorr(b,J,c,it){var o=b.querySelector('.cc');if(!o)return;var PI=J.pr
 function dossie(c){var b=caixa('dv-id','#dv-ic');if(b.dataset.c===c&&b._ok)return;b._ok=1;b.dataset.c=c;b.innerHTML='<p class="k">Sócios e linha do tempo</p><p>Montando…</p>';
  get('int/dossie?cnpj='+c).then(function(J){b.innerHTML=htmlD(J)}).catch(function(x){b.innerHTML='<p class="k">Sócios e linha do tempo</p><p>'+e((x&&x.message)||'Indisponível agora.')+'</p>'})}
 function htmlD(J){var h='<p class="k">Sócios e linha do tempo</p><h3>Quem está por trás e como a empresa chegou até aqui</h3>';(J.alertas||[]).forEach(function(a){h+='<div class="al">'+e(a)+'</div>'});
+ var C=J.compliance||{},F=J.fachada||{},PT=J.processos_tipo||[];
+ h+='<h4>Trabalho escravo e meio ambiente</h4>'+((C.escravo||[]).length?(C.escravo||[]).map(function(x){return'<div class="sc"><span class="tag r">Lista suja do trabalho escravo</span> <b>'+e(x.nome)+'</b> ('+fc(x.cnpj)+') · '+e(x.quem)+(x.trabalhadores?' · '+e(x.trabalhadores)+' trabalhador(es)':'')+(x.inclusao?' · incluída em '+e(x.inclusao):'')+'</div>'}).join(''):'<p><span class="tag v">Fora da lista suja do trabalho escravo</span> (empresa e grupo econômico)</p>')+((C.embargos||[]).length?(C.embargos||[]).map(function(x){return'<div class="sc"><span class="tag a">Embargo ambiental (Ibama)</span> '+e(x.data||'')+' · '+e((x.municipio||'')+(x.uf?'/'+x.uf:''))+(x.area?' · '+e(x.area)+' ha':'')+' · '+e(x.quem)+(x.situacao?' · '+e(x.situacao):'')+(x.motivo?'<br><small>'+e(x.motivo)+'</small>':'')+'</div>'}).join(''):'<p><span class="tag v">Nenhum embargo ambiental do Ibama</span> (empresa e grupo econômico)</p>')+'<p class="m">Cadastro de Empregadores do Ministério do Trabalho e termos de embargo do Ibama'+(C.atualizado?', atualizados em '+br(C.atualizado):'')+'.</p>';
+ h+='<h4>Sinais de empresa de fachada</h4>'+((F.sinais||[]).length?'<p><span class="tag '+(F.nivel==='alto'?'r':'a')+'">'+(F.nivel==='alto'?'Vários sinais':'Algum sinal')+'</span></p><ul>'+F.sinais.map(function(x){return'<li>'+e(x)+'</li>'}).join('')+'</ul>':'<p><span class="tag v">Nenhum sinal encontrado</span></p>')+'<p class="m">Indícios a conferir, não uma conclusão: capital, tempo de abertura, endereço e telefone compartilhados, sócios e porte.</p>';
+ if(PT.length)h+='<h4>Processos por tipo</h4><p>'+PT.map(function(x){return'<span class="tag '+(/execucao|falencia|criminal|improbidade/.test(x.tipo)?'r':'a')+'">'+e(x.nome)+': '+x.n+'</span>'}).join(' ')+'</p>';
  h+='<h4>Sócios a fundo</h4>'+((J.socios||[]).length?(J.socios||[]).map(function(s){var t=[];if(s.criminais)t.push('<span class="tag r">'+s.criminais+' processo(s) criminal(is)</span>');if(s.pep)t.push('<span class="tag r">Pessoa politicamente exposta</span>');if(s.divida_grupo>0)t.push('<span class="tag a">Empresas com dívida ativa: '+mc(s.divida_grupo)+'</span>');if(s.parentes)t.push('<span class="tag a">'+s.parentes+' possível(is) parente(s) em outras empresas</span>');if(!t.length)t.push('<span class="tag v">Nada encontrado</span>');
   return'<div class="sc"><b>'+e(s.nome)+'</b> · '+e(s.qualificacao)+(s.entrada?' · desde '+br(s.entrada):'')+(s.faixa?' · '+e(s.faixa):'')+'<br>'+t.join('')+(s.n_empresas?'<p class="m" style="margin:6px 0 0!important">Outras empresas ('+s.n_empresas+'): '+s.empresas.map(function(x){return'<a href="/plataforma/raio-x/?cnpj='+x.cnpj+'">'+e(x.razao)+'</a>'+(x.pgfn>0?' ('+mc(x.pgfn)+' em dívida)':'')}).join(' · ')+'</p>':'')+'</div>'}).join(''):'<p>Quadro de sócios não informado pela Receita.</p>');
  h+='<h4>Linha do tempo</h4><ul class="tl">'+(J.timeline||[]).map(function(t){return'<li class="'+e(t.tipo)+'"><b>'+br(t.data)+'</b> '+e(t.texto)+(t.link?' · <a href="'+e(t.link)+'" target="_blank" rel="noopener">abrir</a>':'')+'</li>'}).join('')+'</ul><p class="m">Cadastro da Receita, contratos no PNCP, processos (DJEN/CNJ), notícias e sanções. Processos trabalhistas comuns aparecem somados por ano.</p>';

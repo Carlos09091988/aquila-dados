@@ -62,7 +62,7 @@ function aq_fr_wa( $t ) { return 'https://wa.me/5511993500950?text=' . rawurlenc
 function aq_fr_css() {
 	static $ja = false; if ( $ja ) { return ''; } $ja = true;
 	return '<style>
-.aqf-blk{padding:56px 0 80px!important}
+.aqf-blk{padding:56px 0 80px!important}.aqf:has(.cards){max-width:none}
 .aqf{--n:#0F1B2D;--a:#0F1B2D;--g:#B8924F;--c:#F8F7F3;--l:#D9D5CC;--m:#4A5668;font-family:"Public Sans",system-ui,sans-serif;color:var(--n);max-width:880px;line-height:1.6;font-size:17px}
 .aqf p{margin:0 0 10px}.aqf h2,.aqf h3{font-family:"EB Garamond",Georgia,serif;font-weight:500;color:var(--n);margin:0 0 10px;font-size:28px;line-height:1.2}
 .aqf .bx{background:#fff;border:1px solid var(--l);border-radius:4px;padding:26px 28px;margin:0 0 20px}

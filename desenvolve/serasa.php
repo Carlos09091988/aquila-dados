@@ -22,6 +22,12 @@ add_action( 'init', function () {
 	update_option( 'dv_sr_pagina', '1', false );
 }, 30 );
 
+/* fora da plataforma (visitante) a página não aparece */
+add_action( 'template_redirect', function () {
+	if ( ! is_user_logged_in() && is_page( 'serasa' ) ) { wp_safe_redirect( home_url( '/' ), 302 ); exit; }
+} );
+add_action( 'wp_head', function () { echo '<style>body:not(.logged-in) .dv-cst{display:none!important}</style>'; } );
+
 add_action( 'rest_api_init', function () {
 	$perm = function () { return is_user_logged_in() && function_exists( 'dv_tools_perm' ) && dv_tools_perm(); };
 	register_rest_route( 'desenvolve/v1', '/serasa', array( 'methods' => 'POST', 'permission_callback' => $perm, 'callback' => function ( WP_REST_Request $r ) {

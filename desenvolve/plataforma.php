@@ -283,6 +283,17 @@ function dv_renovar( $uid, $motivo = 'Assinatura renovada', $dias = 31 ) {
 }
 
 /** Registra um uso e desconta um crédito. Retorna array ou WP_Error. */
+/** A mesma consulta já foi paga dentro da janela de repetição? (não cobra de novo) */
+function dv_uso_repetido( $uid, $ferramenta, $chave ) {
+	global $wpdb; $t = $wpdb->prefix . 'dv_uso';
+	$chave = substr( hash( 'sha256', $ferramenta . '|' . strtolower( trim( $chave ) ) ), 0, 64 );
+	$jan = in_array( $ferramenta, array( 'raiox', 'comprador', 'dossie', 'lote' ), true ) ? 15 * MINUTE_IN_SECONDS : (int) dv_cfg( 'dedupe_dias' ) * DAY_IN_SECONDS;
+	$ja = $wpdb->get_var( $wpdb->prepare( "SELECT id FROM $t WHERE user_id=%d AND chave=%s AND criado > %s LIMIT 1", $uid, $chave, gmdate( 'Y-m-d H:i:s', current_time( 'timestamp' ) - $jan ) ) );
+	if ( ! $ja && $jan < DAY_IN_SECONDS ) {
+		$ja = $wpdb->get_var( $wpdb->prepare( "SELECT id FROM $t WHERE user_id=%d AND chave=%s AND rotulo LIKE %s AND criado > %s LIMIT 1", $uid, $chave, 'Pacote:%', gmdate( 'Y-m-d H:i:s', current_time( 'timestamp' ) - 30 * DAY_IN_SECONDS ) ) );
+	}
+	return (bool) $ja;
+}
 function dv_usar( $uid, $ferramenta, $chave, $rotulo = '' ) {
 	global $wpdb;
 	$t = $wpdb->prefix . 'dv_uso';
@@ -376,8 +387,11 @@ add_action( 'rest_api_init', function () {
 		if ( ! $f || $c === '' ) { return new WP_Error( 'dv_param', 'Informe a ferramenta e a consulta.', array( 'status' => 400 ) ); }
 		$uid = get_current_user_id(); $n = dv_custo( $f ); $rot = sanitize_text_field( (string) $r['rotulo'] );
 		if ( $n === 0 ) { if ( dv_status( $uid ) === 'bloqueado' ) { return new WP_Error( 'dv_bloqueado', 'Acesso bloqueado. Fale com a Desenvolve.', array( 'status' => 403 ) ); } return array( 'cobrado' => 0, 'motivo' => 'gratis', 'saldo' => dv_saldo( $uid ) ); }
+		/* confere o saldo ANTES de cobrar o primeiro crédito (antes cobrava 1 e só depois avisava que faltava) */
+		if ( $n > 1 && ! dv_is_master( $uid ) && ! dv_teste_ilimitado( $uid ) && dv_status( $uid ) !== 'bloqueado' && ! dv_uso_repetido( $uid, $f, $c ) && dv_saldo( $uid )['total'] < $n ) {
+			return new WP_Error( 'dv_sem_credito', 'Esta consulta usa ' . $n . ' créditos e o seu saldo não é suficiente.', array( 'status' => 402, 'saldo' => dv_saldo( $uid ) ) );
+		}
 		$u = dv_usar( $uid, $f, $c, $rot ); if ( is_wp_error( $u ) || $n <= 1 || empty( $u['cobrado'] ) ) { return $u; }
-		if ( dv_saldo( $uid )['total'] < $n - 1 ) { return new WP_Error( 'dv_sem_credito', 'Esta consulta usa ' . $n . ' créditos e o seu saldo não é suficiente.', array( 'status' => 402 ) ); }
 		for ( $i = 2; $i <= $n; $i++ ) { $u = dv_usar( $uid, $f, $c . '|' . $i, '' ); if ( is_wp_error( $u ) ) { return $u; } }
 		$u['creditos'] = $n; return $u;
 	} ) );

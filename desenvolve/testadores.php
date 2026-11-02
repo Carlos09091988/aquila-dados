@@ -1,6 +1,6 @@
 /**
  * Desenvolve — Programa de testadores especialistas
- * Convite único (/teste/?convite=CODIGO) → conta com 7 dias de acesso completo e 30 créditos →
+ * Convite único (/teste/?convite=CODIGO) → conta com 7 dias de uso ilimitado →
  * avaliação em /plataforma/avaliacao/ → recompensa automática: 1 mês de assinatura (80 créditos).
  * Admin: Desenvolve → Testadores (gerar convites, acompanhar e baixar as avaliações).
  */
@@ -33,7 +33,7 @@ add_shortcode( 'dv_teste', function () {
 				if ( function_exists( 'dv_extrato' ) ) { dv_extrato( $uid, DV_TS_CREDITOS, 'teste', 'Teste de especialista (' . DV_TS_DIAS . ' dias)' ); }
 				$C[ $cod ]['uid'] = $uid; $C[ $cod ]['ativado'] = current_time( 'mysql' ); $C[ $cod ]['nome'] = $nome; $C[ $cod ]['email'] = $email; update_option( 'dv_testers', $C, false );
 				$from = function_exists( 'dv_cfg' ) && dv_cfg( 'email_remetente' ) ? dv_cfg( 'email_remetente' ) : 'contato@desenvolveestrategias.com.br';
-				wp_mail( $email, 'Seu teste de especialista na Desenvolve começou', "Olá, $nome!\n\nObrigado por aceitar testar a Desenvolve. Você tem " . DV_TS_DIAS . " dias de acesso completo e " . DV_TS_CREDITOS . " créditos para usar o Raio-X, a Due Diligence e as demais ferramentas.\n\nAo final, preencha a avaliação (leva uns 10 minutos):\n" . home_url( '/plataforma/avaliacao/' ) . "\n\nAssim que você enviar, liberamos automaticamente 1 mês de assinatura, com 80 créditos.\n\nEquipe Desenvolve", array( 'From: Desenvolve <' . $from . '>' ) );
+				wp_mail( $email, 'Seu teste de especialista na Desenvolve começou', "Olá, $nome!\n\nObrigado por aceitar testar a Desenvolve. Você tem " . DV_TS_DIAS . " dias de acesso completo e ilimitado ao Raio-X, à Due Diligence e às demais ferramentas.\n\nAo final, preencha a avaliação (leva uns 10 minutos):\n" . home_url( '/plataforma/avaliacao/' ) . "\n\nAssim que você enviar, liberamos automaticamente 1 mês de assinatura, com 80 créditos.\n\nEquipe Desenvolve", array( 'From: Desenvolve <' . $from . '>' ) );
 				wp_mail( get_option( 'admin_email' ), 'Testador ativou o convite: ' . $nome, "Convite: $cod\nNome: $nome\nE-mail: $email\nAtuação: $atua", array( 'From: Desenvolve <' . $from . '>' ) );
 				wp_set_current_user( $uid ); wp_set_auth_cookie( $uid, true ); wp_safe_redirect( home_url( '/plataforma/?teste=1' ) ); exit;
 			}
@@ -42,7 +42,7 @@ add_shortcode( 'dv_teste', function () {
 	ob_start(); ?>
 <form class="ts" method="post"><?php wp_nonce_field( 'dv_ts', '_dvts' ); ?><input type="hidden" name="dv_ts" value="1"><input type="hidden" name="convite" value="<?php echo esc_attr( $cod ); ?>">
 	<span class="ts-k">Convite de especialista</span><h2><?php echo ! empty( $C[ $cod ]['rotulo'] ) ? esc_html( $C[ $cod ]['rotulo'] ) . ', teste' : 'Teste'; ?> a Desenvolve antes de todo mundo</h2>
-	<ul class="ts-l"><li><b><?php echo DV_TS_DIAS; ?> dias</b> de acesso completo, com <b><?php echo DV_TS_CREDITOS; ?> créditos</b> para usar o Raio-X, a Due Diligence e as demais ferramentas</li><li>No fim, uma <b>avaliação rápida</b> (cerca de 10 minutos) com as suas sugestões</li><li>Enviou a avaliação: ganha <b>1 mês de assinatura</b> (80 créditos), liberado na hora</li></ul>
+	<ul class="ts-l"><li><b><?php echo DV_TS_DIAS; ?> dias</b> de acesso completo e <b>ilimitado</b> ao Raio-X, à Due Diligence e às demais ferramentas</li><li>No fim, uma <b>avaliação rápida</b> (cerca de 10 minutos) com as suas sugestões</li><li>Enviou a avaliação: ganha <b>1 mês de assinatura</b> (80 créditos), liberado na hora</li></ul>
 	<?php if ( $err ) { echo '<p class="ts-err">' . esc_html( $err ) . '</p>'; } ?>
 	<label>Nome completo<input name="nome" required value="<?php echo esc_attr( $_POST['nome'] ?? ( $C[ $cod ]['rotulo'] ?? '' ) ); ?>"></label>
 	<div class="ts-2"><label>E-mail<input type="email" name="email" required value="<?php echo esc_attr( $_POST['email'] ?? '' ); ?>"></label><label>WhatsApp<input name="tel" value="<?php echo esc_attr( $_POST['tel'] ?? '' ); ?>"></label></div>
@@ -133,7 +133,7 @@ add_action( 'admin_menu', function () {
 			for ( $i = 0; $i < $n; $i++ ) { do { $k = strtoupper( wp_generate_password( 8, false, false ) ); } while ( isset( $C[ $k ] ) ); $C[ $k ] = array( 'criado' => current_time( 'mysql' ), 'rotulo' => mb_substr( $rot[ $i ] ?? '', 0, 80 ) ); }
 			update_option( 'dv_testers', $C, false ); echo '<div class="updated"><p>' . $n . ' convite(s) gerado(s).</p></div>';
 		}
-		echo '<div class="wrap"><h1>Testadores especialistas</h1><p>Cada convite vale para uma pessoa: ' . DV_TS_DIAS . ' dias de acesso com ' . DV_TS_CREDITOS . ' créditos. Ao enviar a avaliação, ganha 1 mês de assinatura (80 créditos).</p>';
+		echo '<div class="wrap"><h1>Testadores especialistas</h1><p>Cada convite vale para uma pessoa: ' . DV_TS_DIAS . ' dias de uso ilimitado (trava de 60 consultas por dia; depois disso usa os ' . DV_TS_CREDITOS . ' créditos de reserva). Ao enviar a avaliação, ganha 1 mês de assinatura (80 créditos).</p>';
 		echo '<form method="post" style="background:#fff;border:1px solid #ddd;padding:12px 16px;margin:12px 0">'; wp_nonce_field( 'dv_ts_gerar' );
 		echo '<p><b>Gerar convites</b>: escreva um nome por linha (aparece no convite) ou só a quantidade.</p><p><textarea name="rotulos" rows="4" cols="50" placeholder="Maria Silva&#10;João Souza"></textarea></p><p>Quantidade (se não colocar nomes): <input type="number" name="qtd" min="0" max="50" value="0" style="width:70px"> <button class="button button-primary" name="dv_ts_gerar" value="1">Gerar</button></p></form>';
 		echo '<table class="widefat striped"><thead><tr><th>Convite</th><th>Nome</th><th>Link</th><th>Ativou</th><th>Avaliou</th><th>Recomendação</th><th>Quanto pagaria</th></tr></thead><tbody>';

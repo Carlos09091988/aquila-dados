@@ -354,7 +354,7 @@ add_action( 'rest_api_init', function () {
 			$cnpj = preg_replace( '/\D/', '', (string) $r['cnpj'] );
 			if ( strlen( $cnpj ) !== 14 ) { return new WP_Error( 'dv_cnpj', 'Informe um CNPJ com 14 números.', array( 'status' => 400 ) ); }
 			$uid = get_current_user_id(); $n = max( 1, (int) ( dv_cfg( 'creditos_dossie' ) ?: 3 ) );
-			if ( ! dv_is_master( $uid ) && dv_saldo( $uid )['total'] < $n ) {
+			if ( ! dv_ilimitado( $uid ) && dv_saldo( $uid )['total'] < $n ) {
 				global $wpdb; // se já pagou este dossiê nos últimos 30 dias, deixa reabrir
 				$ja = $wpdb->get_var( $wpdb->prepare( "SELECT id FROM {$wpdb->prefix}dv_uso WHERE user_id=%d AND chave=%s AND criado > %s", $uid,
 					substr( hash( 'sha256', 'dossie|' . strtolower( 'dossie|' . $cnpj . '|1' ) ), 0, 64 ), gmdate( 'Y-m-d H:i:s', time() - 30 * DAY_IN_SECONDS ) ) );

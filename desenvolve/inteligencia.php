@@ -26,7 +26,7 @@ function dv_int_cad( $cnpj ) {
 	set_transient( $ck, $c, DAY_IN_SECONDS ); return $c;
 }
 function dv_int_pode( $uid, $f, $cnpj ) {
-	if ( function_exists( 'dv_is_master' ) && dv_is_master( $uid ) ) { return true; }
+	if ( function_exists( 'dv_ilimitado' ) && dv_ilimitado( $uid ) ) { return true; }
 	global $wpdb; $lim = gmdate( 'Y-m-d H:i:s', current_time( 'timestamp' ) - 30 * DAY_IN_SECONDS );
 	$rel = $wpdb->get_var( $wpdb->prepare( "SELECT id FROM {$wpdb->prefix}dv_rel WHERE user_id=%d AND ferramenta=%s AND cnpj=%s AND criado>=%s LIMIT 1", $uid, $f, $cnpj, $lim ) );
 	if ( $rel ) { return true; }
@@ -326,7 +326,7 @@ add_action( 'rest_api_init', function () {
 		if ( function_exists( 'dv_usar' ) ) {
 			$fc = preg_replace( '/^(\d{2})(\d{3})(\d{3})(\d{4})(\d{2})$/', '$1.$2.$3/$4-$5', $c ); $k = 'rx-cnpj=' . $fc; $n = function_exists( 'dv_custo' ) ? dv_custo( 'raiox' ) : 5;
 			if ( $n > 0 ) {
-				if ( ! dv_is_master( $uid ) && dv_saldo( $uid )['total'] < $n ) { return new WP_Error( 'dv_sem_credito', 'Saldo insuficiente para continuar o lote.', array( 'status' => 402 ) ); }
+				if ( ! dv_ilimitado( $uid ) && dv_saldo( $uid )['total'] < $n ) { return new WP_Error( 'dv_sem_credito', 'Saldo insuficiente para continuar o lote.', array( 'status' => 402 ) ); }
 				$u = dv_usar( $uid, 'raiox', $k, $fc . ' (lote)' ); if ( is_wp_error( $u ) ) { return $u; }
 				if ( ! empty( $u['cobrado'] ) ) { for ( $i = 2; $i <= $n; $i++ ) { $x = dv_usar( $uid, 'raiox', $k . '|' . $i, '' ); if ( is_wp_error( $x ) ) { return $x; } } }
 			}
@@ -596,7 +596,7 @@ add_action( 'rest_api_init', function () {
 		$c = preg_replace( '/\D/', '', (string) $r['cnpj'] ); if ( strlen( $c ) !== 14 ) { return new WP_Error( 'dv_cnpj', 'CNPJ inválido.', array( 'status' => 400 ) ); }
 		$uid = get_current_user_id(); @set_time_limit( 120 ); $n = function_exists( 'dv_custo' ) ? dv_custo( 'habilitacao' ) : 0;
 		if ( $n > 0 && function_exists( 'dv_usar' ) ) {
-			if ( ! dv_is_master( $uid ) && dv_saldo( $uid )['total'] < $n ) { return new WP_Error( 'dv_sem_credito', 'A busca de habilitação usa ' . $n . ' créditos e o seu saldo não é suficiente.', array( 'status' => 402 ) ); }
+			if ( ! dv_ilimitado( $uid ) && dv_saldo( $uid )['total'] < $n ) { return new WP_Error( 'dv_sem_credito', 'A busca de habilitação usa ' . $n . ' créditos e o seu saldo não é suficiente.', array( 'status' => 402 ) ); }
 			$fc = preg_replace( '/^(\d{2})(\d{3})(\d{3})(\d{4})(\d{2})$/', '$1.$2.$3/$4-$5', $c ); $k = 'hab|' . $c;
 			$u = dv_usar( $uid, 'habilitacao', $k, $fc ); if ( is_wp_error( $u ) ) { return $u; }
 			if ( ! empty( $u['cobrado'] ) ) { for ( $i = 2; $i <= $n; $i++ ) { $x = dv_usar( $uid, 'habilitacao', $k . '|' . $i, '' ); if ( is_wp_error( $x ) ) { return $x; } } }

@@ -71,7 +71,7 @@ add_action( 'init', function () {
 /* Custos por ferramenta para as telas (rótulos e avisos antes do clique) */
 add_action( 'wp_head', function () {
 	if ( ! is_user_logged_in() ) { return; } $o = array();
-	foreach ( array( 'raiox', 'comprador', 'comparador', 'precos', 'buscador', 'vencendo', 'dossie', 'habilitacao' ) as $k ) { $o[ $k ] = dv_custo( $k ); }
+	foreach ( array( 'raiox', 'comprador', 'comparador', 'precos', 'buscador', 'vencendo', 'dossie', 'habilitacao' ) as $k ) { $o[ $k ] = dv_teste_ilimitado( get_current_user_id() ) ? 0 : dv_custo( $k ); }
 	echo '<script>window.DVC=' . wp_json_encode( $o ) . ';</script>';
 }, 1 );
 /* Tabela de preços 3 (out/2026): foco 100% em licitações, R$ 79 / 149 / 349, sem preço de fundador */
@@ -174,6 +174,15 @@ add_action( 'init', function () {
 function dv_is_master( $uid ) {
 	return get_user_meta( $uid, 'dv_master', true ) === '1' || user_can( $uid, 'manage_options' );
 }
+/** Testador com convite: uso ilimitado durante os dias do teste (até avaliar). Trava de segurança: 60 consultas por dia. */
+function dv_teste_ilimitado( $uid ) {
+	if ( ! $uid || ! get_user_meta( $uid, 'dv_tester', true ) || ! get_user_meta( $uid, 'dv_trial', true ) || get_user_meta( $uid, 'dv_tester_recompensa', true ) ) { return false; }
+	$v = (string) get_user_meta( $uid, 'dv_vence', true ); if ( ! $v || $v < current_time( 'Y-m-d' ) ) { return false; }
+	global $wpdb; $t = $wpdb->prefix . 'dv_uso';
+	$n = (int) $wpdb->get_var( $wpdb->prepare( "SELECT COUNT(*) FROM $t WHERE user_id=%d AND origem='teste' AND criado >= %s", $uid, current_time( 'Y-m-d' ) . ' 00:00:00' ) );
+	return $n < 60;
+}
+function dv_ilimitado( $uid ) { return dv_is_master( $uid ) || dv_teste_ilimitado( $uid ); }
 function dv_status( $uid ) {
 	$s = get_user_meta( $uid, 'dv_status', true ) ?: 'pendente';
 	if ( $s === 'ativo' ) {
@@ -267,9 +276,10 @@ function dv_usar( $uid, $ferramenta, $chave, $rotulo = '' ) {
 			$uid, $chave, 'Pacote:%', gmdate( 'Y-m-d H:i:s', current_time( 'timestamp' ) - 30 * DAY_IN_SECONDS ) ) );
 	}
 	if ( $ja ) { return array( 'cobrado' => 0, 'motivo' => 'repetido', 'saldo' => dv_saldo( $uid ) ); }
-	if ( dv_is_master( $uid ) ) {
-		$wpdb->insert( $t, $base + array( 'cobrado' => 0, 'origem' => 'master' ) );
-		return array( 'cobrado' => 0, 'motivo' => 'master', 'saldo' => null );
+	if ( dv_is_master( $uid ) || dv_teste_ilimitado( $uid ) ) {
+		$mo = dv_is_master( $uid ) ? 'master' : 'teste';
+		$wpdb->insert( $t, $base + array( 'cobrado' => 0, 'origem' => $mo ) );
+		return array( 'cobrado' => 0, 'motivo' => $mo, 'saldo' => null );
 	}
 	$origem = '';
 	if ( $st === 'ativo' && (int) get_user_meta( $uid, 'dv_mes_saldo', true ) > 0 ) {

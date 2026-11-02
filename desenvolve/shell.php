@@ -89,7 +89,7 @@ body.dv-app #ht-ctc-chat{bottom:18px!important}
 add_action( 'wp_footer', function () {
 	if ( ! dv_app_pagina() ) { return; }
 	$uid = get_current_user_id(); $u = wp_get_current_user();
-	$master = function_exists( 'dv_is_master' ) && dv_is_master( $uid );
+	$master = function_exists( 'dv_ilimitado' ) && dv_ilimitado( $uid );
 	$saldo = $master ? 'ilimitado' : ( function_exists( 'dv_saldo' ) ? (int) dv_saldo( $uid )['total'] : 0 );
 	$plano = ''; if ( function_exists( 'dv_plano' ) && function_exists( 'dv_plano_info' ) ) { $pi = dv_plano_info( dv_plano( $uid ) ); $plano = is_array( $pi ) ? ( $pi['nome'] ?? '' ) : ''; }
 	if ( $master ) { $plano = 'Conta Master'; }

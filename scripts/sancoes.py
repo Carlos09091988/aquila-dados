@@ -21,10 +21,14 @@ def baixar(cad):
     return None
 
 def col(row, *nomes):
-    for k, v in row.items():
-        kk = (k or '').upper()
-        if any(n in kk for n in nomes):
-            return (v or '').strip()
+    up = {(k or '').strip().upper(): v for k, v in row.items()}
+    for n in nomes:  # primeiro o nome exato da coluna
+        if n in up:
+            return (up[n] or '').strip()
+    for n in nomes:  # depois o começo do nome
+        for k, v in up.items():
+            if k.startswith(n):
+                return (v or '').strip()
     return ''
 
 def main():
@@ -38,18 +42,19 @@ def main():
                 continue
             txt = z.read(nome).decode('latin-1')
             for row in csv.DictReader(io.StringIO(txt), delimiter=';'):
-                doc = ''.join(c for c in col(row, 'CPF OU CNPJ', 'CNPJ') if c.isdigit())
+                doc = ''.join(c for c in col(row, 'CPF OU CNPJ DO SANCIONADO', 'CPF OU CNPJ') if c.isdigit())
                 if len(doc) != 14:
                     continue
                 r8 = doc[:8]
                 idx.setdefault(r8, []).append({
                     'cad': cad.upper(), 'cnpj': doc,
-                    'tipo': col(row, 'CATEGORIA DA SAN', 'TIPO DE SAN'),
+                    'tipo': col(row, 'CATEGORIA DA SANÇÃO', 'CATEGORIA DA SANCAO', 'TIPO DE SANÇÃO'),
                     'orgao': col(row, 'ÓRGÃO SANCIONADOR', 'ORGAO SANCIONADOR'),
-                    'uf': col(row, 'UF ÓRGÃO', 'UF ORGAO'),
-                    'inicio': col(row, 'DATA INÍCIO', 'DATA INICIO'),
-                    'fim': col(row, 'DATA FINAL', 'DATA FIM'),
-                    'lei': col(row, 'FUNDAMENTA', 'LEGAL'),
+                    'esfera': col(row, 'ESFERA ÓRGÃO SANCIONADOR', 'ESFERA ORGAO SANCIONADOR'),
+                    'uf': col(row, 'UF ÓRGÃO SANCIONADOR', 'UF ORGAO SANCIONADOR'),
+                    'inicio': col(row, 'DATA INÍCIO SANÇÃO', 'DATA INICIO SANCAO', 'DATA INÍCIO'),
+                    'fim': col(row, 'DATA FINAL SANÇÃO', 'DATA FINAL SANCAO', 'DATA FINAL'),
+                    'lei': col(row, 'FUNDAMENTAÇÃO LEGAL', 'FUNDAMENTACAO LEGAL'),
                     'processo': col(row, 'NÚMERO DO PROCESSO', 'NUMERO DO PROCESSO'),
                 })
     if not idx:

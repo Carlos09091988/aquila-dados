@@ -46,6 +46,19 @@ add_action( 'init', function () {
 }, 6 );
 if ( ! function_exists( 'dv_rs' ) ) { function dv_rs( $v ) { $v = (float) $v; return number_format( $v, floor( $v ) == $v ? 0 : 2, ',', '.' ); } }
 add_action( 'init', function () { if ( get_option( 'dv_precos_ver' ) !== '3' ) { return; } $c = (array) get_option( 'dv_cfg', array() ); $c['trial_creditos'] = 25; update_option( 'dv_cfg', $c, false ); update_option( 'dv_precos_ver', '4', false ); }, 9 );
+/* Aviso de fuso nas páginas da plataforma */
+add_action( 'wp_footer', function () {
+	if ( ! is_user_logged_in() || is_admin() ) { return; }
+	$u = (string) ( $_SERVER['REQUEST_URI'] ?? '' ); if ( ! preg_match( '#^/(plataforma|painel|creditos|assinar)(/|$|\?)#', $u ) ) { return; }
+	echo '<script>(function(){var m=document.querySelector(".dv-main,main,#main,.site-main")||document.body;var p=document.createElement("p");p.className="dv-fuso";p.textContent="Todos os horários da plataforma estão no horário de Brasília.";p.style.cssText="margin:28px auto 18px;text-align:center;font-size:12.5px;color:#8A867C;max-width:900px";m.appendChild(p)})();</script>';
+}, 99 );
+/* Fuso: o site passou para o horário de Brasília; corrige uma vez os horários gravados antes em UTC */
+add_action( 'init', function () {
+	if ( get_option( 'dv_tz_fix' ) || get_option( 'timezone_string' ) !== 'America/Sao_Paulo' ) { return; }
+	global $wpdb; $lim = current_time( 'mysql' );
+	foreach ( array( 'dv_uso', 'dv_rel' ) as $tb ) { $t = $wpdb->prefix . $tb; if ( $wpdb->get_var( $wpdb->prepare( 'SHOW TABLES LIKE %s', $t ) ) === $t ) { $wpdb->query( $wpdb->prepare( "UPDATE $t SET criado = DATE_SUB(criado, INTERVAL 3 HOUR) WHERE criado <= %s", $lim ) ); } }
+	update_option( 'dv_tz_fix', current_time( 'mysql' ), false );
+}, 12 );
 /* Raio-X em lote: preço fixo de 15 créditos para até 20 CNPJs */
 add_action( 'init', function () {
 	if ( (int) get_option( 'dv_precos_ver' ) !== 5 ) { return; }
@@ -535,7 +548,7 @@ function dv_admin_uso() {
 	$al = (array) get_option( 'dv_alertas', array() );
 	foreach ( array_slice( $al, 0, 30 ) as $a ) { $u = get_userdata( $a['user_id'] ); echo '<tr><td>' . esc_html( $a['quando'] ) . '</td><td>' . esc_html( $u ? $u->display_name . ' <' . $u->user_email . '>' : '#' . $a['user_id'] ) . '</td><td>' . esc_html( $a['motivo'] ) . '</td></tr>'; }
 	if ( ! $al ) { echo '<tr><td>Nenhum alerta.</td></tr>'; }
-	echo '</tbody></table><h2>Últimos usos</h2><table class="widefat striped"><thead><tr><th>Quando</th><th>Pessoa</th><th>Ferramenta</th><th>Consulta</th><th>Crédito</th><th>IP</th></tr></thead><tbody>';
+	echo '</tbody></table><h2>Últimos usos</h2><table class="widefat striped"><thead><tr><th>Quando <small style="font-weight:400">(horário de Brasília)</small></th><th>Pessoa</th><th>Ferramenta</th><th>Consulta</th><th>Crédito</th><th>IP</th></tr></thead><tbody>';
 	foreach ( $wpdb->get_results( "SELECT * FROM {$wpdb->prefix}dv_uso ORDER BY id DESC LIMIT 200" ) as $r ) {
 		$u = get_userdata( $r->user_id );
 		echo '<tr><td>' . esc_html( $r->criado ) . '</td><td>' . esc_html( $u ? $u->display_name : '#' . $r->user_id ) . '</td><td>' . esc_html( $r->ferramenta ) . '</td><td>' . esc_html( $r->rotulo ) . '</td><td>' . ( $r->cobrado ? esc_html( $r->origem ) : 'não cobrado (' . esc_html( $r->origem ?: 'repetido' ) . ')' ) . '</td><td>' . esc_html( $r->ip ) . '</td></tr>';
@@ -549,7 +562,7 @@ function dv_admin_pedidos() {
 		$wpdb->update( $t, array( 'status' => sanitize_key( $_POST['status'] ), 'nota' => sanitize_textarea_field( $_POST['nota'] ) ), array( 'id' => (int) $_POST['pid'] ) );
 		echo '<div class="notice notice-success"><p>Pedido atualizado.</p></div>';
 	}
-	echo '<div class="wrap dv-w"><h1>Pedidos de consultor</h1><table class="widefat striped"><thead><tr><th>Quando</th><th>Cliente</th><th>Ferramenta e mensagem</th><th>Prévia</th><th>Andamento</th></tr></thead><tbody>';
+	echo '<div class="wrap dv-w"><h1>Pedidos de consultor</h1><table class="widefat striped"><thead><tr><th>Quando <small style="font-weight:400">(horário de Brasília)</small></th><th>Cliente</th><th>Ferramenta e mensagem</th><th>Prévia</th><th>Andamento</th></tr></thead><tbody>';
 	foreach ( $wpdb->get_results( "SELECT * FROM $t ORDER BY id DESC LIMIT 100" ) as $p ) {
 		$u = get_userdata( $p->user_id );
 		echo '<tr><td>' . esc_html( $p->criado ) . '</td><td>' . esc_html( $u ? $u->display_name : '' ) . '<br>' . esc_html( $u ? $u->user_email : '' ) . '<br>' . esc_html( get_user_meta( $p->user_id, 'dv_tel', true ) ) . '</td>';

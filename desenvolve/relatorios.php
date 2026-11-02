@@ -113,7 +113,7 @@ var R=<?php echo wp_json_encode( $ctx, JSON_UNESCAPED_UNICODE ); ?>;
 var Q=new URLSearchParams(location.search),REL=Q.get('rel');if(REL)window.DVREL_VIEW=true;window.DVREL=R;
 function e(s){return String(s==null?'':s).replace(/[&<>"]/g,function(c){return{'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]})}
 function fc(c){return c.replace(/^(\d{2})(\d{3})(\d{3})(\d{4})(\d{2})$/,'$1.$2.$3/$4-$5')}
-function dt(s){var m=String(s).match(/(\d{4})-(\d{2})-(\d{2})(?:[ T](\d{2}):(\d{2}))?/);return m?m[3]+'/'+m[2]+'/'+m[1]+(m[4]?' às '+m[4]+':'+m[5]:''):''}
+function dt(s){var m=String(s).match(/(\d{4})-(\d{2})-(\d{2})(?:[ T](\d{2}):(\d{2}))?/);return m?m[3]+'/'+m[2]+'/'+m[1]+(m[4]?' às '+m[4]+':'+m[5]+' (horário de Brasília)':''):''}
 function cr(){return R.custo+(R.custo===1?' crédito':' créditos')}
 var tool=document.querySelector('.dv-tool');if(!tool)return;
 var QC=(Q.get('cnpj')||'').replace(/\D/g,'');if(!REL&&QC.length===14){var sk='';try{sk=sessionStorage.getItem('dv_rel_skip')||''}catch(x){}if(sk!==QC){for(var i=0;i<R.lista.length;i++)if(R.lista[i].cnpj===QC){window.DVREL_VIEW=true;location.replace(R.lista[i].url);return}}}

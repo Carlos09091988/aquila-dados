@@ -7,7 +7,7 @@
 if ( ! defined( 'ABSPATH' ) ) { exit; }
 define( 'DV_TS_DIAS', 7 ); define( 'DV_TS_CREDITOS', 30 );
 function dv_ts_codigos() { $c = get_option( 'dv_testers', array() ); return is_array( $c ) ? $c : array(); }
-function dv_ts_ferramentas() { return array( 'vencendo' => 'Contratos vencendo', 'alertas' => 'Alertas de oportunidades', 'buscador' => 'Buscador de licitações', 'licitacoes' => 'Gestão de licitações e conferência do edital', 'concorrentes' => 'Concorrentes e classificação dos lances', 'raiox' => 'Raio-X de concorrentes', 'dossie' => 'Due Diligence completa', 'comprador' => 'Raio-X do comprador', 'precos' => 'Banco de preços', 'recursos' => 'Impugnações e recursos', 'teses' => 'Banco de teses', 'meuscontratos' => 'Meus contratos e garantias', 'documentos' => 'Documentos e certidões' ); }
+function dv_ts_ferramentas() { return array( 'vencendo' => 'Contratos vencendo', 'alertas' => 'Alertas de oportunidades', 'licitacoes' => 'Gestão de licitações e conferência do edital', 'concorrentes' => 'Concorrentes e classificação dos lances', 'raiox' => 'Raio-X do concorrente', 'lote' => 'Raio-X em lote', 'dossie' => 'Due Diligence completa', 'comprador' => 'Raio-X do comprador', 'precos' => 'Banco de preços', 'recursos' => 'Impugnações e recursos', 'meuscontratos' => 'Meus contratos e garantias', 'documentos' => 'Documentos e certidões' ); }
 function dv_ts_e_testador( $uid ) { return (string) get_user_meta( $uid, 'dv_tester', true ); }
 
 /* ---------- Cadastro pelo convite ---------- */

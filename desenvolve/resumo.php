@@ -142,7 +142,7 @@ function htmlComprador(r){
  '<div class="g"><div class="q w"><b>Nível de atenção</b><p>'+(A.concat(M).length?e(A.concat(M).join(' · '))+'.':'Nenhum sinal relevante nas fontes consultadas.')+'</p></div>'+
  '<div class="q"><b>Paga em dia?</b><p>'+paga+'</p></div>'+
  '<div class="q"><b>Tamanho da oportunidade</b><p>'+e(cap1(op.join(' · '))||'Sem contratos encontrados no PNCP')+'.</p></div>'+
- '<div class="q w"><b>Próximo passo</b><p>'+e(prev)+'</p><div class="ac"><a class="p" href="/plataforma/buscador/">Ver licitações abertas</a><a href="/plataforma/contratos-vencendo/">Contratos vencendo</a></div></div></div>';
+ '<div class="q w"><b>Próximo passo</b><p>'+e(prev)+'</p><div class="ac"><a class="p" href="/plataforma/alertas/">Ver alertas de licitações</a><a href="/plataforma/contratos-vencendo/">Contratos vencendo</a></div></div></div>';
 }
 
 function pdfRecurso(){var X=window.DVRS;if(!X)return;var r=root(),S=X.S,h2=r.querySelector('.rx-card.ink h2, .rp-hd h2, h2'),nome=h2?h2.textContent.trim():'',hoje=new Date().toLocaleDateString('pt-BR');

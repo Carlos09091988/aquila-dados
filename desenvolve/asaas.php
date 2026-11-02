@@ -199,7 +199,7 @@ add_shortcode( 'dv_creditos', function () {
 		$h .= '<div class="c' . ( $q === $dest ? ' dest' : '' ) . '">' . ( $q === $dest ? '<span class="tg">Recomendado</span>' : '' ) . '<div class="q">' . $q . '<small>créditos</small></div>';
 		$h .= '<div class="pr">R$ ' . number_format( $v, 2, ',', '.' ) . '<span>R$ ' . number_format( $v / $q, 2, ',', '.' ) . ' por crédito</span></div>';
 		$h .= '<ul>' . ( $n >= 1 ? '<li>Rende ' . $n . ' Raio-X do concorrente</li>' : '<li>Para consultas avulsas</li>' ) . '<li>Válidos por ' . $val . ' meses</li><li>Acumulam com os do mês</li></ul>';
-		$h .= '<button type="button" data-q="' . $q . '">Comprar ' . $q . ' créditos</button></div>';
+		$h .= '<button type="button" data-q="' . $q . '">Comprar</button></div>';
 	}
 	$h .= '</div>';
 	$usos = array( array( 'Raio-X do concorrente', 'habilitação e pontos fracos incluídos', dv_custo( 'raiox' ) ), array( 'Raio-X do comprador', 'pagamentos, concorrência e últimos contratos', dv_custo( 'comprador' ) ), array( 'Raio-X em lote', 'até 20 CNPJs de uma vez', dv_custo( 'lote' ) ), array( 'Due Diligence completa', 'relatório da empresa e do grupo', dv_custo( 'dossie' ) ), array( 'Contratos vencendo', 'lista para prospectar', dv_custo( 'vencendo' ) ) );

@@ -12,6 +12,7 @@ add_action( 'wp_footer', function () {
 <style id="dv-rs-css">
 .dv-rs{background:#fff!important;border:1px solid #E3DED2!important;border-left:6px solid #C9A45C!important;border-radius:16px!important;padding:20px 22px!important;margin:0 0 18px!important;color:#16191E!important;font-family:'Hanken Grotesk',system-ui,sans-serif!important;box-shadow:0 6px 24px rgba(22,25,30,.06)!important;break-inside:avoid;page-break-inside:avoid}
 .dv-rs *{font-family:inherit!important;box-sizing:border-box}
+.dv-rs .id{display:flex;flex-wrap:wrap;align-items:baseline;gap:10px;margin:0 0 12px;padding:0 0 12px;border-bottom:1px solid #EEE9DD}.dv-rs .id b{font-size:1.35rem!important;font-weight:800;color:#16191E!important;letter-spacing:-.01em}.dv-rs .id span{color:#6E6A60!important;font-size:.9rem}
 .dv-rs .h{display:flex;align-items:center;gap:12px;flex-wrap:wrap;margin:0 0 14px}
 .dv-rs .h small{font-size:.72rem!important;letter-spacing:.14em;text-transform:uppercase;color:#8A6A2E!important;font-weight:700}
 .dv-rs .h h3{margin:0!important;font-size:1.25rem!important;color:#16191E!important;letter-spacing:-.01em;flex:1 1 auto}
@@ -209,6 +210,8 @@ function montar(){
  if(PG==='concorrente'&&!r.querySelector('.rx-pts'))return;
  if(PG!=='concorrente'&&!r.querySelector('.rp-sec'))return;
  var h;try{h=PG==='comprador'?htmlComprador(r):htmlEmpresa(sinaisEmpresa(r))}catch(x){return}
+ var r0=root(),h2=r0&&r0.querySelector('.rx-card.ink h2, .rp-hd h2'),nm=h2?h2.textContent.trim():'',cn=(new URLSearchParams(location.search).get('cnpj')||'').replace(/\D/g,'');if(!cn){var ii=document.querySelector('.dv-tool input');cn=ii?String(ii.value).replace(/\D/g,''):''}
+ if(nm)h='<div class="id"><b>'+e(nm)+'</b>'+(cn.length===14?'<span>CNPJ '+cn.replace(/^(\d{2})(\d{3})(\d{3})(\d{4})(\d{2})$/,'$1.$2.$3/$4-$5')+'</span>':'')+'</div>'+h;
  h+='<p class="ft">Leitura automática dos dados públicos deste relatório, na data da consulta. Não constitui parecer jurídico: confirme cada ponto nas fontes oficiais e com o seu especialista.</p>';
  clearTimeout(ts);ts=setTimeout(salvar,7000);
  if(h===ult&&document.getElementById('dv-rs'))return;ult=h;

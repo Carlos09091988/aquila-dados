@@ -128,6 +128,9 @@ function acao(b){if(!b||b.disabled||b.closest('.dv-md,.dv-cons,.dv-rl,.dv-rb,#dv
 function pergunta(x,seguir){var m=document.createElement('div');m.className='dv-md';m.innerHTML='<div><h3>Você já tem este relatório</h3><p>'+e(x.rotulo||fc(x.cnpj))+', emitido em '+dt(x.criado)+'. Ele fica disponível sem custo até '+dt(x.ate)+'.</p><div class="dv-rlx"><button type="button" data-a>Abrir o relatório salvo (sem custo)</button><button type="button" class="g" data-n>Pesquisar de novo, com dados atualizados ('+cr()+')</button></div></div>';document.body.appendChild(m);
  m.addEventListener('click',function(ev){if(ev.target===m){m.remove();return}if(ev.target.closest('[data-a]')){location.href=x.url;return}if(ev.target.closest('[data-n]')){m.remove();seguir()}})}
 function pular(c){try{if(sessionStorage.getItem('dv_rel_skip')===c){return true}}catch(x){}return false}
+/* no relatório salvo, uma nova consulta recarrega a página para pesquisar de verdade */
+var RELC='';window.addEventListener('click',function(ev){if(!REL||livre)return;var b=ev.target.closest&&ev.target.closest('button,input[type=submit],input[type=button],a.btn,.btn');if(!b||!tool.contains(b)||!acao(b))return;var c=cnpjTool();if(c.length!==14)return;ev.preventDefault();ev.stopImmediatePropagation();location.href=urlNova(c)},true);
+window.addEventListener('submit',function(ev){if(!REL||!tool.contains(ev.target))return;var c=cnpjTool();if(c.length!==14)return;ev.preventDefault();ev.stopImmediatePropagation();location.href=urlNova(c)},true);
 window.addEventListener('click',function(ev){if(livre||REL)return;var b=ev.target.closest&&ev.target.closest('button,input[type=submit],input[type=button],a.btn,.btn');if(!b||!tool.contains(b)||!acao(b))return;var c=cnpjTool(),x=c&&salvo(c);if(!x||pular(c))return;ev.preventDefault();ev.stopImmediatePropagation();pergunta(x,function(){try{sessionStorage.setItem('dv_rel_skip',c)}catch(y){}livre=true;b.click();livre=false})},true);
 window.addEventListener('submit',function(ev){if(livre||REL||!tool.contains(ev.target))return;var c=cnpjTool(),x=c&&salvo(c);if(!x||pular(c))return;ev.preventDefault();ev.stopImmediatePropagation();var f=ev.target;pergunta(x,function(){try{sessionStorage.setItem('dv_rel_skip',c)}catch(y){}livre=true;if(f.requestSubmit)f.requestSubmit();else f.submit();livre=false})},true);
 /* abrir um relatório salvo */
@@ -136,10 +139,10 @@ if(REL){fetch(R.api+'relatorio/'+encodeURIComponent(REL),{credentials:'same-orig
  if(x.s>=400||!j.html){bn.innerHTML='<span>'+e((j&&j.message)||'Não foi possível abrir este relatório.')+'</span>';tool.parentNode.insertBefore(bn,tool);return}
  (j.estilos||[]).forEach(function(s){if(s.id&&document.getElementById(s.id))return;var st=document.createElement('style');if(s.id)st.id=s.id;st.textContent=s.css;document.head.appendChild(st)});
  var anc=(j.pai&&j.pai.id&&document.getElementById(j.pai.id))||tool,c1=j.pai&&j.pai.cls?String(j.pai.cls).split(/\s+/)[0]:'',par=c1?(anc.classList.contains(c1)?anc:anc.querySelector('.'+c1.replace(/[^\w-]/g,''))||anc):anc;
- tool.querySelectorAll('input').forEach(function(i){if(!i.value&&/cnpj|00\.000/i.test((i.name||'')+(i.id||'')+(i.placeholder||'')))i.value=fc(j.cnpj)});
+ tool.querySelectorAll('input').forEach(function(i){if(/cnpj|00\.000/i.test((i.name||'')+(i.id||'')+(i.placeholder||'')))i.value=fc(j.cnpj)});
  var tmp=document.createElement('div');tmp.innerHTML=j.html;[].forEach.call(tmp.querySelectorAll('.dv-ia'),function(x){x.removeAttribute('data-v2')});var rt=tmp.firstElementChild;if(!rt)return;var rc=rt.classList[0];if(rc)[].forEach.call(par.querySelectorAll(':scope > .'+rc),function(o){o.remove()});
  par.appendChild(rt);
- bn.innerHTML='<span>📄 <b>Relatório salvo</b> de '+dt(j.criado)+'. Disponível sem custo até '+dt(j.ate)+'.</span><button type="button">Pesquisar de novo ('+cr()+')</button>';
+ bn.innerHTML='<span>📄 <b>Relatório salvo</b>'+(j.rotulo?' de <b>'+e(j.rotulo)+'</b> ('+fc(j.cnpj)+')':'')+', emitido em '+dt(j.criado)+'. Disponível sem custo até '+dt(j.ate)+'.</span><button type="button">Pesquisar de novo ('+cr()+')</button>';
  bn.querySelector('button').onclick=function(){location.href=urlNova(j.cnpj)};rt.parentNode.insertBefore(bn,rt);
  var impresso=false;window.addEventListener('beforeprint',function(){impresso=true});
  rt.addEventListener('click',function(ev){var b=ev.target.closest('button');if(!b||!/pdf/i.test(b.textContent+' '+b.className))return;impresso=false;setTimeout(function(){if(!impresso)window.print()},300)});

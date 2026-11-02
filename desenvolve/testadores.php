@@ -1,7 +1,7 @@
 /**
  * Desenvolve — Programa de testadores especialistas
  * Convite único (/teste/?convite=CODIGO) → conta com 7 dias de acesso completo e 30 créditos →
- * avaliação em /plataforma/avaliacao/ → recompensa automática: 1 mês de assinatura (60 créditos).
+ * avaliação em /plataforma/avaliacao/ → recompensa automática: 1 mês de assinatura (80 créditos).
  * Admin: Desenvolve → Testadores (gerar convites, acompanhar e baixar as avaliações).
  */
 if ( ! defined( 'ABSPATH' ) ) { exit; }
@@ -60,7 +60,7 @@ add_shortcode( 'dv_avaliacao', function () {
 	if ( ! is_user_logged_in() ) { return '<div class="ts"><h2>Entre na sua conta</h2><p>A avaliação é para quem está no teste de especialista. <a href="/painel/">Entrar</a>.</p></div>' . dv_ts_css(); }
 	$uid = get_current_user_id(); $cod = dv_ts_e_testador( $uid ); $F = dv_ts_ferramentas();
 	if ( ! $cod ) { return '<div class="ts"><h2>Avaliação de especialistas</h2><p>Esta página é para quem recebeu um convite de teste.</p></div>' . dv_ts_css(); }
-	if ( get_user_meta( $uid, 'dv_tester_av', true ) ) { return '<div class="ts"><h2>Obrigado pela avaliação!</h2><p class="ts-ok">Seu mês do plano Profissional está ativo, com 60 créditos, até ' . esc_html( date_i18n( 'd/m/Y', strtotime( (string) get_user_meta( $uid, 'dv_vence', true ) ) ) ) . '.</p><p><a class="ts-b" href="/plataforma/">Ir para as ferramentas</a></p></div>' . dv_ts_css(); }
+	if ( get_user_meta( $uid, 'dv_tester_av', true ) ) { return '<div class="ts"><h2>Obrigado pela avaliação!</h2><p class="ts-ok">Seu mês de assinatura está ativo, com 60 créditos, até ' . esc_html( date_i18n( 'd/m/Y', strtotime( (string) get_user_meta( $uid, 'dv_vence', true ) ) ) ) . '.</p><p><a class="ts-b" href="/plataforma/">Ir para as ferramentas</a></p></div>' . dv_ts_css(); }
 	$err = '';
 	if ( 'POST' === $_SERVER['REQUEST_METHOD'] && isset( $_POST['dv_av'] ) && wp_verify_nonce( $_POST['_dvav'] ?? '', 'dv_av' ) ) {
 		$notas = array(); foreach ( $F as $k => $n ) { $v = $_POST['n_' . $k] ?? ''; $notas[ $k ] = $v === '' ? null : max( 0, min( 10, (int) $v ) ); }
@@ -87,7 +87,7 @@ add_shortcode( 'dv_avaliacao', function () {
 	ob_start(); ?>
 <form class="ts" method="post"><?php wp_nonce_field( 'dv_av', '_dvav' ); ?><input type="hidden" name="dv_av" value="1">
 	<span class="ts-k">Avaliação de especialista</span><h2>Sua opinião vale 1 mês de assinatura</h2>
-	<p><?php echo $dl >= 0 ? 'Seu teste vai até <b>' . esc_html( date_i18n( 'd/m/Y', strtotime( $v ) ) ) . '</b>. ' : ''; ?>Responda com sinceridade: o que você disser vai direto para a melhoria da plataforma. Ao enviar, liberamos na hora 1 mês do Profissional, com 60 créditos.</p>
+	<p><?php echo $dl >= 0 ? 'Seu teste vai até <b>' . esc_html( date_i18n( 'd/m/Y', strtotime( $v ) ) ) . '</b>. ' : ''; ?>Responda com sinceridade: o que você disser vai direto para a melhoria da plataforma. Ao enviar, liberamos na hora 1 mês de assinatura, com 60 créditos.</p>
 	<?php if ( $err ) { echo '<p class="ts-err">' . esc_html( $err ) . '</p>'; } ?>
 	<label>Nota de 0 a 10 para cada ferramenta que você usou <small>(deixe em branco o que não usou)</small></label>
 	<table><?php foreach ( $F as $k => $n ) { echo '<tr><td>' . esc_html( $n ) . '</td><td style="text-align:right"><select name="n_' . esc_attr( $k ) . '"><option value="">—</option>'; for ( $i = 10; $i >= 0; $i-- ) { echo '<option' . ( isset( $_POST[ 'n_' . $k ] ) && $_POST[ 'n_' . $k ] === (string) $i ? ' selected' : '' ) . '>' . $i . '</option>'; } echo '</select></td></tr>'; } ?></table><br>
@@ -110,7 +110,7 @@ add_action( 'wp_footer', function () {
 	if ( strpos( (string) ( $_SERVER['REQUEST_URI'] ?? '' ), '/plataforma' ) === false && strpos( (string) ( $_SERVER['REQUEST_URI'] ?? '' ), '/painel' ) === false ) { return; }
 	if ( strpos( (string) $_SERVER['REQUEST_URI'], '/avaliacao' ) !== false ) { return; }
 	$v = (string) get_user_meta( $uid, 'dv_vence', true ); $dl = $v ? (int) round( ( strtotime( $v ) - strtotime( current_time( 'Y-m-d' ) ) ) / DAY_IN_SECONDS ) : 0;
-	echo '<div style="position:fixed;left:16px;right:16px;bottom:16px;z-index:9998;max-width:760px;margin:0 auto;background:#0C0F13;color:#F4F2EC;border:1px solid #C9A45C;border-radius:14px;padding:12px 16px;display:flex;gap:12px;align-items:center;justify-content:space-between;flex-wrap:wrap;font-family:Hanken Grotesk,sans-serif;box-shadow:0 10px 30px rgba(0,0,0,.35)"><span>🧪 <b>Teste de especialista</b> · ' . ( $dl > 0 ? 'faltam ' . $dl . ' dia(s)' : ( $dl === 0 ? 'último dia' : 'terminou' ) ) . '. Avalie e ganhe <b>1 mês do Profissional</b>.</span><a href="/plataforma/avaliacao/" style="background:#C9A45C;color:#241A06;border-radius:10px;padding:8px 14px;font-weight:700;text-decoration:none">Avaliar agora</a></div>';
+	echo '<div style="position:fixed;left:16px;right:16px;bottom:16px;z-index:9998;max-width:760px;margin:0 auto;background:#0C0F13;color:#F4F2EC;border:1px solid #C9A45C;border-radius:14px;padding:12px 16px;display:flex;gap:12px;align-items:center;justify-content:space-between;flex-wrap:wrap;font-family:Hanken Grotesk,sans-serif;box-shadow:0 10px 30px rgba(0,0,0,.35)"><span>🧪 <b>Teste de especialista</b> · ' . ( $dl > 0 ? 'faltam ' . $dl . ' dia(s)' : ( $dl === 0 ? 'último dia' : 'terminou' ) ) . '. Avalie e ganhe <b>1 mês de assinatura</b>.</span><a href="/plataforma/avaliacao/" style="background:#C9A45C;color:#241A06;border-radius:10px;padding:8px 14px;font-weight:700;text-decoration:none">Avaliar agora</a></div>';
 }, 95 );
 /* Lembrete por e-mail 2 dias antes do fim e no último dia */
 add_action( 'init', function () { if ( ! wp_next_scheduled( 'dv_ts_diario' ) ) { wp_schedule_event( strtotime( 'tomorrow 12:30 UTC' ), 'daily', 'dv_ts_diario' ); } } );
@@ -133,7 +133,7 @@ add_action( 'admin_menu', function () {
 			for ( $i = 0; $i < $n; $i++ ) { do { $k = strtoupper( wp_generate_password( 8, false, false ) ); } while ( isset( $C[ $k ] ) ); $C[ $k ] = array( 'criado' => current_time( 'mysql' ), 'rotulo' => mb_substr( $rot[ $i ] ?? '', 0, 80 ) ); }
 			update_option( 'dv_testers', $C, false ); echo '<div class="updated"><p>' . $n . ' convite(s) gerado(s).</p></div>';
 		}
-		echo '<div class="wrap"><h1>Testadores especialistas</h1><p>Cada convite vale para uma pessoa: ' . DV_TS_DIAS . ' dias de acesso com ' . DV_TS_CREDITOS . ' créditos. Ao enviar a avaliação, ganha 1 mês de assinatura (60 créditos).</p>';
+		echo '<div class="wrap"><h1>Testadores especialistas</h1><p>Cada convite vale para uma pessoa: ' . DV_TS_DIAS . ' dias de acesso com ' . DV_TS_CREDITOS . ' créditos. Ao enviar a avaliação, ganha 1 mês de assinatura (80 créditos).</p>';
 		echo '<form method="post" style="background:#fff;border:1px solid #ddd;padding:12px 16px;margin:12px 0">'; wp_nonce_field( 'dv_ts_gerar' );
 		echo '<p><b>Gerar convites</b>: escreva um nome por linha (aparece no convite) ou só a quantidade.</p><p><textarea name="rotulos" rows="4" cols="50" placeholder="Maria Silva&#10;João Souza"></textarea></p><p>Quantidade (se não colocar nomes): <input type="number" name="qtd" min="0" max="50" value="0" style="width:70px"> <button class="button button-primary" name="dv_ts_gerar" value="1">Gerar</button></p></form>';
 		echo '<table class="widefat striped"><thead><tr><th>Convite</th><th>Nome</th><th>Link</th><th>Ativou</th><th>Avaliou</th><th>Recomendação</th><th>Quanto pagaria</th></tr></thead><tbody>';

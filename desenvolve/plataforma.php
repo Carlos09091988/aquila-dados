@@ -46,6 +46,11 @@ add_action( 'init', function () {
 }, 6 );
 if ( ! function_exists( 'dv_rs' ) ) { function dv_rs( $v ) { $v = (float) $v; return number_format( $v, floor( $v ) == $v ? 0 : 2, ',', '.' ); } }
 add_action( 'init', function () { if ( get_option( 'dv_precos_ver' ) !== '3' ) { return; } $c = (array) get_option( 'dv_cfg', array() ); $c['trial_creditos'] = 25; update_option( 'dv_cfg', $c, false ); update_option( 'dv_precos_ver', '4', false ); }, 9 );
+/* Home no celular: cabeçalho numa linha só, botão compacto e formulário em coluna */
+add_action( 'wp_head', function () {
+	if ( ! is_front_page() ) { return; }
+	echo '<style>@media(max-width:640px){.h2s .tp .w{height:60px!important;gap:10px!important;flex-wrap:nowrap!important}.h2s .tp .lg{min-width:0;flex:1 1 auto;gap:8px!important}.h2s .tp .lg svg{width:26px!important;height:26px!important;flex:0 0 26px}.h2s .tp .lg b{font-size:15px!important;white-space:nowrap!important;line-height:1.1!important}.h2s .tp .lg small{display:none!important}.h2s .tp nav{display:none!important}.h2s .tp .ac{margin-left:auto;flex:0 0 auto}.h2s .tp .ac .bt{padding:9px 14px!important;font-size:14px!important;line-height:1.1!important;white-space:nowrap!important;border-radius:10px!important;min-height:0!important}.h2s .fm input{flex:1 1 100%!important}.h2s h1{font-size:34px!important;letter-spacing:-.03em!important}.h2s .hero p{font-size:17px!important}}</style>';
+}, 99 );
 /* Aviso de fuso nas páginas da plataforma */
 add_action( 'wp_footer', function () {
 	if ( ! is_user_logged_in() || is_admin() ) { return; }

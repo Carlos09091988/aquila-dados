@@ -673,10 +673,10 @@ add_shortcode( 'dv_ctx', function ( $a ) {
 	$h = '<script>window.DV=' . wp_json_encode( $ctx ) . ';window.DVWM="";</script>';
 	$h .= '<div class="dv-tbar"><a href="/painel/">&larr; Meu painel</a><span id="dv-saldo">' . ( $uid ? ( $ctx['master'] ? 'Créditos: ilimitado' : 'Créditos: ' . (int) $ctx['saldo'] ) : '' ) . '</span></div>';
 	if ( ! $uid && function_exists( 'dv_pre_lancamento' ) && dv_pre_lancamento() ) {
-		$h .= '<div class="dv-pw"><h2>Lançamento em breve</h2><p>Esta ferramenta faz parte da Desenvolve, inteligência em licitações. Entre na lista de espera: você recebe os planos antes de todo mundo e ganha ' . (int) get_option( 'dv_bonus_lista', 100 ) . ' créditos de bônus na primeira mensalidade. Planos a partir de R$ ' . number_format( dv_preco_plano( 0, 'essencial' )['valor'], 0, ',', '.' ) . '/mês, sem fidelidade.</p><p><a class="dv-btn" href="/#lista">Entrar na lista de espera</a> <a class="dv-btn g" href="/painel/">Já tenho conta</a></p></div><style>.dv-tool{display:none!important}</style>';
+		$h .= '<div class="dv-pw"><h2>Lançamento em breve</h2><p>Esta ferramenta faz parte da Desenvolve, inteligência em licitações. Entre na lista de espera: você recebe os planos antes de todo mundo e ganha ' . (int) get_option( 'dv_bonus_lista', 100 ) . ' créditos de bônus no primeiro mês. Assinatura de R$ ' . dv_rs( dv_preco_plano( 0, array_key_first( dv_planos() ) )['valor'] ) . '/mês, sem fidelidade.</p><p><a class="dv-btn" href="/#lista">Entrar na lista de espera</a> <a class="dv-btn g" href="/painel/">Já tenho conta</a></p></div><style>.dv-tool{display:none!important}</style>';
 	} elseif ( ! $uid ) {
 		$td = (int) dv_cfg( 'trial_dias' );
-		$h .= '<div class="dv-pw"><h2>Ferramenta exclusiva para assinantes</h2><p>' . ( $td ? 'Teste ' . $td . ' dias grátis, com ' . (int) dv_cfg( 'trial_creditos' ) . ' créditos, sem cartão. Depois, planos a partir de R$ ' . number_format( dv_preco_plano( 0, 'essencial' )['valor'], 0, ',', '.' ) . '/mês.' : 'Planos a partir de R$ ' . number_format( dv_preco_plano( 0, 'essencial' )['valor'], 0, ',', '.' ) . '/mês.' ) . '</p><p><a class="dv-btn" href="/assinar/">' . ( $td ? 'Começar o teste grátis' : 'Assinar agora' ) . '</a> <a class="dv-btn g" href="/painel/">Já tenho conta</a></p></div><style>.dv-tool{display:none!important}</style>';
+		$h .= '<div class="dv-pw"><h2>Ferramenta exclusiva para assinantes</h2><p>' . ( $td ? 'Teste ' . $td . ' dias grátis, com ' . (int) dv_cfg( 'trial_creditos' ) . ' créditos, sem cartão. Depois, planos a partir de R$ ' . dv_rs( dv_preco_plano( 0, array_key_first( dv_planos() ) )['valor'] ) . '/mês.' : 'Planos a partir de R$ ' . dv_rs( dv_preco_plano( 0, array_key_first( dv_planos() ) )['valor'] ) . '/mês.' ) . '</p><p><a class="dv-btn" href="/assinar/">' . ( $td ? 'Começar o teste grátis' : 'Assinar agora' ) . '</a> <a class="dv-btn g" href="/painel/">Já tenho conta</a></p></div><style>.dv-tool{display:none!important}</style>';
 	} elseif ( ! $acesso ) {
 		$h .= '<div class="dv-pw"><h2>Escolha um plano para continuar</h2><p>' . ( get_user_meta( $uid, 'dv_trial', true ) ? 'O seu teste grátis terminou. ' : '' ) . 'A assinatura custa R$ ' . dv_rs( dv_preco_plano( $uid, array_key_first( dv_planos() ) )['valor'] ) . '/mês, com créditos todo mês e as ferramentas de gestão sem limite.</p><p><a class="dv-btn" href="/assinar/">Ver os planos</a></p></div><style>.dv-tool{display:none!important}</style>';
 	}
@@ -907,7 +907,7 @@ add_action( 'rest_api_init', function () {
 		update_option( 'dv_lista', $l, false );
 		$from = dv_cfg( 'email_remetente' ) ?: 'contato@desenvolveestrategias.com.br'; $h = array( 'From: Desenvolve <' . $from . '>' );
 		$b = (int) get_option( 'dv_bonus_lista', 100 );
-		wp_mail( $em, 'Você está na lista da Desenvolve', 'Olá, ' . $nome . "!\n\nSeu nome está na lista de espera da Desenvolve Estratégias, inteligência em licitações.\n\nVocê vai receber os planos antes de todo mundo, no dia do lançamento, e ganha " . $b . " créditos de bônus para usar como quiser: Raio-X de concorrentes, Due Diligence e as demais ferramentas. Para receber o bônus, assine com este mesmo e-mail: os créditos entram junto com a primeira mensalidade.\n\nAté breve!\nEquipe Desenvolve", $h );
+		wp_mail( $em, 'Você está na lista da Desenvolve', 'Olá, ' . $nome . "!\n\nSeu nome está na lista de espera da Desenvolve Estratégias, inteligência em licitações.\n\nVocê vai receber os planos antes de todo mundo, no dia do lançamento, e ganha " . $b . " créditos de bônus para usar no primeiro mês: Raio-X de concorrentes, Due Diligence e as demais ferramentas. Para receber o bônus, assine com este mesmo e-mail: os créditos entram junto com a primeira mensalidade e valem durante o primeiro mês.\n\nAté breve!\nEquipe Desenvolve", $h );
 		wp_mail( get_option( 'admin_email' ), 'Lista de espera: ' . $nome, "Nome: $nome\nE-mail: $em\nWhatsApp: $whats\nEmpresa: $emp\nRamo: $ramo\n\nVeja a lista completa no painel: " . admin_url( 'admin.php?page=dv-lista' ), $h );
 		return array( 'ok' => true );
 	} ) );
@@ -917,7 +917,7 @@ function dv_bonus_lista( $uid ) {
 	$u = get_userdata( $uid ); if ( ! $u ) { return; }
 	$l = dv_lista(); $em = strtolower( $u->user_email );
 	if ( empty( $l[ $em ] ) || ! empty( $l[ $em ]['bonus'] ) ) { return; }
-	dv_dar_creditos( $uid, (int) get_option( 'dv_bonus_lista', 100 ), 'Bônus da lista de espera (primeira mensalidade)', true );
+	dv_dar_creditos( $uid, (int) get_option( 'dv_bonus_lista', 100 ), 'Bônus da lista de espera (válido no primeiro mês)', true, 1 );
 	$l[ $em ]['bonus'] = $uid; update_option( 'dv_lista', $l, false );
 }
 /* Marca na lista quem já criou a conta (o bônus só sai no pagamento) */

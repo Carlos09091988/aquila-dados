@@ -24,7 +24,7 @@ function dv_cfg( $k = null ) {
 		'email_remetente'  => 'contato@desenvolveestrategias.com.br',
 		// chave:Nome:preço:créditos por mês:termos no Radar do Diário Oficial
 		'planos'           => 'desenvolve:Desenvolve:79.90:80:5',
-		'custos'           => 'raiox:10,comprador:10,buscador:0,vencendo:5,precos:0,comparador:3,habilitacao:5',
+		'custos'           => 'raiox:15,comprador:10,buscador:0,vencendo:5,precos:0,comparador:3,habilitacao:0',
 		'fundador_desc'    => 30,
 		'fundador_vagas'   => 0,
 		'fundador_meses'   => 12,
@@ -46,12 +46,21 @@ add_action( 'init', function () {
 }, 6 );
 if ( ! function_exists( 'dv_rs' ) ) { function dv_rs( $v ) { $v = (float) $v; return number_format( $v, floor( $v ) == $v ? 0 : 2, ',', '.' ); } }
 add_action( 'init', function () { if ( get_option( 'dv_precos_ver' ) !== '3' ) { return; } $c = (array) get_option( 'dv_cfg', array() ); $c['trial_creditos'] = 25; update_option( 'dv_cfg', $c, false ); update_option( 'dv_precos_ver', '4', false ); }, 9 );
+/* Raio-X 15 créditos com a habilitação incluída (sem cobrança à parte, porque a busca pode não achar nada) */
+add_action( 'init', function () {
+	if ( (int) get_option( 'dv_precos_ver' ) !== 4 ) { return; }
+	$c = (array) get_option( 'dv_cfg', array() ); $m = array();
+	foreach ( explode( ',', (string) ( $c['custos'] ?? '' ) ) as $x ) { $y = explode( ':', trim( $x ) ); if ( count( $y ) === 2 ) { $m[ sanitize_key( $y[0] ) ] = (int) $y[1]; } }
+	$m['raiox'] = 15; $m['habilitacao'] = 0;
+	$c['custos'] = implode( ',', array_map( function ( $k, $v ) { return $k . ':' . $v; }, array_keys( $m ), $m ) );
+	update_option( 'dv_cfg', $c, false ); update_option( 'dv_precos_ver', '5', false );
+}, 10 );
 /* Preços (nov/2026): plano único de R$ 79,90 com 80 créditos; crédito avulso a R$ 1; consultas reprecificadas */
 add_action( 'init', function () {
 	if ( (int) get_option( 'dv_precos_ver' ) >= 3 ) { return; }
 	$c = (array) get_option( 'dv_cfg', array() ); $m = array();
 	foreach ( explode( ',', (string) ( $c['custos'] ?? '' ) ) as $x ) { $y = explode( ':', trim( $x ) ); if ( count( $y ) === 2 ) { $m[ sanitize_key( $y[0] ) ] = (int) $y[1]; } }
-	$m = array_merge( $m, array( 'raiox' => 10, 'comprador' => 10, 'vencendo' => 5, 'comparador' => 3, 'habilitacao' => 5, 'buscador' => 0, 'precos' => 0 ) );
+	$m = array_merge( $m, array( 'raiox' => 15, 'comprador' => 10, 'vencendo' => 5, 'comparador' => 3, 'habilitacao' => 0, 'buscador' => 0, 'precos' => 0 ) );
 	$c['custos'] = implode( ',', array_map( function ( $k, $v ) { return $k . ':' . $v; }, array_keys( $m ), $m ) );
 	$c['planos'] = 'desenvolve:Desenvolve:79.90:80:5';
 	$c['preco_assinatura'] = '79.90'; $c['creditos_mes'] = 80;

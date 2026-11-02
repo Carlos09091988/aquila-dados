@@ -7,6 +7,7 @@ Saída: data/compliance/escravo.json  {cnpj14|cpf: {...}}
 import csv, io, json, os, re, subprocess, sys, tempfile, zipfile, datetime, urllib.request
 
 OUT = 'data/compliance'
+csv.field_size_limit(10**9)
 UA = {'User-Agent': 'aquila-dados (dados abertos)', 'Accept': '*/*'}
 
 def get(url, timeout=180):
@@ -93,7 +94,8 @@ def linhas_csv(b, nome):
         except UnicodeDecodeError:
             continue
     sep = ';' if txt[:2000].count(';') > txt[:2000].count(',') else ','
-    for row in csv.DictReader(io.StringIO(txt), delimiter=sep):
+    rd = csv.DictReader(io.StringIO(txt), delimiter=sep); print('colunas', nome, rd.fieldnames)
+    for row in rd:
         yield {(k or '').strip().upper(): (v or '').strip() for k, v in row.items()}
 
 def campo(row, *pref):

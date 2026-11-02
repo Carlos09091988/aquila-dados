@@ -18,6 +18,7 @@ function dv_app_menu() {
 		array( 'Analisar e disputar', array( array( 'Gestão de licitações', '/plataforma/licitacoes/', '📋', 'sessoes' ), array( 'Banco de preços', '/plataforma/banco-de-precos/', '💲' ) ) ),
 		array( 'Habilitação e garantias', array( array( 'Documentos e certidões', '/plataforma/documentos/', '🗂️', 'docs' ), array( 'Meus contratos e garantias', '/plataforma/meus-contratos/', '🛡️' ) ) ),
 		array( 'Contestar', array( array( 'Impugnações e recursos', '/plataforma/recursos/', '⚖️', 'prazos' ) ) ),
+		array( 'Minha conta', array( array( 'Comprar créditos', '/creditos/', '💳' ), array( 'Minha assinatura', '/painel/#dv-planos', '⭐' ) ) ),
 	);
 }
 add_filter( 'body_class', function ( $c ) { if ( dv_app_pagina() ) { $c[] = 'dv-app'; } return $c; } );
@@ -100,7 +101,7 @@ add_action( 'wp_footer', function () {
 	$uri = strtok( (string) ( $_SERVER['REQUEST_URI'] ?? '' ), '?' );
 	$logo = '<svg aria-hidden="true"><use href="#mark" width="100%" height="100%"/></svg>';
 	ob_start();
-	echo '<div class="dv-topm"><button type="button" class="dv-burg" aria-label="Abrir menu">☰</button><b>desenvolve <i>estratégias</i></b><a href="/painel/">' . ( $master ? '∞' : (int) $saldo ) . ' créditos</a></div><div class="dv-veil"></div>';
+	echo '<div class="dv-topm"><button type="button" class="dv-burg" aria-label="Abrir menu">☰</button><b>desenvolve <i>estratégias</i></b><a href="/creditos/">' . ( $master ? '∞' : (int) $saldo ) . ' créditos</a></div><div class="dv-veil"></div>';
 	echo '<aside class="dv-side" aria-label="Menu da plataforma"><a class="lg" href="/painel/">' . $logo . '<span><b>desenvolve <i>estratégias</i></b><small>Inteligência em licitações</small></span></a><nav>';
 	foreach ( dv_app_menu() as $g ) {
 		if ( $g[0] ) { echo '<div class="gt">' . esc_html( $g[0] ) . '</div>'; }
@@ -109,7 +110,7 @@ add_action( 'wp_footer', function () {
 			echo '<a href="' . esc_url( $it[1] ) . '"' . ( $on ? ' class="on" aria-current="page"' : '' ) . '><span class="ic">' . $it[2] . '</span><span>' . esc_html( $it[0] ) . '</span>' . ( $b ? '<span class="bd ' . $b[1] . '">' . (int) $b[0] . '</span>' : '' ) . '</a>';
 		}
 	}
-	echo '</nav><div class="ft"><a class="cr" href="/painel/#dv-planos"><span style="color:inherit;font-weight:400"><small>Créditos disponíveis</small><b>' . ( $master ? 'Ilimitado' : (int) $saldo ) . '</b></span><span>' . ( $master ? '' : 'Comprar' ) . '</span></a>';
+	echo '</nav><div class="ft"><a class="cr" href="/creditos/"><span style="color:inherit;font-weight:400"><small>Créditos disponíveis</small><b>' . ( $master ? 'Ilimitado' : (int) $saldo ) . '</b></span><span>' . ( $master ? '' : '+ Comprar' ) . '</span></a>';
 	echo '<div class="us"><span><b>' . esc_html( $u->display_name ) . '</b>' . esc_html( $plano ) . '</span><a href="' . esc_url( wp_logout_url( home_url( '/' ) ) ) . '">Sair</a></div>';
 	echo '<a class="hp" href="https://wa.me/5511993500950" target="_blank" rel="noopener">💬 Ajuda pelo WhatsApp</a></div></aside>';
 	$html = ob_get_clean(); ?>

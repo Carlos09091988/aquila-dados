@@ -170,18 +170,44 @@ add_action( 'rest_api_init', function () {
 /* Tela de compra de créditos: [dv_creditos] */
 add_shortcode( 'dv_creditos', function () {
 	if ( ! is_user_logged_in() ) { return '<div class="dvp"><h2>Entre na sua conta</h2><p><a class="dv-btn" href="/painel/">Entrar</a></p></div>'; }
-	$uid = get_current_user_id(); $s = dv_saldo( $uid ); $ativo = dv_status( $uid ) === 'ativo' || dv_is_master( $uid );
-	$pac = dv_pacotes();
-	$h = '<div class="dvp" id="dv-cred" data-api="' . esc_attr( rest_url( 'desenvolve/v1/' ) ) . '" data-nonce="' . esc_attr( wp_create_nonce( 'wp_rest' ) ) . '"><h2>Créditos extras</h2>';
-	$h .= '<p>Saldo atual: <b>' . ( dv_is_master( $uid ) ? 'ilimitado' : (int) $s['total'] ) . '</b>.</p><p><b>Os créditos comprados acumulam e valem por ' . (int) dv_cfg( 'validade_extra' ) . ' meses a partir da compra.</b> Eles são usados depois dos créditos do mês. Se você cancelar a assinatura, eles ficam guardados e voltam a valer se você reativar dentro desse prazo.</p>';
-	if ( ! $ativo ) { return $h . '<p class="dv-err">Créditos extras são exclusivos para assinantes ativos.</p><p><a class="dv-btn" href="/painel/">Ativar assinatura</a></p></div>'; }
-	$h .= '<div class="dv-g">';
-	$ks = array_keys( $pac ); $ref = $ks ? $pac[ $ks[0] ] / $ks[0] : 0; $meio = count( $ks ) >= 3 ? $ks[1] : 0;
+	$uid = get_current_user_id(); $s = dv_saldo( $uid ); $master = dv_is_master( $uid ); $ativo = dv_status( $uid ) === 'ativo' || $master;
+	$pac = dv_pacotes(); $val = (int) dv_cfg( 'validade_extra' ); $rx = max( 1, dv_custo( 'raiox' ) );
+	$css = '<style>
+.dvk{--k:#16191E;--m:#6E6A60;--l:#E6E1D6;--g:#C9A45C;--g2:#A8843F;color:var(--k);font-family:"Hanken Grotesk",-apple-system,sans-serif}
+.dvk .hd{display:flex;flex-wrap:wrap;justify-content:space-between;align-items:flex-end;gap:18px;margin-bottom:22px}.dvk h2{margin:0;font-size:1.9rem;letter-spacing:-.03em}.dvk .hd p{margin:6px 0 0;color:var(--m);max-width:560px}
+.dvk .sd{display:flex;gap:10px;flex-wrap:wrap}.dvk .sd div{background:#fff;border:1px solid var(--l);border-radius:14px;padding:12px 16px;min-width:120px}.dvk .sd small{display:block;color:var(--m);font-size:.78rem}.dvk .sd b{font-size:1.5rem;letter-spacing:-.02em}.dvk .sd .t{background:var(--k);border-color:var(--k);color:#F4F2EC}.dvk .sd .t small{color:#B9B4A8}.dvk .sd .t b{color:#E8D29A}
+.dvk .pk{display:grid;grid-template-columns:repeat(auto-fit,minmax(210px,1fr));gap:16px}
+.dvk .c{position:relative;background:#fff;border:1px solid var(--l);border-radius:18px;padding:22px 20px 20px;display:flex;flex-direction:column;box-shadow:0 1px 2px rgba(22,25,30,.04);transition:transform .15s,box-shadow .15s}.dvk .c:hover{transform:translateY(-2px);box-shadow:0 12px 28px rgba(22,25,30,.08)}
+.dvk .c.dest{border:2px solid var(--g);padding:21px 19px 19px}.dvk .c .tg{position:absolute;top:-11px;left:18px;background:var(--k);color:#E8D29A;font-size:.72rem;font-weight:700;letter-spacing:.06em;text-transform:uppercase;border-radius:999px;padding:4px 10px}
+.dvk .c .q{font-size:2.6rem;font-weight:800;letter-spacing:-.04em;line-height:1}.dvk .c .q small{font-size:1rem;font-weight:600;letter-spacing:0;color:var(--m);margin-left:4px}
+.dvk .c .pr{margin-top:10px;font-size:1.25rem;font-weight:700}.dvk .c .pr span{display:block;font-size:.8rem;font-weight:400;color:var(--m)}
+.dvk .c ul{list-style:none;padding:0;margin:14px 0 18px;color:var(--m);font-size:.88rem;line-height:1.5;flex:1}.dvk .c li{padding-left:20px;position:relative;margin:4px 0}.dvk .c li:before{content:"✓";position:absolute;left:0;color:var(--g2);font-weight:800}
+.dvk .c button{width:100%;background:var(--k)!important;color:#F4F2EC!important;border-radius:12px!important;padding:13px 0!important}.dvk .c.dest button{background:var(--g)!important;color:#241A06!important}
+.dvk .us{margin-top:26px;display:grid;grid-template-columns:1.3fr 1fr;gap:16px}@media(max-width:780px){.dvk .us{grid-template-columns:1fr}}
+.dvk .bx{background:#fff;border:1px solid var(--l);border-radius:18px;padding:20px 22px}.dvk .bx h3{margin:0 0 10px;font-size:1.05rem}
+.dvk table{width:100%;border-collapse:collapse;font-size:.92rem}.dvk td{padding:8px 0;border-bottom:1px solid #EFEBE2}.dvk tr:last-child td{border:0}.dvk td:last-child{text-align:right;font-weight:700;white-space:nowrap}.dvk td small{display:block;color:var(--m);font-weight:400}
+.dvk .bx p{margin:0 0 10px;color:var(--m);font-size:.9rem;line-height:1.55}.dvk .bx p b{color:var(--k)}.dvk .pg{display:flex;gap:8px;flex-wrap:wrap;margin-top:4px}.dvk .pg span{background:#F4F2EC;border-radius:8px;padding:5px 10px;font-size:.82rem;font-weight:700}
+</style>';
+	$h = $css . '<div class="dvp dvk" id="dv-cred" data-api="' . esc_attr( rest_url( 'desenvolve/v1/' ) ) . '" data-nonce="' . esc_attr( wp_create_nonce( 'wp_rest' ) ) . '">';
+	$h .= '<div class="hd"><div><h2>Comprar créditos</h2><p>Para não parar no meio de uma análise quando os créditos do mês acabarem. Os créditos entram assim que o pagamento é confirmado.</p></div>';
+	$h .= '<div class="sd">' . ( $master ? '<div class="t"><small>Seu saldo</small><b>Ilimitado</b></div>' : '<div class="t"><small>Seu saldo</small><b>' . (int) $s['total'] . '</b></div><div><small>Do mês</small><b>' . (int) $s['mes'] . '</b></div><div><small>Comprados</small><b>' . (int) ( $s['extra'] + $s['cortesia'] ) . '</b></div>' ) . '</div></div>';
+	if ( ! $ativo ) { return $h . '<div class="bx"><h3>Créditos extras são para assinantes</h3><p>Ative a assinatura para receber os créditos do mês e poder comprar mais quando precisar.</p><p><a class="dv-btn" href="/painel/#dv-planos">Ver a assinatura</a></p></div></div>'; }
+	$ks = array_keys( $pac ); $dest = count( $ks ) >= 3 ? $ks[1] : 0;
+	$h .= '<div class="pk">';
 	foreach ( $pac as $q => $v ) {
-		$eco = $ref ? round( ( 1 - ( $v / $q ) / $ref ) * 100 ) : 0; $dest = $q === $meio;
-		$h .= '<div class="dv-c"' . ( $dest ? ' style="border-color:#C9A45C;box-shadow:0 0 0 1px #C9A45C"' : '' ) . '><span>' . ( $dest ? 'Pacote' : 'Pacote' ) . '</span><b>' . $q . ' créditos</b><p>R$ ' . number_format( $v, 2, ',', '.' ) . ' <small style="color:#8E938F">(R$ ' . number_format( $v / $q, 2, ',', '.' ) . ' por crédito)</small></p><p style="margin:4px 0 0;font-size:.85rem;color:#6E6A60">Válidos por ' . (int) dv_cfg( 'validade_extra' ) . ' meses</p>' . ( $eco > 0 ? '<p style="margin:-4px 0 8px;color:#8FBDA3;font-size:.85rem;font-weight:700">Economia de ' . $eco . '% por crédito</p>' : '' ) . '<button type="button" data-q="' . $q . '">Comprar</button></div>';
+		$n = (int) floor( $q / $rx );
+		$h .= '<div class="c' . ( $q === $dest ? ' dest' : '' ) . '">' . ( $q === $dest ? '<span class="tg">Recomendado</span>' : '' ) . '<div class="q">' . $q . '<small>créditos</small></div>';
+		$h .= '<div class="pr">R$ ' . number_format( $v, 2, ',', '.' ) . '<span>R$ ' . number_format( $v / $q, 2, ',', '.' ) . ' por crédito</span></div>';
+		$h .= '<ul>' . ( $n >= 1 ? '<li>Rende ' . $n . ' Raio-X do concorrente</li>' : '<li>Para consultas avulsas</li>' ) . '<li>Válidos por ' . $val . ' meses</li><li>Acumulam com os do mês</li></ul>';
+		$h .= '<button type="button" data-q="' . $q . '">Comprar ' . $q . ' créditos</button></div>';
 	}
-	return $h . '</div><p class="dv-msg"></p></div>';
+	$h .= '</div>';
+	$usos = array( array( 'Raio-X do concorrente', 'habilitação e pontos fracos incluídos', dv_custo( 'raiox' ) ), array( 'Raio-X do comprador', 'pagamentos, concorrência e últimos contratos', dv_custo( 'comprador' ) ), array( 'Raio-X em lote', 'até 20 CNPJs de uma vez', dv_custo( 'lote' ) ), array( 'Due Diligence completa', 'relatório da empresa e do grupo', dv_custo( 'dossie' ) ), array( 'Contratos vencendo', 'lista para prospectar', dv_custo( 'vencendo' ) ) );
+	$h .= '<div class="us"><div class="bx"><h3>Quanto custa cada consulta</h3><table>';
+	foreach ( $usos as $u ) { if ( $u[2] > 0 ) { $h .= '<tr><td>' . esc_html( $u[0] ) . '<small>' . esc_html( $u[1] ) . '</small></td><td>' . (int) $u[2] . ' créditos</td></tr>'; } }
+	$h .= '<tr><td>Gestão de licitações, documentos, contratos e recursos<small>ferramentas de gestão</small></td><td>sem custo</td></tr></table></div>';
+	$h .= '<div class="bx"><h3>Como funciona</h3><p><b>Pagamento seguro pelo Asaas.</b> Você escolhe a forma na página de pagamento.</p><div class="pg"><span>Pix</span><span>Boleto</span><span>Cartão</span></div><p style="margin-top:14px"><b>Valem ' . $val . ' meses</b> a partir da compra e são usados depois dos créditos do mês.</p><p><b>Se cancelar a assinatura,</b> eles ficam guardados e voltam a valer se você reativar dentro desse prazo.</p><p>O custo de cada consulta aparece antes de você confirmar.</p></div></div>';
+	return $h . '<p class="dv-msg"></p></div>';
 } );
 
 add_action( 'wp_footer', function () {

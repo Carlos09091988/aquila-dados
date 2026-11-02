@@ -101,6 +101,7 @@ add_action( 'wp_footer', function () {
 .dv-rl .l{display:flex;gap:8px;flex-wrap:wrap}
 .dv-rl a{display:inline-block;border:1px solid #E3DED2;background:#FAF8F3;border-radius:10px;padding:7px 11px;font-size:.86rem;color:#16191E!important;text-decoration:none!important;line-height:1.3}
 .dv-rl a:hover{border-color:#C9A45C}.dv-rl a small{display:block;color:#6E6A60;font-size:.74rem}
+@media(max-width:700px){.dv-rl .l{flex-wrap:nowrap;overflow-x:auto;-webkit-overflow-scrolling:touch;padding-bottom:4px}.dv-rl a{flex:0 0 auto;max-width:240px;white-space:normal}}
 .dv-rb{display:flex;gap:12px;align-items:center;flex-wrap:wrap;background:#FBF6EA;border:1px solid #E8D7AE;border-radius:14px;padding:12px 16px;margin:0 0 16px;font-family:'Hanken Grotesk',system-ui,sans-serif;color:#16191E;font-size:.95rem}
 .dv-rb span{flex:1 1 260px}.dv-rb button{border:1px solid #C9A45C;background:#fff;color:#241A06;border-radius:10px;padding:8px 14px;font-weight:700;cursor:pointer;font:inherit;font-weight:700}
 .dv-md .dv-rlx{display:flex;flex-direction:column;gap:8px;margin-top:14px}.dv-md .dv-rlx button{width:100%}

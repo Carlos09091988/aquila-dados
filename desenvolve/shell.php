@@ -9,7 +9,7 @@ function dv_app_pagina() {
 	if ( ! is_user_logged_in() || is_admin() || ! is_page() ) { return false; }
 	global $post; if ( ! $post ) { return false; }
 	if ( is_page( 'painel' ) ) { return true; }
-	foreach ( array( 'dv_ctx', 'dv_creditos', 'dv_lote', 'dv_cadastro' ) as $sc ) { if ( has_shortcode( (string) $post->post_content, $sc ) ) { return true; } }
+	foreach ( array( 'dv_ctx', 'dv_creditos', 'dv_lote', 'dv_cadastro', 'dv_painel' ) as $sc ) { if ( has_shortcode( (string) $post->post_content, $sc ) ) { return true; } }
 	return false;
 }
 function dv_app_menu() {

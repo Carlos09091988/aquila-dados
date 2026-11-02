@@ -13,7 +13,7 @@ function dv_ts_e_testador( $uid ) { return (string) get_user_meta( $uid, 'dv_tes
 /* ---------- Cadastro pelo convite ---------- */
 add_shortcode( 'dv_teste', function () {
 	$cod = strtoupper( preg_replace( '/[^A-Za-z0-9]/', '', (string) ( $_REQUEST['convite'] ?? '' ) ) ); $C = dv_ts_codigos(); $err = '';
-	if ( is_user_logged_in() ) { $u = get_current_user_id(); return '<div class="ts"><h2>Você já está conectado</h2><p>' . ( dv_ts_e_testador( $u ) ? 'Siga para as ferramentas e, ao final, preencha a <a href="/plataforma/avaliacao/">avaliação</a> para ganhar 1 mês de assinatura.' : 'Este convite é para criar uma conta nova de testador.' ) . '</p><p><a class="ts-b" href="/plataforma/">Ir para as ferramentas</a></p></div>' . dv_ts_css(); }
+	if ( is_user_logged_in() ) { $u = get_current_user_id(); return '<div class="ts"><h2>Você já está conectado</h2><p>' . ( dv_ts_e_testador( $u ) ? 'Siga para as ferramentas e, ao final, preencha a <a href="/plataforma/avaliacao/">avaliação</a> para ganhar 1 mês de assinatura.' : 'Este convite é para criar uma conta nova de testador.' ) . '</p><p><a class="ts-b" href="/painel/">Ir para as ferramentas</a></p></div>' . dv_ts_css(); }
 	if ( ! $cod || ! isset( $C[ $cod ] ) ) { return '<div class="ts"><h2>Convite inválido</h2><p>Este link de teste não existe ou foi digitado errado. Peça um novo convite à Desenvolve pelo WhatsApp <a href="https://wa.me/5511993500950">(11) 99350-0950</a>.</p></div>' . dv_ts_css(); }
 	if ( ! empty( $C[ $cod ]['uid'] ) ) { return '<div class="ts"><h2>Convite já utilizado</h2><p>Cada convite vale para uma pessoa. Se foi você quem ativou, <a href="/painel/">entre na sua conta</a>.</p></div>' . dv_ts_css(); }
 	if ( 'POST' === $_SERVER['REQUEST_METHOD'] && isset( $_POST['dv_ts'] ) && wp_verify_nonce( $_POST['_dvts'] ?? '', 'dv_ts' ) ) {
@@ -60,7 +60,7 @@ add_shortcode( 'dv_avaliacao', function () {
 	if ( ! is_user_logged_in() ) { return '<div class="ts"><h2>Entre na sua conta</h2><p>A avaliação é para quem está no teste de especialista. <a href="/painel/">Entrar</a>.</p></div>' . dv_ts_css(); }
 	$uid = get_current_user_id(); $cod = dv_ts_e_testador( $uid ); $F = dv_ts_ferramentas();
 	if ( ! $cod ) { return '<div class="ts"><h2>Avaliação de especialistas</h2><p>Esta página é para quem recebeu um convite de teste.</p></div>' . dv_ts_css(); }
-	if ( get_user_meta( $uid, 'dv_tester_av', true ) ) { return '<div class="ts"><h2>Obrigado pela avaliação!</h2><p class="ts-ok">Seu mês de assinatura está ativo, com 80 créditos, até ' . esc_html( date_i18n( 'd/m/Y', strtotime( (string) get_user_meta( $uid, 'dv_vence', true ) ) ) ) . '.</p><p><a class="ts-b" href="/plataforma/">Ir para as ferramentas</a></p></div>' . dv_ts_css(); }
+	if ( get_user_meta( $uid, 'dv_tester_av', true ) ) { return '<div class="ts"><h2>Obrigado pela avaliação!</h2><p class="ts-ok">Seu mês de assinatura está ativo, com 80 créditos, até ' . esc_html( date_i18n( 'd/m/Y', strtotime( (string) get_user_meta( $uid, 'dv_vence', true ) ) ) ) . '.</p><p><a class="ts-b" href="/painel/">Ir para as ferramentas</a></p></div>' . dv_ts_css(); }
 	$err = '';
 	if ( 'POST' === $_SERVER['REQUEST_METHOD'] && isset( $_POST['dv_av'] ) && wp_verify_nonce( $_POST['_dvav'] ?? '', 'dv_av' ) ) {
 		$notas = array(); foreach ( $F as $k => $n ) { $v = $_POST['n_' . $k] ?? ''; $notas[ $k ] = $v === '' ? null : max( 0, min( 10, (int) $v ) ); }

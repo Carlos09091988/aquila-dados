@@ -424,6 +424,7 @@ function htmlC(J,c){var h='<p class="k">Experiência, preço e acompanhamento</p
   var U=Object.keys(P.uf||{});if(U.length>1)h+='<p class="m">Por estado: '+U.map(function(u){return u+' '+pc(P.uf[u].media)+' ('+P.uf[u].n+')'}).join(' · ')+'</p>';
   if((f['acima50']||0)>0)h+='<div class="al">Já venceu com desconto acima de 50% do estimado. Em bens e serviços, isso é indício de inexequibilidade a ser demonstrado (art. 59, § 2º; IN SEGES 73/2022).</div>'}
  else h+='<p>Sem licitações vencidas com valor estimado aberto para calcular o desconto.</p>';
+ var hc=(window.DVC&&DVC.habilitacao!=null)?DVC.habilitacao:5;h+='<h4>Habilitação recente</h4><p>Encontre os documentos de habilitação que esta empresa apresentou nas licitações mais recentes (atas, julgamento, propostas e documentos publicados no PNCP) e o link de cada sessão pública.</p><button type="button" class="bt p c-hab">Buscar habilitação recente'+(hc?' · '+hc+' créditos':'')+'</button><div class="c-habo"></div>';
  h+='<h4>Acompanhar e comparar</h4><p>Receba um e-mail quando esta empresa vencer uma licitação, sofrer sanção, mudar de situação na Receita ou passar a ter dívida ativa em cobrança.</p>';
  h+='<button type="button" class="bt '+(J.monitorado?'on':'p')+' c-mon">'+(J.monitorado?'✓ Monitorando · parar':'Monitorar este concorrente')+'</button>';
  h+='<button type="button" class="bt c-cmp">Comparar com a minha empresa</button>'+(J.meu?'':'<span class="c-meu" style="display:none"> <input class="c-mi" inputmode="numeric" placeholder="CNPJ da sua empresa" style="border:1px solid #D9D3C4;border-radius:8px;padding:7px 9px;font:inherit;width:190px"></span>');
@@ -435,6 +436,9 @@ function ligaC(b,J,c){var E=J.experiencia||[];var q=b.querySelector('.c-q'),v=b.
   if(+v.value>0){var nv=+v.value*1000*.5;o.push(mv>=nv?'✓ Já teve contrato de '+mc(mv)+'.':'⚠ Maior contrato encontrado: '+mc(mv)+' (metade do exigido seria '+mc(nv)+').')}
   r.textContent=o.join(' ')}
  if(q){q.oninput=calc;v.oninput=calc}
+ var hb=b.querySelector('.c-hab');if(hb)hb.onclick=function(){var hc=(window.DVC&&DVC.habilitacao!=null)?DVC.habilitacao:5;if(hc&&!confirm('Buscar a habilitação recente desta empresa? Usa '+hc+' créditos (repetir a busca nos próximos 30 dias não cobra de novo).'))return;var o=b.querySelector('.c-habo');hb.disabled=true;o.innerHTML='<p>Buscando os documentos das licitações mais recentes no PNCP…</p>';
+  post('int/habilitacao',{cnpj:c}).then(function(H){hb.disabled=false;var L=H.itens||[];if(!L.length){o.innerHTML='<p>Não encontramos licitações recentes desta empresa no PNCP para buscar a habilitação.</p>';return}
+   o.innerHTML=L.map(function(x){return'<div class="sc"><b>'+e(x.orgao||x.ref)+'</b> · '+br(x.data)+(x.venceu?' <span class="tag v">venceu</span>':' <span class="tag">participou</span>')+'<p class="m" style="margin:4px 0!important">'+e(String(x.objeto||'').slice(0,160))+'</p>'+(x.docs.length?'<ul style="margin:4px 0 0 18px!important;padding:0!important">'+x.docs.map(function(d){return'<li style="font-size:.88rem!important"><a href="'+e(d.url)+'" target="_blank" rel="noopener">'+e(d.titulo)+'</a>'+(d.tipo?' <span class="m">('+e(d.tipo)+')</span>':'')+'</li>'}).join('')+'</ul>':'<p class="m" style="margin:4px 0!important">Nenhum documento de habilitação publicado no PNCP para esta licitação.</p>')+'<a class="bt" href="'+e(x.sessao)+'" target="_blank" rel="noopener">Sessão pública e habilitação ↗</a><a class="bt" href="'+e(x.pncp)+'" target="_blank" rel="noopener">PNCP</a></div>'}).join('')+(H.parcial?'<p class="m">O PNCP não respondeu para parte das licitações agora. Tente de novo mais tarde, sem nova cobrança.</p>':'')+'<p class="m">No Compras.gov.br, os documentos de habilitação ficam no item da sessão pública, depois da fase de habilitação.</p>'}).catch(function(x){hb.disabled=false;o.innerHTML='<p>'+e((x&&x.message)||'Não foi possível buscar agora.')+'</p>'})};
  var m=b.querySelector('.c-mon');if(m)m.onclick=function(){m.disabled=true;var on=m.classList.contains('on');post('int/monitor',{cnpj:c,acao:on?'del':'add'}).then(function(){m.disabled=false;m.classList.toggle('on',!on);m.classList.toggle('p',on);m.textContent=on?'Monitorar este concorrente':'✓ Monitorando · parar'}).catch(function(x){m.disabled=false;alert((x&&x.message)||'Não foi possível agora.')})};
  var k=b.querySelector('.c-cmp');if(k)k.onclick=function(){var o=b.querySelector('.c-out'),mw=b.querySelector('.c-meu'),mi=b.querySelector('.c-mi'),mv='';if(mi){mw.style.display='inline';mv=String(mi.value).replace(/\D/g,'');if(mv.length!==14){o.innerHTML='<p>Digite o CNPJ da sua empresa e clique de novo.</p>';mi.focus();return}}o.innerHTML='<p>Comparando…</p>';get('int/concorrente?cnpj='+c+'&comparar=1'+(mv?'&meu='+mv:'')).then(function(X){if(!X.eu){o.innerHTML='<p>Não foi possível comparar.</p>';return}var a=X.eu.resumo,z=X.resumo;
   function an(d){var t=Date.parse(d);return t?Math.floor((Date.now()-t)/31557600000)+' anos':'—'}
@@ -556,3 +560,47 @@ add_action( 'wp_footer', function () {
 		. 'function liga(){[].forEach.call(document.querySelectorAll(\'a[href*="pncp.gov.br/app/editais/"]:not([data-ses]), .al-i:not([data-ses])\'),function(a){var ref="",alvo=a;if(a.classList.contains("al-i")){a.setAttribute("data-ses","1");ref=a.dataset.r||"";alvo=a.querySelector(\'.al-ba a[href*="pncp.gov.br"]\');if(!alvo)return}else{a.setAttribute("data-ses","1");if(a.closest(".al-i"))return;var m=a.href.match(/editais\/(\d{14})\/(\d{4})\/(\d+)/);if(!m)return;ref=m[1]+"/"+m[2]+"/"+(+m[3])}if(!/^\d{14}\/\d{4}\/\d+$/.test(ref))return;var l=document.createElement("a");l.href=API+"?ref="+encodeURIComponent(ref);l.target="_blank";l.rel="noopener";l.title=TT;l.textContent=alvo.closest(".al-ba")?"Sessão e habilitação":"sessão e habilitação";l.setAttribute("data-ses","1");if(alvo.closest(".al-ba")){alvo.parentNode.insertBefore(l,alvo.nextSibling)}else{alvo.parentNode.insertBefore(document.createTextNode(" · "),alvo.nextSibling);alvo.parentNode.insertBefore(l,alvo.nextSibling.nextSibling)}})}'
 		. 'var t=null;new MutationObserver(function(){clearTimeout(t);t=setTimeout(liga,400)}).observe(document.body,{childList:true,subtree:true});liga()})();</script>';
 }, 100 );
+
+/* ---------------- Habilitação recente do concorrente (serviço à parte: 5 créditos) ---------------- */
+add_action( 'init', function () {
+	if ( get_option( 'dv_custos_hab' ) === '1' ) { return; }
+	$c = (array) get_option( 'dv_cfg', array() ); $s = (string) ( $c['custos'] ?? '' );
+	if ( strpos( $s, 'habilitacao:' ) === false ) { $c['custos'] = trim( $s . ',habilitacao:5', ',' ); update_option( 'dv_cfg', $c, false ); }
+	update_option( 'dv_custos_hab', '1', false );
+}, 7 );
+function dv_int_habilitacao( $cnpj ) {
+	$ck = 'dv_hab_' . $cnpj; $c = get_transient( $ck ); if ( $c !== false ) { return $c; }
+	$refs = array();
+	if ( function_exists( 'dv_part_vencidas' ) ) { foreach ( (array) ( dv_part_vencidas( $cnpj )['itens'] ?? array() ) as $i ) { $refs[ $i['ref'] ] = array( 'orgao' => $i['orgao'], 'objeto' => $i['objeto'], 'data' => $i['data'], 'venceu' => true ); } }
+	if ( function_exists( 'dv_part_de' ) ) { foreach ( (array) ( dv_part_de( $cnpj )['itens'] ?? array() ) as $i ) { if ( ! isset( $refs[ $i['ref'] ] ) ) { $refs[ $i['ref'] ] = array( 'orgao' => $i['orgao'], 'objeto' => $i['objeto'], 'data' => $i['data'], 'venceu' => false ); } } }
+	uasort( $refs, function ( $a, $b ) { return strcmp( $b['data'], $a['data'] ); } ); $refs = array_slice( $refs, 0, 8, true );
+	$u = array(); foreach ( $refs as $ref => $x ) { list( $oc, $an, $sq ) = explode( '/', $ref ); $u[ $ref ] = "https://pncp.gov.br/api/pncp/v1/orgaos/$oc/compras/$an/$sq/arquivos"; }
+	$res = $u ? dv_int_get( $u, 25 ) : array(); $o = array(); $falhas = 0;
+	$OK = '/habilita|documenta|atestad|balan|certid|propost|contrato social|qualifica|julgamento|ata |ata$|^ata|resultado|adjudica|homologa/i';
+	foreach ( $refs as $ref => $x ) {
+		$b = $res[ $ref ] ?? null; $L = $b ? json_decode( $b, true ) : null; if ( ! is_array( $L ) ) { $falhas++; $L = array(); }
+		$docs = array();
+		foreach ( $L as $a ) {
+			$t = trim( ( $a['titulo'] ?? '' ) . ' ' . ( $a['tipoDocumentoNome'] ?? '' ) ); if ( empty( $a['url'] ) || ! ( $a['statusAtivo'] ?? true ) ) { continue; }
+			if ( ! preg_match( $OK, $t ) || preg_match( '/edital|termo de refer|minuta|estudo t|etp|aviso|errata|esclarec|impugna/i', (string) ( $a['titulo'] ?? '' ) ) ) { continue; }
+			$docs[] = array( 'titulo' => mb_substr( (string) ( $a['titulo'] ?? 'Documento' ), 0, 140 ), 'tipo' => $a['tipoDocumentoNome'] ?? '', 'url' => esc_url_raw( $a['url'] ), 'data' => substr( (string) ( $a['dataPublicacaoPncp'] ?? '' ), 0, 10 ) );
+		}
+		$o[] = $x + array( 'ref' => $ref, 'sessao' => rest_url( 'desenvolve/v1/int/sessao' ) . '?ref=' . rawurlencode( $ref ), 'pncp' => 'https://pncp.gov.br/app/editais/' . $ref, 'docs' => array_slice( $docs, 0, 10 ) );
+	}
+	$c = array( 'itens' => $o, 'parcial' => $falhas > 0 );
+	set_transient( $ck, $c, ( $falhas && $falhas * 2 >= count( $refs ) ) ? HOUR_IN_SECONDS : DAY_IN_SECONDS );
+	return $c;
+}
+add_action( 'rest_api_init', function () {
+	register_rest_route( 'desenvolve/v1', '/int/habilitacao', array( 'methods' => 'POST', 'permission_callback' => function () { return is_user_logged_in(); }, 'callback' => function ( WP_REST_Request $r ) {
+		$c = preg_replace( '/\D/', '', (string) $r['cnpj'] ); if ( strlen( $c ) !== 14 ) { return new WP_Error( 'dv_cnpj', 'CNPJ inválido.', array( 'status' => 400 ) ); }
+		$uid = get_current_user_id(); @set_time_limit( 120 ); $n = function_exists( 'dv_custo' ) ? dv_custo( 'habilitacao' ) : 5;
+		if ( $n > 0 && function_exists( 'dv_usar' ) ) {
+			if ( ! dv_is_master( $uid ) && dv_saldo( $uid )['total'] < $n ) { return new WP_Error( 'dv_sem_credito', 'A busca de habilitação usa ' . $n . ' créditos e o seu saldo não é suficiente.', array( 'status' => 402 ) ); }
+			$fc = preg_replace( '/^(\d{2})(\d{3})(\d{3})(\d{4})(\d{2})$/', '$1.$2.$3/$4-$5', $c ); $k = 'hab|' . $c;
+			$u = dv_usar( $uid, 'habilitacao', $k, $fc ); if ( is_wp_error( $u ) ) { return $u; }
+			if ( ! empty( $u['cobrado'] ) ) { for ( $i = 2; $i <= $n; $i++ ) { $x = dv_usar( $uid, 'habilitacao', $k . '|' . $i, '' ); if ( is_wp_error( $x ) ) { return $x; } } }
+		}
+		return dv_int_habilitacao( $c );
+	} ) );
+} );

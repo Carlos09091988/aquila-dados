@@ -344,11 +344,21 @@ add_action( 'rest_api_init', function () {
 		$V = function_exists( 'dv_part_vencidas' ) ? dv_part_vencidas( $c ) : array();
 		$fed = function_exists( 'dv_ds_interno' ) ? dv_ds_interno( '/dvtools/v1/fornecedor/federal', array( 'cnpj' => $c ) ) : null;
 		$P = function_exists( 'dv_part_de' ) ? dv_part_de( $c ) : array();
+		/* Comparador dentro do lote: sinais para cruzar os participantes (sócios, telefone, e-mail, endereço) */
+		$ck = 'dv_lt_bra_' . $c; $b = get_transient( $ck );
+		if ( $b === false ) { $x = wp_remote_get( 'https://brasilapi.com.br/api/cnpj/v1/' . $c, array( 'timeout' => 20 ) ); $b = is_wp_error( $x ) ? array() : (array) json_decode( wp_remote_retrieve_body( $x ), true ); set_transient( $ck, $b, empty( $b['razao_social'] ) ? HOUR_IN_SECONDS : 7 * DAY_IN_SECONDS ); }
+		$nr = function ( $v ) { return trim( preg_replace( '/\s+/', ' ', strtoupper( remove_accents( (string) $v ) ) ) ); }; $vk = array();
+		foreach ( (array) ( $b['qsa'] ?? array() ) as $q ) { $n = $nr( $q['nome_socio'] ?? '' ); if ( strlen( $n ) > 5 ) { $vk[ 'S|' . $n . '|' . preg_replace( '/\D/', '', (string) ( $q['cnpj_cpf_do_socio'] ?? '' ) ) ] = 'Sócio em comum: ' . $n; } }
+		foreach ( array( 'ddd_telefone_1', 'ddd_telefone_2' ) as $f ) { $t = preg_replace( '/\D/', '', (string) ( $b[ $f ] ?? '' ) ); if ( strlen( $t ) >= 10 ) { $vk[ 'T|' . $t ] = 'Mesmo telefone: ' . $t; } }
+		if ( ! empty( $b['email'] ) ) { $vk[ 'E|' . strtolower( trim( $b['email'] ) ) ] = 'Mesmo e-mail de cadastro'; }
+		$cep = preg_replace( '/\D/', '', (string) ( $b['cep'] ?? '' ) ); $num = preg_replace( '/[^A-Z0-9]/', '', strtoupper( (string) ( $b['numero'] ?? '' ) ) );
+		if ( strlen( $cep ) === 8 && $num !== '' && $num !== 'SN' ) { $vk[ 'A|' . $cep . '|' . $num . '|' . preg_replace( '/[^A-Z0-9]/', '', $nr( $b['complemento'] ?? '' ) ) ] = 'Mesmo endereço: ' . $nr( ( $b['logradouro'] ?? '' ) . ', ' . ( $b['numero'] ?? '' ) ); }
+		$vk[ 'R|' . substr( $c, 0, 8 ) ] = 'Mesma empresa (matriz e filial)';
 		return array( 'cnpj' => $c, 'nome' => $cd['razao_social'] ?? '', 'situacao' => $cd['situacao'] ?? '', 'abertura' => $cd['abertura'] ?? '', 'porte' => $cd['porte'] ?? '', 'capital' => (float) ( $cd['capital_social'] ?? 0 ), 'municipio' => ( $cd['municipio'] ?? '' ) . '/' . ( $cd['uf'] ?? '' ),
 			'sancoes' => count( (array) ( $s['ceis'] ?? array() ) ) + count( (array) ( $s['cnep'] ?? array() ) ) + count( (array) ( $s['tcu'] ?? array() ) ),
 			'pgfn' => $p ? (float) $p['total'] : 0, 'cobranca' => $p ? (float) $p['em_cobranca'] : 0, 'fgts' => $p ? (float) $p['fgts'] : 0,
 			'vitorias' => (int) ( $V['total'] ?? 0 ), 'vitorias_valor' => (float) ( $V['valor'] ?? 0 ), 'desconto' => $V['desconto_medio'] ?? null,
-			'contratos_federais' => (int) ( $fed['contratos_total'] ?? 0 ), 'disputas' => (int) ( $P['total'] ?? 0 ), 'primeiro' => (int) ( $P['primeiro_lugar'] ?? 0 ) );
+			'contratos_federais' => (int) ( $fed['contratos_total'] ?? 0 ), 'disputas' => (int) ( $P['total'] ?? 0 ), 'primeiro' => (int) ( $P['primeiro_lugar'] ?? 0 ), 'vk' => $vk );
 	} ) );
 } );
 
@@ -392,6 +402,7 @@ add_action( 'wp_footer', function () {
 .dv-ix .al{background:#FBF1DC;border:1px solid #EBD39A;border-radius:10px;padding:8px 12px;margin:0 0 10px;font-size:.9rem}
 .dv-ix .sc{border:1px solid #EEE9DD;border-radius:12px;padding:12px 14px;margin:0 0 10px;background:#FAF8F3}
 .dv-ix .tag{display:inline-block;border-radius:6px;padding:2px 7px;font-size:.74rem;font-weight:700;margin:2px 4px 0 0;background:#F3F0E8}.dv-ix .tag.r{background:#FDEDEA;color:#9A3524}.dv-ix .tag.a{background:#FBF1DC;color:#7A5410}.dv-ix .tag.v{background:#EAF5EE;color:#1F5A3B}
+.dv-lote .lt-v{list-style:none;padding:0;margin:8px 0}.dv-lote .lt-v li{padding:8px 0;border-bottom:1px solid #EFEBE2;line-height:1.5}
 .dv-lote .lt-in{background:#fff;border:1px solid #E3DED2;border-radius:16px;padding:18px;margin:0 0 16px;font-family:'Hanken Grotesk',system-ui,sans-serif}
 .dv-lote textarea{width:100%;min-height:130px;border:1px solid #D9D3C4;border-radius:12px;padding:10px;font:inherit;margin:8px 0}
 .dv-lote .lt-b{display:flex;gap:12px;align-items:center;flex-wrap:wrap}.dv-lote .lt-go{background:#C9A45C;border:0;border-radius:999px;padding:12px 22px;font-weight:700;cursor:pointer;color:#241A06;font:inherit;font-weight:700}
@@ -506,7 +517,7 @@ function htmlD(J){var h='<p class="k">Sócios e linha do tempo</p><h3>Quem está
  return h}
 
 /* ---------- Raio-X em lote ---------- */
-if(lt){var T=lt.querySelector('textarea'),go=lt.querySelector('.lt-go'),cu=+lt.dataset.custo||0,cc=lt.querySelector('.lt-c'),mm=lt.querySelector('.lt-m'),out=lt.querySelector('.lt-out');
+if(lt){(function(){var q=(new URLSearchParams(location.search).get('cnpjs')||'').split(',').filter(function(x){return x.replace(/\D/g,'').length===14});var t=lt.querySelector('textarea');if(q.length&&t&&!t.value.trim())t.value=q.join('\n')})();var T=lt.querySelector('textarea'),go=lt.querySelector('.lt-go'),cu=+lt.dataset.custo||0,cc=lt.querySelector('.lt-c'),mm=lt.querySelector('.lt-m'),out=lt.querySelector('.lt-out');
  function lista(){var s={},o=[];(T.value.match(/\d{2}\.?\d{3}\.?\d{3}\/?\d{4}-?\d{2}/g)||[]).forEach(function(x){x=x.replace(/\D/g,'');if(!s[x]){s[x]=1;o.push(x)}});return o.slice(0,20)}
  T.oninput=function(){var n=lista().length;cc.textContent=n?n+' CNPJ(s)'+(cu?' · '+cu+' créditos pelo lote todo':''):''};
  go.onclick=function(){var L=lista();mm.textContent='';if(!L.length){mm.textContent='Cole pelo menos um CNPJ.';return}if(cu&&!confirm('Gerar o Raio-X de '+L.length+' empresa(s)? Usa '+cu+' créditos pelo lote todo (até 20 CNPJs).'))return;
@@ -516,7 +527,9 @@ if(lt){var T=lt.querySelector('textarea'),go=lt.querySelector('.lt-go'),cu=+lt.d
  function tabela(R){var h='<section class="dv-ix"><p class="k">Raio-X em lote</p><h3>Comparativo dos participantes</h3><div class="tw"><table><tr><th>Empresa</th><th>Receita</th><th>Sanções</th><th>Dívida ativa</th><th>Vitórias (3 anos)</th><th>Desconto médio</th><th>Disputas na base</th><th></th></tr>';
   R.forEach(function(x){if(x.erro){h+='<tr><td>'+fc(x.cnpj)+'</td><td colspan="7">'+e(x.erro)+'</td></tr>';return}var at=Date.parse(x.abertura),an=at?Math.floor((Date.now()-at)/31557600000):null;
    h+='<tr><td><b>'+e(x.nome)+'</b><small>'+fc(x.cnpj)+' · '+e(x.municipio)+'</small></td><td>'+(x.situacao==='ATIVA'?'<span class="tag v">ATIVA</span>':'<span class="tag r">'+e(x.situacao||'?')+'</span>')+'<small>'+(an!=null?an+' anos · ':'')+'capital '+mc(x.capital)+'</small></td><td>'+(x.sancoes?'<span class="tag r">'+x.sancoes+'</span>':'<span class="tag v">nada</span>')+'</td><td>'+(x.pgfn>0?'<span class="tag '+(x.cobranca>0?'r':'a')+'">'+mc(x.pgfn)+'</span><small>'+(x.cobranca>0?'em cobrança':'parcelada ou suspensa')+(x.fgts>0?' · FGTS':'')+'</small>':'<span class="tag v">nada</span>')+'</td><td>'+x.vitorias+'<small>'+mc(x.vitorias_valor)+'</small></td><td>'+pc(x.desconto)+'</td><td>'+(x.disputas?x.disputas+(x.primeiro?' · '+x.primeiro+'× 1º':''):'—')+'</td><td><a href="/plataforma/raio-x/?cnpj='+x.cnpj+'">Raio-X completo</a></td></tr>'});
-  return h+'</table></div><p class="m">Dados da Receita, CEIS/CNEP/TCU, PGFN (base trimestral) e PNCP. O lote cobre o comparativo. O Raio-X completo de cada empresa, com habilitação e relatório, é cobrado à parte e fica salvo por 30 dias. Não constitui parecer jurídico.</p></section>'}
+  var V={},N={};R.forEach(function(x){if(x.erro||!x.vk)return;N[x.cnpj]=x.nome;Object.keys(x.vk).forEach(function(k){(V[k]=V[k]||{t:x.vk[k],l:[]}).l.push(x.cnpj)})});var vl=Object.keys(V).filter(function(k){return V[k].l.length>1});
+  h+='</table></div><h3 style="margin-top:22px">Vínculos entre os participantes</h3>'+(vl.length?'<ul class="lt-v">'+vl.map(function(k){return'<li><span class="tag r">'+e(V[k].t)+'</span> '+V[k].l.map(function(c){return'<b>'+e(N[c]||fc(c))+'</b>'}).join(' e ')+'</li>'}).join('')+'</ul><p class="m">Sócio, telefone, e-mail ou endereço em comum entre licitantes da mesma disputa pode indicar combinação de propostas e merece apuração (Lei 14.133, art. 155, IX e XI; Código Penal, art. 337-F).</p>':'<p>Nenhum sócio, telefone, e-mail ou endereço em comum entre os participantes.</p>');
+  return h+'<p class="m">Dados da Receita, CEIS/CNEP/TCU, PGFN (base trimestral) e PNCP. O lote cobre o comparativo. O Raio-X completo de cada empresa, com habilitação e relatório, é cobrado à parte e fica salvo por 30 dias. Não constitui parecer jurídico.</p></section>'}
  return}
 
 /* ---------- gatilho ---------- */
@@ -532,9 +545,9 @@ new MutationObserver(function(){clearTimeout(tm);tm=setTimeout(tenta,1500)}).obs
 /* Comparador: endereço antigo (/comparador-de-licitantes/) leva à página da plataforma, já com os CNPJs */
 add_action( 'template_redirect', function () {
 	$p = (string) wp_parse_url( (string) ( $_SERVER['REQUEST_URI'] ?? '' ), PHP_URL_PATH );
-	if ( ! preg_match( '#^/comparador-de-licitantes/?$#', $p ) ) { return; }
+	if ( ! preg_match( '#^/(comparador-de-licitantes|plataforma/comparador)/?$#', $p ) ) { return; }
 	$c = preg_replace( '/[^0-9,]/', '', (string) ( $_GET['cnpjs'] ?? $_GET['cnpj'] ?? '' ) );
-	wp_safe_redirect( home_url( '/plataforma/comparador/' . ( $c ? '?cnpjs=' . $c : '' ) ), 301 ); exit;
+	wp_safe_redirect( home_url( '/plataforma/raio-x-lote/' . ( $c ? '?cnpjs=' . $c : '' ) ), 302 ); exit;
 }, 1 );
 add_action( 'wp_footer', function () {
 	if ( ! is_page( 'comparador' ) ) { return; }

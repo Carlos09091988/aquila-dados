@@ -101,7 +101,7 @@ function htmlEmpresa(S){
  var cap=[];if(S.contratos)cap.push(S.contratos+(PG==='dossie'?' contrato(s) ativo(s)':' contrato(s) público(s)'));if(S.uniao)cap.push(mc(S.uniao)+' recebidos da União no ano');if(S.vAtivos)cap.push(mc(S.vAtivos)+(PG==='dossie'?' em valor':' em contratos ativos'));if(S.capital)cap.push('capital social de '+mc(S.capital));if(S.anos!=null)cap.push(S.anos+' ano(s) de atividade');
  var fol=(S.contratos>=3&&(S.anos==null||S.anos>=3))?'<em>Tem histórico de execução.</em> ':S.contratos?'<em>Histórico curto.</em> Vale exigir com rigor os atestados (art. 67). ':'<em>Sem contratos públicos encontrados.</em> Vale exigir com rigor os atestados (art. 67). ';
  fol+=e(cap.join(' · ')||'Sem dados de contratos.')+'.';if(S.trab>=50)fol+=' '+S.trab.toLocaleString('pt-BR')+' ações trabalhistas: compare o volume com o porte da empresa.';
- var ac='<a class="p" href="/plataforma/recursos/">Usar no recurso</a>';
+ var ac='<a class="p dv-rec" href="/plataforma/recursos/?tipo=recurso&pontos=1'+(PG==='concorrente'&&S.cnpj?'&conc='+S.cnpj+'&titulo='+encodeURIComponent('Recurso contra '+((window.DVNOME)||S.cnpj)):'')+'">Montar o recurso com estes pontos</a>';
  if(PG==='concorrente'&&S.cnpj)ac+='<a href="/plataforma/dossie/?cnpj='+S.cnpj+'">Due Diligence completa</a>';
  var prox=A.length?'Junte as certidões e o print das fontes e prepare o recurso no prazo (3 dias úteis da intenção, art. 165, §1º, I).':M.length?'Confira as certidões apresentadas no certame e peça diligência sobre os pontos acima antes do recurso.':'Não há o que explorar aqui. Foque nos documentos da proposta e da habilitação.';
  var pts=100,comp=[];function tira(v,t){v=Math.round(v);if(v>0){pts-=v;comp.push([v,t])}}
@@ -110,7 +110,7 @@ function htmlEmpresa(S){
  if(S.fgts)tira(15,'débito de FGTS');if(S.falen)tira(25,'falência ou recuperação judicial');tira(Math.min(15,S.trabEx*1.5),'execuções trabalhistas');
  tira(Math.min(10,S.comum*4),'empresas ligadas com contato em comum');if(S.impr)tira(10,'improbidade');if(S.crim)tira(10,'processo criminal');if(S.colet)tira(5,'ação coletiva');
  tira(Math.min(10,S.noticias*3),'notícias negativas');if(S.trab>=50)tira(5,'volume de ações trabalhistas');if(S.anos!=null&&S.anos<2)tira(5,'menos de 2 anos de atividade');
- pts=Math.max(0,pts);window.DVRS={S:S,arg:arg,pts:pts,comp:comp,inab:inab};
+ pts=Math.max(0,pts);window.DVRS={S:S,arg:arg,pts:pts,comp:comp,inab:inab};if(!window._dvRec){window._dvRec=1;document.addEventListener('click',function(ev){var a=ev.target&&ev.target.closest?ev.target.closest('a.dv-rec'):null;if(!a||!window.DVRS)return;var R=window.DVRS,L=(R.arg||[]).map(function(x){return'- '+x[0]}).concat((R.inab||[]).map(function(x){return'- Pode ser inabilitado: '+x}));try{localStorage.setItem('dv_imp_pontos',L.length?'PONTOS FRACOS DO CONCORRENTE ENCONTRADOS NO RAIO-X (dados oficiais):\n'+L.join('\n'):'')}catch(z){}},true)}
  var ncor=pts>=80?'b':pts>=55?'m':'a';
  ac+='<a href="#" data-pdfr>PDF para anexar ao recurso</a>';
  return '<div class="h"><small>Resumo executivo</small><h3>O que importa para a decisão</h3><span class="nv '+nv[0]+'">'+nv[1]+'</span><span class="nv '+ncor+'" title="Nota de risco de 0 a 100: quanto maior, menor o risco">Nota '+pts+'/100</span></div>'+
@@ -210,7 +210,7 @@ function montar(){
  if(PG==='concorrente'&&!r.querySelector('.rx-pts'))return;
  if(PG!=='concorrente'&&!r.querySelector('.rp-sec'))return;
  var h;try{h=PG==='comprador'?htmlComprador(r):htmlEmpresa(sinaisEmpresa(r))}catch(x){return}
- var r0=root(),h2=r0&&r0.querySelector('.rx-card.ink h2, .rp-hd h2'),nm=h2?h2.textContent.trim():'',cn=(new URLSearchParams(location.search).get('cnpj')||'').replace(/\D/g,'');if(!cn){var ii=document.querySelector('.dv-tool input');cn=ii?String(ii.value).replace(/\D/g,''):''}
+ var r0=root(),h2=r0&&r0.querySelector('.rx-card.ink h2, .rp-hd h2'),nm=h2?h2.textContent.trim():'',_n=(window.DVNOME=nm),cn=(new URLSearchParams(location.search).get('cnpj')||'').replace(/\D/g,'');if(!cn){var ii=document.querySelector('.dv-tool input');cn=ii?String(ii.value).replace(/\D/g,''):''}
  if(nm)h='<div class="id"><b>'+e(nm)+'</b>'+(cn.length===14?'<span>CNPJ '+cn.replace(/^(\d{2})(\d{3})(\d{3})(\d{4})(\d{2})$/,'$1.$2.$3/$4-$5')+'</span>':'')+'</div>'+h;
  h+='<p class="ft">Leitura automática dos dados públicos deste relatório, na data da consulta. Não constitui parecer jurídico: confirme cada ponto nas fontes oficiais e com o seu especialista.</p>';
  clearTimeout(ts);ts=setTimeout(salvar,7000);

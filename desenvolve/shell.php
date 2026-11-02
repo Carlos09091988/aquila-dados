@@ -76,6 +76,7 @@ body.dv-app .dvp .dv-c,body.dv-app .dvp .dv-tools a{box-shadow:0 1px 2px rgba(22
 .dv-cnpj .m{color:#B04A3A;font-size:.85rem;margin:6px 0 0}
 body.dv-app .dv-md{position:fixed;inset:0;background:rgba(5,7,10,.6);display:flex;align-items:center;justify-content:center;z-index:99999;font-family:"Hanken Grotesk",sans-serif}body.dv-app .dv-md>div{background:#fff;color:#16191E;border-radius:18px;padding:26px;max-width:480px;width:calc(100% - 32px)}body.dv-app .dv-md h3{margin:0 0 8px;color:#16191E}body.dv-app .dv-md p{color:#4A4F55}body.dv-app .dv-md button{border:0;border-radius:999px;padding:12px 20px;font-weight:700;cursor:pointer;background:#C9A45C;color:#241A06;font:inherit;font-weight:700}body.dv-app .dv-md button.g{background:#fff;color:#16191E;border:1px solid #D9D3C4}
 @media(max-width:980px){.dv-cnpj{margin:16px 12px}.dv-cnpj button{flex:1 1 30%}}
+@media(max-width:420px){.dv-topm b i{display:none}.dv-topm a{font-size:.8rem!important}}
 /* componentes comuns dentro das ferramentas */
 body.dv-app .dv-tool input:focus,body.dv-app .dv-tool select:focus,body.dv-app .dv-tool textarea:focus{outline:2px solid rgba(201,164,92,.45);outline-offset:1px;border-color:var(--gold)!important}
 body.dv-app #ht-ctc-chat{bottom:18px!important}
@@ -83,7 +84,7 @@ body.dv-app #ht-ctc-chat{bottom:18px!important}
  body.dv-app{padding-left:0!important;padding-top:56px!important}
  .dv-side{transform:translateX(-100%);transition:transform .2s ease;width:280px;box-shadow:0 0 40px rgba(0,0,0,.4)}
  body.dv-side-on .dv-side{transform:none}
- .dv-sld{display:none} body.dv-app .dv-th{padding-right:16px!important} body.dv-app .dv-cnpj{margin-top:16px!important} .dv-topm{display:flex;position:fixed;top:0;left:0;right:0;height:56px;background:var(--side);z-index:9989;align-items:center;justify-content:space-between;padding:0 14px;color:#F4F2EC;font-family:"Hanken Grotesk",sans-serif}
+ .dv-sld{display:none} .dv-topm a{white-space:nowrap;margin-left:10px;background:rgba(201,164,92,.14);border-radius:999px;padding:6px 10px} body.dv-app .dv-th{padding-right:16px!important} body.dv-app .dv-cnpj{margin-top:16px!important} .dv-topm{display:flex;position:fixed;top:0;left:0;right:0;height:56px;background:var(--side);z-index:9989;align-items:center;justify-content:space-between;padding:0 14px;color:#F4F2EC;font-family:"Hanken Grotesk",sans-serif}
  body.admin-bar .dv-topm{top:46px}
  .dv-topm button{background:none;border:0;color:#F4F2EC;font-size:1.5rem;cursor:pointer;padding:6px}
  .dv-topm b{font-weight:600}.dv-topm b i{font-style:normal;color:var(--gold)}.dv-topm a{color:var(--gold);font-weight:700;font-size:.85rem;text-decoration:none}

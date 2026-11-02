@@ -1,7 +1,7 @@
 /**
  * Desenvolve — Programa de testadores especialistas
  * Convite único (/teste/?convite=CODIGO) → conta com 7 dias de acesso completo e 30 créditos →
- * avaliação em /plataforma/avaliacao/ → recompensa automática: 1 mês do plano Profissional (60 créditos).
+ * avaliação em /plataforma/avaliacao/ → recompensa automática: 1 mês de assinatura (60 créditos).
  * Admin: Desenvolve → Testadores (gerar convites, acompanhar e baixar as avaliações).
  */
 if ( ! defined( 'ABSPATH' ) ) { exit; }
@@ -13,7 +13,7 @@ function dv_ts_e_testador( $uid ) { return (string) get_user_meta( $uid, 'dv_tes
 /* ---------- Cadastro pelo convite ---------- */
 add_shortcode( 'dv_teste', function () {
 	$cod = strtoupper( preg_replace( '/[^A-Za-z0-9]/', '', (string) ( $_REQUEST['convite'] ?? '' ) ) ); $C = dv_ts_codigos(); $err = '';
-	if ( is_user_logged_in() ) { $u = get_current_user_id(); return '<div class="ts"><h2>Você já está conectado</h2><p>' . ( dv_ts_e_testador( $u ) ? 'Siga para as ferramentas e, ao final, preencha a <a href="/plataforma/avaliacao/">avaliação</a> para ganhar 1 mês do plano Profissional.' : 'Este convite é para criar uma conta nova de testador.' ) . '</p><p><a class="ts-b" href="/plataforma/">Ir para as ferramentas</a></p></div>' . dv_ts_css(); }
+	if ( is_user_logged_in() ) { $u = get_current_user_id(); return '<div class="ts"><h2>Você já está conectado</h2><p>' . ( dv_ts_e_testador( $u ) ? 'Siga para as ferramentas e, ao final, preencha a <a href="/plataforma/avaliacao/">avaliação</a> para ganhar 1 mês de assinatura.' : 'Este convite é para criar uma conta nova de testador.' ) . '</p><p><a class="ts-b" href="/plataforma/">Ir para as ferramentas</a></p></div>' . dv_ts_css(); }
 	if ( ! $cod || ! isset( $C[ $cod ] ) ) { return '<div class="ts"><h2>Convite inválido</h2><p>Este link de teste não existe ou foi digitado errado. Peça um novo convite à Desenvolve pelo WhatsApp <a href="https://wa.me/5511993500950">(11) 99350-0950</a>.</p></div>' . dv_ts_css(); }
 	if ( ! empty( $C[ $cod ]['uid'] ) ) { return '<div class="ts"><h2>Convite já utilizado</h2><p>Cada convite vale para uma pessoa. Se foi você quem ativou, <a href="/painel/">entre na sua conta</a>.</p></div>' . dv_ts_css(); }
 	if ( 'POST' === $_SERVER['REQUEST_METHOD'] && isset( $_POST['dv_ts'] ) && wp_verify_nonce( $_POST['_dvts'] ?? '', 'dv_ts' ) ) {
@@ -33,7 +33,7 @@ add_shortcode( 'dv_teste', function () {
 				if ( function_exists( 'dv_extrato' ) ) { dv_extrato( $uid, DV_TS_CREDITOS, 'teste', 'Teste de especialista (' . DV_TS_DIAS . ' dias)' ); }
 				$C[ $cod ]['uid'] = $uid; $C[ $cod ]['ativado'] = current_time( 'mysql' ); $C[ $cod ]['nome'] = $nome; $C[ $cod ]['email'] = $email; update_option( 'dv_testers', $C, false );
 				$from = function_exists( 'dv_cfg' ) && dv_cfg( 'email_remetente' ) ? dv_cfg( 'email_remetente' ) : 'contato@desenvolveestrategias.com.br';
-				wp_mail( $email, 'Seu teste de especialista na Desenvolve começou', "Olá, $nome!\n\nObrigado por aceitar testar a Desenvolve. Você tem " . DV_TS_DIAS . " dias de acesso completo e " . DV_TS_CREDITOS . " créditos para usar o Raio-X, a Due Diligence e as demais ferramentas.\n\nAo final, preencha a avaliação (leva uns 10 minutos):\n" . home_url( '/plataforma/avaliacao/' ) . "\n\nAssim que você enviar, liberamos automaticamente 1 mês do plano Profissional, com 60 créditos.\n\nEquipe Desenvolve", array( 'From: Desenvolve <' . $from . '>' ) );
+				wp_mail( $email, 'Seu teste de especialista na Desenvolve começou', "Olá, $nome!\n\nObrigado por aceitar testar a Desenvolve. Você tem " . DV_TS_DIAS . " dias de acesso completo e " . DV_TS_CREDITOS . " créditos para usar o Raio-X, a Due Diligence e as demais ferramentas.\n\nAo final, preencha a avaliação (leva uns 10 minutos):\n" . home_url( '/plataforma/avaliacao/' ) . "\n\nAssim que você enviar, liberamos automaticamente 1 mês de assinatura, com 60 créditos.\n\nEquipe Desenvolve", array( 'From: Desenvolve <' . $from . '>' ) );
 				wp_mail( get_option( 'admin_email' ), 'Testador ativou o convite: ' . $nome, "Convite: $cod\nNome: $nome\nE-mail: $email\nAtuação: $atua", array( 'From: Desenvolve <' . $from . '>' ) );
 				wp_set_current_user( $uid ); wp_set_auth_cookie( $uid, true ); wp_safe_redirect( home_url( '/plataforma/?teste=1' ) ); exit;
 			}
@@ -42,7 +42,7 @@ add_shortcode( 'dv_teste', function () {
 	ob_start(); ?>
 <form class="ts" method="post"><?php wp_nonce_field( 'dv_ts', '_dvts' ); ?><input type="hidden" name="dv_ts" value="1"><input type="hidden" name="convite" value="<?php echo esc_attr( $cod ); ?>">
 	<span class="ts-k">Convite de especialista</span><h2><?php echo ! empty( $C[ $cod ]['rotulo'] ) ? esc_html( $C[ $cod ]['rotulo'] ) . ', teste' : 'Teste'; ?> a Desenvolve antes de todo mundo</h2>
-	<ul class="ts-l"><li><b><?php echo DV_TS_DIAS; ?> dias</b> de acesso completo, com <b><?php echo DV_TS_CREDITOS; ?> créditos</b> para usar o Raio-X, a Due Diligence e as demais ferramentas</li><li>No fim, uma <b>avaliação rápida</b> (cerca de 10 minutos) com as suas sugestões</li><li>Enviou a avaliação: ganha <b>1 mês do plano Profissional</b> (60 créditos), liberado na hora</li></ul>
+	<ul class="ts-l"><li><b><?php echo DV_TS_DIAS; ?> dias</b> de acesso completo, com <b><?php echo DV_TS_CREDITOS; ?> créditos</b> para usar o Raio-X, a Due Diligence e as demais ferramentas</li><li>No fim, uma <b>avaliação rápida</b> (cerca de 10 minutos) com as suas sugestões</li><li>Enviou a avaliação: ganha <b>1 mês de assinatura</b> (60 créditos), liberado na hora</li></ul>
 	<?php if ( $err ) { echo '<p class="ts-err">' . esc_html( $err ) . '</p>'; } ?>
 	<label>Nome completo<input name="nome" required value="<?php echo esc_attr( $_POST['nome'] ?? ( $C[ $cod ]['rotulo'] ?? '' ) ); ?>"></label>
 	<div class="ts-2"><label>E-mail<input type="email" name="email" required value="<?php echo esc_attr( $_POST['email'] ?? '' ); ?>"></label><label>WhatsApp<input name="tel" value="<?php echo esc_attr( $_POST['tel'] ?? '' ); ?>"></label></div>
@@ -73,9 +73,9 @@ add_shortcode( 'dv_avaliacao', function () {
 		else {
 			update_user_meta( $uid, 'dv_tester_av', wp_slash( wp_json_encode( $av, JSON_UNESCAPED_UNICODE ) ) );
 			$C = dv_ts_codigos(); if ( isset( $C[ $cod ] ) ) { $C[ $cod ]['avaliado'] = current_time( 'mysql' ); update_option( 'dv_testers', $C, false ); }
-			// recompensa: 1 mês do plano Profissional
-			delete_user_meta( $uid, 'dv_trial' ); update_user_meta( $uid, 'dv_plano', 'profissional' ); update_user_meta( $uid, 'dv_tester_recompensa', current_time( 'mysql' ) );
-			if ( function_exists( 'dv_renovar' ) ) { dv_renovar( $uid, 'Recompensa de testador: 1 mês do plano Profissional', 31 ); }
+			// recompensa: 1 mês de assinatura
+			delete_user_meta( $uid, 'dv_trial' ); update_user_meta( $uid, 'dv_plano', array_key_first( function_exists( 'dv_planos' ) ? dv_planos() : array( 'desenvolve' => 1 ) ) ); update_user_meta( $uid, 'dv_tester_recompensa', current_time( 'mysql' ) );
+			if ( function_exists( 'dv_renovar' ) ) { dv_renovar( $uid, 'Recompensa de testador: 1 mês de assinatura', 31 ); }
 			$u = wp_get_current_user(); $from = function_exists( 'dv_cfg' ) && dv_cfg( 'email_remetente' ) ? dv_cfg( 'email_remetente' ) : 'contato@desenvolveestrategias.com.br';
 			$txt = "Testador: {$u->display_name} <{$u->user_email}> (convite $cod)\nAtuação: " . get_user_meta( $uid, 'dv_tester_atuacao', true ) . "\n\nNOTAS\n"; foreach ( $notas as $k => $v ) { $txt .= '- ' . $F[ $k ] . ': ' . ( $v === null ? 'não usou' : $v ) . "\n"; }
 			$txt .= "\nMAIS AJUDOU\n{$av['ajudou']}\n\nFALTOU\n{$av['faltou']}\n\nERROS\n{$av['erros']}\n\nQUANTO PAGARIA: {$av['preco']}\nRECOMENDAÇÃO (0-10): {$av['nps']}\n\nDEPOIMENTO" . ( $av['autoriza'] ? ' (AUTORIZADO para divulgação como: ' . $av['assinatura'] . ')' : ' (não autorizado)' ) . "\n{$av['depoimento']}";
@@ -86,7 +86,7 @@ add_shortcode( 'dv_avaliacao', function () {
 	$v = (string) get_user_meta( $uid, 'dv_vence', true ); $dl = $v ? (int) round( ( strtotime( $v ) - strtotime( current_time( 'Y-m-d' ) ) ) / DAY_IN_SECONDS ) : 0;
 	ob_start(); ?>
 <form class="ts" method="post"><?php wp_nonce_field( 'dv_av', '_dvav' ); ?><input type="hidden" name="dv_av" value="1">
-	<span class="ts-k">Avaliação de especialista</span><h2>Sua opinião vale 1 mês do plano Profissional</h2>
+	<span class="ts-k">Avaliação de especialista</span><h2>Sua opinião vale 1 mês de assinatura</h2>
 	<p><?php echo $dl >= 0 ? 'Seu teste vai até <b>' . esc_html( date_i18n( 'd/m/Y', strtotime( $v ) ) ) . '</b>. ' : ''; ?>Responda com sinceridade: o que você disser vai direto para a melhoria da plataforma. Ao enviar, liberamos na hora 1 mês do Profissional, com 60 créditos.</p>
 	<?php if ( $err ) { echo '<p class="ts-err">' . esc_html( $err ) . '</p>'; } ?>
 	<label>Nota de 0 a 10 para cada ferramenta que você usou <small>(deixe em branco o que não usou)</small></label>
@@ -120,7 +120,7 @@ add_action( 'dv_ts_diario', function () {
 		if ( empty( $c['uid'] ) || ! empty( $c['avaliado'] ) ) { continue; } $uid = (int) $c['uid']; $u = get_userdata( $uid ); if ( ! $u ) { continue; }
 		$v = (string) get_user_meta( $uid, 'dv_vence', true ); $dl = (int) round( ( strtotime( $v ) - strtotime( $hoje ) ) / DAY_IN_SECONDS ); $env = (array) get_user_meta( $uid, 'dv_tester_lemb', true );
 		foreach ( array( 2, 0, -3 ) as $m ) { if ( $dl === $m && empty( $env[ $m ] ) ) { $env[ $m ] = $hoje; update_user_meta( $uid, 'dv_tester_lemb', $env );
-			wp_mail( $u->user_email, $m > 0 ? 'Faltam 2 dias do seu teste: avalie e ganhe 1 mês grátis' : ( $m === 0 ? 'Último dia do seu teste na Desenvolve' : 'Ainda dá tempo: sua avaliação vale 1 mês grátis' ), 'Olá, ' . $u->first_name . "!\n\n" . ( $m >= 0 ? 'Seu teste de especialista na Desenvolve está acabando.' : 'Seu teste terminou, mas a avaliação continua aberta.' ) . " Conte o que achou (uns 10 minutos) e liberamos na hora 1 mês do plano Profissional, com 60 créditos:\n" . home_url( '/plataforma/avaliacao/' ) . "\n\nObrigado!\nEquipe Desenvolve", array( 'From: Desenvolve <' . $from . '>' ) ); } }
+			wp_mail( $u->user_email, $m > 0 ? 'Faltam 2 dias do seu teste: avalie e ganhe 1 mês grátis' : ( $m === 0 ? 'Último dia do seu teste na Desenvolve' : 'Ainda dá tempo: sua avaliação vale 1 mês grátis' ), 'Olá, ' . $u->first_name . "!\n\n" . ( $m >= 0 ? 'Seu teste de especialista na Desenvolve está acabando.' : 'Seu teste terminou, mas a avaliação continua aberta.' ) . " Conte o que achou (uns 10 minutos) e liberamos na hora 1 mês de assinatura, com 60 créditos:\n" . home_url( '/plataforma/avaliacao/' ) . "\n\nObrigado!\nEquipe Desenvolve", array( 'From: Desenvolve <' . $from . '>' ) ); } }
 	}
 } );
 
@@ -133,7 +133,7 @@ add_action( 'admin_menu', function () {
 			for ( $i = 0; $i < $n; $i++ ) { do { $k = strtoupper( wp_generate_password( 8, false, false ) ); } while ( isset( $C[ $k ] ) ); $C[ $k ] = array( 'criado' => current_time( 'mysql' ), 'rotulo' => mb_substr( $rot[ $i ] ?? '', 0, 80 ) ); }
 			update_option( 'dv_testers', $C, false ); echo '<div class="updated"><p>' . $n . ' convite(s) gerado(s).</p></div>';
 		}
-		echo '<div class="wrap"><h1>Testadores especialistas</h1><p>Cada convite vale para uma pessoa: ' . DV_TS_DIAS . ' dias de acesso com ' . DV_TS_CREDITOS . ' créditos. Ao enviar a avaliação, ganha 1 mês do plano Profissional (60 créditos).</p>';
+		echo '<div class="wrap"><h1>Testadores especialistas</h1><p>Cada convite vale para uma pessoa: ' . DV_TS_DIAS . ' dias de acesso com ' . DV_TS_CREDITOS . ' créditos. Ao enviar a avaliação, ganha 1 mês de assinatura (60 créditos).</p>';
 		echo '<form method="post" style="background:#fff;border:1px solid #ddd;padding:12px 16px;margin:12px 0">'; wp_nonce_field( 'dv_ts_gerar' );
 		echo '<p><b>Gerar convites</b>: escreva um nome por linha (aparece no convite) ou só a quantidade.</p><p><textarea name="rotulos" rows="4" cols="50" placeholder="Maria Silva&#10;João Souza"></textarea></p><p>Quantidade (se não colocar nomes): <input type="number" name="qtd" min="0" max="50" value="0" style="width:70px"> <button class="button button-primary" name="dv_ts_gerar" value="1">Gerar</button></p></form>';
 		echo '<table class="widefat striped"><thead><tr><th>Convite</th><th>Nome</th><th>Link</th><th>Ativou</th><th>Avaliou</th><th>Recomendação</th><th>Quanto pagaria</th></tr></thead><tbody>';

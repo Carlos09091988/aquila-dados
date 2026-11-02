@@ -163,36 +163,46 @@ add_action( 'rest_api_init', function () {
 		}
 		return $c;
 	} ) );
-	/* Últimas licitações do mesmo órgão para o mesmo objeto (contratos do PNCP nos últimos 4 anos + dados da compra) */
+	/* Últimas licitações do mesmo órgão para o mesmo objeto (busca do PNCP filtrada pelo órgão + dados e resultado de cada compra) */
 	register_rest_route( $ns, '/lic/historico', array( 'methods' => 'GET', 'permission_callback' => $perm, 'callback' => function ( WP_REST_Request $r ) {
 		$cnpj = preg_replace( '/\D/', '', (string) $r['cnpj'] ); if ( strlen( $cnpj ) !== 14 ) { return new WP_Error( 'dv_lic', 'Licitação sem CNPJ do órgão no PNCP.', array( 'status' => 400 ) ); }
-		if ( ! function_exists( 'dv_cp_contratos' ) || ! function_exists( 'dv_cp_tok' ) ) { return new WP_Error( 'dv_lic', 'Consulta indisponível agora.', array( 'status' => 503 ) ); }
+		if ( ! function_exists( 'dv_cp_tok' ) || ! function_exists( 'dv_ds_multi' ) ) { return new WP_Error( 'dv_lic', 'Consulta indisponível agora.', array( 'status' => 503 ) ); }
 		$kw = mb_substr( sanitize_text_field( (string) $r['objeto'] ), 0, 120 ); $atual = preg_replace( '/[^0-9\/]/', '', (string) $r['ref'] );
-		$ck = 'dv_hist_' . md5( $cnpj . '|' . $kw ); $c = get_transient( $ck ); if ( $c !== false ) { return $c; }
-		$toks = dv_cp_tok( $kw ); $ct = dv_cp_contratos( $cnpj ); $G = array();
-		foreach ( (array) $ct['itens'] as $x ) {
-			if ( $toks ) { $t = dv_ds_nrm( $x['objeto'] ); $hit = 0; foreach ( $toks as $k ) { if ( strpos( $t, $k ) !== false ) { $hit++; } } if ( $hit < min( 2, count( $toks ) ) ) { continue; } }
-			$ano = ''; $seq = 0; if ( preg_match( '#-(\d+)/(\d{4})$#', (string) $x['compra'], $m ) ) { $ano = $m[2]; $seq = (int) $m[1]; }
-			$k = $ano ? $ano . '/' . $seq : 'c' . md5( $x['link'] . $x['titulo'] );
-			if ( $ano && $atual && substr( $atual, -strlen( $ano . '/' . $seq ) ) === $ano . '/' . $seq ) { continue; }
-			if ( ! isset( $G[ $k ] ) ) { $G[ $k ] = array( 'ano' => $ano, 'seq' => $seq, 'data' => substr( (string) $x['assinatura'], 0, 10 ), 'objeto' => $x['objeto'], 'vencedores' => array(), 'contratado' => 0, 'fim' => '', 'link' => $ano ? 'https://pncp.gov.br/app/editais/' . $cnpj . '/' . $ano . '/' . $seq : $x['link'] ); }
-			$G[ $k ]['vencedores'][ $x['fornecedor'] ] = 1; $G[ $k ]['contratado'] += (float) $x['valor'];
-			if ( $x['fim'] > $G[ $k ]['fim'] ) { $G[ $k ]['fim'] = substr( (string) $x['fim'], 0, 10 ); }
-			if ( $x['assinatura'] && substr( $x['assinatura'], 0, 10 ) < $G[ $k ]['data'] ) { $G[ $k ]['data'] = substr( $x['assinatura'], 0, 10 ); }
+		$ck = 'dv_hist2_' . md5( $cnpj . '|' . $kw . '|' . $atual ); $c = get_transient( $ck ); if ( $c !== false ) { return $c; }
+		$S = 'https://pncp.gov.br/api/search/?tipos_documento=edital&ordenacao=-data&status=todos';
+		$oid = get_transient( 'dv_pncp_oid_' . $cnpj );
+		if ( ! $oid ) {
+			$g = wp_remote_get( $S . '&pagina=1&tam_pagina=10&q=' . $cnpj, array( 'timeout' => 20 ) ); $j = is_wp_error( $g ) ? null : json_decode( wp_remote_retrieve_body( $g ), true );
+			foreach ( (array) ( $j['items'] ?? array() ) as $i ) { if ( ( $i['orgao_cnpj'] ?? '' ) === $cnpj && ! empty( $i['orgao_id'] ) ) { $oid = (string) $i['orgao_id']; break; } }
+			if ( $oid ) { set_transient( 'dv_pncp_oid_' . $cnpj, $oid, 30 * DAY_IN_SECONDS ); }
 		}
-		usort( $G, function ( $a, $b ) { return strcmp( $b['data'], $a['data'] ); } ); $G = array_slice( $G, 0, 10 );
-		$u = array(); foreach ( $G as $i => $g ) { if ( $g['ano'] ) { $u[ $i ] = 'https://pncp.gov.br/api/consulta/v1/orgaos/' . $cnpj . '/compras/' . $g['ano'] . '/' . $g['seq']; } }
-		$res = ( $u && function_exists( 'dv_ds_multi' ) ) ? dv_ds_multi( $u, array(), 25 ) : array();
-		foreach ( $G as $i => &$g ) {
-			$g['vencedores'] = array_keys( $g['vencedores'] ); $j = isset( $res[ $i ] ) && is_string( $res[ $i ] ) ? json_decode( $res[ $i ], true ) : null;
-			$est = (float) ( $j['valorTotalEstimado'] ?? 0 ); $hom = (float) ( $j['valorTotalHomologado'] ?? 0 );
-			$g['modalidade'] = trim( ( $j['modalidadeNome'] ?? '' ) . ' ' . ( $j['numeroCompra'] ?? '' ) . ( isset( $j['anoCompra'] ) ? '/' . $j['anoCompra'] : '' ) );
-			$g['sessao'] = substr( (string) ( $j['dataAberturaProposta'] ?? '' ), 0, 10 ); $g['estimado'] = $est; $g['homologado'] = $hom;
-			$g['desconto'] = ( $est > 0 && $hom > 0 && $hom <= $est ) ? round( ( 1 - $hom / $est ) * 100, 1 ) : null;
+		if ( ! $oid ) { return new WP_Error( 'dv_lic', 'Não encontramos este órgão na busca do PNCP agora. Tente de novo mais tarde.', array( 'status' => 502 ) ); }
+		$toks = dv_cp_tok( $kw ); $q = rawurlencode( $kw ?: 'licitacao' );
+		$res = dv_ds_multi( array( 1 => $S . '&pagina=1&tam_pagina=50&orgaos=' . $oid . '&q=' . $q, 2 => $S . '&pagina=2&tam_pagina=50&orgaos=' . $oid . '&q=' . $q ), array(), 25 );
+		$L = array(); $vis = array();
+		foreach ( $res as $body ) { $j = is_string( $body ) ? json_decode( $body, true ) : $body; foreach ( (array) ( $j['items'] ?? array() ) as $i ) {
+			if ( ( $i['orgao_cnpj'] ?? '' ) !== $cnpj || ! preg_match( '#/compras/\d{14}/(\d{4})/(\d+)#', (string) ( $i['item_url'] ?? '' ), $m ) ) { continue; }
+			$k = $m[1] . '/' . $m[2]; if ( isset( $vis[ $k ] ) || ( $atual && substr( $atual, -strlen( $k ) ) === $k ) ) { continue; } $vis[ $k ] = 1;
+			if ( $toks ) { $t = dv_ds_nrm( ( $i['description'] ?? '' ) . ' ' . ( $i['title'] ?? '' ) ); $hit = 0; foreach ( $toks as $w ) { if ( strpos( $t, $w ) !== false ) { $hit++; } } if ( $hit < min( 2, count( $toks ) ) ) { continue; } }
+			$L[] = array( 'ano' => $m[1], 'seq' => (int) $m[2], 'data' => substr( (string) ( $i['data_publicacao_pncp'] ?? '' ), 0, 10 ), 'modalidade' => trim( ( $i['modalidade_licitacao_nome'] ?? '' ) . ' · ' . ( $i['title'] ?? '' ), ' ·' ),
+				'objeto' => mb_substr( (string) ( $i['description'] ?? '' ), 0, 220 ), 'situacao' => $i['situacao_nome'] ?? '', 'resultado' => ! empty( $i['tem_resultado'] ), 'cancelado' => ! empty( $i['cancelado'] ),
+				'link' => 'https://pncp.gov.br/app/editais/' . $cnpj . '/' . $m[1] . '/' . $m[2], 'vencedores' => array(), 'estimado' => 0, 'homologado' => 0, 'sessao' => '', 'desconto' => null );
+		} }
+		usort( $L, function ( $a, $b ) { return strcmp( $b['data'], $a['data'] ); } ); $L = array_slice( $L, 0, 10 );
+		$u = array(); foreach ( $L as $n => $x ) { $u[ 'c' . $n ] = 'https://pncp.gov.br/api/consulta/v1/orgaos/' . $cnpj . '/compras/' . $x['ano'] . '/' . $x['seq']; if ( $x['resultado'] ) { $u[ 'i' . $n ] = 'https://pncp.gov.br/api/pncp/v1/orgaos/' . $cnpj . '/compras/' . $x['ano'] . '/' . $x['seq'] . '/itens?pagina=1&tamanhoPagina=50'; } }
+		$R1 = $u ? dv_ds_multi( $u, array(), 25 ) : array(); $u2 = array();
+		foreach ( $L as $n => &$x ) {
+			$j = isset( $R1[ 'c' . $n ] ) && is_string( $R1[ 'c' . $n ] ) ? json_decode( $R1[ 'c' . $n ], true ) : null;
+			if ( $j ) { $x['estimado'] = (float) ( $j['valorTotalEstimado'] ?? 0 ); $x['homologado'] = (float) ( $j['valorTotalHomologado'] ?? 0 ); $x['sessao'] = substr( (string) ( $j['dataAberturaProposta'] ?? '' ), 0, 10 ); }
+			$it = isset( $R1[ 'i' . $n ] ) && is_string( $R1[ 'i' . $n ] ) ? json_decode( $R1[ 'i' . $n ], true ) : null; $q2 = 0;
+			foreach ( (array) $it as $ii ) { if ( ! empty( $ii['temResultado'] ) && isset( $ii['numeroItem'] ) && $q2 < 3 ) { $u2[ $n . '_' . $ii['numeroItem'] ] = 'https://pncp.gov.br/api/pncp/v1/orgaos/' . $cnpj . '/compras/' . $x['ano'] . '/' . $x['seq'] . '/itens/' . (int) $ii['numeroItem'] . '/resultados'; $q2++; } }
 		}
-		unset( $g );
-		$c = array( 'termos' => $kw, 'total' => count( $G ), 'itens' => array_values( $G ), 'falhas' => (int) ( $ct['falhas'] ?? 0 ) );
-		set_transient( $ck, $c, $G ? 12 * HOUR_IN_SECONDS : HOUR_IN_SECONDS );
+		unset( $x );
+		$R2 = $u2 ? dv_ds_multi( $u2, array(), 25 ) : array();
+		foreach ( $R2 as $k => $body ) { $n = (int) strtok( $k, '_' ); $j = is_string( $body ) ? json_decode( $body, true ) : $body; foreach ( (array) $j as $v ) { $nm = trim( (string) ( $v['nomeRazaoSocialFornecedor'] ?? '' ) ); if ( $nm && isset( $L[ $n ] ) && ! in_array( $nm, $L[ $n ]['vencedores'], true ) ) { $L[ $n ]['vencedores'][] = $nm; } } }
+		foreach ( $L as &$x ) { if ( $x['estimado'] > 0 && $x['homologado'] > 0 && $x['homologado'] <= $x['estimado'] ) { $x['desconto'] = round( ( 1 - $x['homologado'] / $x['estimado'] ) * 100, 1 ); } } unset( $x );
+		$c = array( 'termos' => $kw, 'total' => count( $L ), 'itens' => array_values( $L ) );
+		set_transient( $ck, $c, $L ? 12 * HOUR_IN_SECONDS : HOUR_IN_SECONDS );
 		return $c;
 	} ) );
 	/* Vencedores homologados de cada item (PNCP) */
@@ -444,13 +454,13 @@ var STOP='contratacao empresa empresas prestacao servico servicos continuos cont
 function toks(t){return String(t||'').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'').split(/[^a-z0-9]+/).filter(function(w){return w.length>4&&STOP.indexOf(w)<0}).slice(0,6)}
 R.addEventListener('click',function(ev){var b=ev.target.closest('[data-hist]');if(!b)return;ev.preventDefault();hist(b.dataset.hist,b.dataset.obj||'')},true);
 window.dvHist=function(a,b){hist(a,b)};
-function hist(ref,obj){var cnpj=ref.slice(0,14),kw=toks(obj).slice(0,3).join(' '),bg=document.createElement('div');bg.className='pk-bg';bg.innerHTML='<div class="pk pk-w"><h3>Licitações anteriores do órgão para este objeto</h3><p class="h">Buscando no PNCP as contratações dos últimos 4 anos'+(kw?' com <b>'+e(kw)+'</b>':'')+'… leva alguns segundos.</p></div>';document.body.appendChild(bg);bg.addEventListener('click',function(v){if(v.target===bg||v.target.dataset.f)bg.remove()});var P=bg.querySelector('.pk');
+function hist(ref,obj){var cnpj=ref.slice(0,14),kw=toks(obj).slice(0,3).join(' '),bg=document.createElement('div');bg.className='pk-bg';bg.innerHTML='<div class="pk pk-w"><h3>Licitações anteriores do órgão para este objeto</h3><p class="h">Buscando no PNCP as licitações anteriores deste órgão'+(kw?' com <b>'+e(kw)+'</b>':'')+'… leva alguns segundos.</p></div>';document.body.appendChild(bg);bg.addEventListener('click',function(v){if(v.target===bg||v.target.dataset.f)bg.remove()});var P=bg.querySelector('.pk');
  function br(d){return d?String(d).slice(0,10).split('-').reverse().join('/'):'—'}
- g(api+'lic/historico?cnpj='+cnpj+'&ref='+encodeURIComponent(ref)+'&objeto='+encodeURIComponent(kw)).then(function(D){var L=D.itens||[],h='<h3>Licitações anteriores do órgão para este objeto</h3><p class="h">Contratos publicados no PNCP nos últimos 4 anos'+(kw?' com os termos <b>'+e(kw)+'</b>':'')+'. Sem custo.</p>';
-  if(!L.length)h+='<p>Nenhuma contratação anterior encontrada para este objeto no PNCP.'+(D.falhas?' Parte da consulta falhou porque o PNCP está instável; tente de novo mais tarde.':'')+'</p>';
+ g(api+'lic/historico?cnpj='+cnpj+'&ref='+encodeURIComponent(ref)+'&objeto='+encodeURIComponent(kw)).then(function(D){var L=D.itens||[],h='<h3>Licitações anteriores do órgão para este objeto</h3><p class="h">As 10 mais recentes publicadas no PNCP por este órgão'+(kw?' com os termos <b>'+e(kw)+'</b>':'')+'. Sem custo.</p>';
+  if(!L.length)h+='<p>Nenhuma contratação anterior encontrada para este objeto no PNCP.'+'</p>';
   else{var ds=L.filter(function(x){return x.desconto!=null}).map(function(x){return x.desconto}),md=ds.length?(ds.reduce(function(a,b){return a+b},0)/ds.length):null;
    h+='<div class="hs-k"><div><b>'+L.length+'</b><span>contratações encontradas</span></div><div><b>'+(md!=null?md.toFixed(1).replace('.',',')+'%':'—')+'</b><span>desconto médio sobre o estimado</span></div><div><b>'+e(((L[0].vencedores||[])[0]||'—').slice(0,28))+'</b><span>vencedor mais recente</span></div></div>';
-   h+='<div class="hs-t"><table><thead><tr><th>Data</th><th>Licitação e objeto</th><th>Vencedor</th><th>Estimado</th><th>Contratado</th><th>Desconto</th></tr></thead><tbody>'+L.map(function(x){return'<tr><td>'+br(x.sessao||x.data)+(x.fim?'<small>vigência até '+br(x.fim)+'</small>':'')+'</td><td>'+(x.link?'<a href="'+e(x.link)+'" target="_blank" rel="noopener">'+e(x.modalidade||'Ver no PNCP')+'</a>':e(x.modalidade))+'<small>'+e(String(x.objeto||'').slice(0,140))+'</small></td><td>'+e((x.vencedores||[]).join(', ').slice(0,80))+'</td><td>'+(x.estimado?moeda(x.estimado):'—')+'</td><td>'+moeda(x.homologado||x.contratado)+'</td><td>'+(x.desconto!=null?'<b>'+String(x.desconto).replace('.',',')+'%</b>':'—')+'</td></tr>'}).join('')+'</tbody></table></div>';
+   h+='<div class="hs-t"><table><thead><tr><th>Data</th><th>Licitação e objeto</th><th>Vencedor</th><th>Estimado</th><th>Homologado</th><th>Desconto</th></tr></thead><tbody>'+L.map(function(x){return'<tr><td>'+br(x.sessao||x.data)+(x.sessao&&x.sessao!==x.data?'<small>publicada '+br(x.data)+'</small>':'')+'</td><td>'+(x.link?'<a href="'+e(x.link)+'" target="_blank" rel="noopener">'+e(x.modalidade||'Ver no PNCP')+'</a>':e(x.modalidade))+'<small>'+e(String(x.objeto||'').slice(0,140))+'</small></td><td>'+((x.vencedores||[]).length?e(x.vencedores.join(', ').slice(0,90)):'<small>'+e(x.cancelado?'cancelada':(x.resultado?'resultado sem vencedor informado':(x.situacao||'sem resultado ainda')))+'</small>')+'</td><td>'+(x.estimado?moeda(x.estimado):'—')+'</td><td>'+(x.homologado?moeda(x.homologado):'—')+'</td><td>'+(x.desconto!=null?'<b>'+String(x.desconto).replace('.',',')+'%</b>':'—')+'</td></tr>'}).join('')+'</tbody></table></div>';
    h+='<p class="h">O desconto compara o valor estimado com o homologado da licitação. A lista de participantes de cada pregão sai no Raio-X do órgão.</p>'}
   h+='<p style="display:flex;gap:8px;flex-wrap:wrap;margin-top:12px"><a class="g" style="text-decoration:none;border:1px solid #E3DED2;border-radius:10px;padding:10px 14px;color:#16191E;font-weight:700" href="/plataforma/raio-x-comprador/?cnpj='+cnpj+'&item='+encodeURIComponent(kw)+'">Raio-X do órgão</a><button type="button" class="g" data-f="1">Fechar</button></p>';P.innerHTML=h}).catch(function(j){P.innerHTML='<h3>Licitações anteriores</h3><p class="er">'+e((j&&j.message)||'Não foi possível consultar o PNCP agora.')+'</p><p><button type="button" class="g" data-f="1">Fechar</button></p>'})}
 R.addEventListener('click',function(ev){var b=ev.target.closest('[data-pac]');if(!b)return;ev.preventDefault();abrir(b.dataset.pac,b.dataset.item||'',b.dataset.st||'',b.dataset.obj||'')},true);

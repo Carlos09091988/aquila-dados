@@ -50,16 +50,29 @@ def escravo():
         f.write(b); f.flush()
         txt = subprocess.run(['pdftotext', '-layout', f.name, '-'], capture_output=True, text=True).stdout
     out = {}
-    for ln in txt.splitlines():
-        m = re.search(r'(\d{2}\.\d{3}\.\d{3}/\d{4}-\d{2}|\d{3}\.\d{3}\.\d{3}-\d{2})', ln)
+    L = txt.splitlines()
+    R = r'(\d{2}\.\d{3}\.\d{3}/\d{4}-\d{2}|\d{3}\.\d{3}\.\d{3}-\d{2})'
+    for i, ln in enumerate(L):
+        m = re.search(R, ln)
         if not m: continue
-        doc = so_dig(m.group(1))
-        partes = [p.strip() for p in re.split(r'\s{2,}', ln.strip()) if p.strip()]
+        doc = so_dig(m.group(1)); ini = m.start()
+        u = re.search(r'\b(\d{4})\s+([A-Z]{2})\b', ln[:ini])
+        a0 = u.end() if u else 0
+        def trecho(t):
+            return re.sub(r'\s{2,}', ' ', t[a0:ini]).strip() if len(t) > a0 else ''
+        nome = trecho(ln)
+        if not nome:  # nome quebrado nas linhas vizinhas
+            viz = [L[j] for j in (i - 2, i - 1, i + 1, i + 2) if 0 <= j < len(L) and not re.search(R, L[j]) and not re.match(r'\s*\d+\s+\d{4}\s+[A-Z]{2}\b', L[j])]
+            nome = ' '.join(x for x in (trecho(v) for v in viz) if x)
+        resto = ln[m.end():]
+        cn = re.search(r'\d{4}-\d/\d{2}', resto)
+        trab = ''
+        if cn:
+            n = re.findall(r'\b(\d{1,4})\b', resto[:cn.start()])
+            trab = n[-1] if n else ''
         datas = re.findall(r'\d{2}/\d{2}/\d{4}', ln)
-        nome = next((p for p in partes if re.search(r'[A-Za-zÀ-ú]{3}', p) and m.group(1) not in p), '')
-        uf = next((p for p in partes if re.fullmatch(r'[A-Z]{2}', p)), '')
-        out[doc] = {'nome': nome[:120], 'uf': uf, 'trabalhadores': next((p for p in partes if re.fullmatch(r'\d{1,4}', p)), ''),
-                    'decisao': datas[0] if datas else '', 'inclusao': datas[-1] if datas else '', 'linha': ln.strip()[:300]}
+        out[doc] = {'nome': nome[:160], 'uf': u.group(2) if u else '', 'ano_acao': u.group(1) if u else '', 'trabalhadores': trab,
+                    'decisao': datas[0] if datas else '', 'inclusao': datas[-1] if datas else ''}
     print('lista suja', len(out))
     return {'fonte': url, 'atualizado': datetime.date.today().isoformat(), 'itens': out}
 
@@ -114,11 +127,14 @@ def embargos():
         for row in linhas_csv(b, u):
             doc = so_dig(campo(row, 'CPF_CNPJ_EMBARGADO', 'CPF_CNPJ_INFRATOR', 'CPF_CNPJ', 'NUM_CPF_CNPJ', 'CNPJ'))
             if len(doc) != 14: continue
-            sit = campo(row, 'SIT_DESEMBARGO', 'DES_STATUS', 'SITUACAO')
+            st = campo(row, 'DES_STATUS_FORMULARIO')
+            if re.search(r'CANCEL|EXCLU|SUBSTITU', st, re.I): continue
+            dd = campo(row, 'DAT_DESEMBARGO')
+            sit = ('Desembargado em ' + dd[:10]) if (dd or campo(row, 'SIT_DESEMBARGO') == 'S') else 'Em vigor'
             idx.setdefault(doc[:8], []).append({'cnpj': doc,
                 'data': campo(row, 'DAT_EMBARGO', 'DATA_EMBARGO', 'DAT_HORA_AUTO', 'DATA'),
                 'municipio': campo(row, 'MUNICIPIO', 'NOM_MUNICIPIO'), 'uf': campo(row, 'UF', 'SIG_UF'),
-                'area': campo(row, 'QTD_AREA_EMBARGADA', 'AREA'), 'motivo': campo(row, 'DES_INFRACAO', 'DES_TAD', 'DESCRICAO', 'OBSERVACAO')[:240],
+                'area': campo(row, 'QTD_AREA_EMBARGADA', 'AREA'), 'motivo': campo(row, 'DES_TAD', 'DES_INFRACAO')[:240],
                 'situacao': sit, 'termo': campo(row, 'NUM_TAD', 'NUM_TERMO', 'SEQ_TAD')})
         if idx: break
     print('embargos empresas', len(idx))

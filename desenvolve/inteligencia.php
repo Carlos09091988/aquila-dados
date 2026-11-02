@@ -319,18 +319,26 @@ add_action( 'rest_api_init', function () {
 		if ( ! dv_int_pode( get_current_user_id(), 'dossie', $c ) ) { return new WP_Error( 'dv_pago', 'Gere a Due Diligence deste CNPJ para ver os sócios e a linha do tempo.', array( 'status' => 403 ) ); }
 		return dv_int_dossie( $c ) ?: new WP_Error( 'dv_ds', 'Dados da Due Diligence indisponíveis. Gere o relatório de novo.', array( 'status' => 404 ) );
 	} ) );
-	/* Raio-X em lote: um CNPJ por chamada (cobra como o Raio-X do concorrente) */
+	/* Raio-X em lote: preço fixo por lote de até 20 CNPJs (cobra uma vez ao abrir; depois um CNPJ por chamada) */
+	register_rest_route( 'desenvolve/v1', '/int/lote/abrir', array( 'methods' => 'POST', 'permission_callback' => $logado, 'callback' => function ( WP_REST_Request $r ) {
+		$L = array(); foreach ( (array) $r['cnpjs'] as $x ) { $x = preg_replace( '/\D/', '', (string) $x ); if ( strlen( $x ) === 14 ) { $L[ $x ] = 1; } }
+		$L = array_keys( $L ); if ( ! $L ) { return new WP_Error( 'dv_cnpj', 'Cole pelo menos um CNPJ válido.', array( 'status' => 400 ) ); }
+		if ( count( $L ) > 20 ) { return new WP_Error( 'dv_cnpj', 'O lote aceita até 20 CNPJs.', array( 'status' => 400 ) ); }
+		sort( $L ); $h = substr( hash( 'sha256', implode( ',', $L ) ), 0, 16 ); $uid = get_current_user_id();
+		$n = function_exists( 'dv_custo' ) ? dv_custo( 'lote' ) : 15;
+		if ( $n > 0 && function_exists( 'dv_usar' ) ) {
+			if ( ! dv_ilimitado( $uid ) && dv_saldo( $uid )['total'] < $n ) { return new WP_Error( 'dv_sem_credito', 'O Raio-X em lote usa ' . $n . ' créditos e o seu saldo não é suficiente.', array( 'status' => 402 ) ); }
+			$u = dv_usar( $uid, 'lote', 'lote=' . $h, 'Raio-X em lote (' . count( $L ) . ' CNPJs)' ); if ( is_wp_error( $u ) ) { return $u; }
+			if ( ! empty( $u['cobrado'] ) ) { for ( $i = 2; $i <= $n; $i++ ) { $x = dv_usar( $uid, 'lote', 'lote=' . $h . '|' . $i, '' ); if ( is_wp_error( $x ) ) { return $x; } } }
+		}
+		set_transient( 'dv_lt_' . $uid . '_' . $h, $L, DAY_IN_SECONDS );
+		return array( 'lote' => $h, 'total' => count( $L ) );
+	} ) );
 	register_rest_route( 'desenvolve/v1', '/int/lote', array( 'methods' => 'POST', 'permission_callback' => $logado, 'callback' => function ( WP_REST_Request $r ) use ( $cn ) {
 		$c = $cn( $r ); if ( ! $c ) { return new WP_Error( 'dv_cnpj', 'CNPJ inválido.', array( 'status' => 400 ) ); }
 		$uid = get_current_user_id(); @set_time_limit( 150 );
-		if ( function_exists( 'dv_usar' ) ) {
-			$fc = preg_replace( '/^(\d{2})(\d{3})(\d{3})(\d{4})(\d{2})$/', '$1.$2.$3/$4-$5', $c ); $k = 'rx-cnpj=' . $fc; $n = function_exists( 'dv_custo' ) ? dv_custo( 'raiox' ) : 5;
-			if ( $n > 0 ) {
-				if ( ! dv_ilimitado( $uid ) && dv_saldo( $uid )['total'] < $n ) { return new WP_Error( 'dv_sem_credito', 'Saldo insuficiente para continuar o lote.', array( 'status' => 402 ) ); }
-				$u = dv_usar( $uid, 'raiox', $k, $fc . ' (lote)' ); if ( is_wp_error( $u ) ) { return $u; }
-				if ( ! empty( $u['cobrado'] ) ) { for ( $i = 2; $i <= $n; $i++ ) { $x = dv_usar( $uid, 'raiox', $k . '|' . $i, '' ); if ( is_wp_error( $x ) ) { return $x; } } }
-			}
-		}
+		$L = get_transient( 'dv_lt_' . $uid . '_' . preg_replace( '/[^a-f0-9]/', '', (string) $r['lote'] ) );
+		if ( ! is_array( $L ) || ! in_array( $c, $L, true ) ) { return new WP_Error( 'dv_lote', 'Lote expirado. Clique em "Gerar Raio-X de todos" de novo.', array( 'status' => 403 ) ); }
 		$cad = dv_int_cad( $c ); if ( ! $cad ) { return new WP_Error( 'dv_cad', 'CNPJ não encontrado na Receita Federal.', array( 'status' => 404 ) ); }
 		$cd = $cad['cadastro']; $s = (array) ( $cad['sancoes'] ?? array() ); $p = function_exists( 'dv_ds_pgfn' ) ? dv_ds_pgfn( $c ) : null;
 		$V = function_exists( 'dv_part_vencidas' ) ? dv_part_vencidas( $c ) : array();
@@ -347,7 +355,7 @@ add_action( 'rest_api_init', function () {
 /* ---------------- Página do Raio-X em lote ---------------- */
 add_shortcode( 'dv_lote', function () {
 	if ( ! is_user_logged_in() ) { return '<p>Entre na sua conta para usar o Raio-X em lote.</p>'; }
-	$custo = function_exists( 'dv_custo' ) ? dv_custo( 'raiox' ) : 5;
+	$custo = function_exists( 'dv_teste_ilimitado' ) && dv_teste_ilimitado( get_current_user_id() ) ? 0 : ( function_exists( 'dv_custo' ) ? dv_custo( 'lote' ) : 15 );
 	ob_start(); ?>
 <div class="dv-tool dv-lote" data-sem-portao="1" data-custo="<?php echo (int) $custo; ?>" data-api="<?php echo esc_url( rest_url( 'desenvolve/v1/' ) ); ?>" data-nonce="<?php echo esc_attr( wp_create_nonce( 'wp_rest' ) ); ?>">
 <div class="lt-in"><label for="lt-t"><b>Cole os CNPJs dos participantes</b> (um por linha, ou o texto da ata; até 20)</label>
@@ -500,15 +508,15 @@ function htmlD(J){var h='<p class="k">Sócios e linha do tempo</p><h3>Quem está
 /* ---------- Raio-X em lote ---------- */
 if(lt){var T=lt.querySelector('textarea'),go=lt.querySelector('.lt-go'),cu=+lt.dataset.custo||0,cc=lt.querySelector('.lt-c'),mm=lt.querySelector('.lt-m'),out=lt.querySelector('.lt-out');
  function lista(){var s={},o=[];(T.value.match(/\d{2}\.?\d{3}\.?\d{3}\/?\d{4}-?\d{2}/g)||[]).forEach(function(x){x=x.replace(/\D/g,'');if(!s[x]){s[x]=1;o.push(x)}});return o.slice(0,20)}
- T.oninput=function(){var n=lista().length;cc.textContent=n?n+' CNPJ(s)'+(cu?' · '+n*cu+' créditos':''):''};
- go.onclick=function(){var L=lista();mm.textContent='';if(!L.length){mm.textContent='Cole pelo menos um CNPJ.';return}if(cu&&!confirm('Gerar o Raio-X de '+L.length+' empresa(s)? Usa '+L.length*cu+' créditos (CNPJs consultados nos últimos 15 minutos não são cobrados de novo).'))return;
-  go.disabled=true;var R=[];out.innerHTML='<section class="dv-ix"><p>Gerando 0 de '+L.length+'…</p></section>';var q=Promise.resolve();
-  L.forEach(function(c,i){q=q.then(function(){out.querySelector('p').textContent='Gerando '+(i+1)+' de '+L.length+'…';return post('int/lote',{cnpj:c}).then(function(x){R.push(x)}).catch(function(x){R.push({cnpj:c,erro:(x&&x.message)||'Falhou'});if(x&&x.code==='dv_sem_credito')throw x})})});
-  q.catch(function(x){mm.textContent=(x&&x.message)||''}).then(function(){go.disabled=false;out.innerHTML=tabela(R)})};
+ T.oninput=function(){var n=lista().length;cc.textContent=n?n+' CNPJ(s)'+(cu?' · '+cu+' créditos pelo lote todo':''):''};
+ go.onclick=function(){var L=lista();mm.textContent='';if(!L.length){mm.textContent='Cole pelo menos um CNPJ.';return}if(cu&&!confirm('Gerar o Raio-X de '+L.length+' empresa(s)? Usa '+cu+' créditos pelo lote todo (até 20 CNPJs).'))return;
+  go.disabled=true;var R=[];out.innerHTML='<section class="dv-ix"><p>Gerando 0 de '+L.length+'…</p></section>';var lid='';var q=post('int/lote/abrir',{cnpjs:L}).then(function(x){lid=x.lote});
+  L.forEach(function(c,i){q=q.then(function(){out.querySelector('p').textContent='Gerando '+(i+1)+' de '+L.length+'…';return post('int/lote',{cnpj:c,lote:lid}).then(function(x){R.push(x)}).catch(function(x){R.push({cnpj:c,erro:(x&&x.message)||'Falhou'});if(x&&(x.code==='dv_sem_credito'||x.code==='dv_lote'))throw x})})});
+  q.catch(function(x){mm.textContent=(x&&x.message)||''}).then(function(){go.disabled=false;out.innerHTML=R.length?tabela(R):''})};
  function tabela(R){var h='<section class="dv-ix"><p class="k">Raio-X em lote</p><h3>Comparativo dos participantes</h3><div class="tw"><table><tr><th>Empresa</th><th>Receita</th><th>Sanções</th><th>Dívida ativa</th><th>Vitórias (3 anos)</th><th>Desconto médio</th><th>Disputas na base</th><th></th></tr>';
   R.forEach(function(x){if(x.erro){h+='<tr><td>'+fc(x.cnpj)+'</td><td colspan="7">'+e(x.erro)+'</td></tr>';return}var at=Date.parse(x.abertura),an=at?Math.floor((Date.now()-at)/31557600000):null;
    h+='<tr><td><b>'+e(x.nome)+'</b><small>'+fc(x.cnpj)+' · '+e(x.municipio)+'</small></td><td>'+(x.situacao==='ATIVA'?'<span class="tag v">ATIVA</span>':'<span class="tag r">'+e(x.situacao||'?')+'</span>')+'<small>'+(an!=null?an+' anos · ':'')+'capital '+mc(x.capital)+'</small></td><td>'+(x.sancoes?'<span class="tag r">'+x.sancoes+'</span>':'<span class="tag v">nada</span>')+'</td><td>'+(x.pgfn>0?'<span class="tag '+(x.cobranca>0?'r':'a')+'">'+mc(x.pgfn)+'</span><small>'+(x.cobranca>0?'em cobrança':'parcelada ou suspensa')+(x.fgts>0?' · FGTS':'')+'</small>':'<span class="tag v">nada</span>')+'</td><td>'+x.vitorias+'<small>'+mc(x.vitorias_valor)+'</small></td><td>'+pc(x.desconto)+'</td><td>'+(x.disputas?x.disputas+(x.primeiro?' · '+x.primeiro+'× 1º':''):'—')+'</td><td><a href="/plataforma/raio-x/?cnpj='+x.cnpj+'">Raio-X completo</a></td></tr>'});
-  return h+'</table></div><p class="m">Dados da Receita, CEIS/CNEP/TCU, PGFN (base trimestral) e PNCP. O Raio-X completo de cada empresa abre sem nova cobrança nos próximos 15 minutos e fica salvo por 30 dias depois de aberto. Não constitui parecer jurídico.</p></section>'}
+  return h+'</table></div><p class="m">Dados da Receita, CEIS/CNEP/TCU, PGFN (base trimestral) e PNCP. O lote cobre o comparativo. O Raio-X completo de cada empresa, com habilitação e relatório, é cobrado à parte e fica salvo por 30 dias. Não constitui parecer jurídico.</p></section>'}
  return}
 
 /* ---------- gatilho ---------- */

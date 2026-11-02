@@ -24,7 +24,7 @@ function dv_cfg( $k = null ) {
 		'email_remetente'  => 'contato@desenvolveestrategias.com.br',
 		// chave:Nome:preço:créditos por mês:termos no Radar do Diário Oficial
 		'planos'           => 'desenvolve:Desenvolve:79.90:80:5',
-		'custos'           => 'raiox:15,comprador:10,buscador:0,vencendo:5,precos:0,comparador:3,habilitacao:0',
+		'custos'           => 'raiox:15,comprador:10,buscador:0,vencendo:5,precos:0,comparador:3,habilitacao:0,lote:15',
 		'fundador_desc'    => 30,
 		'fundador_vagas'   => 0,
 		'fundador_meses'   => 12,
@@ -46,6 +46,13 @@ add_action( 'init', function () {
 }, 6 );
 if ( ! function_exists( 'dv_rs' ) ) { function dv_rs( $v ) { $v = (float) $v; return number_format( $v, floor( $v ) == $v ? 0 : 2, ',', '.' ); } }
 add_action( 'init', function () { if ( get_option( 'dv_precos_ver' ) !== '3' ) { return; } $c = (array) get_option( 'dv_cfg', array() ); $c['trial_creditos'] = 25; update_option( 'dv_cfg', $c, false ); update_option( 'dv_precos_ver', '4', false ); }, 9 );
+/* Raio-X em lote: preço fixo de 15 créditos para até 20 CNPJs */
+add_action( 'init', function () {
+	if ( (int) get_option( 'dv_precos_ver' ) !== 5 ) { return; }
+	$c = (array) get_option( 'dv_cfg', array() ); $s = (string) ( $c['custos'] ?? '' );
+	if ( strpos( $s, 'lote:' ) === false ) { $c['custos'] = trim( $s . ',lote:15', ',' ); update_option( 'dv_cfg', $c, false ); }
+	update_option( 'dv_precos_ver', '6', false );
+}, 11 );
 /* Raio-X 15 créditos com a habilitação incluída (sem cobrança à parte, porque a busca pode não achar nada) */
 add_action( 'init', function () {
 	if ( (int) get_option( 'dv_precos_ver' ) !== 4 ) { return; }
@@ -71,7 +78,7 @@ add_action( 'init', function () {
 /* Custos por ferramenta para as telas (rótulos e avisos antes do clique) */
 add_action( 'wp_head', function () {
 	if ( ! is_user_logged_in() ) { return; } $o = array();
-	foreach ( array( 'raiox', 'comprador', 'comparador', 'precos', 'buscador', 'vencendo', 'dossie', 'habilitacao' ) as $k ) { $o[ $k ] = dv_teste_ilimitado( get_current_user_id() ) ? 0 : dv_custo( $k ); }
+	foreach ( array( 'raiox', 'comprador', 'comparador', 'precos', 'buscador', 'vencendo', 'dossie', 'habilitacao', 'lote' ) as $k ) { $o[ $k ] = dv_teste_ilimitado( get_current_user_id() ) ? 0 : dv_custo( $k ); }
 	echo '<script>window.DVC=' . wp_json_encode( $o ) . ';</script>';
 }, 1 );
 /* Tabela de preços 3 (out/2026): foco 100% em licitações, R$ 79 / 149 / 349, sem preço de fundador */
@@ -267,7 +274,7 @@ function dv_usar( $uid, $ferramenta, $chave, $rotulo = '' ) {
 	$base = array( 'user_id' => $uid, 'ferramenta' => $ferramenta, 'chave' => $chave, 'rotulo' => mb_substr( $rotulo, 0, 190 ),
 		'ip' => $_SERVER['REMOTE_ADDR'] ?? '', 'criado' => current_time( 'mysql' ) );
 	/* Raio-X e Due Diligence ficam salvos por 30 dias: pesquisar de novo cobra (só evita cobrança dupla em 15 min) */
-	$jan = in_array( $ferramenta, array( 'raiox', 'comprador', 'dossie' ), true ) ? 15 * MINUTE_IN_SECONDS : (int) dv_cfg( 'dedupe_dias' ) * DAY_IN_SECONDS;
+	$jan = in_array( $ferramenta, array( 'raiox', 'comprador', 'dossie', 'lote' ), true ) ? 15 * MINUTE_IN_SECONDS : (int) dv_cfg( 'dedupe_dias' ) * DAY_IN_SECONDS;
 	$ja = $wpdb->get_var( $wpdb->prepare( "SELECT id FROM $t WHERE user_id=%d AND chave=%s AND criado > %s LIMIT 1",
 		$uid, $chave, gmdate( 'Y-m-d H:i:s', current_time( 'timestamp' ) - $jan ) ) );
 	/* Pago antecipadamente no pacote da licitação: abrir em até 30 dias não cobra de novo */

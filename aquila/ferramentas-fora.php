@@ -1,5 +1,5 @@
 /* Aquila — ferramentas do site fora do ar (out/2026): redireciona os links antigos e tira as chamadas das paginas. */
-function aq_fora_slugs() { return array( 'ferramentas', 'raio-x-do-fornecedor', 'calculadora-de-prazos', 'calculadora-de-reajuste', 'buscador-de-licitacoes', 'banco-de-precos', 'comparador-de-licitantes', 'repactuacao-e-reequilibrio' ); }
+function aq_fora_slugs() { return array( 'raio-x-do-fornecedor', 'calculadora-de-reajuste', 'buscador-de-licitacoes', 'banco-de-precos', 'comparador-de-licitantes', 'repactuacao-e-reequilibrio' ); }
 function aq_fora_limpar( $h ) {
 	if ( ! is_string( $h ) || $h === '' ) { return $h; }
 	$t  = '(?:https?://aquilaadvocacia\.com\.br)?/(?:' . implode( '|', aq_fora_slugs() ) . ')/?(?:\#[^"]*)?';

@@ -436,6 +436,7 @@ add_action( 'wp_footer', function () {
 .dv-ix .tag{display:inline-block;border-radius:6px;padding:2px 7px;font-size:.74rem;font-weight:700;margin:2px 4px 0 0;background:#F3F0E8}.dv-ix .tag.r{background:#FDEDEA;color:#9A3524}.dv-ix .tag.a{background:#FBF1DC;color:#7A5410}.dv-ix .tag.v{background:#EAF5EE;color:#1F5A3B}
 .dv-lote .lt-v{list-style:none;padding:0;margin:8px 0}.dv-lote .lt-v li{padding:8px 0;border-bottom:1px solid #EFEBE2;line-height:1.5}
 .dv-lote .lt-in{background:#fff;border:1px solid #E3DED2;border-radius:16px;padding:18px;margin:0 0 16px;font-family:'Hanken Grotesk',system-ui,sans-serif}
+.dv-lote .lt-in label{display:block;color:#16191E!important;font-size:.95rem}.dv-lote .lt-in label b{color:#16191E!important}.dv-lote textarea{color:#16191E!important;background:#fff!important}
 .dv-lote textarea{width:100%;min-height:130px;border:1px solid #D9D3C4;border-radius:12px;padding:10px;font:inherit;margin:8px 0}
 .dv-lote .lt-b{display:flex;gap:12px;align-items:center;flex-wrap:wrap}.dv-lote .lt-go{background:#C9A45C;border:0;border-radius:999px;padding:12px 22px;font-weight:700;cursor:pointer;color:#241A06;font:inherit;font-weight:700}
 .dv-lote .lt-c{color:#6E6A60;font-size:.9rem}.dv-lote .lt-m{color:#9A3524;font-size:.9rem;margin:8px 0 0}

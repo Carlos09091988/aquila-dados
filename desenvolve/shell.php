@@ -15,7 +15,7 @@ function dv_app_pagina() {
 function dv_app_menu() {
 	return array(
 		array( '', array( array( 'Início', '/painel/', '🏠' ) ) ),
-		array( 'Raio-X e Due Diligence', array( array( 'Raio-X do comprador', '/plataforma/raio-x-comprador/', '🏛️' ), array( 'Raio-X do concorrente', '/plataforma/raio-x/', '🩻' ), array( 'Due Diligence completa', '/plataforma/dossie/', '📑' ), array( 'Raio-X em lote', '/plataforma/raio-x-lote/', '🗂️' ) ) ),
+		array( 'Raio-X e Due Diligence', array( array( 'Raio-X do comprador', '/plataforma/raio-x-comprador/', '🏛️' ), array( 'Raio-X do concorrente', '/plataforma/raio-x/', '🩻' ), array( 'Due Diligence completa', '/plataforma/dossie/', '📑' ), array( 'Raio-X em lote', '/plataforma/raio-x-lote/', '🗂️' ), array( 'Consulta Serasa', '/plataforma/serasa/', '🔎' ) ) ),
 		array( 'Encontrar', array( array( 'Alertas e oportunidades', '/plataforma/alertas/', '📥', 'caixa' ), array( 'Contratos vencendo', '/plataforma/contratos-vencendo/', '⏳' ) ) ),
 		array( 'Analisar e disputar', array( array( 'Gestão de licitações', '/plataforma/licitacoes/', '📋', 'sessoes' ), array( 'Banco de preços', '/plataforma/banco-de-precos/', '💲' ) ) ),
 		array( 'Habilitação e garantias', array( array( 'Documentos e certidões', '/plataforma/documentos/', '🗂️', 'docs' ), array( 'Meus contratos e garantias', '/plataforma/meus-contratos/', '🛡️' ) ) ),
@@ -115,6 +115,7 @@ add_action( 'wp_footer', function () {
 	foreach ( dv_app_menu() as $g ) {
 		if ( $g[0] ) { echo '<div class="gt">' . esc_html( $g[0] ) . '</div>'; }
 		foreach ( $g[1] as $it ) {
+			if ( $it[1] === '/plataforma/serasa/' && ! ( ( function_exists( 'dv_sr_ligado' ) && dv_sr_ligado() ) || dv_is_master( $uid ) ) ) { continue; }
 			$on = rtrim( $uri, '/' ) === rtrim( $it[1], '/' ); $b = isset( $it[3], $bd[ $it[3] ] ) ? $bd[ $it[3] ] : null;
 			echo '<a href="' . esc_url( $it[1] ) . '"' . ( $on ? ' class="on" aria-current="page"' : '' ) . '><span class="ic">' . $it[2] . '</span><span>' . esc_html( $it[0] ) . '</span>' . ( $b ? '<span class="bd ' . $b[1] . '">' . (int) $b[0] . '</span>' : '' ) . '</a>';
 		}

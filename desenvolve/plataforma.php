@@ -832,7 +832,7 @@ add_action( 'wp_footer', function () {
 /* ---------------- Aparência das telas do assinante ---------------- */
 add_action( 'wp_footer', function () {
 	global $post;
-	if ( ! $post || ( ! has_shortcode( $post->post_content, 'dv_painel' ) && ! has_shortcode( $post->post_content, 'dv_cadastro' ) ) ) { return; }
+	if ( ! $post || ( ! has_shortcode( $post->post_content, 'dv_painel' ) && ! has_shortcode( $post->post_content, 'dv_cadastro' ) && ! has_shortcode( $post->post_content, 'dv_creditos' ) ) ) { return; }
 	?>
 <style>
 .dvp{--bg:#0C0F13;--sf:#151A20;--ln:rgba(255,255,255,.1);--fg:#F4F2EC;--mu:#8E938F;--gd:#CBA55C;max-width:980px;margin:40px auto;padding:0 20px;color:var(--fg);font-family:"Hanken Grotesk",-apple-system,sans-serif}

@@ -8,7 +8,7 @@ if ( ! defined( 'ABSPATH' ) ) { exit; }
 function dv_app_pagina() {
 	if ( ! is_user_logged_in() || is_admin() || ! is_page() ) { return false; }
 	global $post; if ( ! $post ) { return false; }
-	return is_page( 'painel' ) || has_shortcode( (string) $post->post_content, 'dv_ctx' );
+	return is_page( 'painel' ) || has_shortcode( (string) $post->post_content, 'dv_ctx' ) || has_shortcode( (string) $post->post_content, 'dv_creditos' );
 }
 function dv_app_menu() {
 	return array(

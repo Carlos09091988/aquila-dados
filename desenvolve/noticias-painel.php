@@ -66,6 +66,7 @@ function dv_np_buscar( $qs, $filtrar = true, $lim = 40 ) {
 		}
 	}
 	usort( $out, function ( $a, $b ) { return strcmp( $b['d'], $a['d'] ); } );
+	$pf = array(); $out = array_values( array_filter( $out, function ( $x ) use ( &$pf ) { $k = strtolower( $x['f'] ); $pf[ $k ] = ( $pf[ $k ] ?? 0 ) + 1; return $pf[ $k ] <= 4; } ) );
 	return array_slice( $out, 0, $lim );
 }
 
@@ -79,7 +80,7 @@ function dv_np_orgao( $o ) {
 
 function dv_np_aba( $uid, $aba ) {
 	if ( $aba === 'geral' || $aba === 'decisoes' ) {
-		$ck = 'dv_np4_' . $aba; $c = get_transient( $ck ); if ( is_array( $c ) ) { return $c; }
+		$ck = 'dv_np5_' . $aba; $c = get_transient( $ck ); if ( is_array( $c ) ) { return $c; }
 		$qs = $aba === 'geral'
 			? array( 'licitação when:7d', 'licitações when:7d', 'pregão eletrônico when:14d', '"compras públicas" when:14d', '"Lei 14.133" when:30d', 'licitação prefeitura when:7d', 'licitação governo when:7d', 'contrato emergencial when:14d', 'superfaturamento licitação when:30d', 'licitação suspensa when:14d' )
 			: array( 'TCU licitação when:30d', '"Tribunal de Contas" licitação when:14d', 'TCU acórdão contratação when:60d', '"Tribunal de Contas" suspende licitação when:30d', 'TCE licitação when:14d', 'TCU contrato irregularidade when:30d' );
@@ -97,7 +98,7 @@ function dv_np_aba( $uid, $aba ) {
 		if ( ! $t ) { return array( 'itens' => array(), 'vazio' => 'orgaos' ); }
 		$qs = array(); foreach ( $t as $x ) { $qs[ 'o:' . $x[0] ] = '"' . $x[0] . '"' . ( $x[1] ? ' "' . $x[1] . '"' : '' ) . ' (licitação OR contrato OR pregão OR edital) when:120d'; } $t = array_map( function ( $x ) { return $x[1] ? $x[0] . ' (' . $x[1] . ')' : $x[0]; }, $t );
 	} else { return new WP_Error( 'dv_aba', 'Aba inválida.', array( 'status' => 400 ) ); }
-	$ck = 'dv_np_v4' . md5( $aba . wp_json_encode( $t ) ); $c = get_transient( $ck ); if ( is_array( $c ) ) { return $c; }
+	$ck = 'dv_np_v5' . md5( $aba . wp_json_encode( $t ) ); $c = get_transient( $ck ); if ( is_array( $c ) ) { return $c; }
 	$l = dv_np_buscar( $qs, true, 50 ); if ( $l === null ) { return array( 'itens' => array(), 'aviso' => 'As notícias não carregaram agora. Tente de novo em alguns minutos.', 'termos' => $t ); }
 	$r = array( 'itens' => $l, 'termos' => $t, 'em' => current_time( 'mysql' ) ); set_transient( $ck, $r, 6 * HOUR_IN_SECONDS ); return $r;
 }

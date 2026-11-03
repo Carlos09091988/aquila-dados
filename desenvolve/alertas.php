@@ -40,15 +40,20 @@ function dv_al_uf_nome( $n ) {
 function dv_al_dt_sessao( $t ) {
 	$hoje = current_time( 'Y-m-d' ); $max = gmdate( 'Y-m-d', strtotime( $hoje . ' +120 days' ) ); $c = array();
 	$mes = array( 'JANEIRO'=>1,'FEVEREIRO'=>2,'MARCO'=>3,'ABRIL'=>4,'MAIO'=>5,'JUNHO'=>6,'JULHO'=>7,'AGOSTO'=>8,'SETEMBRO'=>9,'OUTUBRO'=>10,'NOVEMBRO'=>11,'DEZEMBRO'=>12 );
-	$n = dv_al_norm( $t );
-	if ( preg_match_all( '#\b(\d{1,2})[/.](\d{1,2})[/.](\d{4})(?:[^0-9]{0,25}?\b(\d{1,2})\s*(?:HORAS|H|:)\s*(?:E\s*)?(\d{2})?)?#', $n, $mm, PREG_SET_ORDER ) ) {
-		foreach ( $mm as $x ) { if ( checkdate( (int) $x[2], (int) $x[1], (int) $x[3] ) ) { $c[] = array( sprintf( '%04d-%02d-%02d', $x[3], $x[2], $x[1] ), isset( $x[4] ) && $x[4] !== '' && (int) $x[4] < 24 ? sprintf( '%02d:%02d', $x[4], (int) ( $x[5] ?? 0 ) ) : '' ); } }
-	}
-	if ( preg_match_all( '#\b(\d{1,2})\s+DE\s+(' . implode( '|', array_keys( $mes ) ) . ')\s+DE\s+(\d{4})(?:[^0-9]{0,20}?\b(\d{1,2})\s*(?:HORAS|H|:)\s*(?:E\s*)?(\d{2})?)?#', $n, $mm, PREG_SET_ORDER ) ) {
-		foreach ( $mm as $x ) { if ( checkdate( $mes[ $x[2] ], (int) $x[1], (int) $x[3] ) ) { $c[] = array( sprintf( '%04d-%02d-%02d', $x[3], $mes[ $x[2] ], $x[1] ), isset( $x[4] ) && $x[4] !== '' && (int) $x[4] < 24 ? sprintf( '%02d:%02d', $x[4], (int) ( $x[5] ?? 0 ) ) : '' ); } }
-	}
+	$n = dv_al_norm( $t ); $hr = '(?:[^0-9]{0,25}?\b(\d{1,2})\s*(?:HORAS|H|:)\s*(?:E\s*)?(\d{2})?)?';
+	$add = function ( $y, $m, $d, $x, $pos ) use ( &$c, $n ) {
+		if ( ! checkdate( (int) $m, (int) $d, (int) $y ) ) { return; }
+		$h = isset( $x[4] ) && $x[4][0] !== '' && (int) $x[4][0] < 24 ? sprintf( '%02d:%02d', $x[4][0], (int) ( $x[5][0] ?? 0 ) ) : '';
+		/* data perto de "abertura/sessão/disputa" é a da sessão; "edital disponível a partir de…" não é */
+		$ant = substr( $n, max( 0, $pos - 110 ), min( 110, $pos ) );
+		$pref = (bool) preg_match( '/ABERTURA|SESSAO|REALIZA|DISPUTA|LANCES|CERTAME|JULGAMENTO|ENTREGA DOS ENVELOPES|RECEBIMENTO DAS PROPOSTAS ATE|ACOLHIMENTO/', $ant );
+		$c[] = array( sprintf( '%04d-%02d-%02d', $y, $m, $d ), $h, $pref );
+	};
+	if ( preg_match_all( '#\b(\d{1,2})[/.](\d{1,2})[/.](\d{4})' . $hr . '#', $n, $mm, PREG_SET_ORDER | PREG_OFFSET_CAPTURE ) ) { foreach ( $mm as $x ) { $add( $x[3][0], $x[2][0], $x[1][0], $x, $x[0][1] ); } }
+	if ( preg_match_all( '#\b(\d{1,2})\s+DE\s+(' . implode( '|', array_keys( $mes ) ) . ')\s+DE\s+(\d{4})' . $hr . '#', $n, $mm, PREG_SET_ORDER | PREG_OFFSET_CAPTURE ) ) { foreach ( $mm as $x ) { $add( $x[3][0], $mes[ $x[2][0] ], $x[1][0], $x, $x[0][1] ); } }
 	$f = array_values( array_filter( $c, function ( $d ) use ( $hoje, $max ) { return $d[0] >= $hoje && $d[0] <= $max; } ) );
 	if ( ! $f ) { return ''; }
+	$p = array_values( array_filter( $f, function ( $d ) { return $d[2]; } ) ); if ( $p ) { $f = $p; }
 	usort( $f, function ( $a, $b ) { return strcmp( $a[0], $b[0] ); } );
 	return $f[0][0] . ( $f[0][1] ? ' ' . $f[0][1] : '' );
 }
@@ -173,7 +178,12 @@ function dv_al_buscar( $a, $desde ) {
 		if ( ! isset( $a['diarios'] ) || $a['diarios'] ) { foreach ( dv_al_diario_urls( $t, $desde ) as $k => $u ) { $urls[ $k . '|' . $t ] = $u; } }
 	}
 	$res = array();
-	if ( function_exists( 'dv_ds_multi' ) ) { $res = dv_ds_multi( $urls, array( 'Accept' => 'application/json,text/html' ), 30 ); }
+	if ( function_exists( 'dv_ds_multi' ) ) {
+		/* PNCP e diários em disparos separados: um diário lento não derruba a busca do PNCP */
+		$up = array_filter( $urls, function ( $k ) { return strpos( $k, 'p|' ) === 0; }, ARRAY_FILTER_USE_KEY );
+		$res = dv_ds_multi( $up, array(), 30 );
+		$ud = array_diff_key( $urls, $up ); if ( $ud ) { $res += dv_ds_multi( $ud, array( 'Accept' => 'text/html,application/json' ), 18 ); }
+	}
 	else { foreach ( $urls as $k => $u ) { $g = wp_remote_get( $u, array( 'timeout' => 30 ) ); $res[ $k ] = is_wp_error( $g ) ? null : wp_remote_retrieve_body( $g ); } }
 	$GLOBALS['dv_al_dbg'] = array_map( function ( $b ) { return is_string( $b ) ? strlen( $b ) : -1; }, $res );
 	$out = array(); $dia = array();

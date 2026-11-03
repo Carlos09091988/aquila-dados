@@ -811,9 +811,9 @@ add_filter( 'pre_get_document_title', function ( $t ) { return is_front_page() ?
 /* Prévia de link (WhatsApp, LinkedIn etc.) com a marca nova */
 add_action( 'wp_head', function () {
 	if ( is_admin() ) { return; }
-	$img = 'https://desenvolveestrategias.com.br/wp-content/uploads/2026/11/desenvolve-og-2.png';
-	$t = is_front_page() ? 'Desenvolve · Raio-X do comprador e do concorrente' : wp_get_document_title();
-	$d = 'Antes de participar, conheça o comprador. Depois dos lances, os pontos fracos do concorrente. Inteligência em licitações com dados oficiais.';
+	$img = 'https://desenvolveestrategias.com.br/wp-content/uploads/2026/11/desenvolve-og-3.jpg';
+	$t = is_front_page() ? 'Desenvolve Estratégias · Inteligência em licitações' : wp_get_document_title();
+	$d = 'Editais do seu ramo todo dia, prazos da Lei 14.133 avisados, Raio-X de concorrentes e órgãos e as notícias do seu mercado numa plataforma só.';
 	echo "\n" . '<meta property="og:type" content="website"><meta property="og:site_name" content="Desenvolve Estratégias"><meta property="og:title" content="' . esc_attr( $t ) . '"><meta property="og:description" content="' . esc_attr( $d ) . '"><meta name="description" content="' . esc_attr( $d ) . '"><meta property="og:url" content="' . esc_url( home_url( add_query_arg( array() ) ) ) . '"><meta property="og:image" content="' . $img . '"><meta property="og:image:width" content="1200"><meta property="og:image:height" content="630"><meta name="twitter:card" content="summary_large_image">' . "\n";
 }, 1 );
 

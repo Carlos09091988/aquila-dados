@@ -1140,3 +1140,14 @@ document.addEventListener('submit',function(e){var f=e.target;if(!f.querySelecto
 })();</script>
 	<?php
 }, 130 );
+
+// Teste de entrega de e-mail (só master): envia um e-mail para o próprio usuário e mostra o resultado do wp_mail.
+add_action( 'rest_api_init', function () {
+	register_rest_route( 'desenvolve/v1', '/admin/teste-email', array( 'methods' => 'POST', 'permission_callback' => function () { return is_user_logged_in() && function_exists( 'dv_is_master' ) && dv_is_master( get_current_user_id() ) && current_user_can( 'manage_options' ); },
+		'callback' => function () {
+			$u = wp_get_current_user(); $from = function_exists( 'dv_cfg' ) && dv_cfg( 'email_remetente' ) ? dv_cfg( 'email_remetente' ) : 'contato@desenvolveestrategias.com.br'; $erro = '';
+			add_action( 'wp_mail_failed', function ( $e ) use ( &$erro ) { $erro = $e->get_error_message(); } );
+			$ok = wp_mail( $u->user_email, 'Teste de entrega da Desenvolve', "Olá!\n\nEste é um teste de entrega dos e-mails da plataforma (alertas, prazos e boas-vindas).\n\nSe este e-mail caiu no spam ou na aba Promoções, me avise.\n\nEquipe Desenvolve", array( 'From: Desenvolve <' . $from . '>' ) );
+			return array( 'ok' => $ok, 'para' => $u->user_email, 'de' => $from, 'erro' => $erro );
+		} ) );
+} );

@@ -30,7 +30,7 @@ function dv_np_confiavel( $host, $nome ) {
 	$D = array( 'g1.globo.com', 'oglobo.globo.com', 'valor.globo.com', 'extra.globo.com', 'epocanegocios.globo.com', 'globo.com', 'folha.uol.com.br', 'uol.com.br', 'estadao.com.br', 'cnnbrasil.com.br', 'metropoles.com', 'poder360.com.br', 'exame.com', 'veja.abril.com.br', 'infomoney.com.br', 'band.uol.com.br', 'r7.com', 'terra.com.br', 'correiobraziliense.com.br', 'agenciabrasil.ebc.com.br', 'ebc.com.br', 'istoe.com.br', 'istoedinheiro.com.br', 'cartacapital.com.br', 'jota.info', 'conjur.com.br', 'migalhas.com.br', 'nexojornal.com.br', 'gazetadopovo.com.br', 'otempo.com.br', 'em.com.br', 'gauchazh.clicrbs.com.br', 'clicrbs.com.br', 'correiodopovo.com.br', 'atarde.com.br', 'jc.uol.com.br', 'jc.ne10.uol.com.br', 'diariodepernambuco.com.br', 'folhape.com.br', 'opovo.com.br', 'diariodonordeste.verdesmares.com.br', 'oliberal.com', 'acritica.com', 'tribunadonorte.com.br', 'jornaldocomercio.com', 'opopular.com.br', 'nsctotal.com.br', 'bnamericas.com', 'diariodotransporte.com.br', 'acidadeon.com', 'odia.ig.com.br', 'odia.com.br', 'seudinheiro.com', 'braziljournal.com', 'neofeed.com.br', 'convergenciadigital.com.br', 'teletime.com.br', 'portosenavios.com.br', 'agenciainfra.com', 'sollicita.com.br', 'zenite.blog.br', 'zenite.com.br', 'jornaldebrasilia.com.br', 'campograndenews.com.br', 'gazetaonline.com.br', 'agazeta.com.br', 'correiodoestado.com.br', 'gazetasp.com.br', 'diariodoaco.com.br', 'jornalcruzeiro.com.br' );
 	foreach ( $D as $d ) { if ( $host === $d || substr( $host, -strlen( '.' . $d ) ) === '.' . $d ) { return true; } }
 	$n = strtoupper( remove_accents( (string) $nome ) );
-	return (bool) preg_match( '/^(G1|O GLOBO|VALOR|VALOR ECONOMICO|FOLHA|FOLHA DE S.PAULO|ESTADAO|CNN BRASIL|METROPOLES|PODER360|AGENCIA BRASIL|JOTA|CONSULTOR JURIDICO|CONJUR|MIGALHAS|EXAME|INFOMONEY|UOL|CORREIO BRAZILIENSE|GAZETA DO POVO|ESTADO DE MINAS|O TEMPO|GZH|A TARDE|TRIBUNA DO NORTE|DIARIO DO NORDESTE|O POVO|O LIBERAL|NSC TOTAL|BNAMERICAS|DIARIO DO TRANSPORTE|AGENCIA SENADO|AGENCIA CAMARA|CAMARA DOS DEPUTADOS|SENADO FEDERAL|R7|TERRA|BAND|VEJA|ISTOE|EPOCA|CARTACAPITAL|JORNAL DO COMMERCIO|CORREIO DO POVO|FOLHA DE PERNAMBUCO|AGENCIA INFRA|NEXO JORNAL|BRAZIL JOURNAL|WWW\.GOV\.BR|GOV\.BR|TCU|TRIBUNAL DE CONTAS)\b/', $n );
+	return (bool) preg_match( '/^(G1|O GLOBO|VALOR|VALOR ECONOMICO|FOLHA DE S\.?PAULO|FOLHA DE SAO PAULO|UOL ECONOMIA|ESTADAO|CNN BRASIL|METROPOLES|PODER360|AGENCIA BRASIL|JOTA|CONSULTOR JURIDICO|CONJUR|MIGALHAS|EXAME|INFOMONEY|UOL|CORREIO BRAZILIENSE|GAZETA DO POVO|ESTADO DE MINAS|O TEMPO|GZH|A TARDE|TRIBUNA DO NORTE|DIARIO DO NORDESTE|O POVO|O LIBERAL|NSC TOTAL|BNAMERICAS|DIARIO DO TRANSPORTE|AGENCIA SENADO|AGENCIA CAMARA|CAMARA DOS DEPUTADOS|SENADO FEDERAL|R7|TERRA|BAND|VEJA|ISTOE|EPOCA|CARTACAPITAL|JORNAL DO COMMERCIO|CORREIO DO POVO|FOLHA DE PERNAMBUCO|AGENCIA INFRA|NEXO JORNAL|BRAZIL JOURNAL|WWW\.GOV\.BR|GOV\.BR|TCU|TCE[ -][A-Z]{2}|TRIBUNAL DE CONTAS( D[AEO]S?( ESTADO| MUNICIPIO)?( D[AEO])? [A-Z ]+)?)$/', trim( $n ) );
 }
 function dv_np_rss( $xml ) {
 	$prev = libxml_use_internal_errors( true ); $x = simplexml_load_string( (string) $xml ); libxml_use_internal_errors( $prev );
@@ -79,7 +79,7 @@ function dv_np_orgao( $o ) {
 
 function dv_np_aba( $uid, $aba ) {
 	if ( $aba === 'geral' || $aba === 'decisoes' ) {
-		$ck = 'dv_np3_' . $aba; $c = get_transient( $ck ); if ( is_array( $c ) ) { return $c; }
+		$ck = 'dv_np4_' . $aba; $c = get_transient( $ck ); if ( is_array( $c ) ) { return $c; }
 		$qs = $aba === 'geral'
 			? array( 'licitação when:7d', 'licitações when:7d', 'pregão eletrônico when:14d', '"compras públicas" when:14d', '"Lei 14.133" when:30d', 'licitação prefeitura when:7d', 'licitação governo when:7d', 'contrato emergencial when:14d', 'superfaturamento licitação when:30d', 'licitação suspensa when:14d' )
 			: array( 'TCU licitação when:30d', '"Tribunal de Contas" licitação when:14d', 'TCU acórdão contratação when:60d', '"Tribunal de Contas" suspende licitação when:30d', 'TCE licitação when:14d', 'TCU contrato irregularidade when:30d' );
@@ -97,7 +97,7 @@ function dv_np_aba( $uid, $aba ) {
 		if ( ! $t ) { return array( 'itens' => array(), 'vazio' => 'orgaos' ); }
 		$qs = array(); foreach ( $t as $x ) { $qs[ 'o:' . $x[0] ] = '"' . $x[0] . '"' . ( $x[1] ? ' "' . $x[1] . '"' : '' ) . ' (licitação OR contrato OR pregão OR edital) when:120d'; } $t = array_map( function ( $x ) { return $x[1] ? $x[0] . ' (' . $x[1] . ')' : $x[0]; }, $t );
 	} else { return new WP_Error( 'dv_aba', 'Aba inválida.', array( 'status' => 400 ) ); }
-	$ck = 'dv_np_v3' . md5( $aba . wp_json_encode( $t ) ); $c = get_transient( $ck ); if ( is_array( $c ) ) { return $c; }
+	$ck = 'dv_np_v4' . md5( $aba . wp_json_encode( $t ) ); $c = get_transient( $ck ); if ( is_array( $c ) ) { return $c; }
 	$l = dv_np_buscar( $qs, true, 50 ); if ( $l === null ) { return array( 'itens' => array(), 'aviso' => 'As notícias não carregaram agora. Tente de novo em alguns minutos.', 'termos' => $t ); }
 	$r = array( 'itens' => $l, 'termos' => $t, 'em' => current_time( 'mysql' ) ); set_transient( $ck, $r, 6 * HOUR_IN_SECONDS ); return $r;
 }

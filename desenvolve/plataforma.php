@@ -1129,3 +1129,14 @@ window.dvTextoDe=function(el){if(!el)return'';var c=el.cloneNode(true);[].forEac
 
 // Nome da empresa em maiúsculas em todas as páginas (cabeçalho, rodapé e maquetes do site).
 add_action( 'wp_head', function () { echo '<style>a.lg>span>b,.mk .sd>b,a.logo .wm,.dv-side .lg b,.dv-topm b{text-transform:uppercase!important;letter-spacing:.05em}a.lg>span>b{white-space:nowrap}</style>'; }, 120 );
+
+// Aviso de e-mail digitado errado ("Você quis dizer gmail.com?") em todos os formulários; bloqueia domínios que não existem (ex.: gmail.com.br).
+add_action( 'wp_footer', function () { ?>
+<script>(function(){var C={'gmail.com.br':'gmail.com','gmial.com':'gmail.com','gmal.com':'gmail.com','gmai.com':'gmail.com','gamil.com':'gmail.com','gnail.com':'gmail.com','gmail.co':'gmail.com','gmail.con':'gmail.com','gmail.cm':'gmail.com','gmaill.com':'gmail.com','gmail.om':'gmail.com','hotmal.com':'hotmail.com','hotmial.com':'hotmail.com','hotmai.com':'hotmail.com','hotmail.con':'hotmail.com','hotmail.co':'hotmail.com','hotmil.com':'hotmail.com','outlok.com':'outlook.com','outlook.con':'outlook.com','outloo.com':'outlook.com','yahoo.con':'yahoo.com','yaho.com.br':'yahoo.com.br','yahoo.com.b':'yahoo.com.br','icloud.con':'icloud.com','iclod.com':'icloud.com','uol.com':'uol.com.br','bol.com':'bol.com.br','terra.com':'terra.com.br'},BLOQ={'gmail.com.br':1,'gmial.com':1,'gmal.com':1,'gamil.com':1,'gnail.com':1,'gmail.con':1,'hotmail.con':1,'outlook.con':1,'yahoo.con':1,'icloud.con':1};
+function sug(i){var v=String(i.value||'').trim().toLowerCase(),m=v.match(/^([^@\s]+)@([^@\s]+)$/);return m&&C[m[2]]?{d:m[2],ok:m[1]+'@'+C[m[2]]}:null}
+function aviso(i){var s=sug(i),b=i.parentNode.querySelector('.dv-emsug');if(!s){if(b)b.remove();return null}if(!b){b=document.createElement('div');b.className='dv-emsug';b.style.cssText='margin:6px 0 2px;font:500 .85rem/1.4 "Hanken Grotesk",-apple-system,sans-serif;color:#8E2F1F;background:#FFF4F1;border:1px solid #F0C9BF;border-radius:8px;padding:7px 10px';i.insertAdjacentElement('afterend',b)}b.innerHTML='Você quis dizer <a href="#" style="color:#86621F;font-weight:800;text-decoration:underline">'+s.ok+'</a>?'+(BLOQ[s.d]?' O endereço “@'+s.d+'” não existe.':'');b.querySelector('a').onclick=function(e){e.preventDefault();i.value=s.ok;i.dispatchEvent(new Event('input',{bubbles:true}));b.remove();i.focus()};return s}
+document.addEventListener('blur',function(e){var i=e.target;if(i&&i.matches&&i.matches('input[type=email],input[name*=mail]'))aviso(i)},true);
+document.addEventListener('submit',function(e){var f=e.target;if(!f.querySelectorAll)return;[].forEach.call(f.querySelectorAll('input[type=email],input[name*=mail]'),function(i){var s=aviso(i);if(s&&BLOQ[s.d]){e.preventDefault();e.stopImmediatePropagation();i.focus();i.scrollIntoView({block:'center'})}})},true);
+})();</script>
+	<?php
+}, 130 );

@@ -1065,3 +1065,6 @@ html body .dv-tool .aq,html body .dv-tool .aq *{font-family:"Hanken Grotesk",-ap
 </style>
 	<?php
 }, 98 );
+
+// Esconde o custo em créditos para visitantes (páginas públicas).
+add_action( 'wp_head', function () { if ( ! is_user_logged_in() ) echo '<style>.dv-cst{display:none!important}</style>'; } );

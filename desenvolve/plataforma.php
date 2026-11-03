@@ -1183,7 +1183,7 @@ add_action( 'rest_api_init', function () {
 add_action( 'wp_footer', function () { ?>
 <style>.dv-up{text-transform:uppercase!important;letter-spacing:.05em!important}
 @media print{.dv-rnav,.dv-top,.dv-topm,.dv-side,.dv-sld,.dv-mia-w,.dv-mia,#dv-pal,#ht-ctc-chat,.np-it .ac{display:none!important}body.dv-app{padding:0!important}body.dv-app .dv-tool,body.dv-app .dv-tool *,body.dv-app .aq{overflow:visible!important}body.dv-app .dv-tool .aq:has(.dv-rnav),body.dv-app .dv-tool :has(>.dv-rnav){overflow:visible!important}}</style>
-<script>(function(){var RE=/^\s*desenvolve\s+estrat[ée]gias\s*$/i;function up(r){var L=(r||document.body).querySelectorAll('span,b,a,div,p,strong,td,h1,h2,h3,h4,small');for(var i=0;i<L.length;i++){var e=L[i];if(e.classList.contains('dv-up')||e.children.length>3)continue;var t=e.textContent;if(t.length<40&&RE.test(t)){e.classList.add('dv-up')}}}
+<script>(function(){var RE=/^\s*desenvolve\s+estrat[ée]gias\s*$/i;function up(r){var L=(r||document.body).querySelectorAll('span,b,a,div,p,strong,td,h1,h2,h3,h4,small');for(var i=0;i<L.length;i++){var e=L[i];if(e.classList.contains('dv-up')||e.children.length>3)continue;var t=e.textContent;if(t.length<40&&RE.test(t)){e.classList.add('dv-up');[e].concat([].slice.call(e.querySelectorAll('span,b,strong'))).forEach(function(z){z.style.setProperty('text-transform','uppercase','important');z.style.setProperty('letter-spacing','.04em','important')})}}}
 up();var T=0;new MutationObserver(function(){clearTimeout(T);T=setTimeout(function(){up()},400)}).observe(document.body,{childList:true,subtree:true});window.addEventListener('beforeprint',function(){up()})})();</script>
 	<?php
 }, 140 );

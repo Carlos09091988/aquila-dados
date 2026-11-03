@@ -61,7 +61,7 @@ function dv_al_modalidade( $n ) {
 	foreach ( array( 'PREGAO ELETRONICO' => 'Pregão Eletrônico', 'PREGAO PRESENCIAL' => 'Pregão Presencial', 'PREGAO' => 'Pregão', 'CONCORRENCIA' => 'Concorrência', 'TOMADA DE PRECOS' => 'Tomada de Preços', 'DISPENSA' => 'Dispensa', 'INEXIGIBILIDADE' => 'Inexigibilidade', 'CHAMAMENTO PUBLICO' => 'Chamamento Público', 'CREDENCIAMENTO' => 'Credenciamento', 'CONVITE' => 'Convite', 'LEILAO' => 'Leilão' ) as $k => $v ) { if ( strpos( $n, $k ) !== false ) { return $v; } }
 	return 'Licitação';
 }
-function dv_al_numero( $n ) { return preg_match( '#\bN[\s.ºO°\x{00BA}]*\s*(\d{1,3}\.\d{3}|\d{1,6})\s*/\s*(\d{4})#u', $n, $m ) ? str_replace( '.', '', $m[1] ) . '/' . $m[2] : ''; }
+function dv_al_numero( $n ) { if ( preg_match( '#(?:PREGAO|CONCORRENCIA|DISPENSA|TOMADA DE PRECOS|CHAMAMENTO PUBLICO|CREDENCIAMENTO|EDITAL)[A-Z\s/]{0,40}?\bN[\s.ºO°\x{00BA}]*\s*(\d{1,3}\.\d{3}|\d{1,6})\s*/\s*(\d{4})#u', $n, $m ) ) { return str_replace( '.', '', $m[1] ) . '/' . $m[2]; } return preg_match( '#\bN[\s.ºO°\x{00BA}]*\s*(\d{1,3}\.\d{3}|\d{1,6})\s*/\s*(\d{4})#u', $n, $m ) ? str_replace( '.', '', $m[1] ) . '/' . $m[2] : ''; }
 function dv_al_objeto( $txt ) {
 	if ( preg_match( '#OBJETO\s*(?:[:\-–]|\b(?:A|O|É|E|DE)\b)?\s*(.{20,420}?)(?:\.\s|;|\s(?:DATA|ABERTURA|SESS[AÃ]O|ENTREGA|EDITAL|VALOR|PRAZO|LOCAL|INFORMA|OS INTERESSADOS)|$)#iu', $txt, $m ) ) { return rtrim( trim( $m[1], ' "“”' ), '.' ); }
 	$n = dv_al_norm( $txt ); if ( preg_match( DV_AL_QUER, $n, $q, PREG_OFFSET_CAPTURE ) && $q[0][1] > 30 ) { $txt = mb_substr( $txt, $q[0][1] ); }
@@ -76,7 +76,7 @@ function dv_al_diario_urls( $t, $desde ) {
 	);
 }
 define( 'DV_AL_QUER', '/AVISO D[EO] (LICITACAO|PREGAO|ABERTURA|DISPENSA|CHAMAMENTO|EDITAL|REABERTURA|CONCORRENCIA)|AVISOS DE LICITACAO|PREGAO (ELETRONICO|PRESENCIAL)|CONCORRENCIA (ELETRONICA|PUBLICA)|TOMADA DE PRECOS|DISPENSA (ELETRONICA|DE LICITACAO)|CHAMAMENTO PUBLICO|SESSAO PUBLICA|ABERTURA DAS? (PROPOSTAS|SESSAO|ENVELOPES|LICITACAO)|RECEBIMENTO DAS PROPOSTAS|EDITAL DE (LICITACAO|PREGAO)/' );
-define( 'DV_AL_NAO', '/HOMOLOG|ADJUDICA|EXTRATO D|RATIFICA|RESULTADO|TERMO ADITIVO|ATA DE REGISTRO DE PRECOS N|REVOGA|ANULA|DESERT|FRACASSAD|VENCEDOR|CONCURSO PUBLICO|PROCESSO SELETIVO/' );
+define( 'DV_AL_NAO', '/HOMOLOG|ADJUDICA|EXTRATO D|RATIFICA|RESULTADO|TERMO ADITIVO|ATA DE REGISTRO DE PRECOS N|REVOGA|ANULA|DESERT|FRACASSAD|VENCEDOR|CONCURSO PUBLICO|PROCESSO SELETIVO|EMPENHO|CONTRATACAO DIRETA - D|ORDEM DE (SERVICO|FORNECIMENTO)/' );
 function dv_al_aceita( $nd, $enc, $termo, $excl, $a ) {
 	if ( ! dv_al_relevante( $termo, $nd ) || ! preg_match( DV_AL_QUER, $nd ) ) { return false; }
 	if ( preg_match( DV_AL_NAO, $nd ) && ! $enc ) { return false; }
@@ -183,6 +183,8 @@ function dv_al_buscar( $a, $desde ) {
 		$up = array_filter( $urls, function ( $k ) { return strpos( $k, 'p|' ) === 0; }, ARRAY_FILTER_USE_KEY );
 		$res = dv_ds_multi( $up, array(), 30 );
 		$ud = array_diff_key( $urls, $up ); if ( $ud ) { $res += dv_ds_multi( $ud, array( 'Accept' => 'text/html,application/json' ), 18 ); }
+		/* uma nova tentativa, uma a uma, para o que falhou (PNCP e DOU às vezes recusam o primeiro acesso) */
+		foreach ( $res as $k => $b ) { if ( $b ) { continue; } $g = wp_remote_get( $urls[ $k ], array( 'timeout' => strpos( $k, 'p|' ) === 0 ? 25 : 15, 'headers' => array( 'Accept' => strpos( $k, 'p|' ) === 0 ? 'application/json' : 'text/html,application/json' ) ) ); if ( ! is_wp_error( $g ) && wp_remote_retrieve_response_code( $g ) === 200 ) { $res[ $k ] = wp_remote_retrieve_body( $g ); } }
 	}
 	else { foreach ( $urls as $k => $u ) { $g = wp_remote_get( $u, array( 'timeout' => 30 ) ); $res[ $k ] = is_wp_error( $g ) ? null : wp_remote_retrieve_body( $g ); } }
 	$GLOBALS['dv_al_dbg'] = array_map( function ( $b ) { return is_string( $b ) ? strlen( $b ) : -1; }, $res );

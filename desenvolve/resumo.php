@@ -212,7 +212,7 @@ function montar(){
  var h;try{h=PG==='comprador'?htmlComprador(r):htmlEmpresa(sinaisEmpresa(r))}catch(x){return}
  var r0=root(),h2=r0&&r0.querySelector('.rx-card.ink h2, .rp-hd h2'),nm=h2?h2.textContent.trim():'',_n=(window.DVNOME=nm),cn=(new URLSearchParams(location.search).get('cnpj')||'').replace(/\D/g,'');if(!cn){var ii=document.querySelector('.dv-tool input');cn=ii?String(ii.value).replace(/\D/g,''):''}
  if(nm)h='<div class="id"><b>'+e(nm)+'</b>'+(cn.length===14?'<span>CNPJ '+cn.replace(/^(\d{2})(\d{3})(\d{3})(\d{4})(\d{2})$/,'$1.$2.$3/$4-$5')+'</span>':'')+'</div>'+h;
- h+='<div class="dv-mia-w"><button type="button" class="dv-mia" data-mia-r="'+PG+'">🤖 Analisar com a minha IA</button></div>';
+ h+='<div class="dv-mia-w"><button type="button" class="dv-mia" data-mia-r="'+PG+'">Analisar com a minha IA</button></div>';
  h+='<p class="ft">Leitura automática dos dados públicos deste relatório, na data da consulta. Não constitui parecer jurídico: confirme cada ponto nas fontes oficiais e com o seu especialista.</p>';
  clearTimeout(ts);ts=setTimeout(salvar,7000);
  if(h===ult&&document.getElementById('dv-rs'))return;ult=h;

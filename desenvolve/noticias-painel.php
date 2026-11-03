@@ -26,6 +26,10 @@ function dv_np_tag( $t ) {
 /** Só fontes confiáveis: órgãos oficiais, grande imprensa nacional/regional e imprensa jurídica. */
 function dv_np_confiavel( $host, $nome ) {
 	$host = strtolower( preg_replace( '/^www\./', '', (string) $host ) );
+	/* veículos com paywall (o cliente não consegue ler sem assinatura): ficam de fora */
+	$PAGO = array( 'folha.uol.com.br', 'estadao.com.br', 'valor.globo.com', 'oglobo.globo.com', 'epocanegocios.globo.com', 'gazetadopovo.com.br', 'jota.info', 'em.com.br', 'gauchazh.clicrbs.com.br', 'clicrbs.com.br', 'otempo.com.br', 'correiobraziliense.com.br', 'veja.abril.com.br', 'exame.com', 'bnamericas.com', 'agenciainfra.com', 'neofeed.com.br', 'opovo.com.br', 'nsctotal.com.br', 'diariodonordeste.verdesmares.com.br', 'agazeta.com.br', 'gazetaonline.com.br', 'correiodoestado.com.br', 'megawhat.energy', 'braziljournal.com', 'istoedinheiro.com.br', 'teletime.com.br', 'atarde.com.br', 'jc.uol.com.br', 'jc.ne10.uol.com.br', 'oliberal.com', 'opopular.com.br' );
+	foreach ( $PAGO as $d ) { if ( $host === $d || substr( $host, -strlen( '.' . $d ) ) === '.' . $d ) { return false; } }
+	if ( preg_match( '/^(FOLHA DE S\.?PAULO|FOLHA DE SAO PAULO|ESTADAO|O ESTADO DE S\.? ?PAULO|VALOR|VALOR ECONOMICO|VALOR INVESTE|O GLOBO|GAZETA DO POVO|JOTA|JOTA INFO|ESTADO DE MINAS|GZH|ZERO HORA|O TEMPO|CORREIO BRAZILIENSE|VEJA|EXAME|BNAMERICAS|AGENCIA INFRA|NEOFEED|O POVO|NSC TOTAL|DIARIO DO NORDESTE|A GAZETA|MEGAWHAT|BRAZIL JOURNAL|ISTOE DINHEIRO|EPOCA NEGOCIOS|A TARDE|JORNAL DO COMMERCIO|O LIBERAL|O POPULAR)$/', trim( strtoupper( remove_accents( (string) $nome ) ) ) ) ) { return false; }
 	if ( $host && preg_match( '/\.(gov|jus|leg|mp|def)\.br$/', $host ) ) { return true; }
 	$D = array( 'g1.globo.com', 'oglobo.globo.com', 'valor.globo.com', 'extra.globo.com', 'epocanegocios.globo.com', 'globo.com', 'folha.uol.com.br', 'uol.com.br', 'estadao.com.br', 'cnnbrasil.com.br', 'metropoles.com', 'poder360.com.br', 'exame.com', 'veja.abril.com.br', 'infomoney.com.br', 'band.uol.com.br', 'r7.com', 'terra.com.br', 'correiobraziliense.com.br', 'agenciabrasil.ebc.com.br', 'ebc.com.br', 'istoe.com.br', 'istoedinheiro.com.br', 'cartacapital.com.br', 'jota.info', 'conjur.com.br', 'migalhas.com.br', 'nexojornal.com.br', 'gazetadopovo.com.br', 'otempo.com.br', 'em.com.br', 'gauchazh.clicrbs.com.br', 'clicrbs.com.br', 'correiodopovo.com.br', 'atarde.com.br', 'jc.uol.com.br', 'jc.ne10.uol.com.br', 'diariodepernambuco.com.br', 'folhape.com.br', 'opovo.com.br', 'diariodonordeste.verdesmares.com.br', 'oliberal.com', 'acritica.com', 'tribunadonorte.com.br', 'jornaldocomercio.com', 'opopular.com.br', 'nsctotal.com.br', 'bnamericas.com', 'diariodotransporte.com.br', 'acidadeon.com', 'odia.ig.com.br', 'odia.com.br', 'seudinheiro.com', 'braziljournal.com', 'neofeed.com.br', 'convergenciadigital.com.br', 'teletime.com.br', 'portosenavios.com.br', 'agenciainfra.com', 'sollicita.com.br', 'zenite.blog.br', 'zenite.com.br', 'jornaldebrasilia.com.br', 'campograndenews.com.br', 'gazetaonline.com.br', 'agazeta.com.br', 'correiodoestado.com.br', 'gazetasp.com.br', 'diariodoaco.com.br', 'jornalcruzeiro.com.br' );
 	foreach ( $D as $d ) { if ( $host === $d || substr( $host, -strlen( '.' . $d ) ) === '.' . $d ) { return true; } }
@@ -80,7 +84,7 @@ function dv_np_orgao( $o ) {
 
 function dv_np_aba( $uid, $aba ) {
 	if ( $aba === 'geral' || $aba === 'decisoes' ) {
-		$ck = 'dv_np5_' . $aba; $c = get_transient( $ck ); if ( is_array( $c ) ) { return $c; }
+		$ck = 'dv_np6_' . $aba; $c = get_transient( $ck ); if ( is_array( $c ) ) { return $c; }
 		$qs = $aba === 'geral'
 			? array( 'licitação when:7d', 'licitações when:7d', 'pregão eletrônico when:14d', '"compras públicas" when:14d', '"Lei 14.133" when:30d', 'licitação prefeitura when:7d', 'licitação governo when:7d', 'contrato emergencial when:14d', 'superfaturamento licitação when:30d', 'licitação suspensa when:14d' )
 			: array( 'TCU licitação when:30d', '"Tribunal de Contas" licitação when:14d', 'TCU acórdão contratação when:60d', '"Tribunal de Contas" suspende licitação when:30d', 'TCE licitação when:14d', 'TCU contrato irregularidade when:30d' );
@@ -98,7 +102,7 @@ function dv_np_aba( $uid, $aba ) {
 		if ( ! $t ) { return array( 'itens' => array(), 'vazio' => 'orgaos' ); }
 		$qs = array(); foreach ( $t as $x ) { $qs[ 'o:' . $x[0] ] = '"' . $x[0] . '"' . ( $x[1] ? ' "' . $x[1] . '"' : '' ) . ' (licitação OR contrato OR pregão OR edital) when:120d'; } $t = array_map( function ( $x ) { return $x[1] ? $x[0] . ' (' . $x[1] . ')' : $x[0]; }, $t );
 	} else { return new WP_Error( 'dv_aba', 'Aba inválida.', array( 'status' => 400 ) ); }
-	$ck = 'dv_np_v5' . md5( $aba . wp_json_encode( $t ) ); $c = get_transient( $ck ); if ( is_array( $c ) ) { return $c; }
+	$ck = 'dv_np_v6' . md5( $aba . wp_json_encode( $t ) ); $c = get_transient( $ck ); if ( is_array( $c ) ) { return $c; }
 	$l = dv_np_buscar( $qs, true, 50 ); if ( $l === null ) { return array( 'itens' => array(), 'aviso' => 'As notícias não carregaram agora. Tente de novo em alguns minutos.', 'termos' => $t ); }
 	$r = array( 'itens' => $l, 'termos' => $t, 'em' => current_time( 'mysql' ) ); set_transient( $ck, $r, 6 * HOUR_IN_SECONDS ); return $r;
 }
@@ -137,7 +141,7 @@ add_shortcode( 'dv_noticias', function () {
 <div class="dv-tool"><div class="np" id="dv-np" data-api="<?php echo esc_url( rest_url( 'desenvolve/v1/' ) ); ?>" data-nonce="<?php echo esc_attr( wp_create_nonce( 'wp_rest' ) ); ?>">
 <div class="np-bar"><div class="np-tabs" role="tablist"><button type="button" data-a="geral" class="on">Em destaque</button><button type="button" data-a="ramo">Do seu ramo</button><button type="button" data-a="orgaos">Seus órgãos</button><button type="button" data-a="decisoes">Tribunais de Contas</button><button type="button" data-a="salvas">Salvas</button></div><input type="search" class="np-q" placeholder="Filtrar por palavra…" aria-label="Filtrar notícias"></div>
 <div class="np-tags"></div><div class="np-list"></div>
-<p class="np-ft">Só fontes confiáveis: órgãos oficiais, grande imprensa nacional e regional e imprensa jurídica. Cada notícia abre no site do veículo que a publicou.</p>
+<p class="np-ft">Só fontes confiáveis e de leitura livre: órgãos oficiais, grande imprensa e imprensa jurídica, sem sites que exigem assinatura. Cada notícia abre no site do veículo que a publicou.</p>
 </div></div>
 <style>
 .np{background:#fff;border:1px solid #E6E1D6;border-radius:18px;padding:18px 20px;color:#16191E;font-family:"Hanken Grotesk",-apple-system,sans-serif}

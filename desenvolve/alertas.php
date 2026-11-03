@@ -41,11 +41,11 @@ function dv_al_dt_sessao( $t ) {
 	$hoje = current_time( 'Y-m-d' ); $max = gmdate( 'Y-m-d', strtotime( $hoje . ' +120 days' ) ); $c = array();
 	$mes = array( 'JANEIRO'=>1,'FEVEREIRO'=>2,'MARCO'=>3,'ABRIL'=>4,'MAIO'=>5,'JUNHO'=>6,'JULHO'=>7,'AGOSTO'=>8,'SETEMBRO'=>9,'OUTUBRO'=>10,'NOVEMBRO'=>11,'DEZEMBRO'=>12 );
 	$n = dv_al_norm( $t );
-	if ( preg_match_all( '#\b(\d{1,2})[/.](\d{1,2})[/.](\d{4})(?:[^0-9]{0,25}?\b(\d{1,2})\s*(?:H|:)\s*(\d{2})?)?#', $n, $mm, PREG_SET_ORDER ) ) {
+	if ( preg_match_all( '#\b(\d{1,2})[/.](\d{1,2})[/.](\d{4})(?:[^0-9]{0,25}?\b(\d{1,2})\s*(?:HORAS|H|:)\s*(?:E\s*)?(\d{2})?)?#', $n, $mm, PREG_SET_ORDER ) ) {
 		foreach ( $mm as $x ) { if ( checkdate( (int) $x[2], (int) $x[1], (int) $x[3] ) ) { $c[] = array( sprintf( '%04d-%02d-%02d', $x[3], $x[2], $x[1] ), isset( $x[4] ) && $x[4] !== '' && (int) $x[4] < 24 ? sprintf( '%02d:%02d', $x[4], (int) ( $x[5] ?? 0 ) ) : '' ); } }
 	}
-	if ( preg_match_all( '#\b(\d{1,2})\s+DE\s+(' . implode( '|', array_keys( $mes ) ) . ')\s+DE\s+(\d{4})#', $n, $mm, PREG_SET_ORDER ) ) {
-		foreach ( $mm as $x ) { if ( checkdate( $mes[ $x[2] ], (int) $x[1], (int) $x[3] ) ) { $c[] = array( sprintf( '%04d-%02d-%02d', $x[3], $mes[ $x[2] ], $x[1] ), '' ); } }
+	if ( preg_match_all( '#\b(\d{1,2})\s+DE\s+(' . implode( '|', array_keys( $mes ) ) . ')\s+DE\s+(\d{4})(?:[^0-9]{0,20}?\b(\d{1,2})\s*(?:HORAS|H|:)\s*(?:E\s*)?(\d{2})?)?#', $n, $mm, PREG_SET_ORDER ) ) {
+		foreach ( $mm as $x ) { if ( checkdate( $mes[ $x[2] ], (int) $x[1], (int) $x[3] ) ) { $c[] = array( sprintf( '%04d-%02d-%02d', $x[3], $mes[ $x[2] ], $x[1] ), isset( $x[4] ) && $x[4] !== '' && (int) $x[4] < 24 ? sprintf( '%02d:%02d', $x[4], (int) ( $x[5] ?? 0 ) ) : '' ); } }
 	}
 	$f = array_values( array_filter( $c, function ( $d ) use ( $hoje, $max ) { return $d[0] >= $hoje && $d[0] <= $max; } ) );
 	if ( ! $f ) { return ''; }
@@ -56,9 +56,10 @@ function dv_al_modalidade( $n ) {
 	foreach ( array( 'PREGAO ELETRONICO' => 'Pregão Eletrônico', 'PREGAO PRESENCIAL' => 'Pregão Presencial', 'PREGAO' => 'Pregão', 'CONCORRENCIA' => 'Concorrência', 'TOMADA DE PRECOS' => 'Tomada de Preços', 'DISPENSA' => 'Dispensa', 'INEXIGIBILIDADE' => 'Inexigibilidade', 'CHAMAMENTO PUBLICO' => 'Chamamento Público', 'CREDENCIAMENTO' => 'Credenciamento', 'CONVITE' => 'Convite', 'LEILAO' => 'Leilão' ) as $k => $v ) { if ( strpos( $n, $k ) !== false ) { return $v; } }
 	return 'Licitação';
 }
-function dv_al_numero( $n ) { return preg_match( '#\bN[\s.ºO°\x{00BA}]*\s*(\d{1,6}\s*/\s*\d{4})#u', $n, $m ) ? preg_replace( '/\s+/', '', $m[1] ) : ''; }
+function dv_al_numero( $n ) { return preg_match( '#\bN[\s.ºO°\x{00BA}]*\s*(\d{1,3}\.\d{3}|\d{1,6})\s*/\s*(\d{4})#u', $n, $m ) ? str_replace( '.', '', $m[1] ) . '/' . $m[2] : ''; }
 function dv_al_objeto( $txt ) {
-	if ( preg_match( '#OBJETO\s*[:\-–]\s*(.{20,420}?)(?:\.\s|;|\s(?:DATA|ABERTURA|SESS[AÃ]O|ENTREGA|EDITAL|VALOR|PRAZO|LOCAL|INFORMA)|$)#iu', $txt, $m ) ) { return trim( $m[1] ); }
+	if ( preg_match( '#OBJETO\s*(?:[:\-–]|\b(?:A|O|É|E|DE)\b)?\s*(.{20,420}?)(?:\.\s|;|\s(?:DATA|ABERTURA|SESS[AÃ]O|ENTREGA|EDITAL|VALOR|PRAZO|LOCAL|INFORMA|OS INTERESSADOS)|$)#iu', $txt, $m ) ) { return rtrim( trim( $m[1], ' "“”' ), '.' ); }
+	$n = dv_al_norm( $txt ); if ( preg_match( DV_AL_QUER, $n, $q, PREG_OFFSET_CAPTURE ) && $q[0][1] > 30 ) { $txt = mb_substr( $txt, $q[0][1] ); }
 	return mb_substr( $txt, 0, 480 );
 }
 /** URLs dos diários para um termo (entra no mesmo disparo paralelo do PNCP) */
@@ -69,18 +70,61 @@ function dv_al_diario_urls( $t, $desde ) {
 		'd' => 'https://www.in.gov.br/consulta/-/buscar/dou?q=' . rawurlencode( '"' . $t . '"' ) . '&s=do3&exactDate=personalizado&sortType=0&delta=75&publishFrom=' . gmdate( 'd-m-Y', strtotime( $d0 ) ) . '&publishTo=' . current_time( 'd-m-Y' ),
 	);
 }
+define( 'DV_AL_QUER', '/AVISO D[EO] (LICITACAO|PREGAO|ABERTURA|DISPENSA|CHAMAMENTO|EDITAL|REABERTURA|CONCORRENCIA)|AVISOS DE LICITACAO|PREGAO (ELETRONICO|PRESENCIAL)|CONCORRENCIA (ELETRONICA|PUBLICA)|TOMADA DE PRECOS|DISPENSA (ELETRONICA|DE LICITACAO)|CHAMAMENTO PUBLICO|SESSAO PUBLICA|ABERTURA DAS? (PROPOSTAS|SESSAO|ENVELOPES|LICITACAO)|RECEBIMENTO DAS PROPOSTAS|EDITAL DE (LICITACAO|PREGAO)/' );
+define( 'DV_AL_NAO', '/HOMOLOG|ADJUDICA|EXTRATO D|RATIFICA|RESULTADO|TERMO ADITIVO|ATA DE REGISTRO DE PRECOS N|REVOGA|ANULA|DESERT|FRACASSAD|VENCEDOR|CONCURSO PUBLICO|PROCESSO SELETIVO/' );
+function dv_al_aceita( $nd, $enc, $termo, $excl, $a ) {
+	if ( ! dv_al_relevante( $termo, $nd ) || ! preg_match( DV_AL_QUER, $nd ) ) { return false; }
+	if ( preg_match( DV_AL_NAO, $nd ) && ! $enc ) { return false; }
+	foreach ( $excl as $x ) { if ( $x !== '' && strpos( $nd, $x ) !== false ) { return false; } }
+	if ( ! empty( $a['tipo'] ) && dv_al_tipo( $nd ) !== $a['tipo'] ) { return false; }
+	return true;
+}
+/** Texto integral de uma publicação do DOU, separado por aviso (uma publicação pode trazer vários). Guardado 7 dias. */
+function dv_al_dou_blocos( $html ) {
+	$i = strpos( $html, 'class="texto-dou"' ); if ( $i === false ) { return array(); }
+	$f = strpos( $html, 'informacao-conteudo-dou', $i ); $h = substr( $html, $i, $f ? $f - $i : 60000 );
+	preg_match_all( '#<p class="([^"]*)"[^>]*>(.*?)</p>#s', $h, $mm, PREG_SET_ORDER ); $bl = array(); $cab = ''; $cor = '';
+	foreach ( $mm as $m ) {
+		$t = trim( preg_replace( '/\s+/', ' ', html_entity_decode( wp_strip_all_tags( $m[2] ), ENT_QUOTES, 'UTF-8' ) ) ); if ( $t === '' ) { continue; }
+		if ( strpos( $m[1], 'identifica' ) !== false ) { if ( $cor !== '' ) { $bl[] = array( $cab, $cor ); $cab = ''; $cor = ''; } $cab = trim( $cab . ' ' . $t ); }
+		else { $cor = trim( $cor . ' ' . $t ); }
+	}
+	if ( $cab !== '' || $cor !== '' ) { $bl[] = array( $cab, $cor ); }
+	if ( count( $bl ) > 1 && preg_match( '/^AVISOS? D/', dv_al_norm( $bl[0][0] ) ) && $bl[0][1] === '' ) { array_shift( $bl ); }
+	return array_slice( $bl, 0, 30 );
+}
+function dv_al_dou_completar( $dia, $excl, $a ) {
+	$links = array(); foreach ( $dia as $r => $x ) { if ( strpos( $r, 'DOU' ) === 0 && count( $links ) < 45 ) { $links[ $x['link'] ] = 1; } }
+	if ( ! $links ) { return $dia; }
+	$txt = array(); $falta = array();
+	foreach ( array_keys( $links ) as $l ) { $c = get_transient( 'dv_dou_' . md5( $l ) ); if ( is_array( $c ) ) { $txt[ $l ] = $c; } else { $falta[ md5( $l ) ] = $l; } }
+	if ( $falta && function_exists( 'dv_ds_multi' ) ) {
+		foreach ( array_chunk( $falta, 15, true ) as $ch ) {
+			foreach ( dv_ds_multi( $ch, array( 'Accept' => 'text/html' ), 20 ) as $k => $b ) { if ( ! $b ) { continue; } $bl = dv_al_dou_blocos( $b ); $txt[ $ch[ $k ] ] = $bl; set_transient( 'dv_dou_' . $k, $bl, 7 * DAY_IN_SECONDS ); }
+		}
+	}
+	$out = array();
+	foreach ( $dia as $r => $x ) {
+		if ( strpos( $r, 'DOU' ) !== 0 || empty( $txt[ $x['link'] ] ) ) { $out[ $r ] = $x; continue; }
+		$achou = false;
+		foreach ( $txt[ $x['link'] ] as $k => $b ) {
+			$tx = trim( $b[0] . ' — ' . $b[1], ' —' ); $nd = dv_al_norm( $tx ); $ok = false;
+			foreach ( $x['termos'] as $t ) { if ( dv_al_aceita( $nd . ' ' . dv_al_norm( $x['titulo'] ), dv_al_dt_sessao( $tx ), $t, $excl, $a ) ) { $ok = true; } }
+			if ( ! $ok ) { continue; } $achou = true;
+			$y = $x; $y['ref'] = $r . 'B' . $k; $y['trecho'] = mb_substr( $tx, 0, 1500 ); $y['objeto'] = dv_al_objeto( $b[1] ?: $tx ); $y['encerra'] = dv_al_dt_sessao( $tx );
+			$y['numero'] = dv_al_numero( $nd ) ?: $x['numero']; $y['modalidade'] = dv_al_modalidade( dv_al_norm( $b[0] ) . ' ' . $nd );
+			if ( preg_match( '#VALOR (?:TOTAL |GLOBAL )?(?:ESTIMADO|MAXIMO|DE REFERENCIA)?[^0-9]{0,25}R\$\s*([\d.]+,\d{2})#', $nd, $v ) ) { $y['valor'] = (float) str_replace( array( '.', ',' ), array( '', '.' ), $v[1] ); }
+			$out[ $y['ref'] ] = $y;
+		}
+		if ( ! $achou && count( $txt[ $x['link'] ] ) <= 1 ) { $out[ $r ] = $x; }
+	}
+	return $out;
+}
 /** Converte as respostas dos diários em oportunidades no mesmo formato do PNCP (fonte = diario) */
 function dv_al_diario_itens( $tipo, $body, $termo, $a, $ufs, $excl ) {
 	$out = array(); if ( ! $body ) { return $out; }
-	$quer = '/AVISO D[EO] (LICITACAO|PREGAO|ABERTURA|DISPENSA|CHAMAMENTO|EDITAL|REABERTURA|CONCORRENCIA)|AVISOS DE LICITACAO|PREGAO (ELETRONICO|PRESENCIAL)|CONCORRENCIA (ELETRONICA|PUBLICA)|TOMADA DE PRECOS|DISPENSA (ELETRONICA|DE LICITACAO)|CHAMAMENTO PUBLICO|SESSAO PUBLICA|ABERTURA DAS? (PROPOSTAS|SESSAO|ENVELOPES)|RECEBIMENTO DAS PROPOSTAS|EDITAL DE (LICITACAO|PREGAO)/';
-	$nao = '/HOMOLOG|ADJUDICA|EXTRATO D|RATIFICA|RESULTADO|TERMO ADITIVO|ATA DE REGISTRO DE PRECOS N|REVOGA|ANULA|DESERT|FRACASSAD|VENCEDOR|CONCURSO PUBLICO|PROCESSO SELETIVO/';
-	$aceita = function ( $nd, $enc ) use ( $quer, $nao, $termo, $excl, $a ) {
-		if ( ! dv_al_relevante( $termo, $nd ) || ! preg_match( $quer, $nd ) ) { return false; }
-		if ( preg_match( $nao, $nd ) && ! $enc ) { return false; }
-		foreach ( $excl as $x ) { if ( $x !== '' && strpos( $nd, $x ) !== false ) { return false; } }
-		if ( ! empty( $a['tipo'] ) && dv_al_tipo( $nd ) !== $a['tipo'] ) { return false; }
-		return true;
-	};
+	$quer = DV_AL_QUER; $nao = DV_AL_NAO;
+	$aceita = function ( $nd, $enc ) use ( $termo, $excl, $a ) { return dv_al_aceita( $nd, $enc, $termo, $excl, $a ); };
 	if ( $tipo === 'q' ) {
 		$j = json_decode( $body, true );
 		foreach ( (array) ( $j['gazettes'] ?? array() ) as $g ) {
@@ -155,6 +199,7 @@ function dv_al_buscar( $a, $desde ) {
 		}
 	}
 	/* o mesmo edital pode estar no PNCP e no diário: descarta o do diário quando o número e o município (ou órgão) batem */
+	if ( $dia ) { $dia = dv_al_dou_completar( $dia, $excl, $a ); }
 	if ( $dia ) {
 		$ja = array(); foreach ( $out as $x ) { if ( preg_match_all( '#(\d{1,6})\s*/\s*(\d{4})#', $x['titulo'] . ' ' . $x['objeto'], $mm, PREG_SET_ORDER ) ) { foreach ( $mm as $q ) { $ja[ (int) $q[1] . '/' . $q[2] . '|' . dv_al_norm( $x['municipio'] ) ] = 1; } } }
 		$dv = array();

@@ -184,7 +184,7 @@ function dv_al_buscar( $a, $desde ) {
 		$res = dv_ds_multi( $up, array(), 30 );
 		$ud = array_diff_key( $urls, $up ); if ( $ud ) { $res += dv_ds_multi( $ud, array( 'Accept' => 'text/html,application/json' ), 18 ); }
 		/* uma nova tentativa, uma a uma, para o que falhou (PNCP e DOU às vezes recusam o primeiro acesso) */
-		foreach ( $res as $k => $b ) { if ( $b ) { continue; } $g = wp_remote_get( $urls[ $k ], array( 'timeout' => strpos( $k, 'p|' ) === 0 ? 25 : 15, 'headers' => array( 'Accept' => strpos( $k, 'p|' ) === 0 ? 'application/json' : 'text/html,application/json' ) ) ); if ( ! is_wp_error( $g ) && wp_remote_retrieve_response_code( $g ) === 200 ) { $res[ $k ] = wp_remote_retrieve_body( $g ); } }
+		foreach ( $res as $k => $b ) { if ( $b ) { continue; } $g = wp_remote_get( $urls[ $k ], array( 'timeout' => strpos( $k, 'p|' ) === 0 ? 25 : 15, 'headers' => array( 'Accept' => strpos( $k, 'p|' ) === 0 ? 'application/json' : 'text/html,application/json' ) ) ); $GLOBALS['dv_al_cod'][ $k ] = is_wp_error( $g ) ? $g->get_error_message() : wp_remote_retrieve_response_code( $g ) . ' ' . substr( wp_remote_retrieve_body( $g ), 0, 120 ); if ( ! is_wp_error( $g ) && wp_remote_retrieve_response_code( $g ) === 200 ) { $res[ $k ] = wp_remote_retrieve_body( $g ); } }
 	}
 	else { foreach ( $urls as $k => $u ) { $g = wp_remote_get( $u, array( 'timeout' => 30 ) ); $res[ $k ] = is_wp_error( $g ) ? null : wp_remote_retrieve_body( $g ); } }
 	$GLOBALS['dv_al_dbg'] = array_map( function ( $b ) { return is_string( $b ) ? strlen( $b ) : -1; }, $res );
@@ -263,7 +263,7 @@ add_action( 'rest_api_init', function () {
 	register_rest_route( $ns, '/alertas/testar', array( 'methods' => 'POST', 'permission_callback' => $perm, 'callback' => function ( WP_REST_Request $r ) {
 		$a = array( 'termos' => (string) $r['termos'], 'excluir' => (string) $r['excluir'], 'ufs' => (array) $r['ufs'], 'vmin' => (float) $r['vmin'], 'vmax' => (float) $r['vmax'], 'tipo' => in_array( $r['tipo'], array( 'servico', 'compra' ), true ) ? $r['tipo'] : '' );
 		$it = dv_al_buscar( $a, gmdate( 'Y-m-d', strtotime( current_time( 'Y-m-d' ) . ' -15 days' ) ) );
-		return array( 'itens' => array_slice( $it, 0, 80 ), 'total' => count( $it ) ) + ( function_exists( 'dv_is_master' ) && dv_is_master( get_current_user_id() ) && ! empty( $r['dbg'] ) ? array( 'dbg' => $GLOBALS['dv_al_dbg'] ?? null ) : array() );
+		return array( 'itens' => array_slice( $it, 0, 80 ), 'total' => count( $it ) ) + ( function_exists( 'dv_is_master' ) && dv_is_master( get_current_user_id() ) && ! empty( $r['dbg'] ) ? array( 'dbg' => $GLOBALS['dv_al_dbg'] ?? null, 'cod' => $GLOBALS['dv_al_cod'] ?? null ) : array() );
 	} ) );
 } );
 

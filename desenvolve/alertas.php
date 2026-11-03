@@ -222,7 +222,7 @@ function dv_al_buscar( $a, $desde ) {
 		$dv = array();
 		foreach ( $dia as $r => $x ) {
 			if ( $x['numero'] && preg_match( '#(\d+)/(\d{4})#', $x['numero'], $q ) && isset( $ja[ (int) $q[1] . '/' . $q[2] . '|' . dv_al_norm( $x['municipio'] ) ] ) ) { continue; }
-			$k = $x['numero'] ? $x['numero'] . '|' . dv_al_norm( $x['municipio'] ?: $x['orgao'] ) : $r; if ( isset( $dv[ $k ] ) ) { continue; } $dv[ $k ] = 1;
+			$k = $x['numero'] ? $x['numero'] . '|' . dv_al_norm( $x['municipio'] ?: $x['orgao'] ) : $r; $k2 = md5( dv_al_norm( $x['orgao'] . mb_substr( $x['objeto'], 0, 120 ) ) ); if ( isset( $dv[ $k ] ) || isset( $dv[ $k2 ] ) ) { continue; } $dv[ $k ] = 1; $dv[ $k2 ] = 1;
 			$x['termos'] = array_values( array_unique( $x['termos'] ) ); $out[ $r ] = $x;
 		}
 	}
@@ -275,7 +275,7 @@ add_action( 'rest_api_init', function () {
 		foreach ( $res as $k => $b ) { if ( ! $b ) { $g = wp_remote_get( $urls[ $k ], array( 'timeout' => 15 ) ); if ( ! is_wp_error( $g ) && wp_remote_retrieve_response_code( $g ) === 200 ) { $res[ $k ] = wp_remote_retrieve_body( $g ); } } }
 		foreach ( $res as $k => $b ) { foreach ( dv_al_diario_itens( $k, $b, $q, $a, $ufs, array() ) as $rf => $x ) { $dia[ $rf ] = $x; } }
 		$dia = dv_al_dou_completar( $dia, array(), $a ); $dv = array(); $out = array();
-		foreach ( $dia as $x ) { $k = $x['numero'] ? $x['numero'] . '|' . dv_al_norm( $x['municipio'] ?: $x['orgao'] ) : $x['ref']; if ( isset( $dv[ $k ] ) ) { continue; } $dv[ $k ] = 1; unset( $x['termos'] ); $out[] = $x; }
+		foreach ( $dia as $x ) { $k = $x['numero'] ? $x['numero'] . '|' . dv_al_norm( $x['municipio'] ?: $x['orgao'] ) : $x['ref']; $k2 = md5( dv_al_norm( $x['orgao'] . mb_substr( $x['objeto'], 0, 120 ) ) ); if ( isset( $dv[ $k ] ) || isset( $dv[ $k2 ] ) ) { continue; } $dv[ $k ] = 1; $dv[ $k2 ] = 1; unset( $x['termos'] ); $out[] = $x; }
 		usort( $out, function ( $x, $y ) { return strcmp( $y['publicado'], $x['publicado'] ); } );
 		$out = array_slice( $out, 0, 150 );
 		if ( array_filter( $res ) ) { set_transient( $ck, $out, 30 * MINUTE_IN_SECONDS ); }

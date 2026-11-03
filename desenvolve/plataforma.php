@@ -1068,3 +1068,47 @@ html body .dv-tool .aq,html body .dv-tool .aq *{font-family:"Hanken Grotesk",-ap
 
 // Esconde o custo em créditos para visitantes (páginas públicas).
 add_action( 'wp_head', function () { if ( ! is_user_logged_in() ) echo '<style>.dv-cst{display:none!important}</style>'; } );
+
+// "Analisar com a minha IA": abre ChatGPT, Claude ou Gemini do próprio cliente com o conteúdo preenchido.
+add_action( 'wp_footer', function () {
+	if ( ! is_user_logged_in() ) return;
+	?>
+<style>
+.dv-mia{display:inline-flex;align-items:center;gap:6px;background:#0C0F13!important;color:#F4F2EC!important;border:0;border-radius:10px;padding:9px 14px;font:700 .85rem "Hanken Grotesk",-apple-system,sans-serif;cursor:pointer;text-decoration:none}
+.dv-mia:hover{background:#252A31!important}
+.dv-mia-w{margin:14px 0 4px}
+#dv-mia-m{position:fixed;inset:0;background:rgba(12,15,19,.55);display:flex;align-items:center;justify-content:center;z-index:100000;padding:16px}
+#dv-mia-m .bx{background:#FBF9F4;color:#16191E;border-radius:16px;max-width:420px;width:100%;padding:22px;box-shadow:0 20px 60px rgba(0,0,0,.3);font-family:"Hanken Grotesk",-apple-system,sans-serif}
+#dv-mia-m h3{margin:0 0 6px;font-size:1.15rem;font-weight:800;color:#16191E}
+#dv-mia-m p{margin:0 0 14px;font-size:.88rem;color:#5E5A52;line-height:1.45}
+#dv-mia-m .op{display:flex;flex-direction:column;gap:8px}
+#dv-mia-m .op button{display:flex;justify-content:space-between;align-items:center;width:100%;background:#fff!important;color:#16191E!important;border:1px solid #E2DCCD;border-radius:12px;padding:12px 14px;font:700 .95rem inherit;cursor:pointer;text-align:left}
+#dv-mia-m .op button:hover{border-color:#C9A45C}
+#dv-mia-m .op small{font-weight:500;color:#5E5A52;font-size:.78rem}
+#dv-mia-m label{display:flex;gap:8px;align-items:center;margin:14px 0 4px;font-size:.85rem;color:#16191E}
+#dv-mia-m .fx{background:none!important;border:0;color:#5E5A52!important;font-size:.85rem;cursor:pointer;margin-top:8px;padding:4px}
+#dv-mia-t{position:fixed;left:50%;bottom:22px;transform:translateX(-50%);background:#0C0F13;color:#F4F2EC;padding:12px 16px;border-radius:12px;font:500 .88rem "Hanken Grotesk",-apple-system,sans-serif;z-index:100001;max-width:92vw;box-shadow:0 10px 30px rgba(0,0,0,.25)}
+#dv-mia-t a{color:#C9A45C;font-weight:700;margin-left:8px;cursor:pointer}
+</style>
+<script>
+(function(){
+var IAS={chatgpt:{n:'ChatGPT',u:'https://chatgpt.com/?q='},claude:{n:'Claude',u:'https://claude.ai/new?q='},gemini:{n:'Gemini',u:null,b:'https://gemini.google.com/app'}};
+var P={
+licitacao:'Trabalho em uma empresa que vende para o Poder Público. Analise a licitação abaixo e responda de forma objetiva: 1) o que está sendo contratado e os pontos principais; 2) exigências de habilitação e riscos que merecem atenção; 3) se vale a pena participar e o que preparar; 4) prazos importantes. Se o link do edital estiver disponível, leia o edital completo; se não conseguir, diga o que devo conferir nele.',
+concorrente:'Analise o relatório abaixo, feito com dados públicos de uma empresa que concorre comigo em licitações. Responda de forma objetiva: 1) o perfil e a força dessa empresa; 2) pontos fracos e riscos (sanções, dívidas, contratos); 3) como posso me posicionar para competir com ela.',
+dossie:'Analise o relatório de due diligence abaixo, feito com dados públicos de uma empresa. Responda de forma objetiva: 1) os principais riscos (sanções, dívidas, processos, situação cadastral); 2) o que pede atenção antes de contratar, fazer parceria ou consórcio com ela; 3) que documentos ou confirmações devo pedir.',
+comprador:'Analise o relatório abaixo, feito com dados públicos de um órgão público comprador. Responda de forma objetiva: 1) como esse órgão costuma comprar e pagar; 2) oportunidades para quem vende para ele; 3) riscos e cuidados.'};
+function ls(k,v){try{if(v===undefined)return localStorage.getItem(k);if(v===null)localStorage.removeItem(k);else localStorage.setItem(k,v)}catch(e){return null}}
+function toast(h,ms){var t=document.getElementById('dv-mia-t');if(t)t.remove();t=document.createElement('div');t.id='dv-mia-t';t.innerHTML=h;document.body.appendChild(t);setTimeout(function(){t.remove()},ms||7000);return t}
+function copiar(s){try{if(navigator.clipboard)return navigator.clipboard.writeText(s).catch(function(){})}catch(e){}var a=document.createElement('textarea');a.value=s;document.body.appendChild(a);a.select();try{document.execCommand('copy')}catch(e){}a.remove()}
+function limpa(txt){return String(txt||'').split('\n').filter(function(l){return!/desenvolve/i.test(l)}).join('\n').replace(/[ \t]+/g,' ').replace(/\n\s*\n\s*\n+/g,'\n\n').trim().slice(0,12000)}
+function abrir(id,tipo,txt,pend){var I=IAS[id],pr=(P[tipo]||P.concorrente)+'\n\nResponda em português.\n\n'+limpa(txt),enc=encodeURIComponent(pr),url,curto=I.u&&enc.length<7500;url=curto?I.u+enc:(I.b||I.u.replace(/\?q=$/,''));var w=pend||window.open('about:blank','_blank');if(w){try{w.opener=null}catch(e){}w.location.href=url}else location.href=url;copiar(pr);
+var t=toast(curto?'Abrimos o '+I.n+' com a análise pronta para enviar.<a data-tr>Trocar de IA</a>':'Abrimos o '+I.n+'. O texto já está copiado: é só colar na conversa (Ctrl+V ou segurar e colar).<a data-tr>Trocar de IA</a>',curto?6000:12000);t.querySelector('[data-tr]').onclick=function(){ls('dv_minha_ia',null);t.remove();escolher(tipo,txt)}}
+function escolher(tipo,txt){var m=document.getElementById('dv-mia-m');if(m)m.remove();m=document.createElement('div');m.id='dv-mia-m';m.innerHTML='<div class="bx" role="dialog" aria-modal="true"><h3>Analisar com a sua IA</h3><p>Escolha a inteligência artificial que você já usa. Ela abre em uma nova aba com o conteúdo pronto para análise, na sua própria conta.</p><div class="op">'+Object.keys(IAS).map(function(k){return'<button type="button" data-k="'+k+'">'+IAS[k].n+'<small>'+(IAS[k].u?'abre preenchido':'o texto vai copiado')+'</small></button>'}).join('')+'</div><label><input type="checkbox" checked> Lembrar a minha escolha</label><button type="button" class="fx">Cancelar</button></div>';document.body.appendChild(m);
+m.addEventListener('click',function(ev){if(ev.target===m||ev.target.classList.contains('fx')){m.remove();return}var b=ev.target.closest('[data-k]');if(!b)return;if(m.querySelector('input').checked)ls('dv_minha_ia',b.dataset.k);var w=window.open('about:blank','_blank');m.remove();abrir(b.dataset.k,tipo,txt,w)})}
+window.dvMinhaIA=function(tipo,txt){var k=ls('dv_minha_ia');if(k&&IAS[k])abrir(k,tipo,txt);else escolher(tipo,txt)};
+window.dvTextoDe=function(el){if(!el)return'';var c=el.cloneNode(true);[].forEach.call(c.querySelectorAll('button,script,style,svg,input,select,textarea,.dv-mia-w,.dv-cst,dialog'),function(x){x.remove()});[].forEach.call(c.querySelectorAll('div,p,li,h1,h2,h3,h4,h5,tr,section,br,article,header'),function(x){x.appendChild(document.createTextNode('\n'))});[].forEach.call(c.querySelectorAll('td,th'),function(x){x.appendChild(document.createTextNode(' | '))});[].forEach.call(c.querySelectorAll('a[href^="http"]'),function(a){if(a.textContent.trim()&&a.href.indexOf(location.host)<0)a.appendChild(document.createTextNode(' ('+a.href+')'))});return c.textContent};
+})();
+</script>
+	<?php
+}, 50 );

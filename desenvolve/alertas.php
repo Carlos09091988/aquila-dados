@@ -263,6 +263,24 @@ add_action( 'rest_api_init', function () {
 		$uid = get_current_user_id(); $n = 0; foreach ( dv_al_rodar( $uid, gmdate( 'Y-m-d', strtotime( current_time( 'Y-m-d' ) . ' -15 days' ) ) ) as $b ) { $n += count( $b['itens'] ); }
 		return array( 'ok' => true, 'novas' => $n );
 	} ) );
+	/* Buscador: avisos de licitação nos diários oficiais (municípios + DOU seção 3) para a mesma busca; o PNCP o navegador já consulta direto */
+	register_rest_route( $ns, '/buscador/diarios', array( 'methods' => 'GET', 'permission_callback' => $perm, 'callback' => function ( WP_REST_Request $r ) {
+		$q = trim( str_replace( '"', '', sanitize_text_field( (string) $r['q'] ) ) ); if ( mb_strlen( $q ) < 3 ) { return array( 'itens' => array() ); }
+		$q = mb_substr( $q, 0, 80 );
+		$ufs = array_values( array_intersect( array_map( 'strtoupper', array_filter( explode( '|', (string) $r['ufs'] ) ) ), array( 'AC','AL','AP','AM','BA','CE','DF','ES','GO','MA','MT','MS','MG','PA','PB','PR','PE','PI','RJ','RN','RS','RO','RR','SC','SP','SE','TO' ) ) );
+		$ck = 'dv_bqd_' . md5( mb_strtolower( $q ) . '|' . implode( ',', $ufs ) ); $c = get_transient( $ck ); if ( is_array( $c ) ) { return array( 'itens' => $c, 'cache' => 1 ); }
+		$desde = gmdate( 'Y-m-d', strtotime( current_time( 'Y-m-d' ) . ' -20 days' ) ); $a = array( 'termos' => $q ); $dia = array();
+		$urls = array(); foreach ( dv_al_diario_urls( $q, $desde ) as $k => $u ) { $urls[ $k ] = $u; }
+		$res = function_exists( 'dv_ds_multi' ) ? dv_ds_multi( $urls, array( 'Accept' => 'text/html,application/json' ), 20 ) : array();
+		foreach ( $res as $k => $b ) { if ( ! $b ) { $g = wp_remote_get( $urls[ $k ], array( 'timeout' => 15 ) ); if ( ! is_wp_error( $g ) && wp_remote_retrieve_response_code( $g ) === 200 ) { $res[ $k ] = wp_remote_retrieve_body( $g ); } } }
+		foreach ( $res as $k => $b ) { foreach ( dv_al_diario_itens( $k, $b, $q, $a, $ufs, array() ) as $rf => $x ) { $dia[ $rf ] = $x; } }
+		$dia = dv_al_dou_completar( $dia, array(), $a ); $dv = array(); $out = array();
+		foreach ( $dia as $x ) { $k = $x['numero'] ? $x['numero'] . '|' . dv_al_norm( $x['municipio'] ?: $x['orgao'] ) : $x['ref']; if ( isset( $dv[ $k ] ) ) { continue; } $dv[ $k ] = 1; unset( $x['termos'] ); $out[] = $x; }
+		usort( $out, function ( $x, $y ) { return strcmp( $y['publicado'], $x['publicado'] ); } );
+		$out = array_slice( $out, 0, 150 );
+		if ( array_filter( $res ) ) { set_transient( $ck, $out, 30 * MINUTE_IN_SECONDS ); }
+		return array( 'itens' => $out );
+	} ) );
 	/* Prévia: o que o alerta encontra nas licitações abertas publicadas nos últimos 15 dias */
 	register_rest_route( $ns, '/alertas/testar', array( 'methods' => 'POST', 'permission_callback' => $perm, 'callback' => function ( WP_REST_Request $r ) {
 		$a = array( 'termos' => (string) $r['termos'], 'excluir' => (string) $r['excluir'], 'ufs' => (array) $r['ufs'], 'vmin' => (float) $r['vmin'], 'vmax' => (float) $r['vmax'], 'tipo' => in_array( $r['tipo'], array( 'servico', 'compra' ), true ) ? $r['tipo'] : '' );

@@ -31,6 +31,92 @@ function dv_al_tipo( $desc ) {
 	if ( $comp ) { return 'compra'; }
 	return $serv ? 'servico' : 'compra';
 }
+/* ---------- Diários oficiais (municípios fora do PNCP): Querido Diário + DOU seção 3 ---------- */
+function dv_al_uf_nome( $n ) {
+	static $m = array( 'ACRE'=>'AC','ALAGOAS'=>'AL','AMAPA'=>'AP','AMAZONAS'=>'AM','BAHIA'=>'BA','CEARA'=>'CE','DISTRITO FEDERAL'=>'DF','ESPIRITO SANTO'=>'ES','GOIAS'=>'GO','MARANHAO'=>'MA','MATO GROSSO'=>'MT','MATO GROSSO DO SUL'=>'MS','MINAS GERAIS'=>'MG','PARA'=>'PA','PARAIBA'=>'PB','PARANA'=>'PR','PERNAMBUCO'=>'PE','PIAUI'=>'PI','RIO DE JANEIRO'=>'RJ','RIO GRANDE DO NORTE'=>'RN','RIO GRANDE DO SUL'=>'RS','RONDONIA'=>'RO','RORAIMA'=>'RR','SANTA CATARINA'=>'SC','SAO PAULO'=>'SP','SERGIPE'=>'SE','TOCANTINS'=>'TO' );
+	$n = trim( preg_replace( '/^(ESTADO|GOVERNO) D[OAE]S?\s+/', '', dv_al_norm( $n ) ) ); return $m[ $n ] ?? '';
+}
+/** Data da sessão: a primeira data futura (até 120 dias) citada no texto, com hora se houver */
+function dv_al_dt_sessao( $t ) {
+	$hoje = current_time( 'Y-m-d' ); $max = gmdate( 'Y-m-d', strtotime( $hoje . ' +120 days' ) ); $c = array();
+	$mes = array( 'JANEIRO'=>1,'FEVEREIRO'=>2,'MARCO'=>3,'ABRIL'=>4,'MAIO'=>5,'JUNHO'=>6,'JULHO'=>7,'AGOSTO'=>8,'SETEMBRO'=>9,'OUTUBRO'=>10,'NOVEMBRO'=>11,'DEZEMBRO'=>12 );
+	$n = dv_al_norm( $t );
+	if ( preg_match_all( '#\b(\d{1,2})[/.](\d{1,2})[/.](\d{4})(?:[^0-9]{0,25}?\b(\d{1,2})\s*(?:H|:)\s*(\d{2})?)?#', $n, $mm, PREG_SET_ORDER ) ) {
+		foreach ( $mm as $x ) { if ( checkdate( (int) $x[2], (int) $x[1], (int) $x[3] ) ) { $c[] = array( sprintf( '%04d-%02d-%02d', $x[3], $x[2], $x[1] ), isset( $x[4] ) && $x[4] !== '' && (int) $x[4] < 24 ? sprintf( '%02d:%02d', $x[4], (int) ( $x[5] ?? 0 ) ) : '' ); } }
+	}
+	if ( preg_match_all( '#\b(\d{1,2})\s+DE\s+(' . implode( '|', array_keys( $mes ) ) . ')\s+DE\s+(\d{4})#', $n, $mm, PREG_SET_ORDER ) ) {
+		foreach ( $mm as $x ) { if ( checkdate( $mes[ $x[2] ], (int) $x[1], (int) $x[3] ) ) { $c[] = array( sprintf( '%04d-%02d-%02d', $x[3], $mes[ $x[2] ], $x[1] ), '' ); } }
+	}
+	$f = array_values( array_filter( $c, function ( $d ) use ( $hoje, $max ) { return $d[0] >= $hoje && $d[0] <= $max; } ) );
+	if ( ! $f ) { return ''; }
+	usort( $f, function ( $a, $b ) { return strcmp( $a[0], $b[0] ); } );
+	return $f[0][0] . ( $f[0][1] ? ' ' . $f[0][1] : '' );
+}
+function dv_al_modalidade( $n ) {
+	foreach ( array( 'PREGAO ELETRONICO' => 'Pregão Eletrônico', 'PREGAO PRESENCIAL' => 'Pregão Presencial', 'PREGAO' => 'Pregão', 'CONCORRENCIA' => 'Concorrência', 'TOMADA DE PRECOS' => 'Tomada de Preços', 'DISPENSA' => 'Dispensa', 'INEXIGIBILIDADE' => 'Inexigibilidade', 'CHAMAMENTO PUBLICO' => 'Chamamento Público', 'CREDENCIAMENTO' => 'Credenciamento', 'CONVITE' => 'Convite', 'LEILAO' => 'Leilão' ) as $k => $v ) { if ( strpos( $n, $k ) !== false ) { return $v; } }
+	return 'Licitação';
+}
+function dv_al_numero( $n ) { return preg_match( '#\bN[\s.ºO°\x{00BA}]*\s*(\d{1,6}\s*/\s*\d{4})#u', $n, $m ) ? preg_replace( '/\s+/', '', $m[1] ) : ''; }
+function dv_al_objeto( $txt ) {
+	if ( preg_match( '#OBJETO\s*[:\-–]\s*(.{20,420}?)(?:\.\s|;|\s(?:DATA|ABERTURA|SESS[AÃ]O|ENTREGA|EDITAL|VALOR|PRAZO|LOCAL|INFORMA)|$)#iu', $txt, $m ) ) { return trim( $m[1] ); }
+	return mb_substr( $txt, 0, 480 );
+}
+/** URLs dos diários para um termo (entra no mesmo disparo paralelo do PNCP) */
+function dv_al_diario_urls( $t, $desde ) {
+	$d0 = gmdate( 'Y-m-d', min( strtotime( $desde ), strtotime( current_time( 'Y-m-d' ) . ' -5 days' ) ) );
+	return array(
+		'q' => add_query_arg( array( 'querystring' => rawurlencode( '"' . $t . '" + (pregão | concorrência | "aviso de licitação" | "dispensa eletrônica" | "chamamento público" | "tomada de preços")' ), 'published_since' => $d0, 'size' => 60, 'excerpt_size' => 650, 'number_of_excerpts' => 3, 'sort_by' => 'descending_date' ), 'https://queridodiario.ok.org.br/api/gazettes' ),
+		'd' => 'https://www.in.gov.br/consulta/-/buscar/dou?q=' . rawurlencode( '"' . $t . '"' ) . '&s=do3&exactDate=personalizado&sortType=0&delta=75&publishFrom=' . gmdate( 'd-m-Y', strtotime( $d0 ) ) . '&publishTo=' . current_time( 'd-m-Y' ),
+	);
+}
+/** Converte as respostas dos diários em oportunidades no mesmo formato do PNCP (fonte = diario) */
+function dv_al_diario_itens( $tipo, $body, $termo, $a, $ufs, $excl ) {
+	$out = array(); if ( ! $body ) { return $out; }
+	$quer = '/AVISO D[EO] (LICITACAO|PREGAO|ABERTURA|DISPENSA|CHAMAMENTO|EDITAL|REABERTURA|CONCORRENCIA)|AVISOS DE LICITACAO|PREGAO (ELETRONICO|PRESENCIAL)|CONCORRENCIA (ELETRONICA|PUBLICA)|TOMADA DE PRECOS|DISPENSA (ELETRONICA|DE LICITACAO)|CHAMAMENTO PUBLICO|SESSAO PUBLICA|ABERTURA DAS? (PROPOSTAS|SESSAO|ENVELOPES)|RECEBIMENTO DAS PROPOSTAS|EDITAL DE (LICITACAO|PREGAO)/';
+	$nao = '/HOMOLOG|ADJUDICA|EXTRATO D|RATIFICA|RESULTADO|TERMO ADITIVO|ATA DE REGISTRO DE PRECOS N|REVOGA|ANULA|DESERT|FRACASSAD|VENCEDOR|CONCURSO PUBLICO|PROCESSO SELETIVO/';
+	$aceita = function ( $nd, $enc ) use ( $quer, $nao, $termo, $excl, $a ) {
+		if ( ! dv_al_relevante( $termo, $nd ) || ! preg_match( $quer, $nd ) ) { return false; }
+		if ( preg_match( $nao, $nd ) && ! $enc ) { return false; }
+		foreach ( $excl as $x ) { if ( $x !== '' && strpos( $nd, $x ) !== false ) { return false; } }
+		if ( ! empty( $a['tipo'] ) && dv_al_tipo( $nd ) !== $a['tipo'] ) { return false; }
+		return true;
+	};
+	if ( $tipo === 'q' ) {
+		$j = json_decode( $body, true );
+		foreach ( (array) ( $j['gazettes'] ?? array() ) as $g ) {
+			$uf = strtoupper( (string) ( $g['state_code'] ?? '' ) ); if ( $ufs && ! in_array( $uf, $ufs, true ) ) { continue; }
+			foreach ( (array) ( $g['excerpts'] ?? array() ) as $ex ) {
+				$tx = trim( preg_replace( '/\s+/', ' ', html_entity_decode( wp_strip_all_tags( $ex ), ENT_QUOTES, 'UTF-8' ) ) ); $nd = dv_al_norm( $tx );
+				$enc = dv_al_dt_sessao( $tx ); if ( ! $aceita( $nd, $enc ) ) { continue; }
+				$num = dv_al_numero( $nd ); $mun = (string) ( $g['territory_name'] ?? '' );
+				$ref = 'QD' . sprintf( '%u', crc32( ( $g['url'] ?? '' ) . '|' . ( $num ?: mb_substr( $nd, 0, 120 ) ) ) );
+				$out[ $ref ] = array( 'ref' => $ref, 'fonte' => 'diario', 'fonte_nome' => 'Diário Oficial de ' . $mun, 'orgao' => 'Município de ' . $mun, 'municipio' => $mun, 'uf' => $uf, 'modalidade' => dv_al_modalidade( $nd ), 'numero' => $num,
+					'titulo' => '', 'objeto' => dv_al_objeto( $tx ), 'trecho' => mb_substr( $tx, 0, 900 ), 'valor' => 0, 'publicado' => (string) ( $g['date'] ?? '' ), 'encerra' => $enc, 'link' => (string) ( $g['url'] ?? '' ), 'termos' => array( $termo ) );
+			}
+		}
+	} else {
+		if ( ! preg_match( '#<script[^>]*id="_br_com_seatecnologia_in_buscadou_BuscaDouPortlet_params"[^>]*>(.*?)</script>#s', $body, $m ) ) { return $out; }
+		$j = json_decode( trim( $m[1] ), true );
+		foreach ( (array) ( $j['jsonArray'] ?? array() ) as $it ) {
+			$tit = dv_al_norm( ( $it['artType'] ?? '' ) . ' ' . ( $it['title'] ?? '' ) );
+			if ( preg_match( '/HOMOLOG|ADJUDICA|EXTRATO|RATIFICA|RESULTADO|REVOGA|ANULA|SUSPENS|DESERT|FRACASS|CONTRATO|ADITIVO|PENALIDADE|SANCAO|IMPUGNA|ESCLARECIMENTO|JULGAMENTO/', $tit ) ) { continue; }
+			$h = (array) ( $it['hierarchyList'] ?? array() ); $uf = '';
+			foreach ( $h as $nv ) { if ( preg_match( '/^(ESTADO|GOVERNO) D/', dv_al_norm( $nv ) ) ) { $uf = dv_al_uf_nome( $nv ); } }
+			$tx = trim( preg_replace( '/\s+/', ' ', wp_strip_all_tags( html_entity_decode( ( $it['title'] ?? '' ) . ' — ' . ( $it['content'] ?? '' ), ENT_QUOTES, 'UTF-8' ) ) ) ); $nd = dv_al_norm( $tx );
+			if ( ! $uf && preg_match( '#[\s/\-]\s?(AC|AL|AP|AM|BA|CE|DF|ES|GO|MA|MT|MS|MG|PA|PB|PR|PE|PI|RJ|RN|RS|RO|RR|SC|SP|SE|TO)\b[\s.,;)]#', $tx, $u ) ) { $uf = $u[1]; }
+			if ( $ufs && ! in_array( $uf, $ufs, true ) ) { continue; }
+			$enc = dv_al_dt_sessao( $tx ); if ( ! $aceita( $nd . ' ' . $tit, $enc ) ) { continue; }
+			$org = $h ? (string) end( $h ) : 'Órgão publicado no DOU';
+			$mun = preg_match( '/^PREFEITURA MUNICIPAL DE (.+)$/', dv_al_norm( $org ) ) ? trim( preg_replace( '/^prefeitura municipal de\s+/iu', '', $org ) ) : '';
+			$u2 = ! empty( $it['urlTitle'] ) ? 'https://www.in.gov.br/web/dou/-/' . $it['urlTitle'] : ''; if ( ! $u2 ) { continue; }
+			$d = (string) ( $it['pubDate'] ?? '' ); $pub = preg_match( '#^(\d{2})/(\d{2})/(\d{4})#', $d, $x ) ? "$x[3]-$x[2]-$x[1]" : '';
+			$ref = 'DOU' . preg_replace( '/\D/', '', (string) ( $it['classPK'] ?? crc32( $u2 ) ) );
+			$out[ $ref ] = array( 'ref' => $ref, 'fonte' => 'diario', 'fonte_nome' => 'Diário Oficial da União · seção 3', 'orgao' => $org, 'municipio' => $mun, 'uf' => $uf, 'modalidade' => dv_al_modalidade( $nd . ' ' . $tit ), 'numero' => dv_al_numero( $nd ),
+				'titulo' => (string) ( $it['title'] ?? '' ), 'objeto' => dv_al_objeto( $tx ), 'trecho' => mb_substr( $tx, 0, 900 ), 'valor' => 0, 'publicado' => $pub, 'encerra' => $enc, 'link' => $u2, 'termos' => array( $termo ) );
+		}
+	}
+	return $out;
+}
 function dv_al_buscar( $a, $desde ) {
 	$termos = array_slice( array_filter( array_map( 'trim', preg_split( '/[,;\n]+/', (string) $a['termos'] ) ) ), 0, 6 );
 	$excl = array_filter( array_map( function ( $x ) { return dv_al_norm( trim( $x ) ); }, preg_split( '/[,;\n]+/', (string) ( $a['excluir'] ?? '' ) ) ) );
@@ -39,13 +125,16 @@ function dv_al_buscar( $a, $desde ) {
 	foreach ( $termos as $t ) {
 		$q = array( 'q' => $t, 'tipos_documento' => 'edital', 'ordenacao' => '-data', 'pagina' => 1, 'tam_pagina' => 100, 'status' => 'recebendo_proposta' );
 		if ( $ufs ) { $q['ufs'] = implode( '|', $ufs ); }
-		$urls[ $t ] = 'https://pncp.gov.br/api/search/?' . http_build_query( $q );
+		$urls[ 'p|' . $t ] = 'https://pncp.gov.br/api/search/?' . http_build_query( $q );
+		if ( ! isset( $a['diarios'] ) || $a['diarios'] ) { foreach ( dv_al_diario_urls( $t, $desde ) as $k => $u ) { $urls[ $k . '|' . $t ] = $u; } }
 	}
 	$res = array();
-	if ( function_exists( 'dv_ds_multi' ) ) { $res = dv_ds_multi( $urls, array(), 30 ); }
-	else { foreach ( $urls as $k => $u ) { $g = wp_remote_get( $u, array( 'timeout' => 30 ) ); $res[ $k ] = is_wp_error( $g ) ? null : json_decode( wp_remote_retrieve_body( $g ), true ); } }
-	$out = array();
-	foreach ( $res as $termo => $j ) {
+	if ( function_exists( 'dv_ds_multi' ) ) { $res = dv_ds_multi( $urls, array( 'Accept' => 'application/json,text/html' ), 30 ); }
+	else { foreach ( $urls as $k => $u ) { $g = wp_remote_get( $u, array( 'timeout' => 30 ) ); $res[ $k ] = is_wp_error( $g ) ? null : wp_remote_retrieve_body( $g ); } }
+	$out = array(); $dia = array();
+	foreach ( $res as $chave => $j ) {
+		list( $fo, $termo ) = explode( '|', $chave, 2 );
+		if ( $fo !== 'p' ) { foreach ( dv_al_diario_itens( $fo, $j, $termo, $a, $ufs, $excl ) as $r => $x ) { if ( isset( $dia[ $r ] ) ) { $dia[ $r ]['termos'][] = $termo; } else { $dia[ $r ] = $x; } } continue; }
 		if ( is_string( $j ) ) { $j = json_decode( $j, true ); }
 		foreach ( (array) ( $j['items'] ?? array() ) as $i ) {
 			$pub = substr( (string) ( $i['data_publicacao_pncp'] ?? $i['createdAt'] ?? '' ), 0, 10 );
@@ -63,6 +152,16 @@ function dv_al_buscar( $a, $desde ) {
 			$out[ $ref ] = array( 'ref' => $ref, 'orgao' => $i['orgao_nome'] ?? '', 'municipio' => $i['municipio_nome'] ?? '', 'uf' => $i['uf'] ?? '', 'modalidade' => $i['modalidade_licitacao_nome'] ?? '',
 				'titulo' => $i['title'] ?? '', 'objeto' => mb_substr( $desc, 0, 600 ), 'valor' => $v, 'publicado' => $pub, 'encerra' => substr( (string) ( $i['data_fim_vigencia'] ?? '' ), 0, 16 ),
 				'link' => 'https://pncp.gov.br/app/editais/' . $ref, 'termos' => array( $termo ) );
+		}
+	}
+	/* o mesmo edital pode estar no PNCP e no diário: descarta o do diário quando o número e o município (ou órgão) batem */
+	if ( $dia ) {
+		$ja = array(); foreach ( $out as $x ) { if ( preg_match_all( '#(\d{1,6})\s*/\s*(\d{4})#', $x['titulo'] . ' ' . $x['objeto'], $mm, PREG_SET_ORDER ) ) { foreach ( $mm as $q ) { $ja[ (int) $q[1] . '/' . $q[2] . '|' . dv_al_norm( $x['municipio'] ) ] = 1; } } }
+		$dv = array();
+		foreach ( $dia as $r => $x ) {
+			if ( $x['numero'] && preg_match( '#(\d+)/(\d{4})#', $x['numero'], $q ) && isset( $ja[ (int) $q[1] . '/' . $q[2] . '|' . dv_al_norm( $x['municipio'] ) ] ) ) { continue; }
+			$k = $x['numero'] ? $x['numero'] . '|' . dv_al_norm( $x['municipio'] ?: $x['orgao'] ) : $r; if ( isset( $dv[ $k ] ) ) { continue; } $dv[ $k ] = 1;
+			$x['termos'] = array_values( array_unique( $x['termos'] ) ); $out[ $r ] = $x;
 		}
 	}
 	uasort( $out, function ( $x, $y ) { return strcmp( $y['publicado'], $x['publicado'] ); } );
@@ -93,7 +192,7 @@ add_action( 'rest_api_init', function () {
 		dv_al_salvar_lista( $uid, array_filter( dv_al_lista( $uid ), function ( $x ) use ( $id ) { return $x['id'] !== $id; } ) ); return array( 'ok' => true );
 	} ) );
 	register_rest_route( $ns, '/alertas/caixa', array( 'methods' => 'POST', 'permission_callback' => $perm, 'callback' => function ( WP_REST_Request $r ) {
-		$uid = get_current_user_id(); $c = dv_al_caixa( $uid ); $ref = preg_replace( '/[^0-9\/]/', '', (string) $r['ref'] );
+		$uid = get_current_user_id(); $c = dv_al_caixa( $uid ); $ref = preg_replace( '/[^0-9A-Z\/]/', '', (string) $r['ref'] );
 		if ( ! isset( $c[ $ref ] ) ) { return new WP_Error( 'dv_al', 'Oportunidade não encontrada.', array( 'status' => 404 ) ); }
 		$c[ $ref ]['st'] = in_array( $r['st'], array( '', 'quero', 'desc' ), true ) ? $r['st'] : ''; if ( $r['lic'] ) { $c[ $ref ]['lic'] = sanitize_key( (string) $r['lic'] ); }
 		dv_al_caixa_salvar( $uid, $c ); return array( 'ok' => true );
@@ -166,10 +265,10 @@ function dv_al_email( $uid, $bloco, $urgente = false ) {
 	foreach ( $bloco as $b ) {
 		$h .= '<h3 style="font-size:15px;color:#A8843F;letter-spacing:.08em;text-transform:uppercase;margin:22px 0 6px">' . esc_html( $b['a']['nome'] ) . ' (' . count( $b['itens'] ) . ')</h3>';
 		foreach ( $b['itens'] as $x ) {
-			$h .= '<div style="border-left:4px solid #C9A45C;background:#FAF8F3;padding:12px 14px;margin:8px 0;border-radius:8px"><div style="font-size:13px;color:#6E6A60">' . ( ( $x['_ap'] ?? 0 ) >= 65 ? '<span style="background:#EAF5EE;color:#1F5A3B;border-radius:6px;padding:2px 7px;font-weight:bold">⭐ parecido com o que você aproveita</span><br>' : '' ) . '<b style="color:#16191E">' . esc_html( $x['orgao'] ) . '</b> · ' . esc_html( $x['municipio'] . '/' . $x['uf'] ) . ' · ' . esc_html( $x['modalidade'] ) . ( $x['valor'] ? ' · <b>' . esc_html( 'R$ ' . number_format( $x['valor'], 2, ',', '.' ) ) . '</b>' : '' ) . '</div><p style="font-size:14px;line-height:1.45;margin:6px 0">' . esc_html( mb_substr( $x['objeto'], 0, 320 ) ) . '</p><a href="' . esc_url( $x['link'] ) . '" style="color:#8A6A2C;font-weight:bold;margin-right:14px">Ver no PNCP</a><a href="' . esc_url( add_query_arg( 'importar', $x['ref'], $g ) ) . '" style="color:#8A6A2C;font-weight:bold">Levar para a minha gestão</a></div>';
+			$h .= '<div style="border-left:4px solid #C9A45C;background:#FAF8F3;padding:12px 14px;margin:8px 0;border-radius:8px"><div style="font-size:13px;color:#6E6A60">' . ( ( $x['_ap'] ?? 0 ) >= 65 ? '<span style="background:#EAF5EE;color:#1F5A3B;border-radius:6px;padding:2px 7px;font-weight:bold">⭐ parecido com o que você aproveita</span><br>' : '' ) . '<b style="color:#16191E">' . esc_html( $x['orgao'] ) . '</b> · ' . esc_html( $x['municipio'] . '/' . $x['uf'] ) . ' · ' . esc_html( $x['modalidade'] ) . ( $x['valor'] ? ' · <b>' . esc_html( 'R$ ' . number_format( $x['valor'], 2, ',', '.' ) ) . '</b>' : '' ) . '</div><p style="font-size:14px;line-height:1.45;margin:6px 0">' . esc_html( mb_substr( $x['objeto'], 0, 320 ) ) . '</p>' . ( ( $x['fonte'] ?? '' ) === 'diario' ? '<div style="font-size:12px;color:#6E6A60;margin:-2px 0 6px">' . esc_html( $x['fonte_nome'] . ' · publicado em ' . date_i18n( 'd/m/Y', strtotime( $x['publicado'] ) ) ) . ( $x['encerra'] ? esc_html( ' · sessão ' . date_i18n( 'd/m/Y', strtotime( substr( $x['encerra'], 0, 10 ) ) ) ) : '' ) . '</div><a href="' . esc_url( $x['link'] ) . '" style="color:#8A6A2C;font-weight:bold;margin-right:14px">Ver no diário oficial</a><a href="' . esc_url( home_url( '/plataforma/alertas/' ) ) . '" style="color:#8A6A2C;font-weight:bold">Abrir na caixa de oportunidades</a>' : '<a href="' . esc_url( $x['link'] ) . '" style="color:#8A6A2C;font-weight:bold;margin-right:14px">Ver no PNCP</a><a href="' . esc_url( add_query_arg( 'importar', $x['ref'], $g ) ) . '" style="color:#8A6A2C;font-weight:bold">Levar para a minha gestão</a>' ) . '</div>';
 		}
 	}
-	$h .= '<p style="margin-top:20px"><a href="' . esc_url( home_url( '/plataforma/alertas/' ) ) . '" style="background:#C9A45C;color:#241A06;padding:12px 20px;border-radius:999px;text-decoration:none;font-weight:bold">Ajustar meus alertas</a></p><p style="font-size:12px;color:#6E6A60;margin-top:22px">Fonte: Portal Nacional de Contratações Públicas (PNCP), licitações com propostas abertas publicadas desde ontem. Órgãos que ainda não publicam no PNCP podem não aparecer.</p></div></div>';
+	$h .= '<p style="margin-top:20px"><a href="' . esc_url( home_url( '/plataforma/alertas/' ) ) . '" style="background:#C9A45C;color:#241A06;padding:12px 20px;border-radius:999px;text-decoration:none;font-weight:bold">Ajustar meus alertas</a></p><p style="font-size:12px;color:#6E6A60;margin-top:22px">Fontes: Portal Nacional de Contratações Públicas (PNCP), diários oficiais municipais (Querido Diário) e Diário Oficial da União, seção 3. Avisos de diário oficial trazem só o resumo: confira o edital completo no site do órgão.</p></div></div>';
 	$rem = function_exists( 'dv_cfg' ) && dv_cfg( 'email_remetente' ) ? dv_cfg( 'email_remetente' ) : 'contato@desenvolveestrategias.com.br';
 	$hd = array( 'Content-Type: text/html; charset=UTF-8', 'From: Desenvolve Estratégias <' . $rem . '>', 'Reply-To: ' . $rem );
 	$p = function_exists( 'dv_capt_pref' ) ? dv_capt_pref( $uid ) : array( 'emails' => array( $u->user_email ) );
@@ -190,7 +289,7 @@ add_shortcode( 'dv_alertas', function () {
 		<div class="al-2"><label>Valor mínimo (R$)<input name="vmin" inputmode="decimal" placeholder="opcional"></label><label>Valor máximo (R$)<input name="vmax" inputmode="decimal" placeholder="opcional"></label></div>
 		<input type="hidden" name="id">
 		<div class="al-act"><button type="button" class="g al-test">Ver o que ele encontra</button><button type="submit">Salvar alerta</button><button type="button" class="g al-novo" hidden>Cancelar edição</button></div>
-		<p class="al-m al-h">Todo dia, por volta das 7h40, você recebe por e-mail as licitações abertas publicadas no PNCP desde a véspera, e elas entram na Caixa de oportunidades. Às 12h40 e às 17h40 o sistema confere de novo: o que for novo entra na caixa, e dispensas ou editais com prazo de até 5 dias chegam também por e-mail na hora. Os e-mails vão para os mesmos endereços dos avisos de prazo.</p>
+		<p class="al-m al-h">Todo dia, por volta das 7h40, você recebe por e-mail as licitações abertas publicadas no PNCP e nos diários oficiais (municípios e Diário Oficial da União) desde a véspera, e elas entram na Caixa de oportunidades. Às 12h40 e às 17h40 o sistema confere de novo: o que for novo entra na caixa, e dispensas ou editais com prazo de até 5 dias chegam também por e-mail na hora. Os e-mails vão para os mesmos endereços dos avisos de prazo.</p>
 	</form>
 	<h3>Meus alertas</h3><div class="al-lista"><p class="al-h">Carregando…</p></div>
 	<div class="al-res"></div>
@@ -206,6 +305,7 @@ add_shortcode( 'dv_alertas', function () {
 .al-act{display:flex;gap:8px;flex-wrap:wrap}.al-h{color:var(--mu);font-size:.86rem;margin:0}.al-m.e{color:var(--rd)}.al-m.o{color:var(--gr);font-weight:600}
 .al-a{border:1px solid var(--ln);border-radius:12px;padding:12px 14px;background:#fff;margin-bottom:8px;display:flex;justify-content:space-between;gap:10px;align-items:center;flex-wrap:wrap}.al-a b{display:block}.al-a span{color:var(--mu);font-size:.82rem}.al-a .x{display:flex;gap:6px}
 .al-i{border:1px solid var(--ln);border-radius:12px;padding:12px 14px;background:#fff;margin-bottom:8px}.al-i .m{color:var(--mu);font-size:.8rem}.al-i .m b{color:#16191E}.al-i p{margin:6px 0;font-size:.92rem;line-height:1.45}.al-i .k{display:flex;gap:8px;flex-wrap:wrap;align-items:center}.al-i a{color:#8A6A2C;font-weight:700;font-size:.85rem}.al-i button{font-size:.8rem;padding:6px 12px}
+.al-fo{display:inline-block;background:#EEF2F7;color:#2B4A6B;border-radius:6px;padding:1px 7px;font-size:.72rem;font-weight:700;margin-right:4px;text-transform:uppercase;letter-spacing:.04em}.al-dio{border-left:3px solid #8FA7C2}
 .al-tag{display:inline-block;background:#FFF4DC;color:#9A6B12;border-radius:99px;padding:1px 8px;font-size:.72rem;font-weight:700;margin-left:6px}
 .al-cx{border:1px solid var(--ln);border-radius:16px;padding:16px 20px;background:#FAF8F3;margin-bottom:22px}.al-cxh{display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap}.al-cxh h3{margin:0!important}
 .al-tabs{display:flex;gap:6px;flex-wrap:wrap;margin:12px 0 8px}.al-tabs span{border:1px solid var(--ln);border-radius:20px;padding:6px 12px;font-size:.85rem;cursor:pointer;font-weight:600;background:#fff}.al-tabs span.on{background:#0C0F13;color:#F4F2EC;border-color:#0C0F13}
@@ -229,23 +329,30 @@ function dias(d){if(!d)return null;var a=new Date(String(d).slice(0,10)+'T12:00:
 function brh(d){return d?br(d)+(String(d).length>15&&String(d).slice(11,16)!=='00:00'?' às '+String(d).slice(11,16):''):''}
 function caixa(){var n={'':0,quero:0,desc:0};CX.forEach(function(x){n[x.st||'']++});var T=R.querySelector('.al-tabs');T.innerHTML=[['','Novas'],['quero','Quero'],['desc','Descartadas']].map(function(t){return'<span data-cx="'+t[0]+'" class="'+(cab===t[0]?'on':'')+'">'+t[1]+' ('+n[t[0]]+')</span>'}).join('');
  var l=CX.filter(function(x){return(x.st||'')===cab});var L=R.querySelector('.al-cxl');
- L.innerHTML=l.length?l.map(function(x){var d=dias(x.encerra),cl=d===null?'':d<=3?'r':d<=7?'a':'',c=x.ref.split('/'),g=x.lic||GEST[x.ref];return'<div class="al-i" data-r="'+e(x.ref)+'"><div class="m"><b>'+e(x.orgao)+'</b> · '+e(x.municipio+'/'+x.uf)+' · '+e(x.modalidade)+' · alerta “'+e(x.alerta||'')+'”</div><p>'+e(x.objeto)+'</p>'+
+ L.innerHTML=l.length?l.map(function(x){var d=dias(x.encerra),cl=d===null?'':d<=3?'r':d<=7?'a':'',c=x.ref.split('/'),g=x.lic||GEST[x.ref]||(x.link&&GEST[x.link]),dio=x.fonte==='diario';if(dio)return dioC(x,d,cl,g);return'<div class="al-i" data-r="'+e(x.ref)+'"><div class="m"><b>'+e(x.orgao)+'</b> · '+e(x.municipio+'/'+x.uf)+' · '+e(x.modalidade)+' · alerta “'+e(x.alerta||'')+'”</div><p>'+e(x.objeto)+'</p>'+
  '<div class="al-ch">'+(d!==null?'<span class="'+cl+'">'+(d>1?'⏳ faltam '+d+' dias':d===1?'⏳ termina amanhã':'⏳ termina hoje')+'</span><span>Sessão '+brh(x.encerra)+'</span>':'')+'<span class="al-val">'+(x.valor?moeda(x.valor):'Valor estimado: …')+'</span>'+'<span>Publicado '+br(x.publicado)+'</span></div>'+
  '<div class="al-ba">'+(g?'<a class="ok" href="/plataforma/licitacoes/?ver='+g+'">✓ Na sua Gestão · abrir</a>':'<button type="button" class="p" data-q>Quero · levar para a Gestão</button>')+'<button type="button" data-an>Analisar edital</button><a href="/plataforma/raio-x-comprador/?cnpj='+c[0]+'" target="_blank" rel="noopener">Raio-X do órgão · '+((window.DVC&&DVC.comprador)||5)+' créditos</a><a href="/plataforma/licitacoes/?hist='+encodeURIComponent(x.ref)+'&obj='+encodeURIComponent(String(x.objeto||'').slice(0,200))+'">📊 Licitações anteriores</a><a href="'+e(x.link)+'" target="_blank" rel="noopener">Edital no PNCP</a>'+(cab==='desc'?'<button type="button" class="x" data-st="">Restaurar</button>':'<button type="button" class="x" data-st="desc">Descartar</button>')+'</div></div>'}).join(''):'<p class="al-h">'+(!S?'Carregando a caixa de oportunidades…':cab===''?(S.alertas.length?'Nenhuma oportunidade nova agora. Clique em “Atualizar agora” ou espere a próxima rodada.':'Crie um alerta abaixo: o que ele encontrar cai aqui.'):'Nada por aqui.')+'</p>';valores()}
-var VAL={};function valores(){[].slice.call(R.querySelectorAll('.al-cxl .al-i')).slice(0,30).forEach(function(c){var r=c.dataset.r,sp=c.querySelector('.al-val');if(!sp||VAL[r]===null)return;var put=function(v){if(!v){sp.remove();return}sp.className='al-val v';sp.textContent=v.sig?'Valor estimado: sigiloso':v.v?'Valor estimado: '+moeda(v.v):'Valor estimado: não informado'};if(VAL[r])return put(VAL[r]);var k=r.split('/');fetch('https://pncp.gov.br/api/consulta/v1/orgaos/'+k[0]+'/compras/'+k[1]+'/'+k[2]).then(function(x){return x.json()}).then(function(j){VAL[r]={v:j.valorTotalEstimado,sig:j.orcamentoSigilosoCodigo&&j.orcamentoSigilosoCodigo!=1};put(VAL[r])}).catch(function(){VAL[r]=null;sp.remove()})})}
+function loc(x){return[x.municipio,x.uf].filter(Boolean).join('/')}
+function dioC(x,d,cl,g){return'<div class="al-i al-dio" data-r="'+e(x.ref)+'"><div class="m"><span class="al-fo">Diário oficial</span> <b>'+e(x.orgao)+'</b>'+(loc(x)?' · '+e(loc(x)):'')+' · '+e(x.modalidade)+(x.numero?' nº '+e(x.numero):'')+(x.alerta?' · alerta “'+e(x.alerta)+'”':'')+'</div><p>'+e(x.objeto)+'</p>'+
+ '<div class="al-ch">'+(d!==null?'<span class="'+cl+'">'+(d>1?'⏳ faltam '+d+' dias':d===1?'⏳ termina amanhã':'⏳ termina hoje')+'</span><span>Sessão '+brh(x.encerra)+'</span>':'<span>Data da sessão: ver no aviso</span>')+'<span>Publicado '+br(x.publicado)+' · '+e(x.fonte_nome||'Diário oficial')+'</span></div>'+
+ '<div class="al-ba">'+(g?'<a class="ok" href="/plataforma/licitacoes/?ver='+g+'">✓ Na sua Gestão · abrir</a>':'<button type="button" class="p" data-q>Quero · levar para a Gestão</button>')+'<button type="button" data-mia-al>Analisar com a minha IA</button><a href="'+e(x.link)+'" target="_blank" rel="noopener">Ver no diário oficial</a>'+(cab==='desc'?'<button type="button" class="x" data-st="">Restaurar</button>':'<button type="button" class="x" data-st="desc">Descartar</button>')+'</div></div>'}
+function dioLic(x){return{orgao:x.orgao,objeto:x.objeto,municipio:x.municipio,uf:x.uf,modalidade:x.modalidade,numero:x.numero||'',abertura:x.encerra?String(x.encerra).replace(' ','T'):'',link:x.link,status:'analise',notas:'Encontrada no '+(x.fonte_nome||'diário oficial')+' em '+br(x.publicado)+'. Confira o aviso completo e baixe o edital no site do órgão.\n\nTrecho: '+String(x.trecho||'').slice(0,700)}}
+function dioTxt(x){return'Órgão: '+x.orgao+(loc(x)?'\nLocal: '+loc(x):'')+'\nModalidade: '+x.modalidade+(x.numero?' nº '+x.numero:'')+(x.encerra?'\nSessão: '+brh(x.encerra):'')+'\nPublicado em: '+br(x.publicado)+' ('+(x.fonte_nome||'diário oficial')+')\n\nTrecho do aviso:\n'+(x.trecho||x.objeto)+'\n\nLink: '+x.link}
+var VAL={};function valores(){[].slice.call(R.querySelectorAll('.al-cxl .al-i')).slice(0,30).forEach(function(c){var r=c.dataset.r,sp=c.querySelector('.al-val');if(!sp||VAL[r]===null||!/^\d{14}\//.test(r))return;var put=function(v){if(!v){sp.remove();return}sp.className='al-val v';sp.textContent=v.sig?'Valor estimado: sigiloso':v.v?'Valor estimado: '+moeda(v.v):'Valor estimado: não informado'};if(VAL[r])return put(VAL[r]);var k=r.split('/');fetch('https://pncp.gov.br/api/consulta/v1/orgaos/'+k[0]+'/compras/'+k[1]+'/'+k[2]).then(function(x){return x.json()}).then(function(j){VAL[r]={v:j.valorTotalEstimado,sig:j.orcamentoSigilosoCodigo&&j.orcamentoSigilosoCodigo!=1};put(VAL[r])}).catch(function(){VAL[r]=null;sp.remove()})})}
 function marca(ref,st,lic){var x=CX.filter(function(y){return y.ref===ref})[0];if(x){x.st=st;if(lic)x.lic=lic}caixa();return req('POST','alertas/caixa',{ref:ref,st:st,lic:lic||''})}
-function gestao(x,b,depois){b.disabled=true;var t0=b.textContent;b.textContent='Salvando…';req('GET','lic/pncp?ref='+encodeURIComponent(x.ref)).then(function(j){j.status='analise';return req('POST','lic/salvar',j)}).then(function(r){GEST[x.ref]=r.id;marca(x.ref,'quero',r.id);if(depois)depois(r.id)}).catch(function(j){b.disabled=false;b.textContent=t0;alert((j&&j.message)||'Não foi possível salvar agora.')})}
+function gestao(x,b,depois){b.disabled=true;var t0=b.textContent;b.textContent='Salvando…';(x.fonte==='diario'?req('POST','lic/salvar',dioLic(x)):req('GET','lic/pncp?ref='+encodeURIComponent(x.ref)).then(function(j){j.status='analise';return req('POST','lic/salvar',j)})).then(function(r){GEST[x.ref]=r.id;marca(x.ref,'quero',r.id);if(depois)depois(r.id)}).catch(function(j){b.disabled=false;b.textContent=t0;alert((j&&j.message)||'Não foi possível salvar agora.')})}
 R.querySelector('.al-cx').addEventListener('click',function(ev){var t=ev.target;
  if(t.dataset.cx!=null){cab=t.dataset.cx;caixa();return}
  if(t.matches('.al-atu')){t.disabled=true;t.textContent='Buscando…';req('POST','alertas/atualizar').then(function(j){t.textContent=j.novas?j.novas+' nova(s)':'Nada novo';return carregar()}).catch(function(){t.textContent='Tente de novo'}).then(function(){setTimeout(function(){t.disabled=false;t.textContent='Atualizar agora'},2500)});return}
  var c=t.closest('.al-i');if(!c)return;var x=CX.filter(function(y){return y.ref===c.dataset.r})[0];if(!x)return;
  if(t.hasAttribute('data-q'))gestao(x,t);
+ else if(t.hasAttribute('data-mia-al')){if(window.dvMinhaIA)dvMinhaIA('licitacao',dioTxt(x))}
  else if(t.hasAttribute('data-an')){var go=function(id){location.href='/plataforma/licitacoes/?ver='+id+'&analisar=1'};var g=x.lic||GEST[x.ref];if(g)go(g);else gestao(x,t,go)}
  else if(t.dataset.st!=null)marca(x.ref,t.dataset.st)});
-req('GET','lic').then(function(j){(j.itens||[]).forEach(function(y){if(y.pncp)GEST[y.pncp]=y.id});caixa()}).catch(function(){});
+req('GET','lic').then(function(j){(j.itens||[]).forEach(function(y){if(y.pncp)GEST[y.pncp]=y.id;if(y.link&&/in\.gov\.br|queridodiario|diario/i.test(y.link))GEST[y.link]=y.id});caixa()}).catch(function(){});
 function carregar(){return req('GET','alertas').then(function(j){S=j;CX=j.caixa||[];caixa();R.querySelector('.al-lista').innerHTML=j.alertas.length?j.alertas.map(function(a){return'<div class="al-a"><div><b>'+e(a.nome)+(a.ativo?'':' <span class="al-tag">pausado</span>')+'</b><span>'+e(a.termos)+' · '+(a.ufs&&a.ufs.length?a.ufs.join(', '):'Brasil todo')+(a.vmin?' · a partir de '+moeda(a.vmin):'')+(a.vmax?' · até '+moeda(a.vmax):'')+(a.excluir?' · sem: '+e(a.excluir):'')+(a.tipo?' · só '+(a.tipo==='servico'?'serviços':'compras'):'')+'</span></div><div class="x"><button class="g" data-v="'+a.id+'">Ver agora</button><button class="g" data-ed="'+a.id+'">Editar</button><button class="g" data-p="'+a.id+'">'+(a.ativo?'Pausar':'Ativar')+'</button><button class="g" data-x="'+a.id+'">Excluir</button></div></div>'}).join(''):'<p class="al-h">Nenhum alerta ainda. Crie o primeiro acima: em segundos você vê quantas licitações abertas ele encontra.</p>'})}
-function mostrar(j,titulo){var Rr=R.querySelector('.al-res');Rr.innerHTML='<h3>'+e(titulo)+': '+j.total+' licitação(ões) aberta(s) nos últimos 15 dias</h3>'+(j.itens.length?j.itens.map(function(x){return'<div class="al-i"><div class="m"><b>'+e(x.orgao)+'</b> · '+e(x.municipio+'/'+x.uf)+' · '+e(x.modalidade)+' · publicado em '+br(x.publicado)+(x.valor?' · <b>'+moeda(x.valor)+'</b>':'')+'</div><p>'+e(x.objeto)+'</p><div class="k"><a href="'+e(x.link)+'" target="_blank" rel="noopener">Ver no PNCP</a><button data-imp="'+e(x.ref)+'">Levar para a minha gestão</button>'+x.termos.map(function(t){return'<span class="al-tag">'+e(t)+'</span>'}).join('')+'</div></div>'}).join(''):'<p class="al-h">Nada encontrado. Tente palavras mais gerais ou mais estados.</p>');Rr.scrollIntoView({behavior:'smooth'})}
-function testar(o,t){M.className='al-m al-h';M.textContent='Buscando no PNCP…';return req('POST','alertas/testar',o).then(function(j){M.textContent='';mostrar(j,t)}).catch(function(j){M.className='al-m al-h e';M.textContent=(j&&j.message)||'O PNCP não respondeu agora. Tente de novo.'})}
+var PREV=[];function mostrar(j,titulo){PREV=j.itens||[];var nd=PREV.filter(function(x){return x.fonte==='diario'}).length;var Rr=R.querySelector('.al-res');Rr.innerHTML='<h3>'+e(titulo)+': '+j.total+' licitação(ões) aberta(s) nos últimos 15 dias</h3>'+(nd?'<p class="al-h" style="margin:-4px 0 10px">'+(j.total-nd)+' do PNCP e '+nd+' de diários oficiais (municípios e Diário Oficial da União).</p>':'')+(j.itens.length?j.itens.map(function(x,i){var dio=x.fonte==='diario';return'<div class="al-i'+(dio?' al-dio':'')+'"><div class="m">'+(dio?'<span class="al-fo">Diário oficial</span> ':'')+'<b>'+e(x.orgao)+'</b>'+(loc(x)?' · '+e(loc(x)):'')+' · '+e(x.modalidade)+(dio&&x.numero?' nº '+e(x.numero):'')+' · publicado em '+br(x.publicado)+(dio?' · '+e(x.fonte_nome):'')+(x.encerra?' · sessão '+brh(x.encerra):'')+(x.valor?' · <b>'+moeda(x.valor)+'</b>':'')+'</div><p>'+e(x.objeto)+'</p><div class="k">'+(dio?'<a href="'+e(x.link)+'" target="_blank" rel="noopener">Ver no diário oficial</a><button data-impd="'+i+'">Levar para a minha gestão</button>':'<a href="'+e(x.link)+'" target="_blank" rel="noopener">Ver no PNCP</a><button data-imp="'+e(x.ref)+'">Levar para a minha gestão</button>')+x.termos.map(function(t){return'<span class="al-tag">'+e(t)+'</span>'}).join('')+'</div></div>'}).join(''):'<p class="al-h">Nada encontrado. Tente palavras mais gerais ou mais estados.</p>');Rr.scrollIntoView({behavior:'smooth'})}
+function testar(o,t){M.className='al-m al-h';M.textContent='Buscando no PNCP e nos diários oficiais…';return req('POST','alertas/testar',o).then(function(j){M.textContent='';mostrar(j,t)}).catch(function(j){M.className='al-m al-h e';M.textContent=(j&&j.message)||'As fontes não responderam agora. Tente de novo.'})}
 F.addEventListener('submit',function(ev){ev.preventDefault();M.className='al-m al-h';M.textContent='Salvando…';req('POST','alertas/salvar',dados()).then(function(){M.className='al-m al-h o';M.textContent='Alerta salvo. Amanhã cedo chega o primeiro e-mail.';limpar();carregar()}).catch(function(j){M.className='al-m al-h e';M.textContent=(j&&j.message)||'Erro ao salvar.'})});
 R.addEventListener('click',function(ev){var t=ev.target,a;
  if(t.dataset.uf){ufs[t.dataset.uf]=!ufs[t.dataset.uf];pUfs();return}
@@ -256,6 +363,7 @@ R.addEventListener('click',function(ev){var t=ev.target,a;
  if(t.dataset.ed&&a){limpar();F.querySelector('[name=tipo]').value=a.tipo||'';['nome','termos','excluir','id'].forEach(function(k){F.querySelector('[name='+k+']').value=a[k]||''});F.querySelector('[name=vmin]').value=a.vmin||'';F.querySelector('[name=vmax]').value=a.vmax||'';(a.ufs||[]).forEach(function(u){ufs[u]=true});pUfs();R.querySelector('.al-ft').textContent='Editar alerta';R.querySelector('.al-novo').hidden=false;F.scrollIntoView({behavior:'smooth'});return}
  if(t.dataset.p&&a){var o=Object.assign({},a,{ativo:a.ativo?0:1});req('POST','alertas/salvar',o).then(carregar);return}
  if(t.dataset.x&&a){if(confirm('Excluir o alerta "'+a.nome+'"?'))req('POST','alertas/excluir',{id:a.id}).then(carregar);return}
+ if(t.dataset.impd!=null){var y=PREV[+t.dataset.impd];if(!y)return;t.disabled=true;t.textContent='Importando…';req('POST','lic/salvar',dioLic(y)).then(function(){t.textContent='Na sua gestão ✓'}).catch(function(j){t.disabled=false;t.textContent='Tentar de novo'});return}
  if(t.dataset.imp){t.disabled=true;t.textContent='Importando…';req('GET','lic/pncp?ref='+encodeURIComponent(t.dataset.imp)).then(function(j){return req('POST','lic/salvar',j)}).then(function(){t.textContent='Na sua gestão ✓';var cn=String(t.dataset.imp||'').slice(0,14);if(/^\d{14}$/.test(cn)&&!t.nextElementSibling?.classList?.contains('al-rx')){var a=document.createElement('a');a.className='g al-rx';a.href='/plataforma/raio-x-comprador/?cnpj='+cn;a.textContent='Raio-X do órgão →';a.style.cssText='font-size:.85rem;font-weight:600;color:#16191E;border:1px solid #E3DED2;border-radius:10px;padding:8px 12px;text-decoration:none';t.after(a)}}).catch(function(j){t.disabled=false;t.textContent=(j&&j.message)?'Tentar de novo':'Erro'})}});
 (function(){var q=new URLSearchParams(location.search);if(q.get('termos')){F.querySelector('[name=termos]').value=q.get('termos');if(q.get('nome'))F.querySelector('[name=nome]').value=q.get('nome');if(q.get('tipo'))F.querySelector('[name=tipo]').value=q.get('tipo');(q.get('uf')||'').split(',').forEach(function(u){if(u)ufs[u.toUpperCase()]=1});M.className='al-m al-h o';M.textContent='Alerta pré-preenchido com a sua busca. Confira e salve.';history.replaceState(null,'',location.pathname)}})();
 pUfs();carregar();

@@ -102,7 +102,7 @@ function htmlEmpresa(S){
  var fol=(S.contratos>=3&&(S.anos==null||S.anos>=3))?'<em>Tem histórico de execução.</em> ':S.contratos?'<em>Histórico curto.</em> Vale exigir com rigor os atestados (art. 67). ':'<em>Sem contratos públicos encontrados.</em> Vale exigir com rigor os atestados (art. 67). ';
  fol+=e(cap.join(' · ')||'Sem dados de contratos.')+'.';if(S.trab>=50)fol+=' '+S.trab.toLocaleString('pt-BR')+' ações trabalhistas: compare o volume com o porte da empresa.';
  var ac='<a class="p dv-rec" href="/plataforma/recursos/?tipo=recurso&pontos=1'+(PG==='concorrente'&&S.cnpj?'&conc='+S.cnpj+'&titulo='+encodeURIComponent('Recurso contra '+((window.DVNOME)||S.cnpj)):'')+'">Montar o recurso com estes pontos</a>';
- if(PG==='concorrente'&&S.cnpj)ac+='<a href="/plataforma/dossie/?cnpj='+S.cnpj+'">Due Diligence completa</a>';
+ if(PG==='concorrente'&&S.cnpj)ac+='<a href="/plataforma/dossie/?cnpj='+S.cnpj+'">Due Diligence completa</a>';if((PG==='concorrente'||PG==='dossie')&&S.cnpj)ac+='<a href="/plataforma/captador/?cnpj='+S.cnpj+'">Monitorar no Radar do Diário Oficial</a>';
  var prox=A.length?'Junte as certidões e o print das fontes e prepare o recurso no prazo (3 dias úteis da intenção, art. 165, §1º, I).':M.length?'Confira as certidões apresentadas no certame e peça diligência sobre os pontos acima antes do recurso.':'Não há o que explorar aqui. Foque nos documentos da proposta e da habilitação.';
  var pts=100,comp=[];function tira(v,t){v=Math.round(v);if(v>0){pts-=v;comp.push([v,t])}}
  if(S.sit&&S.sit!=='ATIVA')tira(40,'CNPJ '+S.sit.toLowerCase());if(S.sanc.length)tira(40,'sanção registrada');

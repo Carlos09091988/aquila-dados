@@ -267,7 +267,7 @@ add_shortcode( 'dv_captador', function () {
 <div class="cp" id="dv-capt" data-api="<?php echo esc_attr( rest_url( 'desenvolve/v1/' ) ); ?>" data-nonce="<?php echo esc_attr( wp_create_nonce( 'wp_rest' ) ); ?>">
 	<form class="cp-add" autocomplete="off">
 		<label for="cp-v">CNPJ ou nome a monitorar</label>
-		<div class="cp-row"><input id="cp-v" placeholder="00.000.000/0000-00 ou NOME DA EMPRESA / PESSOA" maxlength="150"><button type="submit">Monitorar</button></div>
+		<div class="cp-row"><input id="cp-v" placeholder="00.000.000/0000-00 ou NOME DA EMPRESA / PESSOA" maxlength="150"><button type="submit">Monitorar</button></div><script>(function(){var c=(new URLSearchParams(location.search).get('cnpj')||'').replace(/\D/g,'');if(c.length!==14)return;var i=document.getElementById('cp-v');if(i&&!i.value){i.value=c.replace(/^(\d{2})(\d{3})(\d{3})(\d{4})(\d{2})$/,'$1.$2.$3/$4-$5');setTimeout(function(){i.focus();i.scrollIntoView({block:'center'})},300)}})();</script>
 		<p class="cp-h">Ao informar um CNPJ, monitoramos também todas as filiais e a razão social. A assinatura inclui <?php echo (int) dv_plano_info( dv_plano( get_current_user_id() ) )['radar']; ?> termos sem custo; os demais usam 1 crédito por mês. Ao cadastrar, buscamos os últimos 6 meses; depois, verificamos todo dia e avisamos por e-mail quando sair publicação nova.</p>
 		<p class="cp-msg"></p>
 	</form>

@@ -264,7 +264,7 @@ add_action( 'dv_ct_diario', function () {
 } );
 function dv_ct_email( $uid, $ev ) {
 	$u = get_userdata( $uid ); if ( ! $u ) { return; }
-	$h = '<div style="font-family:Arial,sans-serif;max-width:680px;margin:auto;color:#16191E"><div style="background:#0C0F13;padding:18px 24px;border-radius:12px 12px 0 0"><span style="color:#F4F2EC;font-size:20px">desenvolve </span><b style="color:#C9A45C;font-size:20px">estratégias</b><div style="color:#B9BDB8;font-size:13px;margin-top:4px">Meus contratos · avisos</div></div><div style="border:1px solid #E3DED2;border-top:0;padding:22px 24px;border-radius:0 0 12px 12px"><p>Olá, ' . esc_html( $u->display_name ) . '. Estes contratos pedem atenção:</p>';
+	$h = '<div style="font-family:Arial,sans-serif;max-width:680px;margin:auto;color:#16191E"><div style="background:#0C0F13;padding:18px 24px;border-radius:12px 12px 0 0"><span style="color:#F4F2EC;font-size:18px;letter-spacing:2px;font-weight:700">DESENVOLVE </span><b style="color:#C9A45C;font-size:18px;letter-spacing:2px">ESTRATÉGIAS</b><div style="color:#B9BDB8;font-size:13px;margin-top:4px">Meus contratos · avisos</div></div><div style="border:1px solid #E3DED2;border-top:0;padding:22px 24px;border-radius:0 0 12px 12px"><p>Olá, ' . esc_html( $u->display_name ) . '. Estes contratos pedem atenção:</p>';
 	foreach ( $ev as $e ) {
 		$c = $e['c']; $q = $e['d'] === 0 ? 'hoje' : 'em ' . $e['d'] . ' dias';
 		if ( $e['t'] === 'vig' ) { $tx = 'A vigência termina <b>' . $q . '</b> (' . date_i18n( 'd/m/Y', strtotime( $c['fim'] ) ) . '). Se o contrato admite prorrogação, manifeste o interesse ao órgão com antecedência e confira a garantia.'; $cta = ''; }

@@ -255,8 +255,14 @@ function dv_dossie_dados( $cnpj ) {
 	$cad = is_wp_error( $r ) ? array() : (array) json_decode( wp_remote_retrieve_body( $r ), true );
 	if ( empty( $cad['razao_social'] ) ) { return new WP_Error( 'dv_cnpj', 'CNPJ não encontrado na Receita Federal.', array( 'status' => 404 ) ); }
 	$raiz = substr( $cnpj, 0, 8 );
-	$D = array( 'cnpj' => $cnpj, 'gerado_em' => current_time( 'mysql' ), 'cadastro' => $cad, 'meta' => dv_ds_gz( 'meta.json' ) ?: null );
+	$D = array( 'cnpj' => $cnpj, 'gerado_em' => current_time( 'mysql' ), 'cadastro' => $cad, 'meta' => dv_ds_gz( 'meta.json' ) ?: null, 'parcial' => array(), 'tempos' => array() );
+	/* limite de tempo: o servidor corta em ~120s; passando de DV_DS_LIM, as etapas seguintes ficam de fora e o relatório sai parcial (avisado na tela) */
+	$tp = microtime( true ); $passo = function ( $nome ) use ( &$D, &$tp ) { $D['tempos'][ $nome ] = round( microtime( true ) - $tp, 1 ); $tp = microtime( true ); };
+	$ok = function ( $nome ) use ( &$D, $t0 ) { if ( microtime( true ) - $t0 < 85 ) { return true; } $D['parcial'][] = $nome; return false; };
+	$passo( 'cadastro' );
 
+	$emp = array(); $parentes = array();
+	if ( $ok( 'Grupo econômico' ) ) {
 	/* Grupo econômico */
 	$emp = array();
 	$add = function ( $basico, $razao, $via, $detalhe = '' ) use ( &$emp, $raiz ) {
@@ -304,30 +310,33 @@ function dv_dossie_dados( $cnpj ) {
 	}
 	unset( $bodies );
 	uasort( $emp, function ( $a, $b ) { return count( $b['vias'] ) <=> count( $a['vias'] ) ?: ( $b['pgfn'] ?? 0 ) <=> ( $a['pgfn'] ?? 0 ); } );
-	$D['grupo'] = array_values( $emp ); $D['parentes'] = $parentes;
+	}
+	$D['grupo'] = array_values( $emp ); $D['parentes'] = $parentes; $passo( 'grupo' );
 
 	/* Dívida ativa da União e solidários */
-	$D['pgfn'] = dv_ds_pgfn( $cnpj );
+	$D['pgfn'] = dv_ds_pgfn( $cnpj ); $passo( 'pgfn' );
 
 	/* Ferramentas já existentes (sanções, contratos, certidões, diários, lista suja) */
-	$D['raiox'] = dv_ds_interno( '/dvtools/v1/fornecedor', array( 'cnpj' => $cnpj ) );
-	$D['federal'] = dv_ds_interno( '/dvtools/v1/fornecedor/federal', array( 'cnpj' => $cnpj ) );
-	$D['extras'] = dv_ds_interno( '/dvtools/v1/fornecedor/extras', array( 'cnpj' => $cnpj ) );
-	$D['diarios'] = dv_ds_interno( '/dvtools/v1/fornecedor/diarios', array( 'cnpj' => $cnpj ) );
+	$D['raiox'] = $ok( 'Sanções e cadastros' ) ? dv_ds_interno( '/dvtools/v1/fornecedor', array( 'cnpj' => $cnpj ) ) : null; $passo( 'raiox' );
+	$D['federal'] = $ok( 'Contratos e pagamentos federais' ) ? dv_ds_interno( '/dvtools/v1/fornecedor/federal', array( 'cnpj' => $cnpj ) ) : null; $passo( 'federal' );
+	$D['extras'] = $ok( 'Certidões e lista suja' ) ? dv_ds_interno( '/dvtools/v1/fornecedor/extras', array( 'cnpj' => $cnpj ) ) : null; $passo( 'extras' );
+	$D['diarios'] = $ok( 'Diário Oficial da União' ) ? dv_ds_interno( '/dvtools/v1/fornecedor/diarios', array( 'cnpj' => $cnpj ) ) : null; $passo( 'diarios' );
 
 	/* Contratos públicos (PNCP, todas as esferas) */
 	$nucleoC = function_exists( 'dv_nt_nucleo' ) ? dv_nt_nucleo( $cad['razao_social'] ) : '';
 	$filiais = function_exists( 'dv_capt_filiais' ) ? dv_capt_filiais( $cnpj ) : array();
-	$D['pncp'] = dv_ds_pncp( $cnpj, ( $nucleoC && count( explode( ' ', $nucleoC ) ) >= 2 ) ? $nucleoC : '', $filiais );
+	$D['pncp'] = $ok( 'Contratos no PNCP' ) ? dv_ds_pncp( $cnpj, ( $nucleoC && count( explode( ' ', $nucleoC ) ) >= 2 ) ? $nucleoC : '', $filiais ) : null; $passo( 'pncp' );
 	$D['filiais'] = count( $filiais );
-	$D['cgu_contratos'] = dv_ds_cgu_contratos( $cnpj );
+	$D['cgu_contratos'] = $ok( 'Contratos federais (CGU)' ) ? dv_ds_cgu_contratos( $cnpj ) : array(); $passo( 'cgu' );
 
 	/* Processos judiciais: empresa (todos os tipos) e sócios pessoa física (só criminais) */
 	$nomeEmp = dv_ds_nrm( $cad['razao_social'] ); $nomeEmp = trim( preg_replace( '/\s+(EM RECUPERACAO JUDICIAL)$/', '', $nomeEmp ) );
 	$nomeJ = trim( preg_replace( '/\s+(LTDA|LIMITADA|EIRELI|S\/?A|S\.A\.?|ME|EPP)\.?$/', '', $nomeEmp ) );
-	$D['judicial'] = array( 'empresa' => dv_ds_djen_full( $nomeJ ), 'mensal' => dv_ds_djen_mensal( $nomeJ ), 'socios' => array() );
+	$D['judicial'] = array( 'empresa' => $ok( 'Processos judiciais da empresa' ) ? dv_ds_djen_full( $nomeJ ) : array( 'distintos' => 0, 'publicacoes' => 0, 'por_tipo' => array(), 'por_tribunal' => array(), 'destaques' => array(), 'processos' => array(), 'lidas' => 0, 'nao_consultado' => true ), 'mensal' => null, 'socios' => array() ); $passo( 'judicial' );
+	if ( $ok( 'Linha do tempo dos processos' ) ) { $D['judicial']['mensal'] = dv_ds_djen_mensal( $nomeJ ); } $passo( 'mensal' );
 	$D['pep'] = array();
 	foreach ( array_slice( (array) ( $cad['qsa'] ?? array() ), 0, 8 ) as $s ) {
+		if ( ! $ok( 'Processos criminais e PEP dos sócios' ) ) { break; }
 		$doc = preg_replace( '/\D/', '', (string) ( $s['cnpj_cpf_do_socio'] ?? '' ) ); if ( strlen( $doc ) === 14 ) { continue; }
 		$nm = dv_ds_nrm( $s['nome_socio'] ?? '' ); if ( count( explode( ' ', $nm ) ) < 3 ) { continue; }
 		$cr = dv_ds_djen( $nm, 2, true ); $D['judicial']['socios'][] = array( 'nome' => $s['nome_socio'], 'processos' => $cr['processos'] );
@@ -336,14 +345,16 @@ function dv_dossie_dados( $cnpj ) {
 
 	/* Diários oficiais (DOU e municipais, 24 meses) */
 	$nucleo = function_exists( 'dv_nt_nucleo' ) ? dv_nt_nucleo( $cad['razao_social'] ) : ''; if ( $nucleo && function_exists( 'dv_nt_util' ) && ! dv_nt_util( $nucleo ) ) { $nucleo = ''; }
-	$D['publicacoes'] = dv_ds_diarios( $cnpj, $nucleo );
+	$passo( 'socios' ); $D['publicacoes'] = $ok( 'Diários oficiais municipais' ) ? dv_ds_diarios( $cnpj, $nucleo ) : null; $passo( 'publicacoes' );
 
 	/* Notícias negativas */
-	$D['noticias'] = function_exists( 'dv_noticias' ) ? dv_noticias( $cnpj ) : null;
+	$D['noticias'] = function_exists( 'dv_noticias' ) && $ok( 'Imprensa' ) ? dv_noticias( $cnpj ) : null; $passo( 'noticias' );
 	if ( is_wp_error( $D['noticias'] ) ) { $D['noticias'] = null; }
 
 	$D['tempo'] = round( microtime( true ) - $t0, 1 );
-	set_transient( $ck, $D, 12 * HOUR_IN_SECONDS );
+	$D['parcial'] = array_values( array_unique( $D['parcial'] ) );
+	set_transient( $ck, $D, $D['parcial'] ? 5 * MINUTE_IN_SECONDS : 12 * HOUR_IN_SECONDS );
+	if ( $D['parcial'] || $D['tempo'] > 70 ) { update_option( 'dv_ds_lento', array( 'em' => current_time( 'mysql' ), 'cnpj' => $cnpj, 'tempos' => $D['tempos'], 'parcial' => $D['parcial'] ), false ); }
 	return $D;
 }
 
@@ -360,7 +371,7 @@ add_action( 'rest_api_init', function () {
 					substr( hash( 'sha256', 'dossie|' . strtolower( 'dossie|' . $cnpj . '|1' ) ), 0, 64 ), gmdate( 'Y-m-d H:i:s', time() - 30 * DAY_IN_SECONDS ) ) );
 				if ( ! $ja ) { return new WP_Error( 'dv_sem_credito', 'O dossiê completo usa ' . $n . ' créditos e seu saldo não é suficiente.', array( 'status' => 402 ) ); }
 			}
-			set_time_limit( 120 );
+			set_time_limit( 150 );
 			$D = dv_dossie_dados( $cnpj ); if ( is_wp_error( $D ) ) { return $D; }
 			$u = dv_usar( $uid, 'dossie', 'dossie|' . $cnpj . '|1', $D['cadastro']['razao_social'] ?? $cnpj ); if ( is_wp_error( $u ) ) { return $u; }
 			if ( ! empty( $u['cobrado'] ) ) { for ( $i = 2; $i <= $n; $i++ ) { $u = dv_usar( $uid, 'dossie', 'dossie|' . $cnpj . '|' . $i, '' ); if ( is_wp_error( $u ) ) { return $u; } } } // já pago (inclusive pelo pacote da licitação): não cobra de novo
@@ -394,3 +405,16 @@ add_action( 'wp_footer', function () {
 	if ( strpos( (string) ( $_SERVER['REQUEST_URI'] ?? '' ), '/plataforma/dossie' ) === false ) { return; }
 	echo '<script>(function(){if(!/[?&]auto=1/.test(location.search)||!/cnpj=\\d{14}/.test(location.search))return;var f=document.querySelector(".ds-f");if(f&&f.requestSubmit)setTimeout(function(){f.requestSubmit()},300)})();</script>';
 }, 99 );
+
+/* Aviso de relatório parcial: lê a resposta do /dossie e mostra no topo quais fontes ficaram de fora */
+add_action( 'wp_footer', function () {
+	global $post; if ( ! is_user_logged_in() || ! $post || ! has_shortcode( (string) $post->post_content, 'dv_ctx' ) || strpos( (string) $post->post_content, 'tool="dossie"' ) === false ) { return; } ?>
+<script>(function(){var P=null,of=window.fetch;window.fetch=function(u,o){var p=of.apply(this,arguments);if(/\/desenvolve\/v1\/dossie(\?|$)/.test(String(u))){p.then(function(r){r.clone().json().then(function(j){P=j&&j.parcial&&j.parcial.length?j.parcial:null;if(P)tenta(0)}).catch(function(){})}).catch(function(){})}return p};
+function tenta(n){var r=document.querySelector('.dv-tool .rp');if(!r){if(n<40)setTimeout(function(){tenta(n+1)},500);return}if(r.querySelector('.ds-parc'))return;var d=document.createElement('div');d.className='ds-parc';d.style.cssText='margin:0 0 16px;padding:14px 18px;border:1px solid #E2C98F;background:#FFFCF4;border-radius:14px;color:#16191E;font:500 .92rem/1.5 "Hanken Grotesk",-apple-system,sans-serif';d.innerHTML='<b style="display:block;margin-bottom:4px">Algumas fontes oficiais demoraram a responder</b>Estas partes ficaram de fora desta versão: <b>'+P.join(', ')+'</b>. Ausência aqui <u>não</u> significa que não há registro. Gere de novo em alguns minutos para completar; abrir o mesmo dossiê em 30 dias não cobra créditos.';var h=r.querySelector('.rp-hd');if(h&&h.nextSibling)r.insertBefore(d,h.nextSibling);else r.insertBefore(d,r.firstChild)}})();</script>
+	<?php
+}, 60 );
+
+/* Diagnóstico (master): último dossiê lento */
+add_action( 'rest_api_init', function () {
+	register_rest_route( 'desenvolve/v1', '/admin/dossie-lento', array( 'methods' => 'GET', 'permission_callback' => function () { return current_user_can( 'manage_options' ); }, 'callback' => function () { return get_option( 'dv_ds_lento', null ); } ) );
+} );

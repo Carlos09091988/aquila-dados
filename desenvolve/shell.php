@@ -91,7 +91,7 @@ body.admin-bar .dv-top{top:32px}
 #dv-pal li.on{background:#F4F2EC}#dv-pal .gp{padding:10px 12px 4px;font-size:.68rem;letter-spacing:.12em;text-transform:uppercase;color:#8E8A80;font-weight:700}
 #dv-pal .ft{display:flex;gap:14px;padding:9px 16px;border-top:1px solid #ECE7DC;font-size:.75rem;color:#8E8A80}#dv-pal .vz{padding:18px 16px;color:#6E6A60;font-size:.9rem}
 .dv-rnav{position:sticky;top:68px;z-index:40;display:flex;gap:6px;overflow-x:auto;scrollbar-width:none;background:rgba(255,255,255,.92);-webkit-backdrop-filter:blur(10px);backdrop-filter:blur(10px);border:1px solid var(--ln);border-radius:14px;padding:6px;margin:0 0 14px;box-shadow:0 6px 20px rgba(22,25,30,.06)}
-.dv-rnav::-webkit-scrollbar{display:none}body.admin-bar .dv-rnav{top:100px}
+body.dv-app .dv-tool .aq:has(.dv-rnav),body.dv-app .dv-tool :has(>.dv-rnav){overflow:clip!important}.dv-rnav::-webkit-scrollbar{display:none}body.admin-bar .dv-rnav{top:100px}
 .dv-rnav a{flex:none;white-space:nowrap;padding:7px 12px;border-radius:9px;font:600 .82rem "Hanken Grotesk",sans-serif;color:#5E5A52!important;text-decoration:none!important}
 .dv-rnav a:hover{background:#F4F2EC;color:#16191E!important}.dv-rnav a.on{background:#16191E;color:#F4F2EC!important}
 .dv-tool .rx-out>*,.dv-tool .rp>*{scroll-margin-top:140px}
@@ -212,7 +212,7 @@ document.addEventListener('click',function(e){[].forEach.call(document.querySele
 })();
 /* índice fixo dos relatórios + telas vazias */
 (function(){var NAV=null,T=0;
-function rot(el){if(el.classList.contains('dv-rs'))return'Resumo';var h=el.querySelector('h3,h4');var t=(el.innerText||'').trim().split('\n')[0].trim();if((!t||t.length>48)&&h)t=h.textContent.trim();if(!t||t.length>60)return'';t=t.split(' · ')[0].split(' (')[0].trim();if(t===t.toUpperCase()&&/[A-ZÀ-Ú]{5}/.test(t)){t=t.toLowerCase().replace(/\b(ceis|cnep|tcu|pncp|cnpj|fgts|tce|cgu|ceis)\b/g,function(w){return w.toUpperCase()});t=t.charAt(0).toUpperCase()+t.slice(1)}return t.length>34?t.slice(0,32)+'…':t}
+function rot(el){if(el.classList.contains('dv-rs'))return'Resumo';var h=el.querySelector('h3,h4');var t=(el.innerText||'').trim().split('\n')[0].trim();if((!t||t.length>48)&&h)t=h.textContent.trim();if(!t||t.length>60)return'';t=t.split(' · ')[0].split(' (')[0].trim();if(t===t.toUpperCase()&&/[A-ZÀ-Ú]{5}/.test(t)){t=t.toLowerCase().replace(/\b(ceis|cnep|tcu|pncp|cnpj|fgts|tce|cgu|ceis)\b/g,function(w){return w.toUpperCase()});t=t.replace(/receita federal/,'Receita Federal').replace(/uni[aã]o/,'União');t=t.charAt(0).toUpperCase()+t.slice(1)}return t.length>34?t.slice(0,32)+'…':t}
 function monta(){var R=document.querySelector('.dv-tool .rx-out')||document.querySelector('.dv-tool .rp');if(!R)return;var S=[].slice.call(R.children).filter(function(c){return c!==NAV&&c.offsetHeight>40&&!/dv-pdf-top|rx-note|dv-ia|dv-rnav|rp-bar/.test(c.className)&&c.tagName!=='STYLE'&&c.tagName!=='SCRIPT'}),L=[];S.forEach(function(c){var t=rot(c);if(t)L.push([c,t])});if(L.length<4){if(NAV){NAV.remove();NAV=null}return}
 var sig=L.map(function(x){return x[1]}).join('|');if(NAV&&NAV.dataset.s===sig&&NAV.parentNode===R)return;if(NAV)NAV.remove();NAV=document.createElement('nav');NAV.className='dv-rnav';NAV.setAttribute('aria-label','Seções do relatório');NAV.dataset.s=sig;
 L.forEach(function(x,i){x[0].id=x[0].id||'dv-s'+i;var a=document.createElement('a');a.href='#'+x[0].id;a.textContent=x[1];a.onclick=function(ev){ev.preventDefault();x[0].scrollIntoView({behavior:'smooth',block:'start'})};NAV.appendChild(a)});

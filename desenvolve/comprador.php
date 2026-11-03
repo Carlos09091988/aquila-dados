@@ -80,9 +80,12 @@ function dv_cp_contratos( $cnpj ) {
 	$B = 'https://pncp.gov.br/api/consulta/v1/contratos?cnpjOrgao=' . $cnpj . '&tamanhoPagina=500';
 	$ano = (int) current_time( 'Y' ); $u = array();
 	for ( $a = $ano; $a >= $ano - 3; $a-- ) { $u[ $a . '_1' ] = $B . '&dataInicial=' . $a . '0101&dataFinal=' . ( $a === $ano ? current_time( 'Ymd' ) : $a . '1231' ) . '&pagina=1'; }
-	$b = dv_ds_multi_lento( $u, 2, 50 ); unset( $b['__falhas'] ); $mais = array();
-	foreach ( $b as $k => $body ) { $j = $body ? json_decode( $body, true ) : null; $tp = (int) ( $j['totalPaginas'] ?? 1 ); for ( $p = 2; $p <= min( $tp, 4 ); $p++ ) { $mais[ str_replace( '_1', '_' . $p, $k ) ] = str_replace( '&pagina=1', '&pagina=' . $p, $u[ $k ] ); } }
-	if ( $mais ) { $mm = dv_ds_multi_lento( $mais, 2, 50 ); unset( $mm['__falhas'] ); $b += $mm; }
+	/* cache por órgão (12h): a mesma consulta com outro item não refaz a busca */
+	$ck = 'dv_cpct2_' . $cnpj; $c = get_transient( $ck ); if ( is_array( $c ) ) { return $c; }
+	/* os 4 anos em paralelo; páginas extras só para órgãos médios (órgão grande = amostra de 500 por ano, que já basta para o perfil) */
+	$t0 = microtime( true ); $b = dv_ds_multi_lento( $u, 4, 40 ); unset( $b['__falhas'] ); $mais = array(); $treg = 0;
+	foreach ( $b as $k => $body ) { $j = $body ? json_decode( $body, true ) : null; $tp = (int) ( $j['totalPaginas'] ?? 1 ); $treg += (int) ( $j['totalRegistros'] ?? 0 ); if ( $tp <= 3 ) { for ( $p = 2; $p <= $tp; $p++ ) { $mais[ str_replace( '_1', '_' . $p, $k ) ] = str_replace( '&pagina=1', '&pagina=' . $p, $u[ $k ] ); } } }
+	if ( $mais && microtime( true ) - $t0 < 25 ) { $mm = dv_ds_multi_lento( $mais, 6, 30 ); unset( $mm['__falhas'] ); $b += $mm; }
 	$o = array(); $v = array(); $erro = 0;
 	foreach ( $b as $body ) {
 		$j = $body ? json_decode( $body, true ) : null; if ( ! $j ) { $erro++; continue; }
@@ -95,7 +98,7 @@ function dv_cp_contratos( $cnpj ) {
 				'compra' => $i['numeroControlePncpCompra'] ?? '', 'link' => ( $ac && $sc ) ? 'https://pncp.gov.br/app/contratos/' . $cnpj . '/' . $ac . '/' . $sc : '' );
 		}
 	}
-	return array( 'total' => count( $o ), 'itens' => $o, 'falhas' => $erro );
+	$r = array( 'total' => max( count( $o ), $treg ), 'itens' => $o, 'falhas' => $erro, 'amostra' => $treg > count( $o ) ); if ( ! $erro || $o ) { set_transient( $ck, $r, 12 * HOUR_IN_SECONDS ); } return $r;
 }
 function dv_cp_abertas( $cnpj ) {
 	$u = 'https://pncp.gov.br/api/consulta/v1/contratacoes/proposta?cnpj=' . $cnpj . '&dataFinal=' . gmdate( 'Ymd', strtotime( '+1 year' ) ) . '&pagina=1&tamanhoPagina=50';

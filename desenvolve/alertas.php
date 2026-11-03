@@ -175,6 +175,7 @@ function dv_al_buscar( $a, $desde ) {
 	$res = array();
 	if ( function_exists( 'dv_ds_multi' ) ) { $res = dv_ds_multi( $urls, array( 'Accept' => 'application/json,text/html' ), 30 ); }
 	else { foreach ( $urls as $k => $u ) { $g = wp_remote_get( $u, array( 'timeout' => 30 ) ); $res[ $k ] = is_wp_error( $g ) ? null : wp_remote_retrieve_body( $g ); } }
+	$GLOBALS['dv_al_dbg'] = array_map( function ( $b ) { return is_string( $b ) ? strlen( $b ) : -1; }, $res );
 	$out = array(); $dia = array();
 	foreach ( $res as $chave => $j ) {
 		list( $fo, $termo ) = explode( '|', $chave, 2 );
@@ -250,7 +251,7 @@ add_action( 'rest_api_init', function () {
 	register_rest_route( $ns, '/alertas/testar', array( 'methods' => 'POST', 'permission_callback' => $perm, 'callback' => function ( WP_REST_Request $r ) {
 		$a = array( 'termos' => (string) $r['termos'], 'excluir' => (string) $r['excluir'], 'ufs' => (array) $r['ufs'], 'vmin' => (float) $r['vmin'], 'vmax' => (float) $r['vmax'], 'tipo' => in_array( $r['tipo'], array( 'servico', 'compra' ), true ) ? $r['tipo'] : '' );
 		$it = dv_al_buscar( $a, gmdate( 'Y-m-d', strtotime( current_time( 'Y-m-d' ) . ' -15 days' ) ) );
-		return array( 'itens' => array_slice( $it, 0, 80 ), 'total' => count( $it ) );
+		return array( 'itens' => array_slice( $it, 0, 80 ), 'total' => count( $it ) ) + ( function_exists( 'dv_is_master' ) && dv_is_master( get_current_user_id() ) && ! empty( $r['dbg'] ) ? array( 'dbg' => $GLOBALS['dv_al_dbg'] ?? null ) : array() );
 	} ) );
 } );
 

@@ -23,6 +23,25 @@ function dv_np_tag( $t ) {
 	return 'Geral';
 }
 
+/** Só fontes confiáveis: órgãos oficiais, grande imprensa nacional/regional e imprensa jurídica. */
+function dv_np_confiavel( $host, $nome ) {
+	$host = strtolower( preg_replace( '/^www\./', '', (string) $host ) );
+	if ( $host && preg_match( '/\.(gov|jus|leg|mp|def)\.br$/', $host ) ) { return true; }
+	$D = array( 'g1.globo.com', 'oglobo.globo.com', 'valor.globo.com', 'extra.globo.com', 'epocanegocios.globo.com', 'globo.com', 'folha.uol.com.br', 'uol.com.br', 'estadao.com.br', 'cnnbrasil.com.br', 'metropoles.com', 'poder360.com.br', 'exame.com', 'veja.abril.com.br', 'infomoney.com.br', 'band.uol.com.br', 'r7.com', 'terra.com.br', 'correiobraziliense.com.br', 'agenciabrasil.ebc.com.br', 'ebc.com.br', 'istoe.com.br', 'istoedinheiro.com.br', 'cartacapital.com.br', 'jota.info', 'conjur.com.br', 'migalhas.com.br', 'nexojornal.com.br', 'gazetadopovo.com.br', 'otempo.com.br', 'em.com.br', 'gauchazh.clicrbs.com.br', 'clicrbs.com.br', 'correiodopovo.com.br', 'atarde.com.br', 'jc.uol.com.br', 'jc.ne10.uol.com.br', 'diariodepernambuco.com.br', 'folhape.com.br', 'opovo.com.br', 'diariodonordeste.verdesmares.com.br', 'oliberal.com', 'acritica.com', 'tribunadonorte.com.br', 'jornaldocomercio.com', 'opopular.com.br', 'nsctotal.com.br', 'bnamericas.com', 'diariodotransporte.com.br', 'acidadeon.com', 'odia.ig.com.br', 'odia.com.br', 'seudinheiro.com', 'braziljournal.com', 'neofeed.com.br', 'convergenciadigital.com.br', 'teletime.com.br', 'portosenavios.com.br', 'agenciainfra.com', 'sollicita.com.br', 'zenite.blog.br', 'zenite.com.br', 'jornaldebrasilia.com.br', 'campograndenews.com.br', 'gazetaonline.com.br', 'agazeta.com.br', 'correiodoestado.com.br', 'diariodocentrodomundo.com.br', 'brasildefato.com.br', 'oantagonista.com.br', 'gazetasp.com.br', 'diariodoaco.com.br', 'jornalcruzeiro.com.br', 'jornaldacidadeonline.com.br' );
+	foreach ( $D as $d ) { if ( $host === $d || substr( $host, -strlen( '.' . $d ) ) === '.' . $d ) { return true; } }
+	$n = strtoupper( remove_accents( (string) $nome ) );
+	return (bool) preg_match( '/^(G1|O GLOBO|VALOR|VALOR ECONOMICO|FOLHA|FOLHA DE S.PAULO|ESTADAO|CNN BRASIL|METROPOLES|PODER360|AGENCIA BRASIL|JOTA|CONSULTOR JURIDICO|CONJUR|MIGALHAS|EXAME|INFOMONEY|UOL|CORREIO BRAZILIENSE|GAZETA DO POVO|ESTADO DE MINAS|O TEMPO|GZH|A TARDE|TRIBUNA DO NORTE|DIARIO DO NORDESTE|O POVO|O LIBERAL|NSC TOTAL|BNAMERICAS|DIARIO DO TRANSPORTE|AGENCIA SENADO|AGENCIA CAMARA|CAMARA DOS DEPUTADOS|SENADO FEDERAL|R7|TERRA|BAND|VEJA|ISTOE|EPOCA|CARTACAPITAL|JORNAL DO COMMERCIO|CORREIO DO POVO|FOLHA DE PERNAMBUCO|AGENCIA INFRA|NEXO JORNAL|BRAZIL JOURNAL|WWW\.GOV\.BR|GOV\.BR|TCU|TRIBUNAL DE CONTAS)\b/', $n );
+}
+function dv_np_rss( $xml ) {
+	$prev = libxml_use_internal_errors( true ); $x = simplexml_load_string( (string) $xml ); libxml_use_internal_errors( $prev );
+	$out = array(); if ( ! $x || ! isset( $x->channel->item ) ) { return $out; }
+	foreach ( $x->channel->item as $it ) {
+		$t = html_entity_decode( (string) $it->title, ENT_QUOTES, 'UTF-8' ); $f = (string) $it->source; $su = isset( $it->source['url'] ) ? (string) $it->source['url'] : '';
+		if ( $f && substr( $t, -strlen( ' - ' . $f ) ) === ' - ' . $f ) { $t = substr( $t, 0, -strlen( ' - ' . $f ) ); }
+		$out[] = array( 'titulo' => trim( $t ), 'fonte' => $f, 'host' => $su ? (string) wp_parse_url( $su, PHP_URL_HOST ) : '', 'url' => (string) $it->link, 'data' => gmdate( 'Y-m-d', strtotime( (string) $it->pubDate ) ?: time() ) );
+	}
+	return $out;
+}
 function dv_np_buscar( $qs, $filtrar = true, $lim = 40 ) {
 	$bodies = array();
 	if ( class_exists( '\WpOrg\Requests\Requests' ) ) {
@@ -32,17 +51,18 @@ function dv_np_buscar( $qs, $filtrar = true, $lim = 40 ) {
 	} else {
 		foreach ( $qs as $k => $q ) { $r = wp_remote_get( dv_np_gn( $q ), array( 'timeout' => 15 ) ); if ( ! is_wp_error( $r ) && wp_remote_retrieve_response_code( $r ) === 200 ) { $bodies[ $k ] = wp_remote_retrieve_body( $r ); } }
 	}
-	if ( ! $bodies || ! function_exists( 'dv_nt_rss' ) ) { return null; }
+	if ( ! $bodies ) { return null; }
 	$out = array(); $vis = array();
 	$rel = '/\b(LICITA|PREGAO|EDITAL|CONTRAT|TCU|TRIBUNAL DE CONTAS|COMPRAS? PUBLICAS?|14 133|DISPENSA|CONCORRENCIA|ATA DE REGISTRO|LICITANTE|FORNECEDOR|CONCESS|PPP|PARCERIA PUBLICO)/';
 	foreach ( $bodies as $k => $b ) {
-		foreach ( dv_nt_rss( $b ) as $it ) {
+		foreach ( dv_np_rss( $b ) as $it ) {
+			if ( ! dv_np_confiavel( $it['host'], $it['fonte'] ) ) { continue; }
 			$n = dv_nt_norm( $it['titulo'] ); $h = md5( substr( $n, 0, 70 ) );
 			if ( isset( $vis[ $h ] ) || mb_strlen( $it['titulo'] ) < 25 ) { continue; }
 			if ( preg_match( '/\b(CONCURSOS?|VAGAS|GABARITO|RESIDENCIA MEDICA|PROCESSO SELETIVO|SIMULADO|APOSTILA|PROVA OBJETIVA|ENEM|VESTIBULAR|NOTA DE CORTE)\b/', $n ) ) { continue; }
 			if ( $filtrar && ! preg_match( $rel, $n ) ) { continue; }
 			$vis[ $h ] = 1;
-			$out[] = array( 't' => $it['titulo'], 'f' => $it['fonte'], 'u' => $it['url'], 'd' => $it['data'], 'g' => dv_np_tag( $it['titulo'] ), 'q' => is_string( $k ) && strpos( $k, ':' ) ? substr( $k, strpos( $k, ':' ) + 1 ) : '' );
+			$out[] = array( 't' => $it['titulo'], 'f' => preg_replace( '/^www\./', '', $it['fonte'] ), 'u' => $it['url'], 'd' => $it['data'], 'g' => dv_np_tag( $it['titulo'] ), 'q' => is_string( $k ) && strpos( $k, ':' ) ? substr( $k, strpos( $k, ':' ) + 1 ) : '' );
 		}
 	}
 	usort( $out, function ( $a, $b ) { return strcmp( $b['d'], $a['d'] ); } );
@@ -59,10 +79,10 @@ function dv_np_orgao( $o ) {
 
 function dv_np_aba( $uid, $aba ) {
 	if ( $aba === 'geral' || $aba === 'decisoes' ) {
-		$ck = 'dv_np2_' . $aba; $c = get_transient( $ck ); if ( is_array( $c ) ) { return $c; }
+		$ck = 'dv_np3_' . $aba; $c = get_transient( $ck ); if ( is_array( $c ) ) { return $c; }
 		$qs = $aba === 'geral'
-			? array( 'licitação when:3d', 'pregão eletrônico when:3d', '"compras públicas" when:7d', '"Lei 14.133" when:14d', 'licitação prefeitura edital when:3d' )
-			: array( 'TCU licitação when:14d', '"Tribunal de Contas" licitação when:7d', 'TCU acórdão contratação when:30d', '"Tribunal de Contas" suspende licitação when:30d' );
+			? array( 'licitação when:7d', 'licitações when:7d', 'pregão eletrônico when:14d', '"compras públicas" when:14d', '"Lei 14.133" when:30d', 'licitação prefeitura when:7d', 'licitação governo when:7d', 'contrato emergencial when:14d', 'superfaturamento licitação when:30d', 'licitação suspensa when:14d' )
+			: array( 'TCU licitação when:30d', '"Tribunal de Contas" licitação when:14d', 'TCU acórdão contratação when:60d', '"Tribunal de Contas" suspende licitação when:30d', 'TCE licitação when:14d', 'TCU contrato irregularidade when:30d' );
 		$l = dv_np_buscar( $qs ); if ( $l === null ) { return array( 'itens' => array(), 'aviso' => 'As notícias não carregaram agora. Tente de novo em alguns minutos.' ); }
 		$r = array( 'itens' => $l, 'em' => current_time( 'mysql' ) ); set_transient( $ck, $r, 2 * HOUR_IN_SECONDS ); return $r;
 	}
@@ -70,14 +90,14 @@ function dv_np_aba( $uid, $aba ) {
 		$t = array(); if ( function_exists( 'dv_al_lista' ) ) { foreach ( dv_al_lista( $uid ) as $a ) { foreach ( preg_split( '/[,;\n]+/', (string) ( $a['termos'] ?? '' ) ) as $x ) { $x = trim( $x ); if ( mb_strlen( $x ) >= 3 ) { $t[ mb_strtolower( $x ) ] = $x; } } } }
 		$t = array_slice( array_values( $t ), 0, 6 );
 		if ( ! $t ) { return array( 'itens' => array(), 'vazio' => 'ramo' ); }
-		$qs = array(); foreach ( $t as $x ) { $qs[ 'r:' . $x ] = '"' . $x . '" (licitação OR pregão OR contrato) when:30d'; }
+		$qs = array(); foreach ( $t as $x ) { $qs[ 'r:' . $x ] = '"' . $x . '" (licitação OR pregão OR contrato) when:90d'; }
 	} elseif ( $aba === 'orgaos' ) {
 		$t = array(); if ( function_exists( 'dv_lic_itens' ) ) { $UF = array( 'AC' => 'Acre', 'AL' => 'Alagoas', 'AP' => 'Amapá', 'AM' => 'Amazonas', 'BA' => 'Bahia', 'CE' => 'Ceará', 'DF' => 'Distrito Federal', 'ES' => 'Espírito Santo', 'GO' => 'Goiás', 'MA' => 'Maranhão', 'MT' => 'Mato Grosso', 'MS' => 'Mato Grosso do Sul', 'MG' => 'Minas Gerais', 'PA' => 'Pará', 'PB' => 'Paraíba', 'PR' => 'Paraná', 'PE' => 'Pernambuco', 'PI' => 'Piauí', 'RJ' => 'Rio de Janeiro', 'RN' => 'Rio Grande do Norte', 'RS' => 'Rio Grande do Sul', 'RO' => 'Rondônia', 'RR' => 'Roraima', 'SC' => 'Santa Catarina', 'SP' => 'São Paulo', 'SE' => 'Sergipe', 'TO' => 'Tocantins' ); foreach ( array_reverse( dv_lic_itens( $uid ) ) as $x ) { $o = dv_np_orgao( $x['orgao'] ?? '' ); if ( ! $o || mb_strlen( $o ) < 8 ) { continue; } $uf = strtoupper( (string) ( $x['uf'] ?? '' ) ); $mu = trim( (string) ( $x['municipio'] ?? '' ) ); $ctx = ''; if ( stripos( $o, 'Prefeitura de' ) !== 0 ) { if ( preg_match( '/\b(estado|estadual|governo)\b/iu', $o ) && isset( $UF[ $uf ] ) ) { $ctx = $UF[ $uf ]; } elseif ( $mu ) { $ctx = mb_convert_case( mb_strtolower( $mu ), MB_CASE_TITLE ); } } $t[ $o . '|' . $ctx ] = array( $o, $ctx ); } }
 		$t = array_slice( array_values( $t ), 0, 6 );
 		if ( ! $t ) { return array( 'itens' => array(), 'vazio' => 'orgaos' ); }
-		$qs = array(); foreach ( $t as $x ) { $qs[ 'o:' . $x[0] ] = '"' . $x[0] . '"' . ( $x[1] ? ' "' . $x[1] . '"' : '' ) . ' (licitação OR contrato OR pregão OR edital) when:60d'; } $t = array_map( function ( $x ) { return $x[1] ? $x[0] . ' (' . $x[1] . ')' : $x[0]; }, $t );
+		$qs = array(); foreach ( $t as $x ) { $qs[ 'o:' . $x[0] ] = '"' . $x[0] . '"' . ( $x[1] ? ' "' . $x[1] . '"' : '' ) . ' (licitação OR contrato OR pregão OR edital) when:120d'; } $t = array_map( function ( $x ) { return $x[1] ? $x[0] . ' (' . $x[1] . ')' : $x[0]; }, $t );
 	} else { return new WP_Error( 'dv_aba', 'Aba inválida.', array( 'status' => 400 ) ); }
-	$ck = 'dv_np_v2' . md5( $aba . wp_json_encode( $t ) ); $c = get_transient( $ck ); if ( is_array( $c ) ) { return $c; }
+	$ck = 'dv_np_v3' . md5( $aba . wp_json_encode( $t ) ); $c = get_transient( $ck ); if ( is_array( $c ) ) { return $c; }
 	$l = dv_np_buscar( $qs, true, 50 ); if ( $l === null ) { return array( 'itens' => array(), 'aviso' => 'As notícias não carregaram agora. Tente de novo em alguns minutos.', 'termos' => $t ); }
 	$r = array( 'itens' => $l, 'termos' => $t, 'em' => current_time( 'mysql' ) ); set_transient( $ck, $r, 6 * HOUR_IN_SECONDS ); return $r;
 }
@@ -116,7 +136,7 @@ add_shortcode( 'dv_noticias', function () {
 <div class="dv-tool"><div class="np" id="dv-np" data-api="<?php echo esc_url( rest_url( 'desenvolve/v1/' ) ); ?>" data-nonce="<?php echo esc_attr( wp_create_nonce( 'wp_rest' ) ); ?>">
 <div class="np-bar"><div class="np-tabs" role="tablist"><button type="button" data-a="geral" class="on">Em destaque</button><button type="button" data-a="ramo">Do seu ramo</button><button type="button" data-a="orgaos">Seus órgãos</button><button type="button" data-a="decisoes">Tribunais de Contas</button><button type="button" data-a="salvas">Salvas</button></div><input type="search" class="np-q" placeholder="Filtrar por palavra…" aria-label="Filtrar notícias"></div>
 <div class="np-tags"></div><div class="np-list"></div>
-<p class="np-ft">Notícias públicas reunidas automaticamente a partir do Google Notícias. Cada notícia abre no site do veículo que a publicou.</p>
+<p class="np-ft">Só fontes confiáveis: órgãos oficiais, grande imprensa nacional e regional e imprensa jurídica. Cada notícia abre no site do veículo que a publicou.</p>
 </div></div>
 <style>
 .np{background:#fff;border:1px solid #E6E1D6;border-radius:18px;padding:18px 20px;color:#16191E;font-family:"Hanken Grotesk",-apple-system,sans-serif}

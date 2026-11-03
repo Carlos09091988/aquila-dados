@@ -6,6 +6,7 @@
  * Depende de: notícias do Raio-X (dv_nt_rss, dv_nt_norm).
  */
 
+function dv_np_salvas( $uid ) { $l = json_decode( (string) get_user_meta( $uid, 'dv_np_salvas', true ) ?: '[]', true ); return is_array( $l ) ? $l : array(); }
 function dv_np_gn( $q ) { return 'https://news.google.com/rss/search?q=' . rawurlencode( $q ) . '&hl=pt-BR&gl=BR&ceid=BR:pt-419'; }
 
 function dv_np_tag( $t ) {
@@ -83,7 +84,15 @@ function dv_np_aba( $uid, $aba ) {
 
 add_action( 'rest_api_init', function () {
 	register_rest_route( 'desenvolve/v1', '/noticias', array( 'methods' => 'GET', 'permission_callback' => function () { return is_user_logged_in() && ( ! function_exists( 'dv_tools_perm' ) || dv_tools_perm() ); },
-		'callback' => function ( WP_REST_Request $r ) { return dv_np_aba( get_current_user_id(), sanitize_key( (string) ( $r['aba'] ?: 'geral' ) ) ); } ) );
+		'callback' => function ( WP_REST_Request $r ) { $a = sanitize_key( (string) ( $r['aba'] ?: 'geral' ) ); if ( $a === 'salvas' ) { $l = dv_np_salvas( get_current_user_id() ); return array( 'itens' => $l, 'vazio' => $l ? null : 'salvas' ); } return dv_np_aba( get_current_user_id(), $a ); } ) );
+	register_rest_route( 'desenvolve/v1', '/noticias/salvar', array( 'methods' => 'POST', 'permission_callback' => function () { return is_user_logged_in(); },
+		'callback' => function ( WP_REST_Request $r ) {
+			$uid = get_current_user_id(); $l = dv_np_salvas( $uid ); $u = esc_url_raw( (string) $r['u'] ); if ( ! $u ) { return new WP_Error( 'dv_np', 'Notícia inválida.', array( 'status' => 400 ) ); }
+			$ja = false; foreach ( $l as $i => $x ) { if ( $x['u'] === $u ) { unset( $l[ $i ] ); $ja = true; } }
+			if ( ! $ja ) { array_unshift( $l, array( 't' => sanitize_text_field( (string) $r['t'] ), 'f' => sanitize_text_field( (string) $r['f'] ), 'u' => $u, 'd' => preg_match( '/^\d{4}-\d{2}-\d{2}$/', (string) $r['d'] ) ? (string) $r['d'] : gmdate( 'Y-m-d' ), 'g' => sanitize_text_field( (string) $r['g'] ), 'q' => '' ) ); }
+			$l = array_slice( array_values( $l ), 0, 200 ); update_user_meta( $uid, 'dv_np_salvas', wp_slash( wp_json_encode( $l, JSON_UNESCAPED_UNICODE ) ) );
+			return array( 'salva' => ! $ja, 'total' => count( $l ) );
+		} ) );
 } );
 
 add_action( 'init', function () {
@@ -105,7 +114,7 @@ add_shortcode( 'dv_noticias', function () {
 	if ( ! is_user_logged_in() ) { return ''; }
 	ob_start(); ?>
 <div class="dv-tool"><div class="np" id="dv-np" data-api="<?php echo esc_url( rest_url( 'desenvolve/v1/' ) ); ?>" data-nonce="<?php echo esc_attr( wp_create_nonce( 'wp_rest' ) ); ?>">
-<div class="np-bar"><div class="np-tabs" role="tablist"><button type="button" data-a="geral" class="on">Em destaque</button><button type="button" data-a="ramo">Do seu ramo</button><button type="button" data-a="orgaos">Seus órgãos</button><button type="button" data-a="decisoes">Tribunais de Contas</button></div><input type="search" class="np-q" placeholder="Filtrar por palavra…" aria-label="Filtrar notícias"></div>
+<div class="np-bar"><div class="np-tabs" role="tablist"><button type="button" data-a="geral" class="on">Em destaque</button><button type="button" data-a="ramo">Do seu ramo</button><button type="button" data-a="orgaos">Seus órgãos</button><button type="button" data-a="decisoes">Tribunais de Contas</button><button type="button" data-a="salvas">Salvas</button></div><input type="search" class="np-q" placeholder="Filtrar por palavra…" aria-label="Filtrar notícias"></div>
 <div class="np-tags"></div><div class="np-list"></div>
 <p class="np-ft">Notícias públicas reunidas automaticamente a partir do Google Notícias. Cada notícia abre no site do veículo que a publicou.</p>
 </div></div>
@@ -120,6 +129,7 @@ add_shortcode( 'dv_noticias', function () {
 .np-it .tx{flex:1;min-width:0}.np-it a.t{display:block;color:#16191E!important;font-weight:700;font-size:1rem;line-height:1.35;text-decoration:none!important}.np-it a.t:hover{color:#86621F!important}
 .np-it .m{display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-top:6px;font-size:.8rem;color:#5E5A52}
 .np-g{font-weight:700;font-size:.72rem;padding:2px 8px;border-radius:999px;background:#F1EBDD;color:#6B4F17}.np-g.g1{background:#E7EEF8;color:#2A4A7A}.np-g.g2{background:#FBE9E5;color:#8E2F1F}.np-g.g3{background:#EAF3EC;color:#245C3B}
+.np-it .ac{display:flex;gap:6px;flex:none;align-items:center;flex-wrap:wrap}.np-it .sv,.np-it .wa{flex:none;background:#fff!important;border:1px solid #E6E1D6!important;color:#16191E!important;border-radius:9px;padding:7px 10px;font:700 .76rem inherit;cursor:pointer;white-space:nowrap;text-decoration:none!important}.np-it .sv.on{border-color:#C9A45C!important;background:#FBF6EA!important;color:#6B4F17!important}.np-it .wa{color:#1E7D45!important}.np-it .sv:hover,.np-it .wa:hover{border-color:#C9A45C!important}.np-nv{font-weight:800;font-size:.68rem;padding:2px 7px;border-radius:999px;background:#16191E;color:#F4F2EC}
 .np-it .ia{flex:none;background:#fff!important;border:1px solid #E6E1D6!important;color:#16191E!important;border-radius:9px;padding:7px 10px;font:700 .76rem inherit;cursor:pointer;white-space:nowrap}.np-it .ia:hover{border-color:#C9A45C!important}
 .np-vz{text-align:center;padding:36px 16px;border:1.5px dashed #D9D2C2;border-radius:14px;color:#5E5A52;background:#FBFAF6;margin-top:12px}.np-vz a{color:#86621F!important;font-weight:700}
 .np-sk{height:58px;border-radius:12px;margin-top:10px;background:linear-gradient(90deg,#EEEAE1 25%,#F7F5F0 50%,#EEEAE1 75%);background-size:200% 100%;animation:dvsk 1.3s infinite linear}@keyframes dvsk{0%{background-position:200% 0}100%{background-position:-200% 0}}
@@ -131,23 +141,38 @@ add_shortcode( 'dv_noticias', function () {
 function e(s){return String(s==null?'':s).replace(/[&<>"]/g,function(c){return{'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]})}
 function nz(s){return String(s||'').toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g,'')}
 function quando(d){var h=new Date();h.setHours(0,0,0,0);var x=new Date(d+'T12:00:00');var n=Math.round((h-x)/864e5);return n<=0?'hoje':n===1?'ontem':n<7?'há '+n+' dias':d.split('-').reverse().join('/')}
+var SV={},VI=null;function hk(u){var h=0;u=String(u);for(var i=0;i<u.length;i++)h=(h*31+u.charCodeAt(i))|0;return(h>>>0).toString(36)}try{VI=JSON.parse(localStorage.getItem('dv_np_vis')||'null')}catch(x){}
+function marca(){var it=[];['geral','ramo','orgaos','decisoes'].forEach(function(k){if(C[k]&&C[k].itens)it=it.concat(C[k].itens)});var o={};try{o=JSON.parse(localStorage.getItem('dv_np_vis')||'{}')||{}}catch(x){}it.forEach(function(x){o[hk(x.u)]=1});var ks=Object.keys(o);if(ks.length>600){var n={};ks.slice(-600).forEach(function(k){n[k]=1});o=n}try{localStorage.setItem('dv_np_vis',JSON.stringify(o))}catch(x){}}
 var GC={'Tribunal de Contas':'g1','Investigação':'g2','Licitação aberta':'g3'};
-var VZ={ramo:'Para ver as notícias do seu ramo, <a href="/plataforma/alertas/">crie um alerta de oportunidades</a> com as palavras do seu segmento (por exemplo: limpeza, vigilância, merenda).',orgaos:'Para ver notícias dos órgãos que você acompanha, <a href="/plataforma/licitacoes/">importe uma licitação na Gestão</a>.'};
+var VZ={salvas:'Nenhuma notícia salva ainda. Toque em <b>Salvar</b> em qualquer notícia para guardar aqui e ler depois.',ramo:'Para ver as notícias do seu ramo, <a href="/plataforma/alertas/">crie um alerta de oportunidades</a> com as palavras do seu segmento (por exemplo: limpeza, vigilância, merenda).',orgaos:'Para ver notícias dos órgãos que você acompanha, <a href="/plataforma/licitacoes/">importe uma licitação na Gestão</a>.'};
 function pinta(){var L=R.querySelector('.np-list'),T=R.querySelector('.np-tags'),d=C[aba];if(!d){L.innerHTML='<div class="np-sk"></div><div class="np-sk"></div><div class="np-sk"></div><div class="np-sk"></div>';T.innerHTML='';return}
  if(d.vazio){T.innerHTML='';L.innerHTML='<div class="np-vz">'+VZ[d.vazio]+'</div>';return}
  var it=d.itens||[],cont={};it.forEach(function(x){cont[x.g]=(cont[x.g]||0)+1});
  T.innerHTML=(d.termos&&d.termos.length?'<span style="font-size:.78rem;color:#5E5A52;align-self:center">Buscando: '+d.termos.map(e).join(' · ')+'</span>':'')+(it.length?'<button type="button" data-g="" class="'+(tag?'':'on')+'">Tudo · '+it.length+'</button>'+Object.keys(cont).map(function(k){return'<button type="button" data-g="'+e(k)+'" class="'+(tag===k?'on':'')+'">'+e(k)+' · '+cont[k]+'</button>'}).join(''):'');
  var nq=nz(q),f=it.filter(function(x){return(!tag||x.g===tag)&&(!nq||nz(x.t+' '+x.f).indexOf(nq)>=0)});
- L.innerHTML=f.length?f.map(function(x,i){return'<div class="np-it"><div class="tx"><a class="t" href="'+e(x.u)+'" target="_blank" rel="noopener">'+e(x.t)+'</a><div class="m"><span class="np-g '+(GC[x.g]||'')+'">'+e(x.g)+'</span><span>'+e(x.f)+'</span><span>·</span><span>'+quando(x.d)+'</span>'+(x.q?'<span>·</span><span>sobre “'+e(x.q)+'”</span>':'')+'</div></div><button type="button" class="ia" data-i="'+it.indexOf(x)+'">Analisar com a minha IA</button></div>'}).join(''):'<div class="np-vz">'+(d.aviso?e(d.aviso):'Nenhuma notícia encontrada'+(q||tag?' com esse filtro.':' agora. Volte mais tarde.'))+'</div>'}
+ L.innerHTML=f.length?f.map(function(x,i){return'<div class="np-it"><div class="tx"><a class="t" href="'+e(x.u)+'" target="_blank" rel="noopener">'+e(x.t)+'</a><div class="m">'+(aba!=='salvas'&&VI&&!VI[hk(x.u)]?'<span class="np-nv">Nova</span>':'')+'<span class="np-g '+(GC[x.g]||'')+'">'+e(x.g)+'</span><span>'+e(x.f)+'</span><span>·</span><span>'+quando(x.d)+'</span>'+(x.q?'<span>·</span><span>sobre “'+e(x.q)+'”</span>':'')+'</div></div><div class="ac"><button type="button" class="ia" data-i="'+it.indexOf(x)+'">Analisar com a minha IA</button><button type="button" class="sv'+(SV[x.u]?' on':'')+'" data-s="'+it.indexOf(x)+'">'+(SV[x.u]?'Salva ✓':'Salvar')+'</button><a class="wa" target="_blank" rel="noopener" href="https://wa.me/?text='+encodeURIComponent(x.t+'\n'+x.u+'\n\nVi na Desenvolve Estratégias, plataforma de inteligência em licitações: https://desenvolveestrategias.com.br')+'">WhatsApp</a></div></div>'}).join(''):'<div class="np-vz">'+(d.aviso?e(d.aviso):'Nenhuma notícia encontrada'+(q||tag?' com esse filtro.':' agora. Volte mais tarde.'))+'</div>'}
 function carrega(a){if(C[a]){pinta();return}pinta();fetch(api+'noticias?aba='+a,{headers:{'X-WP-Nonce':nc},credentials:'same-origin'}).then(function(r){return r.json()}).then(function(j){C[a]=j&&j.itens?j:{itens:[],aviso:(j&&j.message)||'As notícias não carregaram agora.'};if(a===aba)pinta()}).catch(function(){C[a]={itens:[],aviso:'As notícias não carregaram agora. Tente de novo em alguns minutos.'};if(a===aba)pinta()})}
 R.addEventListener('click',function(ev){var b=ev.target.closest('[data-a]');if(b){aba=b.dataset.a;tag='';[].forEach.call(R.querySelectorAll('[data-a]'),function(z){z.classList.toggle('on',z===b)});try{localStorage.setItem('dv_np_aba',aba)}catch(x){}carrega(aba);return}
  var g=ev.target.closest('[data-g]');if(g){tag=g.dataset.g;pinta();return}
+ var sv=ev.target.closest('.sv');if(sv){var x=C[aba].itens[+sv.dataset.s];sv.disabled=true;fetch(api+'noticias/salvar',{method:'POST',headers:{'X-WP-Nonce':nc,'Content-Type':'application/json'},credentials:'same-origin',body:JSON.stringify(x)}).then(function(r){return r.json()}).then(function(j){if(j.salva)SV[x.u]=1;else delete SV[x.u];var cur=aba;return fetch(api+'noticias?aba=salvas',{headers:{'X-WP-Nonce':nc},credentials:'same-origin'}).then(function(r){return r.json()}).then(function(j2){C.salvas=j2;pinta()})})['catch'](function(){sv.disabled=false});return}
  var ia=ev.target.closest('.ia');if(ia&&window.dvMinhaIA){var x=C[aba].itens[+ia.dataset.i];window.dvMinhaIA('noticia','Notícia: '+x.t+'\nVeículo: '+x.f+'\nData: '+x.d.split('-').reverse().join('/')+'\nLink: '+x.u)}});
 R.querySelector('.np-q').addEventListener('input',function(){q=this.value;pinta()});
 try{var sa=localStorage.getItem('dv_np_aba');if(sa&&/^(geral|ramo|orgaos|decisoes)$/.test(sa)){aba=sa;[].forEach.call(R.querySelectorAll('[data-a]'),function(z){z.classList.toggle('on',z.dataset.a===aba)})}}catch(x){}
-carrega(aba);
+fetch(api+'noticias?aba=salvas',{headers:{'X-WP-Nonce':nc},credentials:'same-origin'}).then(function(r){return r.json()}).then(function(j){(j.itens||[]).forEach(function(x){SV[x.u]=1});C.salvas=j;pinta()}).catch(function(){});
+carrega(aba);setTimeout(marca,4000);window.addEventListener('pagehide',marca);
 })();
 </script>
 	<?php
 	return ob_get_clean();
 } );
+
+/* contador "N novas" no menu, desde a última visita à página de notícias */
+add_action( 'wp_footer', function () {
+	if ( ! is_user_logged_in() || ! function_exists( 'dv_app_pagina' ) || ! dv_app_pagina() || is_page( 'noticias' ) ) { return; }
+	if ( function_exists( 'dv_tools_perm' ) && ! dv_tools_perm() ) { return; } ?>
+<script>(function(){var a=document.querySelector('.dv-side nav a[href*="/plataforma/noticias/"]');if(!a)return;function hk(u){var h=0;u=String(u);for(var i=0;i<u.length;i++)h=(h*31+u.charCodeAt(i))|0;return(h>>>0).toString(36)}
+function pin(l){var v=null;try{v=JSON.parse(localStorage.getItem('dv_np_vis')||'null')}catch(x){}var n=v?l.filter(function(u){return!v[hk(u)]}).length:Math.min(l.length,9);if(!n)return;var b=document.createElement('span');b.className='bd';b.textContent=n>20?'20+':n;b.title=n+' notícias novas desde a sua última visita';a.appendChild(b)}
+var c=null;try{c=JSON.parse(sessionStorage.getItem('dv_np_g')||'null')}catch(x){}if(c&&Date.now()-c.t<1800000){pin(c.l);return}
+fetch(<?php echo wp_json_encode( rest_url( 'desenvolve/v1/noticias?aba=geral' ) ); ?>,{headers:{'X-WP-Nonce':<?php echo wp_json_encode( wp_create_nonce( 'wp_rest' ) ); ?>},credentials:'same-origin'}).then(function(r){return r.json()}).then(function(j){var l=(j.itens||[]).map(function(x){return x.u});try{sessionStorage.setItem('dv_np_g',JSON.stringify({t:Date.now(),l:l}))}catch(x){}pin(l)}).catch(function(){})})();</script>
+	<?php
+}, 120 );

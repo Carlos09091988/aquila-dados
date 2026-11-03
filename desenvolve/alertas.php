@@ -193,6 +193,10 @@ function dv_al_buscar( $a, $desde ) {
 		list( $fo, $termo ) = explode( '|', $chave, 2 );
 		if ( $fo !== 'p' ) { foreach ( dv_al_diario_itens( $fo, $j, $termo, $a, $ufs, $excl ) as $r => $x ) { if ( isset( $dia[ $r ] ) ) { $dia[ $r ]['termos'][] = $termo; } else { $dia[ $r ] = $x; } } continue; }
 		if ( is_string( $j ) ) { $j = json_decode( $j, true ); }
+		/* o PNCP às vezes recusa a conexão do servidor: guarda a última resposta boa de cada busca (6h) e usa quando ele falhar */
+		$ck = 'dv_alp_' . md5( $urls[ $chave ] );
+		if ( ! empty( $j['items'] ) ) { set_transient( $ck, array( 'items' => array_map( function ( $i ) { return array_intersect_key( $i, array_flip( array( 'data_publicacao_pncp', 'createdAt', 'item_url', 'description', 'title', 'valor_global', 'orgao_nome', 'municipio_nome', 'uf', 'modalidade_licitacao_nome', 'data_fim_vigencia' ) ) ); }, $j['items'] ) ), 6 * HOUR_IN_SECONDS ); }
+		elseif ( ! is_array( $j ) ) { $j = get_transient( $ck ) ?: array(); $GLOBALS['dv_al_cache'] = 1; }
 		foreach ( (array) ( $j['items'] ?? array() ) as $i ) {
 			$pub = substr( (string) ( $i['data_publicacao_pncp'] ?? $i['createdAt'] ?? '' ), 0, 10 );
 			if ( $pub && $pub < $desde ) { continue; }

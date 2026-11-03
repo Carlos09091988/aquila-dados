@@ -1126,3 +1126,6 @@ window.dvTextoDe=function(el){if(!el)return'';var c=el.cloneNode(true);[].forEac
 </script>
 	<?php
 }, 50 );
+
+// Nome da empresa em maiúsculas em todas as páginas (cabeçalho, rodapé e maquetes do site).
+add_action( 'wp_head', function () { echo '<style>a.lg>span>b,.mk .sd>b,a.logo .wm,.dv-side .lg b,.dv-topm b{text-transform:uppercase!important;letter-spacing:.05em}a.lg>span>b{white-space:nowrap}</style>'; }, 120 );

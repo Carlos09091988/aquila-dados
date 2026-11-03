@@ -195,9 +195,9 @@ add_shortcode( 'dv_creditos', function () {
 	$ks = array_keys( $pac ); $dest = count( $ks ) >= 3 ? $ks[1] : 0;
 	$h .= '<div class="pk">';
 	foreach ( $pac as $q => $v ) {
-		$n = (int) floor( $q / $rx );
+		$n = (int) floor( $q / $rx ); $ref = $pac[ $ks[0] ] / $ks[0]; $eco = $ref > 0 ? (int) round( ( 1 - ( $v / $q ) / $ref ) * 100 ) : 0;
 		$h .= '<div class="c' . ( $q === $dest ? ' dest' : '' ) . '">' . ( $q === $dest ? '<span class="tg">Recomendado</span>' : '' ) . '<div class="q">' . $q . '<small>créditos</small></div>';
-		$h .= '<div class="pr">R$ ' . number_format( $v, 2, ',', '.' ) . '<span>R$ ' . number_format( $v / $q, 2, ',', '.' ) . ' por crédito</span></div>';
+		$h .= '<div class="pr">R$ ' . number_format( $v, 2, ',', '.' ) . '<span>R$ ' . number_format( $v / $q, 2, ',', '.' ) . ' por crédito' . ( $eco > 0 ? ' · <b style="color:#1F5A3B">' . $eco . '% de desconto</b>' : '' ) . '</span></div>';
 		$h .= '<ul>' . ( $n >= 1 ? '<li>Rende ' . $n . ' Raio-X do concorrente</li>' : '<li>Para consultas avulsas</li>' ) . '<li>Válidos por ' . $val . ' meses</li><li>Acumulam com os do mês</li></ul>';
 		$h .= '<button type="button" data-q="' . $q . '">Comprar</button></div>';
 	}

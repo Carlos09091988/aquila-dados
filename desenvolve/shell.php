@@ -57,6 +57,7 @@ body.dv-app>header.nav,body.dv-app>footer.band,body.dv-app>.dv-tbar,body.dv-app 
 .dv-side{position:fixed;top:0;left:0;bottom:0;width:264px;background:var(--side);color:#C9CDC8;display:flex;flex-direction:column;z-index:9990;font-family:"Hanken Grotesk",sans-serif;border-right:1px solid #1F242B}
 body.admin-bar .dv-side{top:32px}
 .dv-side .lg{display:flex;align-items:center;gap:10px;padding:20px 20px 14px;text-decoration:none}.dv-side .lg svg{width:30px;height:30px;color:#F4F2EC}.dv-side .lg b{color:#F4F2EC;font-size:1.05rem;font-weight:600;line-height:1.1}.dv-side .lg b i{font-style:normal;color:var(--gold)}.dv-side .lg small{display:block;color:#7E837E;font-size:.62rem;letter-spacing:.16em;text-transform:uppercase;margin-top:3px}
+.dv-side .lg b,.dv-topm b{text-transform:uppercase;letter-spacing:.04em;font-weight:700!important}.dv-side .lg b{font-size:.98rem!important}
 .dv-side nav{flex:1;overflow-y:auto;padding:4px 10px 10px}
 .dv-side .gt{font-size:.66rem;letter-spacing:.14em;text-transform:uppercase;color:#6F746F;font-weight:700;margin:16px 10px 6px}
 .dv-side nav a{display:flex;align-items:center;gap:10px;padding:8px 10px;border-radius:9px;color:#C9CDC8;text-decoration:none;font-size:.9rem;font-weight:500;line-height:1.25}

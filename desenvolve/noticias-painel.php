@@ -14,11 +14,12 @@ function dv_np_tag( $t ) {
 		'Tribunal de Contas' => '/\b(TCU|TRIBUNAL DE CONTAS|TCE|TCM|ACORDAO)\b/',
 		'Investigação'       => '/\b(OPERACAO|POLICIA|FRAUDE|INVESTIGA|MPF|MINISTERIO PUBLICO|PRESO|PRISAO|CARTEL|PROPINA|DESVIO|IMPROBIDADE|GAECO)/',
 		'Legislação'         => '/\b(LEI|DECRETO|PROJETO DE LEI|14 133|INSTRUCAO NORMATIVA|PORTARIA|REGULAMENT|SANCIONA|CONGRESSO|SENADO|CAMARA DOS DEPUTADOS)\b/',
-		'Licitação aberta'   => '/\b(ABRE|LANCA|LANCAMENTO|PUBLICA EDITAL|EDITAL|INSCRICOES|PREGAO|CHAMAMENTO|CONCORRENCIA)\b/',
+		'Disputa'            => '/\b(DESCLASSIFIC|INABILIT|RECURSO|IMPUGNA|VENCEDORA|VENCEDOR|ANULA|CANCELA LICITACAO|REVOGA)/',
+		'Licitação aberta'   => '/\b(ABRE|LANCA|LANCAMENTO|PUBLICA EDITAL|EDITAL|PREGAO|CHAMAMENTO|CONCORRENCIA|PREVISTAS?|VAI CONTRATAR|AGENDA|LICITACAO DE R|LICITACOES ABERTAS)/',
 		'Contratos'          => '/\b(CONTRAT|ADITIVO|RESCIS|REAJUSTE|REEQUILIBRIO|PAGAMENTO|ATRASO)/',
 	);
 	foreach ( $R as $k => $re ) { if ( preg_match( $re, $n ) ) { return $k; } }
-	return 'Mercado';
+	return 'Geral';
 }
 
 function dv_np_buscar( $qs, $filtrar = true, $lim = 40 ) {
@@ -37,6 +38,7 @@ function dv_np_buscar( $qs, $filtrar = true, $lim = 40 ) {
 		foreach ( dv_nt_rss( $b ) as $it ) {
 			$n = dv_nt_norm( $it['titulo'] ); $h = md5( substr( $n, 0, 70 ) );
 			if ( isset( $vis[ $h ] ) || mb_strlen( $it['titulo'] ) < 25 ) { continue; }
+			if ( preg_match( '/\b(CONCURSOS?|VAGAS|GABARITO|RESIDENCIA MEDICA|PROCESSO SELETIVO|SIMULADO|APOSTILA|PROVA OBJETIVA|ENEM|VESTIBULAR|NOTA DE CORTE)\b/', $n ) ) { continue; }
 			if ( $filtrar && ! preg_match( $rel, $n ) ) { continue; }
 			$vis[ $h ] = 1;
 			$out[] = array( 't' => $it['titulo'], 'f' => $it['fonte'], 'u' => $it['url'], 'd' => $it['data'], 'g' => dv_np_tag( $it['titulo'] ), 'q' => is_string( $k ) && strpos( $k, ':' ) ? substr( $k, strpos( $k, ':' ) + 1 ) : '' );
@@ -56,7 +58,7 @@ function dv_np_orgao( $o ) {
 
 function dv_np_aba( $uid, $aba ) {
 	if ( $aba === 'geral' || $aba === 'decisoes' ) {
-		$ck = 'dv_np_' . $aba; $c = get_transient( $ck ); if ( is_array( $c ) ) { return $c; }
+		$ck = 'dv_np2_' . $aba; $c = get_transient( $ck ); if ( is_array( $c ) ) { return $c; }
 		$qs = $aba === 'geral'
 			? array( 'licitação when:3d', 'pregão eletrônico when:3d', '"compras públicas" when:7d', '"Lei 14.133" when:14d', 'licitação prefeitura edital when:3d' )
 			: array( 'TCU licitação when:14d', '"Tribunal de Contas" licitação when:7d', 'TCU acórdão contratação when:30d', '"Tribunal de Contas" suspende licitação when:30d' );
@@ -69,13 +71,13 @@ function dv_np_aba( $uid, $aba ) {
 		if ( ! $t ) { return array( 'itens' => array(), 'vazio' => 'ramo' ); }
 		$qs = array(); foreach ( $t as $x ) { $qs[ 'r:' . $x ] = '"' . $x . '" (licitação OR pregão OR contrato) when:30d'; }
 	} elseif ( $aba === 'orgaos' ) {
-		$t = array(); if ( function_exists( 'dv_lic_itens' ) ) { foreach ( array_reverse( dv_lic_itens( $uid ) ) as $x ) { $o = dv_np_orgao( $x['orgao'] ?? '' ); if ( $o && mb_strlen( $o ) >= 8 ) { $t[ $o ] = $o; } } }
+		$t = array(); if ( function_exists( 'dv_lic_itens' ) ) { $UF = array( 'AC' => 'Acre', 'AL' => 'Alagoas', 'AP' => 'Amapá', 'AM' => 'Amazonas', 'BA' => 'Bahia', 'CE' => 'Ceará', 'DF' => 'Distrito Federal', 'ES' => 'Espírito Santo', 'GO' => 'Goiás', 'MA' => 'Maranhão', 'MT' => 'Mato Grosso', 'MS' => 'Mato Grosso do Sul', 'MG' => 'Minas Gerais', 'PA' => 'Pará', 'PB' => 'Paraíba', 'PR' => 'Paraná', 'PE' => 'Pernambuco', 'PI' => 'Piauí', 'RJ' => 'Rio de Janeiro', 'RN' => 'Rio Grande do Norte', 'RS' => 'Rio Grande do Sul', 'RO' => 'Rondônia', 'RR' => 'Roraima', 'SC' => 'Santa Catarina', 'SP' => 'São Paulo', 'SE' => 'Sergipe', 'TO' => 'Tocantins' ); foreach ( array_reverse( dv_lic_itens( $uid ) ) as $x ) { $o = dv_np_orgao( $x['orgao'] ?? '' ); if ( ! $o || mb_strlen( $o ) < 8 ) { continue; } $uf = strtoupper( (string) ( $x['uf'] ?? '' ) ); $mu = trim( (string) ( $x['municipio'] ?? '' ) ); $ctx = ''; if ( stripos( $o, 'Prefeitura de' ) !== 0 ) { if ( preg_match( '/\b(estado|estadual|governo)\b/iu', $o ) && isset( $UF[ $uf ] ) ) { $ctx = $UF[ $uf ]; } elseif ( $mu ) { $ctx = mb_convert_case( mb_strtolower( $mu ), MB_CASE_TITLE ); } } $t[ $o . '|' . $ctx ] = array( $o, $ctx ); } }
 		$t = array_slice( array_values( $t ), 0, 6 );
 		if ( ! $t ) { return array( 'itens' => array(), 'vazio' => 'orgaos' ); }
-		$qs = array(); foreach ( $t as $x ) { $qs[ 'o:' . $x ] = '"' . $x . '" (licitação OR contrato OR pregão OR edital) when:60d'; }
+		$qs = array(); foreach ( $t as $x ) { $qs[ 'o:' . $x[0] ] = '"' . $x[0] . '"' . ( $x[1] ? ' "' . $x[1] . '"' : '' ) . ' (licitação OR contrato OR pregão OR edital) when:60d'; } $t = array_map( function ( $x ) { return $x[1] ? $x[0] . ' (' . $x[1] . ')' : $x[0]; }, $t );
 	} else { return new WP_Error( 'dv_aba', 'Aba inválida.', array( 'status' => 400 ) ); }
-	$ck = 'dv_np_u' . md5( $aba . wp_json_encode( $t ) ); $c = get_transient( $ck ); if ( is_array( $c ) ) { return $c; }
-	$l = dv_np_buscar( $qs, false, 50 ); if ( $l === null ) { return array( 'itens' => array(), 'aviso' => 'As notícias não carregaram agora. Tente de novo em alguns minutos.', 'termos' => $t ); }
+	$ck = 'dv_np_v2' . md5( $aba . wp_json_encode( $t ) ); $c = get_transient( $ck ); if ( is_array( $c ) ) { return $c; }
+	$l = dv_np_buscar( $qs, true, 50 ); if ( $l === null ) { return array( 'itens' => array(), 'aviso' => 'As notícias não carregaram agora. Tente de novo em alguns minutos.', 'termos' => $t ); }
 	$r = array( 'itens' => $l, 'termos' => $t, 'em' => current_time( 'mysql' ) ); set_transient( $ck, $r, 6 * HOUR_IN_SECONDS ); return $r;
 }
 

@@ -19,8 +19,10 @@ Conta 530-314-4578 (desenvolveserv@gmail.com). Atualizar a cada checagem (10h e 
 | Data/hora | Gasto | Impr. | Cliques | CPC | Lista (total) | Observação |
 |---|---|---|---|---|---|---|
 | 04/11 15h45 | — | — | — | — | 1 (teste) | Aprovada, em aprendizado |
+| 04/11 18h | R$ 0 | 0 | 0 | — | 1 (teste) | ~2h após aprovação ainda sem impressões (PMax demora a começar a entregar); saldo R$ 540; site: 3 visitantes diretos (testadores) |
 
 ## Aprendizados
 - Conta antiga (796-868-4221, 2010) tinha faturamento incompatível → criar conta nova é mais rápido.
 - O assistente do Google cria campanha genérica sozinho ("Consultoria para Empresas", cidades da Grande SP) → sempre revisar textos, região, destino e conversões.
 - Importar imagens: o leitor de site do Google pega no máx. 2 imagens por página e gera recortes automáticos que cortam o texto → usar páginas com até 2 imagens e remover os recortes.
+- PMax recém-aprovada pode levar várias horas (até 1 dia) para registrar as primeiras impressões; não mexer na campanha nesse período para não reiniciar o aprendizado.

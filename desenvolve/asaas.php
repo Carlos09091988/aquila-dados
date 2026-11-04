@@ -148,7 +148,7 @@ add_action( 'rest_api_init', function () {
 					update_user_meta( $uid, 'dv_fundador_ate', gmdate( 'Y-m-d', strtotime( current_time( 'Y-m-d' ) . ' +' . (int) dv_cfg( 'fundador_meses' ) . ' months' ) ) );
 				}
 				$fa = (string) get_user_meta( $uid, 'dv_fundador_ate', true ); $sub = get_user_meta( $uid, 'dv_asaas_assinatura', true );
-				if ( $fa && $fa < current_time( 'Y-m-d' ) && $sub ) { // acabou o período de fundador: próximas cobranças pelo preço cheio
+				if ( $fa && ( $fa < current_time( 'Y-m-d' ) || (int) dv_cfg( 'fundador_meses' ) <= 1 ) && $sub ) { // acabou o período de fundador (ou o desconto é só do 1º mês): próximas cobranças pelo preço cheio
 					$cheio = dv_plano_info( dv_plano( $uid ) )['preco'];
 					if ( (float) get_user_meta( $uid, 'dv_preco_contratado', true ) < $cheio ) { $x = dv_asaas( 'POST', '/subscriptions/' . rawurlencode( $sub ), array( 'value' => $cheio, 'updatePendingPayments' => true ) ); if ( ! is_wp_error( $x ) ) { update_user_meta( $uid, 'dv_preco_contratado', $cheio ); } }
 				}

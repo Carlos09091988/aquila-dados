@@ -130,7 +130,7 @@ function dv_plano_info( $k ) {
 	return $ps[ $k ] ?? reset( $ps );
 }
 function dv_fundador_restantes() { return max( 0, (int) dv_cfg( 'fundador_vagas' ) - (int) get_option( 'dv_fundadores', 0 ) ); }
-function dv_preco_fundador( $preco ) { $v = $preco * ( 1 - (int) dv_cfg( 'fundador_desc' ) / 100 ); return max( 9, ceil( ( $v + 1 ) / 10 ) * 10 - 1 ); } // termina em 9: 69, 139, 349
+function dv_preco_fundador( $preco ) { $v = $preco * ( 1 - (int) dv_cfg( 'fundador_desc' ) / 100 ); $f = floor( $v ); return max( 9, round( $f + 0.9 <= $v + 0.0001 ? $f + 0.9 : $f - 0.1, 2 ) ); } // desconto cheio, terminando em ,90: 79,90 com 30% = 55,90
 /** Preço que este assinante paga pelo plano: fundador (30% por 12 meses) enquanto houver vaga ou se ele já é fundador. */
 function dv_preco_plano( $uid, $k ) {
 	$p = dv_plano_info( $k ); $ate = (string) get_user_meta( $uid, 'dv_fundador_ate', true );
@@ -697,7 +697,7 @@ function dv_planos_html( $uid ) {
 		$h .= $st === 'ativo' ? '<p class="dv-ok">Seu teste grátis vai até ' . esc_html( date_i18n( 'd/m/Y', strtotime( get_user_meta( $uid, 'dv_vence', true ) ) ) ) . '. Assine quando quiser: os créditos do plano entram na hora.</p>' : '<p class="dv-err">Seu teste grátis terminou. Escolha um plano para continuar usando as ferramentas.</p>';
 	}
 	if ( $fa ) { $h .= '<p class="dv-ok">Você é assinante fundador: preço com ' . (int) dv_cfg( 'fundador_desc' ) . '% de desconto até ' . esc_html( date_i18n( 'd/m/Y', strtotime( $fa ) ) ) . '.</p>'; }
-	elseif ( $rest > 0 ) { $h .= '<p class="dv-ok"><b>Preço de fundador:</b> ' . (int) dv_cfg( 'fundador_desc' ) . '% de desconto por ' . (int) dv_cfg( 'fundador_meses' ) . ' meses para os primeiros assinantes. Restam <b>' . $rest . '</b> vagas.</p>'; }
+	elseif ( $rest > 0 ) { $h .= '<p class="dv-ok"><b>Preço de fundador:</b> ' . (int) dv_cfg( 'fundador_desc' ) . '% de desconto ' . ( (int) dv_cfg( 'fundador_meses' ) <= 1 ? 'no primeiro mês' : 'por ' . (int) dv_cfg( 'fundador_meses' ) . ' meses' ) . ' para os primeiros assinantes. Restam <b>' . $rest . '</b> vagas.</p>'; }
 	$h .= '<div class="dv-g">';
 	foreach ( dv_planos() as $k => $p ) {
 		$pr = dv_preco_plano( $uid, $k ); $eh = $pago && $atual === $k;

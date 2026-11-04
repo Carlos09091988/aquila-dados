@@ -83,6 +83,10 @@ body.dv-app .dv-topm{background:#000!important}body.dv-app .dv-topm b i{color:#f
 body.dv-app [class*=ticker],body.dv-app .dv-nt{font-family:Geist,sans-serif!important}
 body.dv-app #dv-mon{background:#fff!important;border:1px solid var(--t-ln2)!important;border-left:3px solid #E0A33B!important;color:#3D3D3D!important;border-radius:10px!important;font-size:13.5px!important}
 
+body.dv-app .dv-tk,body.dv-app .dv-tkg{background:#0A0A0A!important}
+body.dv-app .dv-tk small,body.dv-app .dv-tkg small{color:var(--t-ouro)!important;font-weight:500!important;letter-spacing:.04em!important}
+body.dv-app .dv-tk .vt,body.dv-app .dv-tkg .vt{color:#fff!important;font-weight:500!important}
+body.dv-app .dv-tk b,body.dv-app .dv-tkg b{background:#1A1A1A!important;color:#fff!important;font-weight:500!important;letter-spacing:.04em!important}
 /* cartões e áreas de trabalho */
 body.dv-app .dv-tool>*,body.dv-app .dv-cnpj,body.dv-app .dv-next{border-radius:14px!important}
 body.dv-app .dv-tool>div:first-child:not([class*=dv-pw]),body.dv-app .dv-cnpj{box-shadow:0 1px 2px rgba(0,0,0,.04)!important;border:1px solid var(--t-ln)!important}

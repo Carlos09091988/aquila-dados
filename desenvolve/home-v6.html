@@ -271,9 +271,9 @@ function setup(){dpr=Math.min(devicePixelRatio||1,2);W=sec.clientWidth;H=sec.cli
  const cx=W/2,cy=oy+kh*.5,n=FONTES.length;
  const borda=(sx,sy,tx,ty)=>{for(let k=0;k<=200;k++){const u=k/200,px=sx+(tx-sx)*u,py=sy+(ty-sy)*u;if(x.isPointInPath(P,VB.x+(px-ox)/S,VB.y+(py-oy)/S))return [px,py]}return [tx,ty]};
  linhas=FONTES.map((nome,i)=>{let sx,sy,lado;
-  if(mob){lado=i%2?1:-1;sx=lado<0?18:W-18;sy=H*.06+Math.floor(i/2)*H*.065;}
-  else{lado=-1;const u=i/(n-1);sy=H*.07+u*H*.52;sx=Math.max(190,cx-W*.27-Math.sin(Math.PI*u)*W*.09);}
-  const alvo=ins[Math.floor(Math.random()*ins.length)].p,e=borda(sx,sy,alvo[0],alvo[1]);
+  if(mob){lado=i%2?1:-1;sx=lado<0?18:W-18;sy=H*.11+Math.floor(i/2)*H*.065;}
+  else{lado=-1;const u=i/(n-1);sy=H*.12+u*H*.47;sx=Math.max(190,cx-W*.27-Math.sin(Math.PI*u)*W*.09);}
+  const ty=mob?oy+kh*(.1+.5*Math.random()):oy+kh*(.08+.62*i/(n-1)),alvo=ins.slice().sort((a,b)=>Math.abs(a.p[1]-ty)-Math.abs(b.p[1]-ty))[0].p,e=borda(sx,sy,alvo[0],alvo[1]);
   return {n:nome,s:[sx,sy],c1:[sx+(e[0]-sx)*.5,sy],c2:[e[0]-(e[0]-sx)*.2,e[1]+(sy-e[1])*.3],e,k:i,lado}});
  const fr=ins.slice().sort((a,b)=>b.p[0]-a.p[0]).slice(0,12).sort((a,b)=>a.p[1]-b.p[1]);
  saidas=mob?[]:SAIDAS.map((nome,i)=>{const ex=Math.min(W-300,cx+W*.25),ey=H*.14+i*H*.12;const sp=fr[i*3].p;return {n:nome,s:[sp[0],sp[1]],c1:[sp[0]+(ex-sp[0])*.5,sp[1]],c2:[ex-(ex-sp[0])*.35,ey],e:[ex,ey],k:i}});

@@ -130,12 +130,14 @@ function dv_plano_info( $k ) {
 	if ( $k === 'teste' ) { return array( 'k' => 'teste', 'nome' => 'Teste grátis', 'preco' => 0, 'creditos' => (int) dv_cfg( 'trial_creditos' ), 'radar' => 1 ); }
 	return $ps[ $k ] ?? reset( $ps );
 }
+/** Quem entrou na lista de espera antes do lançamento tem o preço de fundador garantido, mesmo depois das 50 vagas. */
+function dv_na_lista( $uid ) { $u = get_userdata( $uid ); if ( ! $u || ! function_exists( 'dv_lista' ) ) { return false; } $l = dv_lista(); return ! empty( $l[ strtolower( $u->user_email ) ] ); }
 function dv_fundador_restantes() { return max( 0, (int) dv_cfg( 'fundador_vagas' ) - (int) get_option( 'dv_fundadores', 0 ) ); }
 function dv_preco_fundador( $preco ) { $fp = (float) str_replace( ',', '.', (string) dv_cfg( 'fundador_preco' ) ); if ( $fp > 0 && $fp < $preco ) { return round( $fp, 2 ); } $v = $preco * ( 1 - (int) dv_cfg( 'fundador_desc' ) / 100 ); $f = floor( $v ); return max( 9, round( $f + 0.9 <= $v + 0.0001 ? $f + 0.9 : $f - 0.1, 2 ) ); } // desconto cheio, terminando em ,90: 79,90 com 30% = 55,90
 /** Preço que este assinante paga pelo plano: fundador (30% por 12 meses) enquanto houver vaga ou se ele já é fundador. */
 function dv_preco_plano( $uid, $k ) {
 	$p = dv_plano_info( $k ); $ate = (string) get_user_meta( $uid, 'dv_fundador_ate', true );
-	$fund = $ate ? $ate >= current_time( 'Y-m-d' ) : dv_fundador_restantes() > 0;
+	$fund = $ate ? $ate >= current_time( 'Y-m-d' ) : ( dv_fundador_restantes() > 0 || dv_na_lista( $uid ) );
 	return array( 'valor' => $fund ? dv_preco_fundador( $p['preco'] ) : $p['preco'], 'fundador' => $fund, 'cheio' => $p['preco'] );
 }
 function dv_custo( $f ) {
@@ -701,6 +703,7 @@ function dv_planos_html( $uid ) {
 	$fm = (int) dv_cfg( 'fundador_meses' ); $fp = (float) str_replace( ',', '.', (string) dv_cfg( 'fundador_preco' ) );
 	$fq = $fp > 0 ? 'R$ ' . dv_rs( $fp ) . ' por mês' : (int) dv_cfg( 'fundador_desc' ) . '% de desconto';
 	if ( $fa ) { $h .= '<p class="dv-ok">Você é assinante fundador: ' . ( $fa >= '2099-01-01' ? 'seu preço especial fica garantido enquanto você mantiver a assinatura.' : 'preço especial até ' . esc_html( date_i18n( 'd/m/Y', strtotime( $fa ) ) ) . '.' ) . '</p>'; }
+	elseif ( dv_na_lista( $uid ) ) { $h .= '<p class="dv-ok"><b>Você está na lista de espera:</b> seu preço de fundador (' . $fq . ') está garantido' . ( $fm === 0 ? ' para sempre, enquanto mantiver a assinatura' : '' ) . '.</p>'; }
 	elseif ( $rest > 0 ) { $h .= '<p class="dv-ok"><b>Preço de fundador:</b> ' . $fq . ' ' . ( $fm === 0 ? 'para sempre, enquanto mantiver a assinatura,' : ( $fm === 1 ? 'no primeiro mês' : 'por ' . $fm . ' meses' ) ) . ' para os primeiros ' . (int) dv_cfg( 'fundador_vagas' ) . ' assinantes. Restam <b>' . $rest . '</b> vagas.</p>'; }
 	$h .= '<div class="dv-g">';
 	foreach ( dv_planos() as $k => $p ) {

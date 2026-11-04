@@ -50,18 +50,20 @@ add_filter( 'login_errors', function ( $m ) {
 } );
 
 /* Login: 6 erros em 15 minutos bloqueiam aquele IP por 15 minutos */
-function dv_sg_ip() { return preg_replace( '/[^0-9a-f:.]/i', '', (string) ( $_SERVER['REMOTE_ADDR'] ?? '' ) ); }
+/* o site passa por CDN: o IP real vem no cabeçalho encaminhado; a contagem é por IP + usuário, para um ataque não bloquear outros clientes */
+function dv_sg_ip() { $x = (string) ( $_SERVER['HTTP_CF_CONNECTING_IP'] ?? $_SERVER['HTTP_X_REAL_IP'] ?? '' ); if ( $x === '' && ! empty( $_SERVER['HTTP_X_FORWARDED_FOR'] ) ) { $x = trim( explode( ',', (string) $_SERVER['HTTP_X_FORWARDED_FOR'] )[0] ); } if ( $x === '' ) { $x = (string) ( $_SERVER['REMOTE_ADDR'] ?? '' ); } return preg_replace( '/[^0-9a-f:.]/i', '', $x ); }
+function dv_sg_k( $login ) { return 'dv_sg_f_' . md5( dv_sg_ip() . '|' . strtolower( trim( (string) $login ) ) ); }
 add_filter( 'authenticate', function ( $u, $login ) {
 	if ( $login === '' || $login === null ) { return $u; }
-	$k = 'dv_sg_f_' . md5( dv_sg_ip() );
+	$k = dv_sg_k( $login );
 	if ( (int) get_transient( $k ) >= 6 ) { return new WP_Error( 'dv_sg_bloq', '<span class="dv-sg"></span>Muitas tentativas de entrar. Espere 15 minutos e tente de novo, ou use "Perdeu a senha?".' ); }
 	return $u;
 }, 30, 2 );
-add_action( 'wp_login_failed', function () {
-	$k = 'dv_sg_f_' . md5( dv_sg_ip() ); $n = (int) get_transient( $k ) + 1; set_transient( $k, $n, 15 * MINUTE_IN_SECONDS );
-	if ( $n === 6 ) { $l = (array) get_option( 'dv_sg_log', array() ); array_unshift( $l, current_time( 'mysql' ) . ' · bloqueado · ' . dv_sg_ip() ); update_option( 'dv_sg_log', array_slice( $l, 0, 50 ), false ); }
-} );
-add_action( 'wp_login', function () { delete_transient( 'dv_sg_f_' . md5( dv_sg_ip() ) ); } );
+add_action( 'wp_login_failed', function ( $login ) {
+	$k = dv_sg_k( $login ); $n = (int) get_transient( $k ) + 1; set_transient( $k, $n, 15 * MINUTE_IN_SECONDS );
+	if ( $n === 6 ) { $l = (array) get_option( 'dv_sg_log', array() ); array_unshift( $l, current_time( 'mysql' ) . ' · bloqueado · ' . dv_sg_ip() . ' · ' . sanitize_user( (string) $login ) ); update_option( 'dv_sg_log', array_slice( $l, 0, 50 ), false ); }
+}, 10, 1 );
+add_action( 'wp_login', function ( $login ) { delete_transient( dv_sg_k( $login ) ); }, 10, 1 );
 
 /* Edição de plugins, temas e arquivos pelo painel desligada (se alguém roubar uma senha de admin, não consegue mexer no código por ali) */
 add_filter( 'map_meta_cap', function ( $caps, $cap ) {

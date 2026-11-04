@@ -475,9 +475,9 @@ pUfs();carregar();
 /* Painel: aviso das oportunidades novas na caixa */
 add_action( 'wp_footer', function () {
 	if ( ! is_user_logged_in() || ! is_page( 'painel' ) ) { return; }
-	$n = 0; $urg = 0; foreach ( dv_al_caixa( get_current_user_id() ) as $x ) { if ( ( $x['st'] ?? '' ) === '' ) { $n++; if ( dv_al_urgente( $x ) ) { $urg++; } } }
+	$n = 0; $urg = 0; $alta = 0; foreach ( dv_al_caixa( get_current_user_id() ) as $x ) { if ( ( $x['st'] ?? '' ) === '' ) { $n++; if ( dv_al_urgente( $x ) ) { $urg++; } if ( ( $x['prio'] ?? '' ) === 'alta' ) { $alta++; } } }
 	if ( ! $n ) { return; } ?>
 <script>(function(){var el=document.getElementById('dv-painel');if(!el)return;var b=document.createElement('a');b.href='/plataforma/alertas/';b.style.cssText='display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap;background:#16191E;border:1px solid #C9A45C;border-radius:14px;padding:14px 18px;margin:0 0 18px;color:#F4F2EC;text-decoration:none;font-family:Hanken Grotesk,sans-serif';
-b.innerHTML='<span>📥 <b><?php echo (int) $n; ?> oportunidade(s) nova(s)</b> nos seus alertas<?php echo $urg ? ' · <b style="color:#E59A8A">' . (int) $urg . ' com prazo curto</b>' : ''; ?></span><span style="background:#C9A45C;color:#241A06;border-radius:10px;padding:8px 14px;font-weight:700">Ver a caixa</span>';b.style.maxWidth=Math.max(320,el.getBoundingClientRect().width)+'px';b.style.marginLeft='auto';b.style.marginRight='auto';el.parentNode.insertBefore(b,el)})();</script>
+b.innerHTML='<span>📥 <b><?php echo (int) $n; ?> oportunidade(s) nova(s)</b> nos seus alertas<?php echo $alta ? ' · <b style="color:#9FD9B4">' . (int) $alta . ' de prioridade alta</b>' : ''; ?><?php echo $urg ? ' · <b style="color:#E59A8A">' . (int) $urg . ' com prazo curto</b>' : ''; ?></span><span style="background:#C9A45C;color:#241A06;border-radius:10px;padding:8px 14px;font-weight:700">Ver a caixa</span>';b.style.maxWidth=Math.max(320,el.getBoundingClientRect().width)+'px';b.style.marginLeft='auto';b.style.marginRight='auto';el.parentNode.insertBefore(b,el)})();</script>
 	<?php
 }, 96 );

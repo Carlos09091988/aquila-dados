@@ -222,6 +222,57 @@
 
 #dvx .topo .bt{white-space:nowrap}
 @media (max-width:520px){#dvx .topo .w{height:64px}#dvx .marca svg{height:32px}#dvx .topo .bt{padding:10px 14px;font-size:13px}#dvx .hero{margin-top:-65px}}
+
+/* ===== v8: padrão Geist preto/branco/dourado em toda a página ===== */
+#dvx{--ouro:#E6C57C;--ouro2:#E6C57C;font-family:Geist,Inter,system-ui,sans-serif;font-size:16.5px;background:#000}
+#dvx h1,#dvx h2{font-family:Geist,Inter,sans-serif;font-weight:300;letter-spacing:-.035em;line-height:1.06;color:#fff}
+#dvx h2{font-size:clamp(32px,3.6vw,54px);max-width:18ch}
+#dvx h3{font-family:Geist,Inter,sans-serif;font-weight:500;letter-spacing:-.01em;color:#fff}
+#dvx .sub{color:#8E939B;font-size:17px}
+#dvx .bt{border-radius:999px;font:500 14.5px/1 Geist,Inter,sans-serif;padding:15px 26px}
+#dvx .topo{background:rgba(0,0,0,.62);border-bottom:1px solid rgba(255,255,255,.07)}
+#dvx .marca b{font:400 15px/1 Geist,Inter,sans-serif;letter-spacing:.14em}#dvx .marca b i{color:#fff;font-weight:700}
+#dvx .marca small{font-family:Geist,Inter,sans-serif;letter-spacing:.02em}
+#dvx .topo nav{font-family:Geist,Inter,sans-serif;font-size:14px}#dvx .topo nav a{color:#A7ABB2}#dvx .topo nav a:hover{color:#fff}
+#dvx .topo .bt{padding:10px 18px;font-size:13.5px}
+#dvx .fontes{background:#000;border-color:rgba(255,255,255,.07)}
+#dvx .fontes p{color:#6E737B;font-size:13px}
+#dvx .fontes ul{font:500 14px Geist,Inter,sans-serif;letter-spacing:.06em;color:#C9CCD1;gap:8px 40px}
+#dvx .sc,#dvx .sc.claro{background:#000;padding:150px 0}
+#dvx .sc+.sc{border-top:1px solid rgba(255,255,255,.06)}
+#dvx .rx{grid-template-columns:1fr 1fr;gap:96px;align-items:start}
+#dvx .rx ul{margin-top:8px;gap:0;border-top:1px solid rgba(255,255,255,.1)}
+#dvx .rx li{border-left:0;padding:26px 0;border-bottom:1px solid rgba(255,255,255,.1)}
+#dvx .rx li b{color:#fff;font-weight:500;font-size:18px;margin-bottom:6px}
+#dvx .rx li span{color:#8E939B}
+#dvx .dia{border-top-color:rgba(255,255,255,.14)}
+#dvx .dia time{font:500 13px Geist,Inter,sans-serif;letter-spacing:.08em;color:var(--ouro)}
+#dvx .dia p,#dvx .pq p{color:#8E939B}
+#dvx .cmp{border-top-color:rgba(255,255,255,.14)}#dvx .cmp .r{border-bottom-color:rgba(255,255,255,.07)}
+#dvx .cmp .r>:first-child{color:#fff;font-weight:500}
+#dvx .cmp .r:not(:first-child)>:nth-child(2){color:#5E636B;text-decoration-color:rgba(240,110,90,.4)}
+#dvx .cmp .r:not(:first-child)>:nth-child(3){color:#E9E9EA}
+#dvx .pq div{border-top-color:rgba(255,255,255,.14)}
+#dvx .lista{background:#000;border-top:1px solid rgba(255,255,255,.06)}
+#dvx .preco strong{font:300 clamp(64px,7.5vw,104px)/.9 Geist,Inter,sans-serif;letter-spacing:-.05em;color:#fff}
+#dvx .preco em{font:500 15px Geist,Inter,sans-serif;font-style:normal;color:var(--ouro)}
+#dvx .preco s{color:#5E636B}
+#dvx .lista li{color:#C9CCD1}#dvx .lista li:before{background:var(--ouro)}#dvx .lista ul{border-top-color:rgba(255,255,255,.1)}
+#dvx .lf{background:#0B0B0D;color:#E9E9EA;border-radius:16px;box-shadow:0 0 0 1px rgba(255,255,255,.09)}
+#dvx .lf h3{font:500 22px Geist,Inter,sans-serif;letter-spacing:-.02em;color:#fff}
+#dvx .lf input,#dvx .lf select{background:#000;color:#fff;border:1px solid rgba(255,255,255,.14);border-radius:10px;font-family:Geist,Inter,sans-serif}
+#dvx .lf input::placeholder{color:#6E737B}
+#dvx .lf label.ck{color:#8E939B}#dvx .lf label.ck input{accent-color:#E6C57C}
+#dvx .lf .bt.g{background:#fff;color:#000}#dvx .lf .bt.g:hover{background:#E9E9EA}
+#dvx .faq{border-top-color:rgba(255,255,255,.14)}#dvx details{border-bottom-color:rgba(255,255,255,.08)}
+#dvx summary{font:400 20px Geist,Inter,sans-serif;letter-spacing:-.01em;color:#fff}
+#dvx summary:after{color:#8E939B;font-family:Geist,Inter,sans-serif}
+#dvx details p{color:#8E939B}
+#dvx .fim{background:#000;border-top:1px solid rgba(255,255,255,.06)}
+#dvx .fim .mk{width:44px;color:#fff}
+#dvx .fim p{color:#8E939B}
+#dvx .bt.g{background:#fff;color:#000}
+@media (max-width:960px){#dvx .rx{grid-template-columns:1fr;gap:32px}#dvx .sc,#dvx .sc.claro{padding:100px 0}}
 </style>
 
 <div id="dvx">
@@ -340,21 +391,13 @@ html{scroll-behavior:smooth}
   <div>
    <h2>Antes de entrar, conheça o comprador. Depois do lance, o concorrente.</h2>
    <p class="sub">Digite um CNPJ. Em segundos você tem, numa tela só, o que levaria uma tarde abrindo dezenas de sites oficiais, com a fonte de cada informação para usar no recurso.</p>
+  </div>
+  <div>
    <ul>
     <li><b>Raio-X do comprador</b><span>Se o órgão atrasa pagamento, quem presta hoje, contratos vencendo e o preço que já pagou pelo seu item.</span></li>
     <li><b>Raio-X do concorrente</b><span>Sanções no CEIS, CNEP e TCU, dívida ativa, sócios, grupo econômico e vínculos com outros licitantes.</span></li>
     <li><b>Due Diligence completa</b><span>Tudo isso mais processos e notícias, num relatório pronto para o jurídico.</span></li>
    </ul>
-  </div>
-  <div class="tela" role="img" aria-label="Exemplo de Raio-X do concorrente">
-   <div class="top"><b>Raio-X do concorrente</b><small>consultado agora</small></div>
-   <div class="cnt">
-    <p style="font-weight:600;color:#0E1828">Empresa Exemplo Serviços Ltda</p>
-    <p style="font-size:13px;color:#7A8496">CNPJ 00.000.000/0001-00</p>
-    <div class="alertas" style="margin-top:14px"><span class="t rd">Impedida de licitar até 2027</span><span class="t rd">R$ 18,4 mi em dívida ativa</span><span class="t au">Sócio em comum com outro licitante</span></div>
-    <div class="kv"><div><strong>14</strong><span>contratos públicos ativos</span></div><div><strong>R$ 42 mi</strong><span>em contratos</span></div><div><strong>27</strong><span>processos trabalhistas</span></div></div>
-    <p class="fonte">Fontes: CEIS/CGU, PGFN, Receita Federal, PNCP e tribunais. Dados ilustrativos.</p>
-   </div>
   </div>
  </div>
 </section>

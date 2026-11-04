@@ -165,7 +165,7 @@
 #dvx .topo nav a:hover{color:#fff}
 
 #dvx .hero{position:relative;margin-top:-77px;padding:0;min-height:max(100svh,720px);display:flex;align-items:center;background:#0B0C0E;overflow:hidden;isolation:isolate}
-#dvx .cena{position:absolute;inset:0;z-index:-2}
+#dvx .cena{position:absolute;inset:0;z-index:-2;overflow:hidden}
 #dvx .cena img{width:100%;height:100%;object-fit:cover;object-position:50% 40%;filter:grayscale(1) contrast(1.05) brightness(.9);transform-origin:75% 55%}
 #dvx .cena .vela{position:absolute;inset:0;background:linear-gradient(90deg,rgba(8,9,11,.8) 0%,rgba(8,9,11,.5) 36%,rgba(8,9,11,.05) 60%,rgba(8,9,11,0) 100%),linear-gradient(180deg,rgba(8,9,11,.55) 0%,rgba(8,9,11,0) 22%,rgba(8,9,11,0) 70%,#0B0C0E 100%)}
 #dvx .hero .w{width:100%;padding-top:110px;padding-bottom:60px;position:relative;z-index:2}
@@ -213,8 +213,9 @@
 @media (max-width:960px){
  #dvx .hero{min-height:100svh;align-items:flex-end}
  #dvx .cena img{object-position:80% 50%}
- #dvx .cena .vela{background:linear-gradient(180deg,rgba(8,9,11,.5) 0%,rgba(8,9,11,0) 25%,rgba(8,9,11,.35) 48%,rgba(8,9,11,.9) 70%,#0B0C0E 100%)}
- #dvx .hero .w{padding-top:52svh;padding-bottom:40px}
+ #dvx .cena{bottom:auto;height:72svh}
+ #dvx .cena .vela{background:linear-gradient(180deg,rgba(8,9,11,.5) 0%,rgba(8,9,11,0) 22%,rgba(8,9,11,0) 70%,rgba(8,9,11,.85) 90%,#0B0C0E 100%)}
+ #dvx .hero .w{padding-top:66svh;padding-bottom:40px}
  #dvx .peca{right:6vw;top:16vh;bottom:auto;height:34vh}
  #dvx .hero h1{font-size:clamp(40px,11vw,60px)}
 }
@@ -402,7 +403,7 @@ let mx=0,my=0,vis=true,t0=performance.now(),G={};
 addEventListener('pointermove',e=>{mx=e.clientX/innerWidth-.5;my=e.clientY/innerHeight-.5},{passive:true});
 new IntersectionObserver(e=>{vis=e[0].isIntersecting}).observe(hero);
 function rs(){const w=hero.clientWidth,h=hero.clientHeight,a=w/h;r.setSize(w,h,false);cam.aspect=a;
- const m=w<=960; const vh=Math.min(h,innerHeight)/h, hf=(m?.28:.46)*vh, by=(m?.47:.86)*vh, xf=m?.42:.62;ref.material.opacity=m?.08:.16; /* altura, base e posição do cavalo na tela */
+ const m=w<=960; const vh=Math.min(h,innerHeight)/h, hf=(m?.32:.46)*vh, by=(m?.6:.86)*vh, xf=m?.4:.62;ref.visible=!m; /* altura, base e posição do cavalo na tela */
  const Dt=KH/(2*hf),t=Math.tan(cam.fov*Math.PI/360);G={D:Dt/t,cy:(by-.5)*2*Dt,X:(xf-.5)*2*Dt*a};cam.updateProjectionMatrix()}
 rs();addEventListener('resize',rs);
 const ease=x=>x<.5?4*x*x*x:1-Math.pow(-2*x+2,3)/2;

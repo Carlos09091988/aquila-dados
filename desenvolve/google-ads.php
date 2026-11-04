@@ -1,14 +1,14 @@
 <?php
 /**
  * Desenvolve — Tag do Google Ads e conversões
- * Conta 796-868-4221 · tag AW-1011331382
+ * Conta 530-314-4578 (desenvolveserv@gmail.com) · tag AW-18556187618
  * "Entrou na lista de espera": quando o formulário da lista é enviado com sucesso.
  * "Assinou o plano": uma vez por cliente, na primeira página que ele abre depois que a assinatura fica ativa.
  */
 if ( ! defined( 'ABSPATH' ) ) { exit; }
-define( 'DV_ADS_ID', 'AW-1011331382' );
-define( 'DV_ADS_LISTA', 'AW-1011331382/vyOuCP67gbIdELbinuID' );
-define( 'DV_ADS_ASSINOU', 'AW-1011331382/h3_KCIG8gbIdELbinuID' );
+define( 'DV_ADS_ID', 'AW-18556187618' );
+define( 'DV_ADS_LISTA', 'AW-18556187618/ElBSCPO9iLIdEOLno5BF' );
+define( 'DV_ADS_ASSINOU', 'AW-18556187618/nV-hCPa9iLIdEOLno5BF' );
 
 add_action( 'wp_head', function () {
 	if ( is_admin() || ( is_user_logged_in() && function_exists( 'dv_is_master' ) && dv_is_master( get_current_user_id() ) ) ) { return; } ?>

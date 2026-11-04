@@ -184,7 +184,7 @@ function dv_al_buscar( $a, $desde ) {
 		$res = dv_ds_multi( $up, array(), 30 );
 		$ud = array_diff_key( $urls, $up ); if ( $ud ) { $res += dv_ds_multi( $ud, array( 'Accept' => 'text/html,application/json' ), 18 ); }
 		/* uma nova tentativa, uma a uma, para o que falhou (PNCP e DOU às vezes recusam o primeiro acesso) */
-		foreach ( $res as $k => $b ) { if ( $b ) { continue; } $g = wp_remote_get( $urls[ $k ], array( 'timeout' => strpos( $k, 'p|' ) === 0 ? 25 : 15, 'headers' => array( 'Accept' => strpos( $k, 'p|' ) === 0 ? 'application/json' : 'text/html,application/json' ) ) ); $GLOBALS['dv_al_cod'][ $k ] = is_wp_error( $g ) ? $g->get_error_message() : wp_remote_retrieve_response_code( $g ) . ' ' . substr( wp_remote_retrieve_body( $g ), 0, 120 ); if ( ! is_wp_error( $g ) && wp_remote_retrieve_response_code( $g ) === 200 ) { $res[ $k ] = wp_remote_retrieve_body( $g ); } }
+		foreach ( $res as $k => $b ) { if ( $b ) { continue; } $g = wp_remote_get( $urls[ $k ], array( 'timeout' => strpos( $k, 'd|' ) === 0 ? 15 : 30, 'headers' => array( 'Accept' => strpos( $k, 'p|' ) === 0 ? 'application/json' : 'text/html,application/json' ) ) ); $GLOBALS['dv_al_cod'][ $k ] = is_wp_error( $g ) ? $g->get_error_message() : wp_remote_retrieve_response_code( $g ) . ' ' . substr( wp_remote_retrieve_body( $g ), 0, 120 ); if ( ! is_wp_error( $g ) && wp_remote_retrieve_response_code( $g ) === 200 ) { $res[ $k ] = wp_remote_retrieve_body( $g ); } }
 	}
 	else { foreach ( $urls as $k => $u ) { $g = wp_remote_get( $u, array( 'timeout' => 30 ) ); $res[ $k ] = is_wp_error( $g ) ? null : wp_remote_retrieve_body( $g ); } }
 	$GLOBALS['dv_al_dbg'] = array_map( function ( $b ) { return is_string( $b ) ? strlen( $b ) : -1; }, $res );
@@ -316,13 +316,23 @@ function dv_al_rodar( $uid, $desde ) {
 }
 function dv_al_urgente( $x ) { $d = $x['encerra'] ? (int) floor( ( strtotime( substr( $x['encerra'], 0, 10 ) ) - strtotime( current_time( 'Y-m-d' ) ) ) / DAY_IN_SECONDS ) : 99; return $d <= 5 || stripos( (string) $x['modalidade'], 'dispensa' ) !== false; }
 add_action( 'dv_al_diario', function () {
-	global $wpdb; @set_time_limit( 600 );
+	global $wpdb; @set_time_limit( 600 ); $rep = array();
 	$desde = gmdate( 'Y-m-d', strtotime( current_time( 'Y-m-d' ) . ' -2 days' ) );
 	foreach ( $wpdb->get_col( "SELECT user_id FROM {$wpdb->usermeta} WHERE meta_key='dv_alertas' AND meta_value<>'[]'" ) as $uid ) {
 		$uid = (int) $uid; if ( ! dv_al_ativo( $uid ) ) { continue; }
+		$GLOBALS['dv_al_cod'] = array();
 		$bloco = dv_al_rodar( $uid, $desde ); if ( $bloco ) { dv_al_email( $uid, $bloco ); }
+		if ( dv_al_falhou() ) { $rep[] = $uid; }
 	}
+	/* repescagem: quem teve alguma fonte fora do ar (PNCP, diários) roda de novo em 25 minutos; só o que for novo entra */
+	if ( ! empty( $rep ) ) { wp_schedule_single_event( time() + 1500, 'dv_al_repescar', array( $rep ) ); }
 } );
+function dv_al_falhou() { foreach ( (array) ( $GLOBALS['dv_al_cod'] ?? array() ) as $v ) { if ( strpos( (string) $v, '200 ' ) !== 0 ) { return true; } } return false; }
+add_action( 'dv_al_repescar', function ( $uids ) {
+	@set_time_limit( 600 ); $desde = gmdate( 'Y-m-d', strtotime( current_time( 'Y-m-d' ) . ' -2 days' ) );
+	foreach ( (array) $uids as $uid ) { $uid = (int) $uid; if ( ! dv_al_ativo( $uid ) ) { continue; } $bloco = dv_al_rodar( $uid, $desde ); if ( $bloco ) { dv_al_email( $uid, $bloco ); } }
+	$l = (array) get_option( 'dv_al_rep_log', array() ); array_unshift( $l, current_time( 'mysql' ) . ' · repescagem de ' . count( (array) $uids ) . ' cliente(s)' ); update_option( 'dv_al_rep_log', array_slice( $l, 0, 30 ), false );
+}, 10, 1 );
 /* Rodadas extras às 12h40 e 17h40: novidades vão para a caixa; só manda e-mail do que é urgente (dispensa ou prazo de até 5 dias) */
 add_action( 'init', function () {
 	if ( ! wp_next_scheduled( 'dv_al_extra', array( 1 ) ) ) { wp_schedule_event( strtotime( 'tomorrow 15:40 UTC' ), 'daily', 'dv_al_extra', array( 1 ) ); }

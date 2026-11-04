@@ -25,7 +25,7 @@ add_action( 'wp_footer', function () {
 	if ( function_exists( 'dv_is_master' ) && dv_is_master( $uid ) ) { return; }
 	if ( get_user_meta( $uid, 'dv_ads_assinou', true ) ) { return; }
 	if ( ! get_user_meta( $uid, 'dv_plano', true ) || ! function_exists( 'dv_status' ) || dv_status( $uid ) !== 'ativo' ) { return; }
-	$v = 79.90; if ( function_exists( 'dv_plano_info' ) && function_exists( 'dv_plano' ) ) { $p = dv_plano_info( dv_plano( $uid ) ); if ( ! empty( $p['preco'] ) ) { $v = (float) $p['preco']; } }
+	$v = 79.90; if ( function_exists( 'dv_preco_plano' ) && function_exists( 'dv_plano' ) ) { $p = dv_preco_plano( $uid, dv_plano( $uid ) ); if ( ! empty( $p['valor'] ) ) { $v = (float) $p['valor']; } }
 	update_user_meta( $uid, 'dv_ads_assinou', current_time( 'mysql' ) ); ?>
 <script>if(window.gtag)gtag('event','conversion',{send_to:'<?php echo esc_js( DV_ADS_ASSINOU ); ?>',value:<?php echo esc_js( number_format( $v, 2, '.', '' ) ); ?>,currency:'BRL',transaction_id:'assinatura-<?php echo (int) $uid; ?>'});</script>
 	<?php

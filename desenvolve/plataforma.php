@@ -27,7 +27,8 @@ function dv_cfg( $k = null ) {
 		'custos'           => 'raiox:15,comprador:10,buscador:0,vencendo:5,precos:0,comparador:3,habilitacao:0,lote:15',
 		'fundador_desc'    => 30,
 		'fundador_vagas'   => 0,
-		'fundador_meses'   => 12,
+		'fundador_meses'   => 0, // 0 = preço de fundador garantido enquanto mantiver a assinatura
+		'fundador_preco'   => '79.90', // preço fixo de fundador (se vazio, usa o desconto %)
 		'trial_dias'       => 7,
 		'trial_creditos'   => 25,
 	);
@@ -130,7 +131,7 @@ function dv_plano_info( $k ) {
 	return $ps[ $k ] ?? reset( $ps );
 }
 function dv_fundador_restantes() { return max( 0, (int) dv_cfg( 'fundador_vagas' ) - (int) get_option( 'dv_fundadores', 0 ) ); }
-function dv_preco_fundador( $preco ) { $v = $preco * ( 1 - (int) dv_cfg( 'fundador_desc' ) / 100 ); $f = floor( $v ); return max( 9, round( $f + 0.9 <= $v + 0.0001 ? $f + 0.9 : $f - 0.1, 2 ) ); } // desconto cheio, terminando em ,90: 79,90 com 30% = 55,90
+function dv_preco_fundador( $preco ) { $fp = (float) str_replace( ',', '.', (string) dv_cfg( 'fundador_preco' ) ); if ( $fp > 0 && $fp < $preco ) { return round( $fp, 2 ); } $v = $preco * ( 1 - (int) dv_cfg( 'fundador_desc' ) / 100 ); $f = floor( $v ); return max( 9, round( $f + 0.9 <= $v + 0.0001 ? $f + 0.9 : $f - 0.1, 2 ) ); } // desconto cheio, terminando em ,90: 79,90 com 30% = 55,90
 /** Preço que este assinante paga pelo plano: fundador (30% por 12 meses) enquanto houver vaga ou se ele já é fundador. */
 function dv_preco_plano( $uid, $k ) {
 	$p = dv_plano_info( $k ); $ate = (string) get_user_meta( $uid, 'dv_fundador_ate', true );
@@ -598,7 +599,7 @@ function dv_admin_config() {
 	dv_admin_css();
 	if ( isset( $_POST['dv_cfg'] ) && check_admin_referer( 'dv_cfg' ) ) {
 		$in = wp_unslash( $_POST['dv_cfg'] ); $c = dv_cfg();
-		foreach ( array( 'preco_assinatura', 'preco_extra', 'pacotes', 'email_alertas', 'asaas_ambiente', 'email_remetente', 'planos', 'custos' ) as $k ) { $c[ $k ] = sanitize_text_field( $in[ $k ] ?? $c[ $k ] ); }
+		foreach ( array( 'preco_assinatura', 'preco_extra', 'pacotes', 'email_alertas', 'asaas_ambiente', 'email_remetente', 'planos', 'custos', 'fundador_preco' ) as $k ) { $c[ $k ] = sanitize_text_field( $in[ $k ] ?? $c[ $k ] ); }
 		foreach ( array( 'creditos_mes', 'dedupe_dias', 'validade_extra', 'alerta_hora', 'creditos_dossie', 'fundador_desc', 'fundador_vagas', 'fundador_meses', 'trial_dias', 'trial_creditos' ) as $k ) { $c[ $k ] = max( 0, (int) ( $in[ $k ] ?? $c[ $k ] ) ); }
 		update_option( 'dv_cfg', $c, false );
 		if ( ! empty( $_POST['dv_asaas_key'] ) ) { update_option( 'dv_asaas_key', trim( wp_unslash( $_POST['dv_asaas_key'] ) ), false ); }
@@ -612,9 +613,10 @@ function dv_admin_config() {
 	$f( 'pacotes', 'Pacotes de créditos extras', 'text', 'quantidade:preço, separados por vírgula. Ex.: 10:39,30:99,100:290' );
 	$f( 'creditos_dossie', 'Créditos da Due Diligence completa', 'number' );
 	$f( 'custos', 'Créditos por ferramenta (padrão 1)', 'text', 'ferramenta:créditos. Ex.: raiox:5,comprador:5,buscador:0,vencendo:5,precos:0. Use 0 para sem custo. As ferramentas de gestão não usam créditos.' );
+	$f( 'fundador_preco', 'Preço fixo de fundador (R$)', 'text', 'Ex.: 79.90. Se ficar vazio, vale o desconto em %.' );
 	$f( 'fundador_desc', 'Desconto de fundador (%)', 'number' );
 	$f( 'fundador_vagas', 'Vagas de fundador', 'number', 'Já usadas: ' . (int) get_option( 'dv_fundadores', 0 ) );
-	$f( 'fundador_meses', 'Meses com preço de fundador', 'number' );
+	$f( 'fundador_meses', 'Meses com preço de fundador', 'number', '0 = garantido enquanto o assinante mantiver a assinatura' );
 	$f( 'trial_dias', 'Dias de teste grátis (0 desliga)', 'number' );
 	$f( 'trial_creditos', 'Créditos no teste grátis', 'number' );
 	$f( 'email_remetente', 'E-mail que envia os avisos aos assinantes', 'email' );
@@ -696,8 +698,10 @@ function dv_planos_html( $uid ) {
 	if ( get_user_meta( $uid, 'dv_trial', true ) && ! get_user_meta( $uid, 'dv_plano', true ) ) {
 		$h .= $st === 'ativo' ? '<p class="dv-ok">Seu teste grátis vai até ' . esc_html( date_i18n( 'd/m/Y', strtotime( get_user_meta( $uid, 'dv_vence', true ) ) ) ) . '. Assine quando quiser: os créditos do plano entram na hora.</p>' : '<p class="dv-err">Seu teste grátis terminou. Escolha um plano para continuar usando as ferramentas.</p>';
 	}
-	if ( $fa ) { $h .= '<p class="dv-ok">Você é assinante fundador: preço com ' . (int) dv_cfg( 'fundador_desc' ) . '% de desconto até ' . esc_html( date_i18n( 'd/m/Y', strtotime( $fa ) ) ) . '.</p>'; }
-	elseif ( $rest > 0 ) { $h .= '<p class="dv-ok"><b>Preço de fundador:</b> ' . (int) dv_cfg( 'fundador_desc' ) . '% de desconto ' . ( (int) dv_cfg( 'fundador_meses' ) <= 1 ? 'no primeiro mês' : 'por ' . (int) dv_cfg( 'fundador_meses' ) . ' meses' ) . ' para os primeiros assinantes. Restam <b>' . $rest . '</b> vagas.</p>'; }
+	$fm = (int) dv_cfg( 'fundador_meses' ); $fp = (float) str_replace( ',', '.', (string) dv_cfg( 'fundador_preco' ) );
+	$fq = $fp > 0 ? 'R$ ' . dv_rs( $fp ) . ' por mês' : (int) dv_cfg( 'fundador_desc' ) . '% de desconto';
+	if ( $fa ) { $h .= '<p class="dv-ok">Você é assinante fundador: ' . ( $fa >= '2099-01-01' ? 'seu preço especial fica garantido enquanto você mantiver a assinatura.' : 'preço especial até ' . esc_html( date_i18n( 'd/m/Y', strtotime( $fa ) ) ) . '.' ) . '</p>'; }
+	elseif ( $rest > 0 ) { $h .= '<p class="dv-ok"><b>Preço de fundador:</b> ' . $fq . ' ' . ( $fm === 0 ? 'para sempre, enquanto mantiver a assinatura,' : ( $fm === 1 ? 'no primeiro mês' : 'por ' . $fm . ' meses' ) ) . ' para os primeiros ' . (int) dv_cfg( 'fundador_vagas' ) . ' assinantes. Restam <b>' . $rest . '</b> vagas.</p>'; }
 	$h .= '<div class="dv-g">';
 	foreach ( dv_planos() as $k => $p ) {
 		$pr = dv_preco_plano( $uid, $k ); $eh = $pago && $atual === $k;
@@ -706,7 +710,7 @@ function dv_planos_html( $uid ) {
 		$h .= '<ul style="padding-left:18px;color:var(--mu);font-size:.9rem;line-height:1.6;margin:10px 0 16px"><li><b style="display:inline;font-size:inherit;color:var(--fg)">' . $p['creditos'] . ' créditos por mês</b> para consultas</li><li>Ferramentas de gestão sem limite</li><li>' . $p['radar'] . ' CNPJ' . ( $p['radar'] > 1 ? 's ou nomes' : ' ou nome' ) . ' no Radar do Diário Oficial</li>' . ( $k === 'empresarial' ? '<li>Prioridade no consultor</li>' : '' ) . '</ul>';
 		if ( $eh ) { $h .= '<p style="color:var(--gd);font-weight:700">Seu plano atual</p>'; }
 		elseif ( $tem ) { $h .= '<button type="button" data-plano="' . esc_attr( $k ) . '">' . ( $pago ? 'Mudar para ' : 'Assinar ' ) . esc_html( $p['nome'] ) . '</button>'; }
-		else { $h .= '<a class="dv-btn" target="_blank" rel="noopener" href="' . esc_url( 'https://wa.me/5511993500950?text=' . rawurlencode( 'Olá! Quero assinar o plano ' . $p['nome'] . ' da plataforma Desenvolve.' ) ) . '">Assinar ' . esc_html( $p['nome'] ) . '</a>'; }
+		else { $h .= '<p style="color:var(--mu)">Pagamento on-line em manutenção. Tente de novo em alguns minutos.</p>'; }
 		$h .= '</div>';
 	}
 	$h .= '</div><p class="dv-msg"></p><p style="color:var(--mu);font-size:.85rem">Pix, boleto ou cartão. Cancele quando quiser: o acesso continua até o fim do período pago. Créditos extras: ';
@@ -833,16 +837,6 @@ add_action( 'template_redirect', function () {
 	if ( $p === 'plataforma' && is_user_logged_in() && ! is_admin() ) { wp_safe_redirect( home_url( '/painel/' ), 302 ); exit; }
 }, 0 );
 
-/* Enquanto o Asaas não tem chave, "Assinar" e "Comprar créditos" levam ao WhatsApp da Desenvolve */
-function dv_wa_venda() { return 'https://wa.me/5511993500950?text=' . rawurlencode( 'Olá! Quero assinar a plataforma Desenvolve.' ); }
-add_action( 'template_redirect', function () {
-	if ( get_option( 'dv_asaas_key' ) || current_user_can( 'manage_options' ) ) { return; }
-	if ( is_page( 'creditos' ) ) { wp_redirect( dv_wa_venda() ); exit; }
-} );
-add_action( 'wp_footer', function () {
-	if ( get_option( 'dv_asaas_key' ) ) { return; }
-	echo '<script>(function(){var u=' . wp_json_encode( dv_wa_venda() ) . ';function f(){document.querySelectorAll(\'a[href*="/creditos/"]\').forEach(function(a){a.href=u;a.target="_blank";a.rel="noopener"})}f();new MutationObserver(f).observe(document.body,{childList:true,subtree:true})})()</script>';
-}, 71 );
 
 /* ---------------- Aparência das telas do assinante ---------------- */
 add_action( 'wp_footer', function () {

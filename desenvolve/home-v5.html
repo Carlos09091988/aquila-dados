@@ -1,0 +1,422 @@
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Bodoni+Moda:ital,opsz,wght@0,6..96,400..800;1,6..96,400..800&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+<style>#dvx{--branco:#0B0C0E;--gelo:#111316;--pedra:#1A1D21;--linha:#262A30;--preto:#F3F2EE;--grafite:#C8CACE;--cinza:#8C9097;--ouro:#B08A3E;--ouro2:#C9A45C;--verde:#2F7A55;
+ background:var(--branco);color:var(--grafite);font-family:Inter,system-ui,sans-serif;font-size:17px;line-height:1.65;-webkit-font-smoothing:antialiased;overflow-x:hidden;width:100%}
+#dvx *{box-sizing:border-box;margin:0;padding:0}
+#dvx a{color:inherit}
+#dvx .w{max-width:1200px;margin:0 auto;padding:0 32px}
+#dvx h1,#dvx h2{font-family:"Bodoni Moda",Didot,serif;font-weight:500;letter-spacing:-.01em;line-height:1.04;color:var(--preto)}
+#dvx h2{font-size:clamp(36px,4.4vw,60px);max-width:17ch}
+#dvx h3{font-family:Inter,sans-serif;font-weight:600;font-size:19px;line-height:1.3;color:var(--preto)}
+#dvx p{max-width:60ch}
+#dvx .sub{color:var(--cinza);font-size:18px;margin-top:20px}
+#dvx .bt{display:inline-flex;align-items:center;justify-content:center;border:0;border-radius:2px;padding:17px 30px;font:500 15.5px/1 Inter,sans-serif;letter-spacing:.02em;cursor:pointer;text-decoration:none;transition:background .2s,color .2s}
+#dvx .bt.g{background:var(--preto);color:#fff}#dvx .bt.g:hover{background:#2A2A2A}
+#dvx .bt:focus-visible,#dvx input:focus-visible,#dvx select:focus-visible,#dvx summary:focus-visible,#dvx a:focus-visible{outline:2px solid var(--ouro);outline-offset:3px}
+
+/* topo */
+#dvx .topo{position:sticky;top:0;z-index:20;background:rgba(255,255,255,.9);backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);border-bottom:1px solid var(--linha)}
+#dvx .topo .w{display:flex;align-items:center;justify-content:space-between;gap:20px;height:76px}
+#dvx .marca{display:flex;align-items:center;gap:12px;text-decoration:none}
+#dvx .marca svg{height:40px;width:auto;color:var(--preto)}
+#dvx .marca b{display:block;font:400 17px/1 Helvetica,Arial,sans-serif;letter-spacing:.06em;color:var(--preto)}
+#dvx .marca b i{font-style:normal;font-weight:700;color:var(--ouro)}
+#dvx .marca small{display:block;font-size:11.5px;color:var(--cinza);margin-top:5px;letter-spacing:.03em}
+#dvx .topo nav{display:flex;align-items:center;gap:30px;font-size:14.5px}
+#dvx .topo nav a{text-decoration:none;color:var(--grafite)}#dvx .topo nav a:hover{color:var(--ouro)}
+#dvx .topo .bt{padding:12px 20px;font-size:14px}
+
+/* hero: a escultura */
+#dvx .hero{position:relative;padding:40px 0 0;background:linear-gradient(180deg,var(--branco) 0%,var(--gelo) 100%);overflow:hidden}
+#dvx .hero .w{display:grid;grid-template-columns:1.05fr .95fr;gap:20px;align-items:end;min-height:calc(100vh - 116px)}
+#dvx .hero .w>div{padding-bottom:70px;align-self:center}
+#dvx .data{display:inline-flex;align-items:center;gap:10px;color:var(--grafite);font-size:14px;font-weight:500;margin-bottom:28px;padding:7px 14px;border:1px solid var(--linha);border-radius:999px;background:#fff}
+#dvx .data i{width:7px;height:7px;border-radius:50%;background:var(--verde)}
+#dvx .hero h1{font-size:clamp(42px,4.7vw,70px);max-width:13ch}
+#dvx .hero h1 span{display:block;font-style:italic;color:var(--ouro)}
+#dvx .hero .lead{font-size:18px;color:var(--cinza);margin-top:22px;max-width:44ch}
+#dvx .hf{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:30px;max-width:560px}
+#dvx .hf input{min-width:0;border:1px solid var(--linha);background:#fff;color:var(--preto);border-radius:2px;padding:16px 18px;font:16px Inter,sans-serif}
+#dvx .hf input::placeholder{color:#9A9BA0}
+#dvx .hf .bt{grid-column:1/-1}
+#dvx .oferta{margin-top:16px;color:var(--cinza);font-size:14.5px;max-width:560px}
+#dvx .oferta b{color:var(--preto);font-weight:600}
+#dvx .msg{font-size:14.5px;margin-top:10px;min-height:1.4em;color:var(--verde)}#dvx .msg.er{color:#B23A22}
+#dvx .escultura{position:relative;height:min(74vh,700px);align-self:end;display:flex;align-items:flex-end;justify-content:center}
+#dvx .escultura .luz{position:absolute;left:50%;top:4%;width:120%;height:90%;transform:translateX(-50%);background:radial-gradient(closest-side,rgba(201,164,92,.38),rgba(201,164,92,.12) 55%,transparent 78%)}
+#dvx .escultura svg{position:relative;height:84%;width:auto;color:var(--preto);margin-bottom:48px;filter:drop-shadow(30px 40px 40px rgba(0,0,0,.18))}
+#dvx .escultura .pedestal{position:absolute;bottom:0;left:50%;transform:translateX(-50%);width:78%;height:58px;background:linear-gradient(180deg,#fff,var(--pedra));border-top:1px solid #fff;box-shadow:0 -1px 0 var(--linha),0 30px 60px rgba(0,0,0,.08)}
+@media (prefers-reduced-motion:no-preference){
+ #dvx .escultura svg{animation:dvxSobe 1.4s cubic-bezier(.2,.7,.2,1) both}
+ #dvx .escultura .luz{animation:dvxLuz 2.2s ease-out both}
+ @keyframes dvxSobe{from{opacity:0;transform:translateY(40px)}to{opacity:1;transform:none}}
+ @keyframes dvxLuz{from{opacity:0}to{opacity:1}}
+}
+
+/* fontes */
+#dvx .fontes{background:var(--preto);color:#fff;padding:22px 0}
+#dvx .fontes .w{display:flex;gap:14px 40px;flex-wrap:wrap;align-items:center;justify-content:space-between}
+#dvx .fontes p{color:#A8A9AD;font-size:14px}
+#dvx .fontes ul{list-style:none;display:flex;gap:8px 34px;flex-wrap:wrap;font-family:"Bodoni Moda",serif;font-size:19px;color:#fff}
+
+/* seções */
+#dvx .sc{padding:140px 0;background:var(--branco)}
+#dvx .sc.claro{background:var(--gelo)}
+
+/* raio-x */
+#dvx .rx{display:grid;grid-template-columns:.9fr 1.1fr;gap:80px;align-items:center}
+#dvx .rx ul{list-style:none;margin-top:36px;display:grid;gap:22px}
+#dvx .rx li{padding-left:26px;border-left:1px solid var(--ouro)}
+#dvx .rx li b{display:block;color:var(--preto);font-weight:600}
+#dvx .rx li span{color:var(--cinza);font-size:16px}
+#dvx .tela{background:#fff;border-radius:6px;box-shadow:0 50px 90px rgba(0,0,0,.12),0 0 0 1px rgba(0,0,0,.06);overflow:hidden}
+#dvx .tela .top{display:flex;justify-content:space-between;align-items:center;padding:16px 22px;background:var(--preto);color:#fff;font-size:13.5px}
+#dvx .tela .top b{font-weight:600;font-size:15px}
+#dvx .tela .top small{color:#A8A9AD}
+#dvx .tela .cnt{padding:24px}
+#dvx .t{display:inline-block;font-size:12px;font-weight:600;border-radius:2px;padding:4px 9px}
+#dvx .t.ok{background:#E3F1E8;color:#1F6B43}#dvx .t.au{background:#F5ECD8;color:#7A5A1C}#dvx .t.rd{background:#F9E2DC;color:#8E2F1B}
+#dvx .alertas{display:flex;gap:8px;flex-wrap:wrap;margin:6px 0 20px}
+#dvx .kv{display:grid;grid-template-columns:repeat(3,1fr);gap:0;border:1px solid var(--linha)}
+#dvx .kv div{padding:16px;border-left:1px solid var(--linha)}#dvx .kv div:first-child{border-left:0}
+#dvx .kv strong{display:block;font-family:"Bodoni Moda",serif;font-weight:500;font-size:32px;color:var(--preto);line-height:1.1}
+#dvx .kv span{font-size:12.5px;color:var(--cinza)}
+#dvx .fonte{font-size:12px;color:#8E8F94;margin-top:16px}
+
+/* dia */
+#dvx .dia{display:grid;grid-template-columns:repeat(5,1fr);margin-top:64px;border-top:1px solid var(--preto)}
+#dvx .dia li{list-style:none;padding:28px 26px 0 0}
+#dvx .dia time{display:block;font-family:"Bodoni Moda",serif;font-style:italic;color:var(--ouro);font-size:20px;margin-bottom:12px}
+#dvx .dia h3{font-size:17.5px;margin-bottom:8px}
+#dvx .dia p{color:var(--cinza);font-size:15px}
+
+/* antes e depois */
+#dvx .cmp{margin-top:56px;border-top:1px solid var(--preto)}
+#dvx .cmp .r{display:grid;grid-template-columns:1fr 1.2fr 1.2fr;border-bottom:1px solid var(--linha)}
+#dvx .cmp .r>*{padding:20px 20px 20px 0}
+#dvx .cmp .r:first-child>*{font-size:13px;color:var(--cinza);font-weight:500;padding:14px 20px 14px 0}
+#dvx .cmp .r>:first-child{font-weight:600;color:var(--preto)}
+#dvx .cmp .r:not(:first-child)>:nth-child(2){color:#9A9BA0;text-decoration:line-through;text-decoration-color:rgba(178,58,34,.45)}
+#dvx .cmp .r:not(:first-child)>:nth-child(3){color:var(--preto)}
+
+/* para quem */
+#dvx .pq{display:grid;grid-template-columns:repeat(3,1fr);gap:56px;margin-top:64px}
+#dvx .pq div{padding-top:24px;border-top:1px solid var(--preto)}
+#dvx .pq p{color:var(--cinza);margin-top:10px;font-size:16px}
+
+/* lista (o único bloco preto) */
+#dvx .lista{padding:140px 0;background:var(--preto);color:#fff}
+#dvx .lista .w{display:grid;grid-template-columns:1fr 1fr;gap:80px;align-items:start}
+#dvx .lista h2{color:#fff}
+#dvx .lista .sub{color:#A8A9AD}
+#dvx .preco{margin-top:40px;display:flex;align-items:baseline;gap:18px;flex-wrap:wrap}
+#dvx .preco s{color:#7C7D82;font-size:22px}
+#dvx .preco strong{font-family:"Bodoni Moda",serif;font-weight:500;font-size:clamp(66px,8vw,110px);line-height:.9;color:#fff}
+#dvx .preco em{font-style:italic;font-family:"Bodoni Moda",serif;color:var(--ouro2);font-size:20px}
+#dvx .lista ul{list-style:none;margin-top:36px;display:grid;gap:14px;border-top:1px solid #2C2D31;padding-top:28px}
+#dvx .lista li{padding-left:26px;position:relative;color:#D4D5D8}
+#dvx .lista li:before{content:"";position:absolute;left:0;top:.75em;width:12px;height:1px;background:var(--ouro2)}
+#dvx .lf{background:#fff;color:var(--grafite);border-radius:4px;padding:40px;display:grid;gap:12px}
+#dvx .lf h3{font-family:"Bodoni Moda",serif;font-weight:500;font-size:28px;margin-bottom:8px}
+#dvx .lf input,#dvx .lf select{width:100%;border:1px solid var(--linha);background:#fff;color:var(--preto);border-radius:2px;padding:15px 16px;font:16px Inter,sans-serif}
+#dvx .lf .two{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+#dvx .lf label.ck{display:flex;gap:10px;font-size:13.5px;color:var(--cinza);align-items:flex-start;line-height:1.5}
+#dvx .lf label.ck input{width:17px;height:17px;margin-top:2px;flex:none;accent-color:var(--preto)}
+#dvx .lf .bt{width:100%;margin-top:8px}
+#dvx .hp{position:absolute!important;left:-9999px!important}
+
+/* dúvidas */
+#dvx .faq{margin-top:56px;border-top:1px solid var(--preto)}
+#dvx details{border-bottom:1px solid var(--linha)}
+#dvx summary{cursor:pointer;list-style:none;padding:26px 44px 26px 0;font-family:"Bodoni Moda",serif;font-size:23px;color:var(--preto);position:relative}
+#dvx summary::-webkit-details-marker{display:none}
+#dvx summary:after{content:"+";position:absolute;right:6px;top:20px;font:300 30px Inter,sans-serif;color:var(--ouro);transition:transform .2s}
+#dvx details[open] summary:after{transform:rotate(45deg)}
+#dvx details p{padding:0 0 26px;color:var(--cinza)}
+
+/* final */
+#dvx .fim{padding:150px 0;text-align:center;background:var(--gelo)}
+#dvx .fim h2{margin:0 auto;max-width:18ch}
+#dvx .fim p{margin:20px auto 36px;color:var(--cinza)}
+#dvx .fim .mk{width:60px;margin:0 auto 30px;color:var(--preto)}
+
+@media (max-width:960px){
+ #dvx .topo nav a.l{display:none}#dvx .marca small{display:none}
+ #dvx .hero{padding-top:40px}
+ #dvx .hero .w{grid-template-columns:1fr;min-height:0}
+ #dvx .hero .w>div{padding-bottom:20px}
+ #dvx .escultura{height:420px;order:-1}
+ #dvx .rx,#dvx .lista .w{grid-template-columns:1fr;gap:48px}
+ #dvx .dia{grid-template-columns:1fr;gap:26px}#dvx .dia li{padding:0;border-top:1px solid var(--linha);padding-top:20px}#dvx .dia{border-top:0}
+ #dvx .pq{grid-template-columns:1fr;gap:32px}
+ #dvx .cmp .r{grid-template-columns:1fr}#dvx .cmp .r:first-child{display:none}#dvx .cmp .r>*{padding:4px 0}#dvx .cmp .r>:first-child{padding-top:18px}#dvx .cmp .r>:last-child{padding-bottom:18px}
+ #dvx .sc,#dvx .lista,#dvx .fim{padding:90px 0}
+}
+@media (max-width:520px){#dvx .w{padding:0 18px}#dvx .hf{grid-template-columns:1fr}#dvx .lf{padding:26px}#dvx .lf .two{grid-template-columns:1fr}#dvx .escultura{height:340px}#dvx .marca b{font-size:14px}#dvx .topo nav{gap:14px}#dvx .kv{grid-template-columns:1fr 1fr}}
+
+
+/* ===== v5: noite de tempestade ===== */
+#dvx{background:var(--branco);color:var(--grafite)}
+#dvx ::selection{background:#F3F2EE;color:#0B0C0E}
+#dvx .bt.g{background:#F3F2EE;color:#0B0C0E}#dvx .bt.g:hover{background:#fff}
+#dvx .topo{background:rgba(11,12,14,.42);border-bottom:1px solid rgba(255,255,255,.08)}
+#dvx .topo .bt{background:transparent;color:#F3F2EE;box-shadow:inset 0 0 0 1px rgba(243,242,238,.45)}#dvx .topo .bt:hover{background:#F3F2EE;color:#0B0C0E}
+#dvx .marca small{color:#9AA0A8}
+#dvx .topo nav a:hover{color:#fff}
+
+#dvx .hero{position:relative;margin-top:-77px;padding:0;min-height:max(100svh,720px);display:flex;align-items:center;background:#0B0C0E;overflow:hidden;isolation:isolate}
+#dvx .cena{position:absolute;inset:0;z-index:-2}
+#dvx .cena img{width:100%;height:100%;object-fit:cover;object-position:50% 40%;filter:grayscale(1) contrast(1.05) brightness(.9);transform-origin:75% 55%}
+#dvx .cena .vela{position:absolute;inset:0;background:linear-gradient(90deg,rgba(8,9,11,.8) 0%,rgba(8,9,11,.5) 36%,rgba(8,9,11,.05) 60%,rgba(8,9,11,0) 100%),linear-gradient(180deg,rgba(8,9,11,.55) 0%,rgba(8,9,11,0) 22%,rgba(8,9,11,0) 70%,#0B0C0E 100%)}
+#dvx .hero .w{width:100%;padding-top:110px;padding-bottom:60px;position:relative;z-index:2}
+#dvx .hero .txt{max-width:600px}
+#dvx .data{background:rgba(255,255,255,.06);border-color:rgba(255,255,255,.16);color:#E6E6E3;backdrop-filter:blur(6px)}
+#dvx .data i{background:#7FD3A5;box-shadow:0 0 0 4px rgba(127,211,165,.15)}
+#dvx .hero h1{color:#F6F5F1;font-size:clamp(46px,5.6vw,92px);max-width:12ch;text-shadow:0 2px 30px rgba(0,0,0,.35)}
+#dvx .hero h1 span{color:#B9BEC5;font-weight:400}
+#dvx .hero .lead{color:#C2C5CA}
+#dvx .hf input{background:rgba(11,12,14,.55);border:1px solid rgba(255,255,255,.2);color:#F3F2EE;backdrop-filter:blur(8px)}
+#dvx .hf input::placeholder{color:#8E939B}
+#dvx .oferta{color:#A9ADB4}#dvx .oferta b{color:#F3F2EE}
+#dvx .peca{position:absolute;z-index:-1;right:9vw;bottom:9vh;height:58vh;color:#050505;filter:drop-shadow(0 0 1px rgba(255,255,255,.35)) drop-shadow(0 30px 30px rgba(0,0,0,.5))}
+#dvx .peca svg{height:100%;width:auto}
+#dvx .hero canvas{position:absolute;inset:0;width:100%;height:100%;z-index:-1;pointer-events:none}
+#dvx .hero.tem3d .peca{display:none}
+@media (prefers-reduced-motion:no-preference){
+ #dvx .cena img{animation:dvxZoom 24s ease-out both}
+ #dvx .hero .txt>*{animation:dvxEntra 1.1s cubic-bezier(.2,.7,.2,1) both}
+ #dvx .hero .txt>:nth-child(2){animation-delay:.12s}#dvx .hero .txt>:nth-child(3){animation-delay:.24s}#dvx .hero .txt>:nth-child(n+4){animation-delay:.36s}
+ @keyframes dvxZoom{from{transform:scale(1.12)}to{transform:scale(1)}}
+ @keyframes dvxEntra{from{opacity:0;transform:translateY(18px)}to{opacity:1;transform:none}}
+}
+
+#dvx .fontes{background:#0B0C0E;border-top:1px solid var(--linha);border-bottom:1px solid var(--linha)}
+#dvx .fontes ul{color:#E9E8E4}
+#dvx .sc{background:var(--branco)}#dvx .sc.claro{background:var(--gelo)}
+#dvx .tela{background:#14161A;box-shadow:0 50px 100px rgba(0,0,0,.55),0 0 0 1px rgba(255,255,255,.07)}
+#dvx .tela .top{background:#1C1F24;color:#F3F2EE}
+#dvx .t.ok{background:rgba(127,211,165,.12);color:#8FE0B4}#dvx .t.au{background:rgba(214,178,104,.14);color:#E3C27E}#dvx .t.rd{background:rgba(232,120,96,.14);color:#F0A08C}
+#dvx .rx li{border-left-color:#5A5F67}
+#dvx .dia,#dvx .cmp,#dvx .pq div,#dvx .faq{border-top-color:#4A4F57}
+#dvx .dia time{color:#B9BEC5}
+#dvx .cmp .r:not(:first-child)>:nth-child(2){color:#6E737B}
+#dvx .lista{background:linear-gradient(180deg,#0B0C0E,#121418);border-top:1px solid var(--linha)}
+#dvx .lista h2,#dvx .preco strong{color:#F6F5F1}
+#dvx .lf{background:#F3F2EE;color:#1C1D20}
+#dvx .lf h3{color:#0B0C0E}#dvx .lf input,#dvx .lf select{background:#fff;color:#0B0C0E;border-color:#D9D6CE}
+#dvx .lf label.ck{color:#5D6066}#dvx .lf label.ck input{accent-color:#0B0C0E}
+#dvx .lf .bt.g{background:#0B0C0E;color:#fff}#dvx .lf .bt.g:hover{background:#2A2C30}
+#dvx summary:after{color:#B9BEC5}
+#dvx .fim{background:#0B0C0E}
+#dvx .fim .mk{color:#F3F2EE}
+
+@media (max-width:960px){
+ #dvx .hero{min-height:100svh;align-items:flex-end}
+ #dvx .cena img{object-position:80% 50%}
+ #dvx .cena .vela{background:linear-gradient(180deg,rgba(8,9,11,.5) 0%,rgba(8,9,11,0) 25%,rgba(8,9,11,.35) 48%,rgba(8,9,11,.9) 70%,#0B0C0E 100%)}
+ #dvx .hero .w{padding-top:52svh;padding-bottom:40px}
+ #dvx .peca{right:6vw;top:16vh;bottom:auto;height:34vh}
+ #dvx .hero h1{font-size:clamp(40px,11vw,60px)}
+}
+
+#dvx .topo .bt{white-space:nowrap}
+@media (max-width:520px){#dvx .topo .w{height:64px}#dvx .marca svg{height:32px}#dvx .topo .bt{padding:10px 14px;font-size:13px}#dvx .hero{margin-top:-65px}}
+</style>
+
+<div id="dvx">
+
+<header class="topo"><div class="w">
+ <a class="marca" href="/" aria-label="DESENVOLVE ESTRATÉGIAS, página inicial"><svg viewBox="317 133 833 1253" fill="currentColor" aria-hidden="true"><defs><mask id="dvk4" maskUnits="userSpaceOnUse" x="0" y="0" width="1536" height="1536"><rect width="1536" height="1536" fill="#fff"/><ellipse cx="566" cy="406" rx="44" ry="17" transform="rotate(-24 566 406)" fill="#000"/></mask></defs><path mask="url(#dvk4)" fill="currentColor" d="M 607.500 153.934 C 600.898 156.673, 600.010 161.369, 600.016 193.500 C 600.021 223.159, 601 238.303, 604.087 256.500 C 607.436 276.239, 607.901 275.357, 578.991 304 C 538.863 343.757, 516.105 372.812, 476.201 435.235 C 464.949 452.837, 462.461 456.191, 430.008 497.500 C 408.819 524.472, 371.037 573.796, 352.260 599 C 336.455 620.216, 334.265 631.977, 339.506 667.500 C 344.016 698.070, 352.490 710.646, 378.535 725.423 C 386.216 729.780, 397.393 736.642, 403.374 740.671 C 433.717 761.112, 463.844 753.460, 481 720.952 C 512.983 660.353, 562.022 627.895, 624.500 625.975 C 663.864 624.766, 677.461 621.781, 704.500 608.413 C 726.952 597.313, 731.086 601.489, 724.385 628.500 C 714.352 668.944, 694.472 699.254, 617.474 791.500 C 525.361 901.855, 491.339 964.828, 482.409 1041.500 C 478.668 1073.618, 485.015 1081.987, 498.527 1062.754 C 537.004 1007.987, 584.065 963.269, 714.011 858 C 725.214 848.925, 740.527 836.325, 748.040 830 C 755.553 823.675, 769.080 812.377, 778.100 804.893 C 918.630 688.298, 967.441 610.207, 955.560 520.978 C 945.106 442.464, 873.051 356.548, 760.587 288.498 C 747.606 280.643, 741.068 274.492, 728.239 258.065 C 686.974 205.223, 621.007 148.330, 607.500 153.934 M 599 396.528 C 573.037 403.170, 551.793 421.420, 551.569 437.273 C 551.256 459.464, 606.913 440.843, 620.944 414.063 C 630.055 396.674, 622.386 390.546, 599 396.528 M 1117.101 741.892 C 1115.615 743.482, 1111.306 751.639, 1107.526 760.017 C 1070.528 842.004, 1012.470 901.373, 880.500 992.172 C 839.043 1020.696, 830.958 1026.344, 813.342 1039.088 C 719.236 1107.167, 673.596 1156.532, 701.124 1160.465 C 714.830 1162.423, 1037.490 1160.506, 1040.997 1158.446 C 1045.700 1155.683, 1048.600 1151.109, 1051.045 1142.598 C 1058.566 1116.423, 1062.872 1102.597, 1075.681 1063.500 C 1115.263 942.678, 1126.614 889.603, 1129.471 812 C 1130.132 794.031, 1128.619 754.913, 1126.966 747.248 C 1125.218 739.144, 1121.536 737.145, 1117.101 741.892 M 488.994 1190.930 C 478.134 1194.253, 476.676 1196.477, 459.466 1236 C 444.590 1270.162, 428.031 1307.719, 421.770 1321.500 C 408.367 1350.999, 407.633 1358.611, 417.706 1363.615 C 423.918 1366.701, 1114.685 1366.555, 1120 1363.466 C 1132.118 1356.423, 1133.784 1361.856, 1078.350 1227.647 C 1066.806 1199.698, 1064.729 1196.162, 1057.500 1192.161 C 1054.267 1190.371, 494.779 1189.160, 488.994 1190.930"/><path fill="currentColor" d="M 744.500 208.502 C 729.615 213.765, 731.838 227.498, 749.888 241.797 C 755.175 245.984, 763.550 252.976, 768.500 257.332 C 773.450 261.689, 785.375 270.442, 795 276.783 C 859.253 319.116, 861.794 320.993, 895.057 350.729 C 985.477 431.560, 1013.992 537.323, 970.083 629 C 965.209 639.175, 959.894 650.425, 958.272 654 C 956.649 657.575, 953.083 663.425, 950.348 667 C 947.613 670.575, 941.001 679.225, 935.656 686.222 C 916.343 711.502, 890.648 737.460, 855.500 767.198 C 848.900 772.782, 840.575 780.114, 837 783.491 C 833.425 786.868, 825.100 793.917, 818.500 799.156 C 811.900 804.394, 803.574 811.340, 799.997 814.590 C 796.420 817.841, 789.445 823.871, 784.497 827.991 C 779.549 832.111, 771.225 839.122, 766 843.572 C 760.775 848.022, 750.972 855.814, 744.216 860.887 C 737.460 865.961, 727.365 874.429, 721.783 879.705 C 716.201 884.981, 705.625 893.753, 698.281 899.199 C 690.937 904.644, 681.232 912.295, 676.714 916.200 C 672.196 920.106, 663.853 926.894, 658.174 931.285 C 652.495 935.677, 644.170 942.717, 639.674 946.930 C 635.178 951.143, 628.350 957.222, 624.500 960.438 C 607.620 974.538, 557.691 1025.175, 542.105 1044 C 501.968 1092.479, 484.803 1145.282, 504.873 1158.528 C 514.308 1164.755, 607.623 1167.977, 627 1162.745 C 644.671 1157.973, 656.611 1149.135, 670.564 1130.500 C 679.730 1118.257, 695.282 1102.650, 713.711 1087.200 C 720.427 1081.569, 729.256 1073.871, 733.331 1070.093 C 737.406 1066.314, 745.861 1059.428, 752.120 1054.789 C 758.379 1050.151, 766.425 1043.784, 770 1040.642 C 773.575 1037.499, 781.900 1031.147, 788.500 1026.525 C 795.100 1021.903, 806.686 1013.461, 814.246 1007.765 C 821.807 1002.070, 833.507 994.064, 840.246 989.975 C 846.986 985.886, 856.775 979.106, 862 974.907 C 867.225 970.708, 877.350 963.445, 884.500 958.767 C 891.650 954.089, 901.169 947.391, 905.654 943.881 C 910.139 940.371, 920.264 932.708, 928.154 926.850 C 963.377 900.702, 1004.241 862.559, 1021.735 839.500 C 1027.576 831.800, 1036 821.225, 1040.454 816 C 1052.380 802.010, 1053.627 800.227, 1065.841 779.714 C 1076 762.651, 1081.557 751.405, 1096.085 718.500 C 1100.771 707.886, 1109.015 679.499, 1113.074 660 C 1116.926 641.494, 1120.553 576.906, 1118.981 554.803 C 1116.164 515.188, 1111.240 487.479, 1103.295 466.528 C 1093.653 441.105, 1062.666 384.871, 1047.623 365.500 C 1038.052 353.176, 1016.295 328.633, 1010.370 323.477 C 1006.591 320.190, 998.141 312.562, 991.591 306.527 C 975.264 291.483, 952.015 274.339, 938.532 267.402 C 932.465 264.280, 919.899 257.653, 910.610 252.675 C 873.671 232.881, 839.162 221.237, 794.500 213.497 C 786.250 212.067, 774.865 210.020, 769.199 208.949 C 757.146 206.668, 750.049 206.540, 744.500 208.502"/></svg><span><b>DESENVOLVE <i>ESTRATÉGIAS</i></b><small>Inteligência em licitações</small></span></a>
+ <nav aria-label="Menu"><a class="l" href="#raiox">Raio-X</a><a class="l" href="#dia">Como funciona</a><a class="l" href="#para-quem">Para quem</a><a class="l" href="#duvidas">Dúvidas</a><a href="/painel/">Entrar</a><a class="bt g" href="#lista">Lista de espera</a></nav>
+</div></header>
+<section class="hero">
+ <div class="cena" aria-hidden="true"><img src="https://desenvolveestrategias.com.br/wp-content/uploads/2026/11/dv-hero-rei.webp" alt="" fetchpriority="high" decoding="async"><div class="vela"></div></div>
+ <figure class="peca" aria-hidden="true"><svg viewBox="317 133 833 1253" fill="currentColor"><defs><mask id="dvk2" maskUnits="userSpaceOnUse" x="0" y="0" width="1536" height="1536"><rect width="1536" height="1536" fill="#fff"/><ellipse cx="566" cy="406" rx="44" ry="17" transform="rotate(-24 566 406)" fill="#000"/></mask></defs><path mask="url(#dvk2)" fill="currentColor" d="M 607.500 153.934 C 600.898 156.673, 600.010 161.369, 600.016 193.500 C 600.021 223.159, 601 238.303, 604.087 256.500 C 607.436 276.239, 607.901 275.357, 578.991 304 C 538.863 343.757, 516.105 372.812, 476.201 435.235 C 464.949 452.837, 462.461 456.191, 430.008 497.500 C 408.819 524.472, 371.037 573.796, 352.260 599 C 336.455 620.216, 334.265 631.977, 339.506 667.500 C 344.016 698.070, 352.490 710.646, 378.535 725.423 C 386.216 729.780, 397.393 736.642, 403.374 740.671 C 433.717 761.112, 463.844 753.460, 481 720.952 C 512.983 660.353, 562.022 627.895, 624.500 625.975 C 663.864 624.766, 677.461 621.781, 704.500 608.413 C 726.952 597.313, 731.086 601.489, 724.385 628.500 C 714.352 668.944, 694.472 699.254, 617.474 791.500 C 525.361 901.855, 491.339 964.828, 482.409 1041.500 C 478.668 1073.618, 485.015 1081.987, 498.527 1062.754 C 537.004 1007.987, 584.065 963.269, 714.011 858 C 725.214 848.925, 740.527 836.325, 748.040 830 C 755.553 823.675, 769.080 812.377, 778.100 804.893 C 918.630 688.298, 967.441 610.207, 955.560 520.978 C 945.106 442.464, 873.051 356.548, 760.587 288.498 C 747.606 280.643, 741.068 274.492, 728.239 258.065 C 686.974 205.223, 621.007 148.330, 607.500 153.934 M 599 396.528 C 573.037 403.170, 551.793 421.420, 551.569 437.273 C 551.256 459.464, 606.913 440.843, 620.944 414.063 C 630.055 396.674, 622.386 390.546, 599 396.528 M 1117.101 741.892 C 1115.615 743.482, 1111.306 751.639, 1107.526 760.017 C 1070.528 842.004, 1012.470 901.373, 880.500 992.172 C 839.043 1020.696, 830.958 1026.344, 813.342 1039.088 C 719.236 1107.167, 673.596 1156.532, 701.124 1160.465 C 714.830 1162.423, 1037.490 1160.506, 1040.997 1158.446 C 1045.700 1155.683, 1048.600 1151.109, 1051.045 1142.598 C 1058.566 1116.423, 1062.872 1102.597, 1075.681 1063.500 C 1115.263 942.678, 1126.614 889.603, 1129.471 812 C 1130.132 794.031, 1128.619 754.913, 1126.966 747.248 C 1125.218 739.144, 1121.536 737.145, 1117.101 741.892 M 488.994 1190.930 C 478.134 1194.253, 476.676 1196.477, 459.466 1236 C 444.590 1270.162, 428.031 1307.719, 421.770 1321.500 C 408.367 1350.999, 407.633 1358.611, 417.706 1363.615 C 423.918 1366.701, 1114.685 1366.555, 1120 1363.466 C 1132.118 1356.423, 1133.784 1361.856, 1078.350 1227.647 C 1066.806 1199.698, 1064.729 1196.162, 1057.500 1192.161 C 1054.267 1190.371, 494.779 1189.160, 488.994 1190.930"/><path fill="currentColor" d="M 744.500 208.502 C 729.615 213.765, 731.838 227.498, 749.888 241.797 C 755.175 245.984, 763.550 252.976, 768.500 257.332 C 773.450 261.689, 785.375 270.442, 795 276.783 C 859.253 319.116, 861.794 320.993, 895.057 350.729 C 985.477 431.560, 1013.992 537.323, 970.083 629 C 965.209 639.175, 959.894 650.425, 958.272 654 C 956.649 657.575, 953.083 663.425, 950.348 667 C 947.613 670.575, 941.001 679.225, 935.656 686.222 C 916.343 711.502, 890.648 737.460, 855.500 767.198 C 848.900 772.782, 840.575 780.114, 837 783.491 C 833.425 786.868, 825.100 793.917, 818.500 799.156 C 811.900 804.394, 803.574 811.340, 799.997 814.590 C 796.420 817.841, 789.445 823.871, 784.497 827.991 C 779.549 832.111, 771.225 839.122, 766 843.572 C 760.775 848.022, 750.972 855.814, 744.216 860.887 C 737.460 865.961, 727.365 874.429, 721.783 879.705 C 716.201 884.981, 705.625 893.753, 698.281 899.199 C 690.937 904.644, 681.232 912.295, 676.714 916.200 C 672.196 920.106, 663.853 926.894, 658.174 931.285 C 652.495 935.677, 644.170 942.717, 639.674 946.930 C 635.178 951.143, 628.350 957.222, 624.500 960.438 C 607.620 974.538, 557.691 1025.175, 542.105 1044 C 501.968 1092.479, 484.803 1145.282, 504.873 1158.528 C 514.308 1164.755, 607.623 1167.977, 627 1162.745 C 644.671 1157.973, 656.611 1149.135, 670.564 1130.500 C 679.730 1118.257, 695.282 1102.650, 713.711 1087.200 C 720.427 1081.569, 729.256 1073.871, 733.331 1070.093 C 737.406 1066.314, 745.861 1059.428, 752.120 1054.789 C 758.379 1050.151, 766.425 1043.784, 770 1040.642 C 773.575 1037.499, 781.900 1031.147, 788.500 1026.525 C 795.100 1021.903, 806.686 1013.461, 814.246 1007.765 C 821.807 1002.070, 833.507 994.064, 840.246 989.975 C 846.986 985.886, 856.775 979.106, 862 974.907 C 867.225 970.708, 877.350 963.445, 884.500 958.767 C 891.650 954.089, 901.169 947.391, 905.654 943.881 C 910.139 940.371, 920.264 932.708, 928.154 926.850 C 963.377 900.702, 1004.241 862.559, 1021.735 839.500 C 1027.576 831.800, 1036 821.225, 1040.454 816 C 1052.380 802.010, 1053.627 800.227, 1065.841 779.714 C 1076 762.651, 1081.557 751.405, 1096.085 718.500 C 1100.771 707.886, 1109.015 679.499, 1113.074 660 C 1116.926 641.494, 1120.553 576.906, 1118.981 554.803 C 1116.164 515.188, 1111.240 487.479, 1103.295 466.528 C 1093.653 441.105, 1062.666 384.871, 1047.623 365.500 C 1038.052 353.176, 1016.295 328.633, 1010.370 323.477 C 1006.591 320.190, 998.141 312.562, 991.591 306.527 C 975.264 291.483, 952.015 274.339, 938.532 267.402 C 932.465 264.280, 919.899 257.653, 910.610 252.675 C 873.671 232.881, 839.162 221.237, 794.500 213.497 C 786.250 212.067, 774.865 210.020, 769.199 208.949 C 757.146 206.668, 750.049 206.540, 744.500 208.502"/></svg></figure>
+ <div class="w">
+  <div class="txt">
+   <p class="data"><i></i>Lançamento em 17 de novembro</p>
+   <h1>Licitação se ganha antes do lance.<span>Jogue com informação.</span></h1>
+   <p class="lead">Os editais do seu ramo todo dia na sua caixa e o Raio-X de quem compra e de quem disputa com você, com dados oficiais, em segundos.</p>
+   <form class="hf" data-l novalidate>
+    <input name="nome" placeholder="Seu nome" autocomplete="name" aria-label="Seu nome">
+    <input name="email" type="email" placeholder="E-mail profissional" autocomplete="email" aria-label="E-mail profissional">
+    <input class="hp" name="site" tabindex="-1" autocomplete="off" aria-hidden="true">
+    <input type="hidden" name="ok" value="1">
+    <button class="bt g" type="submit">Garantir meu preço de fundador</button>
+   </form>
+   <p class="msg" data-m aria-live="polite"></p>
+   <p class="oferta"><b>R$ 79,90/mês para sempre</b> para quem entra na lista (depois, R$ 149,90), mais 100 créditos de bônus. Sem cartão agora.</p>
+  </div>
+ </div>
+</section>
+
+<section class="fontes">
+ <div class="w"><p>Dados oficiais e públicos, cruzados para você</p>
+  <ul><li>PNCP</li><li>Diário Oficial da União</li><li>Diários municipais</li><li>Receita Federal</li><li>CGU</li><li>TCU</li></ul></div>
+</section>
+
+<section class="sc claro" id="raiox">
+ <div class="w rx">
+  <div>
+   <h2>Antes de entrar, conheça o comprador. Depois do lance, o concorrente.</h2>
+   <p class="sub">Digite um CNPJ. Em segundos você tem, numa tela só, o que levaria uma tarde abrindo dezenas de sites oficiais, com a fonte de cada informação para usar no recurso.</p>
+   <ul>
+    <li><b>Raio-X do comprador</b><span>Se o órgão atrasa pagamento, quem presta hoje, contratos vencendo e o preço que já pagou pelo seu item.</span></li>
+    <li><b>Raio-X do concorrente</b><span>Sanções no CEIS, CNEP e TCU, dívida ativa, sócios, grupo econômico e vínculos com outros licitantes.</span></li>
+    <li><b>Due Diligence completa</b><span>Tudo isso mais processos e notícias, num relatório pronto para o jurídico.</span></li>
+   </ul>
+  </div>
+  <div class="tela" role="img" aria-label="Exemplo de Raio-X do concorrente">
+   <div class="top"><b>Raio-X do concorrente</b><small>consultado agora</small></div>
+   <div class="cnt">
+    <p style="font-weight:600;color:#0E1828">Empresa Exemplo Serviços Ltda</p>
+    <p style="font-size:13px;color:#7A8496">CNPJ 00.000.000/0001-00</p>
+    <div class="alertas" style="margin-top:14px"><span class="t rd">Impedida de licitar até 2027</span><span class="t rd">R$ 18,4 mi em dívida ativa</span><span class="t au">Sócio em comum com outro licitante</span></div>
+    <div class="kv"><div><strong>14</strong><span>contratos públicos ativos</span></div><div><strong>R$ 42 mi</strong><span>em contratos</span></div><div><strong>27</strong><span>processos trabalhistas</span></div></div>
+    <p class="fonte">Fontes: CEIS/CGU, PGFN, Receita Federal, PNCP e tribunais. Dados ilustrativos.</p>
+   </div>
+  </div>
+ </div>
+</section>
+
+<section class="sc" id="dia">
+ <div class="w">
+  <h2>Do edital ao recurso, sem perder nada.</h2>
+  <p class="sub">Pensada para a rotina de quem licita: o que chega de manhã, o que analisar, quem enfrentar e como contestar.</p>
+  <ol class="dia">
+   <li><time>7h40</time><h3>Os editais do seu ramo já estão na caixa</h3><p>Alertas por palavra, estado e tipo, do PNCP e dos diários oficiais. Três vezes ao dia.</p></li>
+   <li><time>9h</time><h3>Vale a pena participar?</h3><p>Prazos, exigências que ferem a lei e o Raio-X do órgão comprador.</p></li>
+   <li><time>Dia da sessão</time><h3>Checklist da disputa</h3><p>Sessões do dia no painel e o lembrete que salva o recurso.</p></li>
+   <li><time>Depois dos lances</time><h3>Os pontos fracos de quem ficou na frente</h3><p>Sanções, dívidas, processos e vínculos, com fonte oficial.</p></li>
+   <li><time>Para contestar</time><h3>Recurso com prazo e jurisprudência</h3><p>Prazo em dias úteis e precedentes do tribunal certo.</p></li>
+  </ol>
+ </div>
+</section>
+
+<section class="sc claro">
+ <div class="w">
+  <h2>Licitação se perde nos detalhes.</h2>
+  <p class="sub">Uma certidão vencida, um preço fora da realidade, um prazo contado errado. A DESENVOLVE ESTRATÉGIAS tira o achismo de cada etapa.</p>
+  <div class="cmp">
+   <div class="r"><span>Etapa</span><span>Hoje</span><span>Com a Desenvolve</span></div>
+   <div class="r"><span>Achar editais</span><span>Horas filtrando o PNCP</span><span>Caixa diária, só com o que interessa</span></div>
+   <div class="r"><span>Decidir se entra</span><span>Ler o edital inteiro no escuro</span><span>Conferência pela lei em minutos</span></div>
+   <div class="r"><span>Conhecer o concorrente</span><span>Dez sites e muita planilha</span><span>Sanções, dívidas e vínculos numa tela</span></div>
+   <div class="r"><span>Prazo de recurso</span><span>Contagem manual e risco de perder</span><span>Data exata em dias úteis, com aviso</span></div>
+   <div class="r"><span>Fundamentar a peça</span><span>Procurar acórdão no Google</span><span>Precedentes do tribunal certo, prontos</span></div>
+  </div>
+ </div>
+</section>
+
+<section class="sc" id="para-quem">
+ <div class="w">
+  <h2>Feita para quem vende ao governo.</h2>
+  <div class="pq">
+   <div><h3>Comercial e licitações</h3><p>Ache editais, saiba o preço que o governo paga e, depois dos lances, descubra os pontos fracos de cada concorrente.</p></div>
+   <div><h3>Jurídico</h3><p>Recorra com prova: sanções, dívida ativa, grupo econômico e vínculos entre licitantes, com fonte oficial.</p></div>
+   <div><h3>Gestão</h3><p>Certidões, contratos e garantias com alerta antes de vencer, e a próxima licitação no radar.</p></div>
+  </div>
+ </div>
+</section>
+
+<section class="lista" id="lista">
+ <div class="w">
+  <div>
+   <h2>Garanta o preço de fundador.</h2>
+   <p class="sub">Quem entra na lista de espera paga o preço de fundador para sempre, enquanto mantiver a assinatura.</p>
+   <div class="preco"><s>R$ 149,90</s><strong>R$ 79,90</strong><em>por mês, para sempre</em></div>
+   <ul>
+    <li>100 créditos de bônus no primeiro mês</li>
+    <li>Acesso aos planos antes de todo mundo, em 17/11</li>
+    <li>Sem fidelidade: cancele quando quiser</li>
+    <li>Funciona com a IA que você já usa</li>
+   </ul>
+  </div>
+  <form class="lf" data-l novalidate>
+   <h3>Entrar na lista de espera</h3>
+   <input name="nome" placeholder="Nome" autocomplete="name" aria-label="Nome">
+   <input name="email" type="email" placeholder="E-mail profissional" autocomplete="email" aria-label="E-mail profissional">
+   <div class="two"><input name="whats" placeholder="WhatsApp (opcional)" inputmode="tel" aria-label="WhatsApp"><input name="empresa" placeholder="Empresa (opcional)" aria-label="Empresa"></div>
+   <select name="ramo" aria-label="Seu ramo"><option value="">Seu ramo (opcional)</option><option>Limpeza, conservação e facilities</option><option>Vigilância e segurança</option><option>Alimentação</option><option>Saúde</option><option>Obras e engenharia</option><option>Tecnologia</option><option>Fornecimento de materiais</option><option>Consultoria ou advocacia</option><option>Outro</option></select>
+   <input class="hp" name="site" tabindex="-1" autocomplete="off" aria-hidden="true">
+   <label class="ck"><input type="checkbox" name="ok" value="1"> <span>Concordo em receber da Desenvolve informações sobre o lançamento, conforme a <a href="/politica-de-privacidade/">Política de privacidade</a>. Posso sair da lista quando quiser.</span></label>
+   <button class="bt g" type="submit">Entrar na lista de espera</button>
+   <p class="msg" data-m aria-live="polite"></p>
+  </form>
+ </div>
+</section>
+
+<section class="sc claro" id="duvidas">
+ <div class="w">
+  <h2>Perguntas frequentes.</h2>
+  <div class="faq">
+   <details><summary>Quando a plataforma lança?</summary><p>Em 17 de novembro. Quem está na lista recebe os planos primeiro, por e-mail, no dia do lançamento, com o preço de fundador garantido.</p></details>
+   <details><summary>De onde vêm os dados?</summary><p>De fontes oficiais e públicas: PNCP, Compras.gov.br, Diário Oficial da União, diários municipais, Receita Federal, CGU, TCU, TCE-SP, STJ e diários de justiça. A Desenvolve reúne, cruza e organiza tudo para você não precisar abrir cada site.</p></details>
+   <details><summary>Como funcionam os créditos?</summary><p>A assinatura dá créditos todo mês. As ferramentas de gestão, os alertas de licitações e o Banco de preços não usam créditos. As consultas aprofundadas, como o Raio-X e a Due Diligence, usam créditos, e o custo aparece na tela antes de cada uso.</p></details>
+   <details><summary>Preciso de uma IA paga?</summary><p>Não. A plataforma prepara o pedido completo e você leva para a IA que já usa, inclusive nas versões gratuitas.</p></details>
+   <details><summary>A plataforma substitui um advogado ou consultor?</summary><p>Não. Ela organiza dados oficiais e prepara o material; a decisão e a peça final continuam com você e, quando for o caso, com um especialista.</p></details>
+   <details><summary>Posso cancelar quando quiser?</summary><p>Sim. Sem fidelidade e sem multa: o acesso continua até o fim do período pago.</p></details>
+  </div>
+ </div>
+</section>
+
+<section class="fim">
+ <div class="w">
+  <div class="mk"><svg viewBox="317 133 833 1253" fill="currentColor"><defs><mask id="dvk3" maskUnits="userSpaceOnUse" x="0" y="0" width="1536" height="1536"><rect width="1536" height="1536" fill="#fff"/><ellipse cx="566" cy="406" rx="44" ry="17" transform="rotate(-24 566 406)" fill="#000"/></mask></defs><path mask="url(#dvk3)" fill="currentColor" d="M 607.500 153.934 C 600.898 156.673, 600.010 161.369, 600.016 193.500 C 600.021 223.159, 601 238.303, 604.087 256.500 C 607.436 276.239, 607.901 275.357, 578.991 304 C 538.863 343.757, 516.105 372.812, 476.201 435.235 C 464.949 452.837, 462.461 456.191, 430.008 497.500 C 408.819 524.472, 371.037 573.796, 352.260 599 C 336.455 620.216, 334.265 631.977, 339.506 667.500 C 344.016 698.070, 352.490 710.646, 378.535 725.423 C 386.216 729.780, 397.393 736.642, 403.374 740.671 C 433.717 761.112, 463.844 753.460, 481 720.952 C 512.983 660.353, 562.022 627.895, 624.500 625.975 C 663.864 624.766, 677.461 621.781, 704.500 608.413 C 726.952 597.313, 731.086 601.489, 724.385 628.500 C 714.352 668.944, 694.472 699.254, 617.474 791.500 C 525.361 901.855, 491.339 964.828, 482.409 1041.500 C 478.668 1073.618, 485.015 1081.987, 498.527 1062.754 C 537.004 1007.987, 584.065 963.269, 714.011 858 C 725.214 848.925, 740.527 836.325, 748.040 830 C 755.553 823.675, 769.080 812.377, 778.100 804.893 C 918.630 688.298, 967.441 610.207, 955.560 520.978 C 945.106 442.464, 873.051 356.548, 760.587 288.498 C 747.606 280.643, 741.068 274.492, 728.239 258.065 C 686.974 205.223, 621.007 148.330, 607.500 153.934 M 599 396.528 C 573.037 403.170, 551.793 421.420, 551.569 437.273 C 551.256 459.464, 606.913 440.843, 620.944 414.063 C 630.055 396.674, 622.386 390.546, 599 396.528 M 1117.101 741.892 C 1115.615 743.482, 1111.306 751.639, 1107.526 760.017 C 1070.528 842.004, 1012.470 901.373, 880.500 992.172 C 839.043 1020.696, 830.958 1026.344, 813.342 1039.088 C 719.236 1107.167, 673.596 1156.532, 701.124 1160.465 C 714.830 1162.423, 1037.490 1160.506, 1040.997 1158.446 C 1045.700 1155.683, 1048.600 1151.109, 1051.045 1142.598 C 1058.566 1116.423, 1062.872 1102.597, 1075.681 1063.500 C 1115.263 942.678, 1126.614 889.603, 1129.471 812 C 1130.132 794.031, 1128.619 754.913, 1126.966 747.248 C 1125.218 739.144, 1121.536 737.145, 1117.101 741.892 M 488.994 1190.930 C 478.134 1194.253, 476.676 1196.477, 459.466 1236 C 444.590 1270.162, 428.031 1307.719, 421.770 1321.500 C 408.367 1350.999, 407.633 1358.611, 417.706 1363.615 C 423.918 1366.701, 1114.685 1366.555, 1120 1363.466 C 1132.118 1356.423, 1133.784 1361.856, 1078.350 1227.647 C 1066.806 1199.698, 1064.729 1196.162, 1057.500 1192.161 C 1054.267 1190.371, 494.779 1189.160, 488.994 1190.930"/><path fill="currentColor" d="M 744.500 208.502 C 729.615 213.765, 731.838 227.498, 749.888 241.797 C 755.175 245.984, 763.550 252.976, 768.500 257.332 C 773.450 261.689, 785.375 270.442, 795 276.783 C 859.253 319.116, 861.794 320.993, 895.057 350.729 C 985.477 431.560, 1013.992 537.323, 970.083 629 C 965.209 639.175, 959.894 650.425, 958.272 654 C 956.649 657.575, 953.083 663.425, 950.348 667 C 947.613 670.575, 941.001 679.225, 935.656 686.222 C 916.343 711.502, 890.648 737.460, 855.500 767.198 C 848.900 772.782, 840.575 780.114, 837 783.491 C 833.425 786.868, 825.100 793.917, 818.500 799.156 C 811.900 804.394, 803.574 811.340, 799.997 814.590 C 796.420 817.841, 789.445 823.871, 784.497 827.991 C 779.549 832.111, 771.225 839.122, 766 843.572 C 760.775 848.022, 750.972 855.814, 744.216 860.887 C 737.460 865.961, 727.365 874.429, 721.783 879.705 C 716.201 884.981, 705.625 893.753, 698.281 899.199 C 690.937 904.644, 681.232 912.295, 676.714 916.200 C 672.196 920.106, 663.853 926.894, 658.174 931.285 C 652.495 935.677, 644.170 942.717, 639.674 946.930 C 635.178 951.143, 628.350 957.222, 624.500 960.438 C 607.620 974.538, 557.691 1025.175, 542.105 1044 C 501.968 1092.479, 484.803 1145.282, 504.873 1158.528 C 514.308 1164.755, 607.623 1167.977, 627 1162.745 C 644.671 1157.973, 656.611 1149.135, 670.564 1130.500 C 679.730 1118.257, 695.282 1102.650, 713.711 1087.200 C 720.427 1081.569, 729.256 1073.871, 733.331 1070.093 C 737.406 1066.314, 745.861 1059.428, 752.120 1054.789 C 758.379 1050.151, 766.425 1043.784, 770 1040.642 C 773.575 1037.499, 781.900 1031.147, 788.500 1026.525 C 795.100 1021.903, 806.686 1013.461, 814.246 1007.765 C 821.807 1002.070, 833.507 994.064, 840.246 989.975 C 846.986 985.886, 856.775 979.106, 862 974.907 C 867.225 970.708, 877.350 963.445, 884.500 958.767 C 891.650 954.089, 901.169 947.391, 905.654 943.881 C 910.139 940.371, 920.264 932.708, 928.154 926.850 C 963.377 900.702, 1004.241 862.559, 1021.735 839.500 C 1027.576 831.800, 1036 821.225, 1040.454 816 C 1052.380 802.010, 1053.627 800.227, 1065.841 779.714 C 1076 762.651, 1081.557 751.405, 1096.085 718.500 C 1100.771 707.886, 1109.015 679.499, 1113.074 660 C 1116.926 641.494, 1120.553 576.906, 1118.981 554.803 C 1116.164 515.188, 1111.240 487.479, 1103.295 466.528 C 1093.653 441.105, 1062.666 384.871, 1047.623 365.500 C 1038.052 353.176, 1016.295 328.633, 1010.370 323.477 C 1006.591 320.190, 998.141 312.562, 991.591 306.527 C 975.264 291.483, 952.015 274.339, 938.532 267.402 C 932.465 264.280, 919.899 257.653, 910.610 252.675 C 873.671 232.881, 839.162 221.237, 794.500 213.497 C 786.250 212.067, 774.865 210.020, 769.199 208.949 C 757.146 206.668, 750.049 206.540, 744.500 208.502"/></svg></div>
+  <h2>A sua próxima licitação começa com informação.</h2>
+  <p>Entre na lista e garanta R$ 79,90 por mês para sempre.</p>
+  <a class="bt g" href="#lista">Entrar na lista de espera</a>
+ </div>
+</section>
+</div>
+<script type="importmap">{"imports":{"three":"https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js","three/addons/":"https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/"}}</script>
+<script type="module">
+import * as THREE from 'three';
+import {SVGLoader} from 'three/addons/loaders/SVGLoader.js';
+import {RoomEnvironment} from 'three/addons/environments/RoomEnvironment.js';
+const hero=document.querySelector('#dvx .hero');if(hero){try{
+const D=["M 607.500 153.934 C 600.898 156.673, 600.010 161.369, 600.016 193.500 C 600.021 223.159, 601 238.303, 604.087 256.500 C 607.436 276.239, 607.901 275.357, 578.991 304 C 538.863 343.757, 516.105 372.812, 476.201 435.235 C 464.949 452.837, 462.461 456.191, 430.008 497.500 C 408.819 524.472, 371.037 573.796, 352.260 599 C 336.455 620.216, 334.265 631.977, 339.506 667.500 C 344.016 698.070, 352.490 710.646, 378.535 725.423 C 386.216 729.780, 397.393 736.642, 403.374 740.671 C 433.717 761.112, 463.844 753.460, 481 720.952 C 512.983 660.353, 562.022 627.895, 624.500 625.975 C 663.864 624.766, 677.461 621.781, 704.500 608.413 C 726.952 597.313, 731.086 601.489, 724.385 628.500 C 714.352 668.944, 694.472 699.254, 617.474 791.500 C 525.361 901.855, 491.339 964.828, 482.409 1041.500 C 478.668 1073.618, 485.015 1081.987, 498.527 1062.754 C 537.004 1007.987, 584.065 963.269, 714.011 858 C 725.214 848.925, 740.527 836.325, 748.040 830 C 755.553 823.675, 769.080 812.377, 778.100 804.893 C 918.630 688.298, 967.441 610.207, 955.560 520.978 C 945.106 442.464, 873.051 356.548, 760.587 288.498 C 747.606 280.643, 741.068 274.492, 728.239 258.065 C 686.974 205.223, 621.007 148.330, 607.500 153.934 M 599 396.528 C 573.037 403.170, 551.793 421.420, 551.569 437.273 C 551.256 459.464, 606.913 440.843, 620.944 414.063 C 630.055 396.674, 622.386 390.546, 599 396.528 M 1117.101 741.892 C 1115.615 743.482, 1111.306 751.639, 1107.526 760.017 C 1070.528 842.004, 1012.470 901.373, 880.500 992.172 C 839.043 1020.696, 830.958 1026.344, 813.342 1039.088 C 719.236 1107.167, 673.596 1156.532, 701.124 1160.465 C 714.830 1162.423, 1037.490 1160.506, 1040.997 1158.446 C 1045.700 1155.683, 1048.600 1151.109, 1051.045 1142.598 C 1058.566 1116.423, 1062.872 1102.597, 1075.681 1063.500 C 1115.263 942.678, 1126.614 889.603, 1129.471 812 C 1130.132 794.031, 1128.619 754.913, 1126.966 747.248 C 1125.218 739.144, 1121.536 737.145, 1117.101 741.892 M 488.994 1190.930 C 478.134 1194.253, 476.676 1196.477, 459.466 1236 C 444.590 1270.162, 428.031 1307.719, 421.770 1321.500 C 408.367 1350.999, 407.633 1358.611, 417.706 1363.615 C 423.918 1366.701, 1114.685 1366.555, 1120 1363.466 C 1132.118 1356.423, 1133.784 1361.856, 1078.350 1227.647 C 1066.806 1199.698, 1064.729 1196.162, 1057.500 1192.161 C 1054.267 1190.371, 494.779 1189.160, 488.994 1190.930", "M 744.500 208.502 C 729.615 213.765, 731.838 227.498, 749.888 241.797 C 755.175 245.984, 763.550 252.976, 768.500 257.332 C 773.450 261.689, 785.375 270.442, 795 276.783 C 859.253 319.116, 861.794 320.993, 895.057 350.729 C 985.477 431.560, 1013.992 537.323, 970.083 629 C 965.209 639.175, 959.894 650.425, 958.272 654 C 956.649 657.575, 953.083 663.425, 950.348 667 C 947.613 670.575, 941.001 679.225, 935.656 686.222 C 916.343 711.502, 890.648 737.460, 855.500 767.198 C 848.900 772.782, 840.575 780.114, 837 783.491 C 833.425 786.868, 825.100 793.917, 818.500 799.156 C 811.900 804.394, 803.574 811.340, 799.997 814.590 C 796.420 817.841, 789.445 823.871, 784.497 827.991 C 779.549 832.111, 771.225 839.122, 766 843.572 C 760.775 848.022, 750.972 855.814, 744.216 860.887 C 737.460 865.961, 727.365 874.429, 721.783 879.705 C 716.201 884.981, 705.625 893.753, 698.281 899.199 C 690.937 904.644, 681.232 912.295, 676.714 916.200 C 672.196 920.106, 663.853 926.894, 658.174 931.285 C 652.495 935.677, 644.170 942.717, 639.674 946.930 C 635.178 951.143, 628.350 957.222, 624.500 960.438 C 607.620 974.538, 557.691 1025.175, 542.105 1044 C 501.968 1092.479, 484.803 1145.282, 504.873 1158.528 C 514.308 1164.755, 607.623 1167.977, 627 1162.745 C 644.671 1157.973, 656.611 1149.135, 670.564 1130.500 C 679.730 1118.257, 695.282 1102.650, 713.711 1087.200 C 720.427 1081.569, 729.256 1073.871, 733.331 1070.093 C 737.406 1066.314, 745.861 1059.428, 752.120 1054.789 C 758.379 1050.151, 766.425 1043.784, 770 1040.642 C 773.575 1037.499, 781.900 1031.147, 788.500 1026.525 C 795.100 1021.903, 806.686 1013.461, 814.246 1007.765 C 821.807 1002.070, 833.507 994.064, 840.246 989.975 C 846.986 985.886, 856.775 979.106, 862 974.907 C 867.225 970.708, 877.350 963.445, 884.500 958.767 C 891.650 954.089, 901.169 947.391, 905.654 943.881 C 910.139 940.371, 920.264 932.708, 928.154 926.850 C 963.377 900.702, 1004.241 862.559, 1021.735 839.500 C 1027.576 831.800, 1036 821.225, 1040.454 816 C 1052.380 802.010, 1053.627 800.227, 1065.841 779.714 C 1076 762.651, 1081.557 751.405, 1096.085 718.500 C 1100.771 707.886, 1109.015 679.499, 1113.074 660 C 1116.926 641.494, 1120.553 576.906, 1118.981 554.803 C 1116.164 515.188, 1111.240 487.479, 1103.295 466.528 C 1093.653 441.105, 1062.666 384.871, 1047.623 365.500 C 1038.052 353.176, 1016.295 328.633, 1010.370 323.477 C 1006.591 320.190, 998.141 312.562, 991.591 306.527 C 975.264 291.483, 952.015 274.339, 938.532 267.402 C 932.465 264.280, 919.899 257.653, 910.610 252.675 C 873.671 232.881, 839.162 221.237, 794.500 213.497 C 786.250 212.067, 774.865 210.020, 769.199 208.949 C 757.146 206.668, 750.049 206.540, 744.500 208.502"],red=matchMedia('(prefers-reduced-motion: reduce)').matches;
+const r=new THREE.WebGLRenderer({antialias:true,alpha:true,powerPreference:'high-performance'});
+r.setPixelRatio(Math.min(devicePixelRatio,2));r.outputColorSpace=THREE.SRGBColorSpace;r.toneMapping=THREE.ACESFilmicToneMapping;r.toneMappingExposure=1;r.shadowMap.enabled=true;r.shadowMap.type=THREE.PCFSoftShadowMap;r.setClearColor(0,0);
+const sc=new THREE.Scene();const pm=new THREE.PMREMGenerator(r);const env=new RoomEnvironment();sc.environment=pm.fromScene(env,.04).texture;
+const cam=new THREE.PerspectiveCamera(30,1,10,40000);
+/* o cavalo oficial, silhueta exata do logo, em laca preta */
+const svg=new SVGLoader().parse('<svg xmlns="http://www.w3.org/2000/svg">'+D.map(d=>'<path d="'+d+'"/>').join('')+'</svg>');
+const shapes=[];svg.paths.forEach(p=>SVGLoader.createShapes(p).forEach(s=>shapes.push(s)));
+const eye=new THREE.Path();eye.absellipse(566,406,44,17,0,Math.PI*2,true,-24*Math.PI/180);if(shapes[0])shapes[0].holes.push(eye);
+const geo=new THREE.ExtrudeGeometry(shapes,{depth:230,bevelEnabled:true,bevelThickness:14,bevelSize:8,bevelSegments:6,curveSegments:40});
+geo.center();geo.scale(.5,-.5,.5);geo.computeVertexNormals();geo.computeBoundingBox();const bb=geo.boundingBox,KH=bb.max.y-bb.min.y;geo.translate(0,-bb.min.y,0);
+const laca=new THREE.MeshPhysicalMaterial({color:0x040405,roughness:.22,metalness:0,clearcoat:1,clearcoatRoughness:.04,envMapIntensity:1.25});
+const kn=new THREE.Mesh(geo,laca);kn.castShadow=true;
+const ref=new THREE.Mesh(geo,new THREE.MeshPhysicalMaterial({color:0x040405,roughness:.35,clearcoat:1,transparent:true,opacity:.16,depthWrite:false,envMapIntensity:.8}));ref.scale.y=-1;
+const K=new THREE.Group();K.add(kn);K.add(ref);sc.add(K);
+/* chão molhado: só sombra (o tabuleiro é a foto) */
+const chao=new THREE.Mesh(new THREE.PlaneGeometry(20000,20000),new THREE.ShadowMaterial({opacity:.55}));chao.rotation.x=-Math.PI/2;chao.receiveShadow=true;sc.add(chao);
+/* luz de céu fechado + contraluz do horizonte */
+sc.add(new THREE.HemisphereLight(0xDDE2E8,0x2A2C30,1.1));
+const key=new THREE.DirectionalLight(0xEEF1F5,1.6);key.position.set(-900,2600,900);key.castShadow=true;key.shadow.mapSize.set(2048,2048);const sh=key.shadow.camera;sh.left=sh.bottom=-1200;sh.right=sh.top=1200;sh.near=100;sh.far=8000;key.shadow.radius=10;key.shadow.bias=-.0004;sc.add(key);key.target=K;
+const rim=new THREE.DirectionalLight(0xFFFFFF,3.6);rim.position.set(1600,1300,-2400);sc.add(rim);rim.target=K;
+const rim2=new THREE.DirectionalLight(0xCFD6E0,1.2);rim2.position.set(-1800,700,-1500);sc.add(rim2);rim2.target=K;
+hero.appendChild(r.domElement);hero.classList.add('tem3d');
+let mx=0,my=0,vis=true,t0=performance.now(),G={};
+addEventListener('pointermove',e=>{mx=e.clientX/innerWidth-.5;my=e.clientY/innerHeight-.5},{passive:true});
+new IntersectionObserver(e=>{vis=e[0].isIntersecting}).observe(hero);
+function rs(){const w=hero.clientWidth,h=hero.clientHeight,a=w/h;r.setSize(w,h,false);cam.aspect=a;
+ const m=w<=960; const vh=Math.min(h,innerHeight)/h, hf=(m?.28:.46)*vh, by=(m?.47:.86)*vh, xf=m?.42:.62;ref.material.opacity=m?.08:.16; /* altura, base e posição do cavalo na tela */
+ const Dt=KH/(2*hf),t=Math.tan(cam.fov*Math.PI/360);G={D:Dt/t,cy:(by-.5)*2*Dt,X:(xf-.5)*2*Dt*a};cam.updateProjectionMatrix()}
+rs();addEventListener('resize',rs);
+const ease=x=>x<.5?4*x*x*x:1-Math.pow(-2*x+2,3)/2;
+function f(now){requestAnimationFrame(f);if(!vis)return;const t=(now-t0)/1000;
+ /* entrada: o cavalo salta em "L" para a casa dele */
+ const p=red?1:ease(Math.min(1,Math.max(0,(t-.5)/1.5)));
+ const sx=G.X+KH*.9,sz=-KH*1.6;K.position.set(sx+(G.X-sx)*p,Math.sin(p*Math.PI)*KH*.35,sz*(1-p));
+ K.rotation.y=-.55+(1-p)*.6+(red?0:Math.sin(t*.35)*.04)+mx*.18;
+ cam.position.set(-mx*KH*.15,G.cy-my*KH*.05,G.D);cam.lookAt(-mx*KH*.15,G.cy,0);
+ r.render(sc,cam)}requestAnimationFrame(f);
+}catch(err){}}
+</script>
+<script>(function(){var R=document.getElementById('dvx');if(!R)return;R.querySelectorAll('form[data-l]').forEach(function(f){var m=f.querySelector('[data-m]')||f.parentNode.querySelector('[data-m]');f.addEventListener('submit',function(ev){ev.preventDefault();var g=function(k){var i=f.querySelector('[name='+k+']');return i?i.value.trim():''};var d={nome:g('nome'),email:g('email'),whats:g('whats'),empresa:g('empresa'),ramo:g('ramo'),site:g('site')};var b=f.querySelector('button');m.classList.remove('er');
+if(d.nome.length<2||!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(d.email)){m.textContent='Informe seu nome e um e-mail válido.';m.classList.add('er');return}
+var ck=f.querySelector('input[type=checkbox][name=ok]');if(ck&&!ck.checked){m.textContent='Marque a concordância para entrar na lista.';m.classList.add('er');return}
+b.disabled=true;var t0=b.textContent;b.textContent='Enviando…';
+fetch('/wp-json/desenvolve/v1/lista',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(d)}).then(function(r){return r.json().then(function(j){if(!r.ok)throw j;return j})}).then(function(j){f.reset();b.textContent=j.ja?'Você já está na lista':'Pronto, você está na lista';m.textContent=j.ja?'Seu e-mail já estava na lista. O preço de fundador está garantido.':'Seu preço de fundador está garantido. Enviamos a confirmação para o seu e-mail.'}).catch(function(e){b.disabled=false;b.textContent=t0;m.textContent=(e&&e.message)||'Não foi possível enviar agora. Tente de novo em instantes.';m.classList.add('er')})})})})();</script>

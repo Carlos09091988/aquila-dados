@@ -1,0 +1,95 @@
+name: Desenvolve - robo dos diarios (coletores abertos do Querido Diario)
+# Seguranca: o codigo de terceiros (coletores do Querido Diario) roda travado numa versao
+# especifica e num job SEM segredos; ele so baixa os diarios. O job "processar" (nosso codigo)
+# recebe os arquivos e e o unico que usa o token do robo.
+on:
+  schedule:
+    - cron: '50 2 * * *'   # 23:50 em Brasilia
+  workflow_dispatch:
+    inputs:
+      dias:
+        description: 'Quantos dias para tras'
+        default: '2'
+permissions:
+  contents: read
+env:
+  QD_SHA: c865658114970927df95ce3baa7ae99e833a2ab4   # versao revisada do okfn-brasil/querido-diario
+jobs:
+  coletar:
+    runs-on: ubuntu-latest
+    timeout-minutes: 150
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - {id: sp, grupo: 'sp'}
+          - {id: ba, grupo: 'ba'}
+          - {id: sudeste, grupo: 'rj,es,mg'}
+          - {id: nordeste, grupo: 'se,al,pe,pb,rn,ce,pi,ma'}
+          - {id: sul-co, grupo: 'pr,rs,sc,ms,mt,go,df'}
+          - {id: norte, grupo: 'to,pa,am,ap,rr,ro,ac'}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.13'
+      - name: Baixar coletores (versao travada)
+        run: |
+          git init -q qd && cd qd
+          git fetch -q --depth 1 https://github.com/okfn-brasil/querido-diario "$QD_SHA"
+          git checkout -q FETCH_HEAD
+          test "$(git rev-parse HEAD)" = "$QD_SHA"
+      - name: Coletar diarios
+        working-directory: qd/querido_diario_raspadores
+        run: |
+          pip install -q uv && (uv sync -q --frozen || uv sync -q)
+          python3 ../../scripts/diarios_qd_lista.py . "${{ matrix.grupo }}" > ../../spiders.txt
+          echo "coletores: $(wc -l < ../../spiders.txt)"
+          INI=$(date -u -d "-${{ github.event.inputs.dias || '2' }} days" +%Y-%m-%d); FIM=$(date -u +%Y-%m-%d)
+          export FILES_STORE=$PWD/arquivos SPIDERMON_ENABLED=False QUERIDODIARIO_DATABASE_URL=sqlite:///$PWD/qd.db
+          cat ../../spiders.txt | xargs -P 8 -I{} timeout 420 uv run scrapy crawl {} -a start_date=$INI -a end_date=$FIM -s LOG_LEVEL=ERROR -s CONCURRENT_REQUESTS=4 -s DOWNLOAD_DELAY=0.5 > /dev/null 2> ../../erros.txt || true
+          mkdir -p ../../saida && mv qd.db ../../saida/ 2>/dev/null; mv arquivos ../../saida/ 2>/dev/null || true
+          echo "edicoes baixadas: $(python3 -c "import sqlite3;print(sqlite3.connect('../../saida/qd.db').execute('select count(*) from gazettes').fetchone()[0])" 2>/dev/null || echo 0)"
+      - uses: actions/upload-artifact@v4
+        with:
+          name: qd-${{ matrix.id }}
+          path: saida
+          retention-days: 1
+          compression-level: 1
+          if-no-files-found: ignore
+  processar:
+    needs: coletar
+    if: always()
+    runs-on: ubuntu-latest
+    timeout-minutes: 120
+    strategy:
+      fail-fast: false
+      max-parallel: 3
+      matrix:
+        id: [sp, ba, sudeste, nordeste, sul-co, norte]
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.13'
+      - run: sudo apt-get install -y poppler-utils >/dev/null
+      - uses: actions/download-artifact@v4
+        continue-on-error: true
+        with:
+          name: qd-${{ matrix.id }}
+          path: saida
+      - name: Processar e enviar
+        run: |
+          test -f saida/qd.db || { echo "nada coletado"; exit 0; }
+          python3 scripts/diarios_robo.py
+        env:
+          DV_ROBO_TOKEN: ${{ secrets.DV_ROBO_TOKEN }}
+          DIAS: ${{ github.event.inputs.dias || '2' }}
+          QD_DB: saida/qd.db
+          QD_FILES: saida/arquivos
+          GRUPO: ${{ matrix.id }}
+          LIMITE_SEG: '3000'

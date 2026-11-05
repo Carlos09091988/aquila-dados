@@ -275,6 +275,7 @@
 @media (max-width:960px){#dvx .rx{grid-template-columns:1fr;gap:32px}#dvx .sc,#dvx .sc.claro{padding:100px 0}}
 #dvx .ja2{margin:18px auto 0;font-size:13.5px;color:#7E848C}#dvx .ja2 a{color:#fff;text-decoration:none;border-bottom:1px solid rgba(255,255,255,.35);padding-bottom:2px;margin-left:4px}
 @media (max-width:520px){#dvx .topo .bt{padding:9px 14px;font-size:12.5px}#dvx .topo nav{gap:14px}#dvx .marca b{font-size:12px;letter-spacing:.1em}}
+#dvx .lfp{font-size:12.5px;line-height:1.5;color:#7E848C;margin:4px 0 0}#dvx .lfp a{color:#A7ABB2}
 </style>
 
 <div id="dvx">
@@ -463,14 +464,13 @@ html{scroll-behavior:smooth;overscroll-behavior-y:none}
    </ul>
   </div>
   <form class="lf" data-l novalidate>
-   <h3>Entrar na lista de espera</h3>
-   <input name="nome" placeholder="Nome" autocomplete="name" aria-label="Nome">
-   <input name="email" type="email" placeholder="E-mail profissional" autocomplete="email" aria-label="E-mail profissional">
-   <div class="two"><input name="whats" placeholder="WhatsApp (opcional)" inputmode="tel" aria-label="WhatsApp"><input name="empresa" placeholder="Empresa (opcional)" aria-label="Empresa"></div>
-   <select name="ramo" aria-label="Seu ramo"><option value="">Seu ramo (opcional)</option><option>Limpeza, conservação e facilities</option><option>Vigilância e segurança</option><option>Alimentação</option><option>Saúde</option><option>Obras e engenharia</option><option>Tecnologia</option><option>Fornecimento de materiais</option><option>Consultoria ou advocacia</option><option>Outro</option></select>
+   <h3>Garanta seu preço de fundador</h3>
+   <input name="nome" placeholder="Seu nome" autocomplete="name" aria-label="Seu nome" required>
+   <input name="email" type="email" placeholder="Seu e-mail" autocomplete="email" aria-label="Seu e-mail" required>
    <input class="hp" name="site" tabindex="-1" autocomplete="off" aria-hidden="true">
-   <label class="ck"><input type="checkbox" name="ok" value="1"> <span>Concordo em receber da Desenvolve informações sobre o lançamento, conforme a <a href="/politica-de-privacidade/">Política de privacidade</a>. Posso sair da lista quando quiser.</span></label>
+   <input type="hidden" name="ok" value="1">
    <button class="bt g" type="submit">Entrar na lista de espera</button>
+   <p class="lfp">Leva 10 segundos. Sem cartão e sem compromisso. Ao entrar, você aceita receber as novidades do lançamento, conforme a <a href="/politica-de-privacidade/">Política de privacidade</a>.</p>
    <p class="msg" data-m aria-live="polite"></p>
   </form>
  </div>

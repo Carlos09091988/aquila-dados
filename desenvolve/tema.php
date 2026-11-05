@@ -90,8 +90,9 @@ add_action( 'template_redirect', function () {
 	if ( ! function_exists( 'dv_app_pagina' ) || ! dv_app_pagina() ) { return; }
 	ob_start( function ( $html ) {
 		if ( ! is_string( $html ) || $html === '' ) { return $html; }
-		$html = strtr( $html, dv_tema_mapa() );
-		if ( dv_tema_escuro() ) { return dv_te_converter( $html ); }
+		if ( dv_tema_escuro() ) { return dv_te_converter( strtr( $html, dv_tema_mapa() ) ); }
+		// modo claro: mantém o creme original; só unifica a fonte e o dourado
+		$html = strtr( $html, array_filter( dv_tema_mapa(), function ( $v, $k ) { return ! preg_match( '/^#/', $k ) || in_array( strtoupper( $v ), array( '#8C6A24' ), true ); }, ARRAY_FILTER_USE_BOTH ) );
 		// botões dourados viram pretos só onde o dourado é FUNDO; o dourado como texto/borda continua dourado
 		$html = preg_replace( '/(background(?:-color)?\s*:\s*)#C9A45C/i', '${1}#111111', $html );
 		$html = preg_replace( '/(background(?:-color)?\s*:\s*)#B8924A/i', '${1}#2B2B2B', $html );
@@ -247,6 +248,16 @@ html.dv-rail .dv-side nav a{padding-left:16px!important}
 body.admin-bar .dv-pin{top:24px}
 @media(max-width:980px){.dv-pin{display:none}}
 </style><!--/dv-tema-off-->
+<?php if ( ! dv_tema_escuro() ) { ?>
+<style id="dv-creme">
+body.dv-app{--t-bg:#F4F2EC;--t-card:#FFFFFF;--t-ln:#E6E1D6;--t-ln2:#DDD6C8;--t-mu:#6E6A60;background:#F4F2EC!important}
+body.dv-app .dv-top{background:rgba(244,242,236,.86)!important;border-bottom-color:#E6E1D6!important}
+body.dv-app .dv-tool th{background:#FAF8F3!important;color:#6E6A60!important}body.dv-app .dv-tool tr:hover>td{background:#FAF8F3}
+body.dv-app .dv-k,body.dv-app .dv-sld{background:#FFFDF8!important;border-color:#E6E1D6!important}
+#dv-pal li.on{background:#F4F2EC!important}body.dv-app .lc-vazio{background:#FFFDF8!important}body.dv-app .lc-vazio::before{background-color:#F4F2EC!important}
+.dv-bellp,.dv-bellp .h{background:#FFFDF8!important}.dv-bellp .it:hover{background:#F4F2EC!important}
+</style>
+<?php } ?>
 <?php if ( dv_tema_escuro() ) { ?>
 <!--dv-tema-off--><style id="dv-escuro">
 html.dv-escuro body.dv-app{background:#0D0F12!important;color:#ECEAE4;color-scheme:dark;isolation:isolate}

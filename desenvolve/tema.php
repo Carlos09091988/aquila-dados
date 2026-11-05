@@ -384,3 +384,20 @@ add_action( 'wp_footer', function () {
 	$ms = function ( $a, $z ) use ( $t ) { return isset( $t[ $a ], $t[ $z ] ) ? round( ( $t[ $z ] - $t[ $a ] ) * 1000 ) : -1; };
 	echo '<!--dvt boot=' . round( ( $t['tpl'] - $b ) * 1000 ) . ' head=' . $ms( 'wp_head0', 'wp_head1' ) . ' conteudo=' . $ms( 'c0', 'c1' ) . ' foot_ate_aqui=' . round( ( microtime( true ) - $t['wp_footer0'] ) * 1000 ) . ' total_ate_aqui=' . round( ( microtime( true ) - $b ) * 1000 ) . '-->';
 }, 99998 );
+
+/* diagnóstico temporário (só administradores): navegador, tempos, erros e uso da chave do modo escuro */
+add_action( 'rest_api_init', function () {
+	register_rest_route( 'desenvolve/v1', '/diag', array( 'methods' => 'POST', 'permission_callback' => function () { return current_user_can( 'manage_options' ); }, 'callback' => function ( WP_REST_Request $r ) {
+		$l = (array) get_option( 'dv_diag', array() ); array_unshift( $l, array( 't' => current_time( 'mysql' ), 'd' => mb_substr( wp_json_encode( $r->get_json_params() ), 0, 3000 ) ) ); update_option( 'dv_diag', array_slice( $l, 0, 30 ), false ); return array( 'ok' => true );
+	} ) );
+} );
+add_action( 'wp_head', function () {
+	if ( ! current_user_can( 'manage_options' ) || ! function_exists( 'dv_app_pagina' ) || ! dv_app_pagina() ) { return; } ?>
+<script>(function(){var E=[],K=[];window.addEventListener('error',function(e){E.push(String(e.message||e).slice(0,200)+' @'+String(e.filename||'').split('/').pop()+':'+e.lineno)});window.addEventListener('unhandledrejection',function(e){E.push('promise: '+String(e.reason&&e.reason.message||e.reason).slice(0,200))});
+document.addEventListener('click',function(ev){var b=ev.target.closest&&ev.target.closest('.dv-modo');if(b)setTimeout(function(){K.push({clique:new Date().toISOString().slice(11,19),escuro_depois:document.documentElement.classList.contains('dv-escuro')});envia('clique')},300)},true);
+function envia(motivo){try{var n=performance.getEntriesByType('navigation')[0]||{};var api=performance.getEntriesByType('resource').filter(function(r){return/\/wp-json\//.test(r.name)}).map(function(r){return r.name.split('/wp-json/')[1].split('?')[0]+' '+Math.round(r.duration)});
+ var d={motivo:motivo,pagina:location.pathname,nav:navigator.userAgent,tela:innerWidth+'x'+innerHeight,html_ms:Math.round((n.responseEnd||0)-(n.requestStart||0)),dom_ms:Math.round(n.domContentLoadedEventEnd||0),load_ms:Math.round(n.loadEventEnd||0),tipo:n.type,cache:n.transferSize===0?'navegador':'rede',escuro:document.documentElement.classList.contains('dv-escuro'),dvTema:typeof window.dvTema,chave:!!document.querySelector('.dv-modo'),versao:document.documentElement.outerHTML.indexOf('function liga()')>0?'nova':'antiga',api:api.slice(0,12),erros:E.slice(0,8),cliques:K};
+ navigator.sendBeacon?fetch(<?php echo wp_json_encode( rest_url( 'desenvolve/v1/diag' ) ); ?>,{method:'POST',credentials:'same-origin',keepalive:true,headers:{'Content-Type':'application/json','X-WP-Nonce':<?php echo wp_json_encode( wp_create_nonce( 'wp_rest' ) ); ?>},body:JSON.stringify(d)}):0}catch(x){}}
+window.addEventListener('load',function(){setTimeout(function(){envia('carregou')},2500)})})();</script>
+	<?php
+}, 1 );

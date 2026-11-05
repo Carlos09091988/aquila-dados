@@ -1,0 +1,1241 @@
+{
+"quando": 1793882749.183931,
+"ent": {
+"687": {
+"uf": "CE",
+"slug": "horizonte"
+},
+"1148": {
+"uf": "MA",
+"slug": "bela-vista-do-maranhao"
+},
+"1488": {
+"uf": "MS",
+"slug": "coronel-sapucaia"
+},
+"1508": {
+"uf": "MS",
+"slug": "jatei"
+},
+"1521": {
+"uf": "MS",
+"slug": "paranhos"
+},
+"1526": {
+"uf": "MS",
+"slug": "rio-brilhante"
+},
+"1908": {
+"uf": "MG",
+"slug": "itajuba"
+},
+"1929": {
+"uf": "MG",
+"slug": "iturama"
+},
+"1972": {
+"uf": "MG",
+"slug": "lambari"
+},
+"2016": {
+"uf": "MG",
+"slug": "matozinhos"
+},
+"2032": {
+"uf": "MG",
+"slug": "monsenhor-paulo"
+},
+"2308": {
+"uf": "MG",
+"slug": "sapucai-mirim"
+},
+"2364": {
+"uf": "MG",
+"slug": "uberaba"
+},
+"2485": {
+"uf": "PA",
+"slug": "picarra"
+},
+"2808": {
+"uf": "PR",
+"slug": "cafezal-do-sul"
+},
+"2826": {
+"uf": "PR",
+"slug": "carambei"
+},
+"3170": {
+"uf": "PE",
+"slug": "aracoiaba"
+},
+"3190": {
+"uf": "PE",
+"slug": "cabrobo"
+},
+"3640": {
+"uf": "RJ",
+"slug": "sao-jose-do-vale-do-rio-preto"
+},
+"4049": {
+"uf": "RS",
+"slug": "marau"
+},
+"4135": {
+"uf": "RS",
+"slug": "quatro-irmaos"
+},
+"4159": {
+"uf": "RS",
+"slug": "santa-clara-do-sul"
+},
+"4247": {
+"uf": "RS",
+"slug": "tres-arroios"
+},
+"4650": {
+"uf": "SP",
+"slug": "adolfo"
+},
+"4651": {
+"uf": "SP",
+"slug": "aguai"
+},
+"4653": {
+"uf": "SP",
+"slug": "aguas-de-lindoia"
+},
+"4660": {
+"uf": "SP",
+"slug": "altinopolis"
+},
+"4665": {
+"uf": "SP",
+"slug": "alvaro-de-carvalho"
+},
+"4669": {
+"uf": "SP",
+"slug": "americo-de-campos"
+},
+"4670": {
+"uf": "SP",
+"slug": "amparo"
+},
+"4671": {
+"uf": "SP",
+"slug": "analandia"
+},
+"4674": {
+"uf": "SP",
+"slug": "anhembi"
+},
+"4678": {
+"uf": "SP",
+"slug": "apiai"
+},
+"4680": {
+"uf": "SP",
+"slug": "aracatuba"
+},
+"4682": {
+"uf": "SP",
+"slug": "aramina"
+},
+"4688": {
+"uf": "SP",
+"slug": "arealva"
+},
+"4698": {
+"uf": "SP",
+"slug": "avai"
+},
+"4700": {
+"uf": "SP",
+"slug": "avare"
+},
+"4702": {
+"uf": "SP",
+"slug": "balbinos"
+},
+"4703": {
+"uf": "SP",
+"slug": "balsamo"
+},
+"4707": {
+"uf": "SP",
+"slug": "bariri"
+},
+"4708": {
+"uf": "SP",
+"slug": "barra-bonita"
+},
+"4714": {
+"uf": "SP",
+"slug": "bastos"
+},
+"4718": {
+"uf": "SP",
+"slug": "bento-de-abreu"
+},
+"4722": {
+"uf": "SP",
+"slug": "birigui"
+},
+"4725": {
+"uf": "SP",
+"slug": "bocaina"
+},
+"4726": {
+"uf": "SP",
+"slug": "bofete"
+},
+"4730": {
+"uf": "SP",
+"slug": "bora"
+},
+"4731": {
+"uf": "SP",
+"slug": "boraceia"
+},
+"4732": {
+"uf": "SP",
+"slug": "borborema"
+},
+"4734": {
+"uf": "SP",
+"slug": "botucatu"
+},
+"4735": {
+"uf": "SP",
+"slug": "braganca-paulista"
+},
+"4738": {
+"uf": "SP",
+"slug": "brodowski"
+},
+"4741": {
+"uf": "SP",
+"slug": "buritama"
+},
+"4742": {
+"uf": "SP",
+"slug": "buritizal"
+},
+"4744": {
+"uf": "SP",
+"slug": "cabreuva"
+},
+"4748": {
+"uf": "SP",
+"slug": "cafelandia"
+},
+"4749": {
+"uf": "SP",
+"slug": "caiabu"
+},
+"4754": {
+"uf": "SP",
+"slug": "cajobi"
+},
+"4758": {
+"uf": "SP",
+"slug": "campo-limpo-paulista"
+},
+"4763": {
+"uf": "SP",
+"slug": "candido-mota"
+},
+"4764": {
+"uf": "SP",
+"slug": "candido-rodrigues"
+},
+"4765": {
+"uf": "SP",
+"slug": "canitar"
+},
+"4767": {
+"uf": "SP",
+"slug": "capela-do-alto"
+},
+"4771": {
+"uf": "SP",
+"slug": "cardoso"
+},
+"4774": {
+"uf": "SP",
+"slug": "castilho"
+},
+"4775": {
+"uf": "SP",
+"slug": "catanduva"
+},
+"4776": {
+"uf": "SP",
+"slug": "catigua"
+},
+"4778": {
+"uf": "SP",
+"slug": "cerqueira-cesar"
+},
+"4784": {
+"uf": "SP",
+"slug": "colina"
+},
+"4785": {
+"uf": "SP",
+"slug": "colombia"
+},
+"4789": {
+"uf": "SP",
+"slug": "coroados"
+},
+"4793": {
+"uf": "SP",
+"slug": "cosmorama"
+},
+"4797": {
+"uf": "SP",
+"slug": "cruzalia"
+},
+"4800": {
+"uf": "SP",
+"slug": "cunha"
+},
+"4803": {
+"uf": "SP",
+"slug": "dirce-reis"
+},
+"4805": {
+"uf": "SP",
+"slug": "dobrada"
+},
+"4807": {
+"uf": "SP",
+"slug": "dolcinopolis"
+},
+"4808": {
+"uf": "SP",
+"slug": "dourado"
+},
+"4814": {
+"uf": "SP",
+"slug": "elias-fausto"
+},
+"4815": {
+"uf": "SP",
+"slug": "elisiario"
+},
+"4816": {
+"uf": "SP",
+"slug": "embauba"
+},
+"4824": {
+"uf": "SP",
+"slug": "estrela-d-oeste"
+},
+"4826": {
+"uf": "SP",
+"slug": "euclides-da-cunha-paulista"
+},
+"4828": {
+"uf": "SP",
+"slug": "fernando-prestes"
+},
+"4829": {
+"uf": "SP",
+"slug": "fernandopolis"
+},
+"4830": {
+"uf": "SP",
+"slug": "fernao"
+},
+"4834": {
+"uf": "SP",
+"slug": "florinea"
+},
+"4839": {
+"uf": "SP",
+"slug": "gabriel-monteiro"
+},
+"4840": {
+"uf": "SP",
+"slug": "galia"
+},
+"4841": {
+"uf": "SP",
+"slug": "garca"
+},
+"4845": {
+"uf": "SP",
+"slug": "getulina"
+},
+"4847": {
+"uf": "SP",
+"slug": "guaicara"
+},
+"4848": {
+"uf": "SP",
+"slug": "guaimbe"
+},
+"4850": {
+"uf": "SP",
+"slug": "guapiacu"
+},
+"4852": {
+"uf": "SP",
+"slug": "guara"
+},
+"4853": {
+"uf": "SP",
+"slug": "guaracai"
+},
+"4856": {
+"uf": "SP",
+"slug": "guaranta"
+},
+"4857": {
+"uf": "SP",
+"slug": "guararapes"
+},
+"4860": {
+"uf": "SP",
+"slug": "guarei"
+},
+"4861": {
+"uf": "SP",
+"slug": "guariba"
+},
+"4866": {
+"uf": "SP",
+"slug": "herculandia"
+},
+"4867": {
+"uf": "SP",
+"slug": "holambra"
+},
+"4871": {
+"uf": "SP",
+"slug": "iaras"
+},
+"4872": {
+"uf": "SP",
+"slug": "ibate"
+},
+"4873": {
+"uf": "SP",
+"slug": "ibira"
+},
+"4874": {
+"uf": "SP",
+"slug": "ibirarema"
+},
+"4877": {
+"uf": "SP",
+"slug": "icem"
+},
+"4880": {
+"uf": "SP",
+"slug": "igarapava"
+},
+"4888": {
+"uf": "SP",
+"slug": "indiapora"
+},
+"4892": {
+"uf": "SP",
+"slug": "ipeuna"
+},
+"4895": {
+"uf": "SP",
+"slug": "ipua"
+},
+"4897": {
+"uf": "SP",
+"slug": "irapua"
+},
+"4899": {
+"uf": "SP",
+"slug": "itabera"
+},
+"4901": {
+"uf": "SP",
+"slug": "itajobi"
+},
+"4902": {
+"uf": "SP",
+"slug": "itaju"
+},
+"4907": {
+"uf": "SP",
+"slug": "itapeva"
+},
+"4908": {
+"uf": "SP",
+"slug": "itapevi"
+},
+"4909": {
+"uf": "SP",
+"slug": "itapira"
+},
+"4914": {
+"uf": "SP",
+"slug": "itapura"
+},
+"4916": {
+"uf": "SP",
+"slug": "itarare"
+},
+"4920": {
+"uf": "SP",
+"slug": "itirapina"
+},
+"4923": {
+"uf": "SP",
+"slug": "itu"
+},
+"4924": {
+"uf": "SP",
+"slug": "itupeva"
+},
+"4925": {
+"uf": "SP",
+"slug": "ituverava"
+},
+"4926": {
+"uf": "SP",
+"slug": "jaborandi"
+},
+"4929": {
+"uf": "SP",
+"slug": "jaci"
+},
+"4931": {
+"uf": "SP",
+"slug": "jaguariuna"
+},
+"4932": {
+"uf": "SP",
+"slug": "jales"
+},
+"4935": {
+"uf": "SP",
+"slug": "jardinopolis"
+},
+"4937": {
+"uf": "SP",
+"slug": "jau"
+},
+"4938": {
+"uf": "SP",
+"slug": "jeriquara"
+},
+"4940": {
+"uf": "SP",
+"slug": "joao-ramalho"
+},
+"4941": {
+"uf": "SP",
+"slug": "jose-bonifacio"
+},
+"4942": {
+"uf": "SP",
+"slug": "julio-mesquita"
+},
+"4949": {
+"uf": "SP",
+"slug": "laranjal-paulista"
+},
+"4952": {
+"uf": "SP",
+"slug": "leme"
+},
+"4955": {
+"uf": "SP",
+"slug": "lindoia"
+},
+"4956": {
+"uf": "SP",
+"slug": "lins"
+},
+"4958": {
+"uf": "SP",
+"slug": "lourdes"
+},
+"4959": {
+"uf": "SP",
+"slug": "louveira"
+},
+"4961": {
+"uf": "SP",
+"slug": "lucianopolis"
+},
+"4962": {
+"uf": "SP",
+"slug": "luiz-antonio"
+},
+"4964": {
+"uf": "SP",
+"slug": "lupercio"
+},
+"4965": {
+"uf": "SP",
+"slug": "lutecia"
+},
+"4969": {
+"uf": "SP",
+"slug": "magda"
+},
+"4970": {
+"uf": "SP",
+"slug": "mairinque"
+},
+"4973": {
+"uf": "SP",
+"slug": "maraba-paulista"
+},
+"4975": {
+"uf": "SP",
+"slug": "marapoama"
+},
+"4979": {
+"uf": "SP",
+"slug": "martinopolis"
+},
+"4982": {
+"uf": "SP",
+"slug": "mendonca"
+},
+"4983": {
+"uf": "SP",
+"slug": "meridiano"
+},
+"4985": {
+"uf": "SP",
+"slug": "miguelopolis"
+},
+"4986": {
+"uf": "SP",
+"slug": "mineiros-do-tiete"
+},
+"4989": {
+"uf": "SP",
+"slug": "mirandopolis"
+},
+"4991": {
+"uf": "SP",
+"slug": "mirassol"
+},
+"4992": {
+"uf": "SP",
+"slug": "mirassolandia"
+},
+"4995": {
+"uf": "SP",
+"slug": "mogi-guacu"
+},
+"4999": {
+"uf": "SP",
+"slug": "mongagua"
+},
+"5000": {
+"uf": "SP",
+"slug": "monte-alegre-do-sul"
+},
+"5002": {
+"uf": "SP",
+"slug": "monte-aprazivel"
+},
+"5003": {
+"uf": "SP",
+"slug": "monte-azul-paulista"
+},
+"5004": {
+"uf": "SP",
+"slug": "monte-castelo"
+},
+"5006": {
+"uf": "SP",
+"slug": "monteiro-lobato"
+},
+"5007": {
+"uf": "SP",
+"slug": "morro-agudo"
+},
+"5008": {
+"uf": "SP",
+"slug": "morungaba"
+},
+"5009": {
+"uf": "SP",
+"slug": "motuca"
+},
+"5010": {
+"uf": "SP",
+"slug": "murutinga-do-sul"
+},
+"5014": {
+"uf": "SP",
+"slug": "nazare-paulista"
+},
+"5018": {
+"uf": "SP",
+"slug": "nova-alianca"
+},
+"5019": {
+"uf": "SP",
+"slug": "nova-campina"
+},
+"5022": {
+"uf": "SP",
+"slug": "nova-europa"
+},
+"5023": {
+"uf": "SP",
+"slug": "nova-granada"
+},
+"5024": {
+"uf": "SP",
+"slug": "nova-guataporanga"
+},
+"5025": {
+"uf": "SP",
+"slug": "nova-independencia"
+},
+"5028": {
+"uf": "SP",
+"slug": "novais"
+},
+"5031": {
+"uf": "SP",
+"slug": "ocaucu"
+},
+"5033": {
+"uf": "SP",
+"slug": "olimpia"
+},
+"5036": {
+"uf": "SP",
+"slug": "orindiuva"
+},
+"5037": {
+"uf": "SP",
+"slug": "orlandia"
+},
+"5043": {
+"uf": "SP",
+"slug": "ouroeste"
+},
+"5046": {
+"uf": "SP",
+"slug": "palmares-paulista"
+},
+"5049": {
+"uf": "SP",
+"slug": "panorama"
+},
+"5050": {
+"uf": "SP",
+"slug": "paraguacu-paulista"
+},
+"5052": {
+"uf": "SP",
+"slug": "paraiso"
+},
+"5055": {
+"uf": "SP",
+"slug": "parapua"
+},
+"5056": {
+"uf": "SP",
+"slug": "pardinho"
+},
+"5059": {
+"uf": "SP",
+"slug": "patrocinio-paulista"
+},
+"5060": {
+"uf": "SP",
+"slug": "pauliceia"
+},
+"5063": {
+"uf": "SP",
+"slug": "paulo-de-faria"
+},
+"5064": {
+"uf": "SP",
+"slug": "pederneiras"
+},
+"5065": {
+"uf": "SP",
+"slug": "pedra-bela"
+},
+"5067": {
+"uf": "SP",
+"slug": "pedregulho"
+},
+"5069": {
+"uf": "SP",
+"slug": "pedrinhas-paulista"
+},
+"5072": {
+"uf": "SP",
+"slug": "pereira-barreto"
+},
+"5075": {
+"uf": "SP",
+"slug": "piacatu"
+},
+"5077": {
+"uf": "SP",
+"slug": "pilar-do-sul"
+},
+"5086": {
+"uf": "SP",
+"slug": "pirajui"
+},
+"5087": {
+"uf": "SP",
+"slug": "pirangi"
+},
+"5089": {
+"uf": "SP",
+"slug": "pirapozinho"
+},
+"5092": {
+"uf": "SP",
+"slug": "pitangueiras"
+},
+"5096": {
+"uf": "SP",
+"slug": "poloni"
+},
+"5098": {
+"uf": "SP",
+"slug": "pongai"
+},
+"5099": {
+"uf": "SP",
+"slug": "pontal"
+},
+"5116": {
+"uf": "SP",
+"slug": "presidente-venceslau"
+},
+"5117": {
+"uf": "SP",
+"slug": "promissao"
+},
+"5119": {
+"uf": "SP",
+"slug": "quata"
+},
+"5126": {
+"uf": "SP",
+"slug": "regente-feijo"
+},
+"5127": {
+"uf": "SP",
+"slug": "reginopolis"
+},
+"5131": {
+"uf": "SP",
+"slug": "ribeirao-bonito"
+},
+"5132": {
+"uf": "SP",
+"slug": "ribeirao-branco"
+},
+"5135": {
+"uf": "SP",
+"slug": "ribeirao-dos-indios"
+},
+"5139": {
+"uf": "SP",
+"slug": "rifaina"
+},
+"5140": {
+"uf": "SP",
+"slug": "rincao"
+},
+"5142": {
+"uf": "SP",
+"slug": "rio-claro"
+},
+"5143": {
+"uf": "SP",
+"slug": "rio-das-pedras"
+},
+"5144": {
+"uf": "SP",
+"slug": "rio-grande-da-serra"
+},
+"5145": {
+"uf": "SP",
+"slug": "riolandia"
+},
+"5147": {
+"uf": "SP",
+"slug": "rosana"
+},
+"5149": {
+"uf": "SP",
+"slug": "rubiacea"
+},
+"5150": {
+"uf": "SP",
+"slug": "rubineia"
+},
+"5151": {
+"uf": "SP",
+"slug": "sabino"
+},
+"5153": {
+"uf": "SP",
+"slug": "sales"
+},
+"5157": {
+"uf": "SP",
+"slug": "saltinho"
+},
+"5158": {
+"uf": "SP",
+"slug": "salto"
+},
+"5159": {
+"uf": "SP",
+"slug": "salto-de-pirapora"
+},
+"5163": {
+"uf": "SP",
+"slug": "santa-albertina"
+},
+"5166": {
+"uf": "SP",
+"slug": "santa-clara-d-oeste"
+},
+"5167": {
+"uf": "SP",
+"slug": "santa-cruz-da-conceicao"
+},
+"5172": {
+"uf": "SP",
+"slug": "santa-fe-do-sul"
+},
+"5175": {
+"uf": "SP",
+"slug": "santa-lucia"
+},
+"5177": {
+"uf": "SP",
+"slug": "santa-mercedes"
+},
+"5178": {
+"uf": "SP",
+"slug": "santa-rita-d-oeste"
+},
+"5179": {
+"uf": "SP",
+"slug": "santa-rita-do-passa-quatro"
+},
+"5181": {
+"uf": "SP",
+"slug": "santa-salete"
+},
+"5184": {
+"uf": "SP",
+"slug": "santo-anastacio"
+},
+"5187": {
+"uf": "SP",
+"slug": "santo-antonio-de-posse"
+},
+"5191": {
+"uf": "SP",
+"slug": "santo-expedito"
+},
+"5194": {
+"uf": "SP",
+"slug": "sao-bento-do-sapucai"
+},
+"5195": {
+"uf": "SP",
+"slug": "sao-bernardo-do-campo"
+},
+"5200": {
+"uf": "SP",
+"slug": "sao-joao-das-duas-pontes"
+},
+"5202": {
+"uf": "SP",
+"slug": "sao-joao-do-pau-d-alho"
+},
+"5203": {
+"uf": "SP",
+"slug": "sao-joaquim-da-barra"
+},
+"5204": {
+"uf": "SP",
+"slug": "sao-jose-da-bela-vista"
+},
+"5206": {
+"uf": "SP",
+"slug": "sao-jose-do-rio-pardo"
+},
+"5224": {
+"uf": "SP",
+"slug": "serra-azul"
+},
+"5227": {
+"uf": "SP",
+"slug": "sertaozinho"
+},
+"5228": {
+"uf": "SP",
+"slug": "sete-barras"
+},
+"5229": {
+"uf": "SP",
+"slug": "severinia"
+},
+"5235": {
+"uf": "SP",
+"slug": "suzanapolis"
+},
+"5237": {
+"uf": "SP",
+"slug": "tabapua"
+},
+"5240": {
+"uf": "SP",
+"slug": "taciba"
+},
+"5243": {
+"uf": "SP",
+"slug": "taiuva"
+},
+"5244": {
+"uf": "SP",
+"slug": "tambau"
+},
+"5245": {
+"uf": "SP",
+"slug": "tanabi"
+},
+"5247": {
+"uf": "SP",
+"slug": "tapiratiba"
+},
+"5249": {
+"uf": "SP",
+"slug": "taquaritinga"
+},
+"5251": {
+"uf": "SP",
+"slug": "taquarivai"
+},
+"5252": {
+"uf": "SP",
+"slug": "tarabai"
+},
+"5262": {
+"uf": "SP",
+"slug": "torrinha"
+},
+"5264": {
+"uf": "SP",
+"slug": "tremembe"
+},
+"5266": {
+"uf": "SP",
+"slug": "tuiuti"
+},
+"5267": {
+"uf": "SP",
+"slug": "tupa"
+},
+"5273": {
+"uf": "SP",
+"slug": "ubirajara"
+},
+"5276": {
+"uf": "SP",
+"slug": "urania"
+},
+"5277": {
+"uf": "SP",
+"slug": "uru"
+},
+"5278": {
+"uf": "SP",
+"slug": "urupes"
+},
+"5279": {
+"uf": "SP",
+"slug": "valentim-gentil"
+},
+"5282": {
+"uf": "SP",
+"slug": "vargem"
+},
+"5284": {
+"uf": "SP",
+"slug": "vargem-grande-paulista"
+},
+"5288": {
+"uf": "SP",
+"slug": "viradouro"
+},
+"5290": {
+"uf": "SP",
+"slug": "vitoria-brasil"
+},
+"5292": {
+"uf": "SP",
+"slug": "votuporanga"
+},
+"5293": {
+"uf": "SP",
+"slug": "zacarias"
+},
+"5509": {
+"uf": "SP",
+"slug": "cioeste"
+},
+"5511": {
+"uf": "SP",
+"slug": "itupeva-legislativo"
+},
+"5513": {
+"uf": "SP",
+"slug": "santopolis-do-aguapei-legislativo"
+},
+"5515": {
+"uf": "SP",
+"slug": "itirapina-legislativo"
+},
+"5516": {
+"uf": "PE",
+"slug": "cabrobo-legislativo"
+},
+"5521": {
+"uf": "SP",
+"slug": "itapevi-legislativo"
+},
+"5522": {
+"uf": "SP",
+"slug": "morro-agudo-legislativo"
+},
+"5524": {
+"uf": "MA",
+"slug": "viana-legislativo"
+},
+"5525": {
+"uf": "MA",
+"slug": "penalva-legislativo"
+},
+"5526": {
+"uf": "MA",
+"slug": "presidente-juscelino-legislativo"
+},
+"5527": {
+"uf": "MA",
+"slug": "paco-do-lumiar-legislativo"
+},
+"5528": {
+"uf": "MA",
+"slug": "rosario-legislativo"
+},
+"5529": {
+"uf": "MA",
+"slug": "anajatuba-legislativo"
+},
+"5530": {
+"uf": "MA",
+"slug": "sao-jose-de-ribamar-legislativo"
+},
+"5535": {
+"uf": "MA",
+"slug": "pinheiro-legislativo"
+},
+"5536": {
+"uf": "MA",
+"slug": "mata-roma-legislativo"
+},
+"5537": {
+"uf": "MS",
+"slug": "deodapolis-legislativo"
+},
+"5540": {
+"uf": "SP",
+"slug": "monte-aprazivel-legislativo"
+},
+"5542": {
+"uf": "SP",
+"slug": "cisnap"
+},
+"5543": {
+"uf": "SP",
+"slug": "cimsa"
+},
+"5544": {
+"uf": "MG",
+"slug": "pocos-de-caldas-legislativo"
+},
+"5545": {
+"uf": "MA",
+"slug": "olho-d-agua-das-cunhas-legislativo"
+},
+"5546": {
+"uf": "MA",
+"slug": "sao-luis-legislativo"
+},
+"5549": {
+"uf": "SP",
+"slug": "panorama-legislativo"
+},
+"5551": {
+"uf": "MA",
+"slug": "palmeirandia-legislativo"
+},
+"5552": {
+"uf": "MA",
+"slug": "bela-vista-do-maranhao-legislativo"
+},
+"5553": {
+"uf": "MA",
+"slug": "sao-joao-dos-patos-legislativo"
+},
+"5554": {
+"uf": "SP",
+"slug": "pitangueiras-legislativo"
+},
+"5555": {
+"uf": "SP",
+"slug": "moncoes-legislativo"
+},
+"5556": {
+"uf": "MA",
+"slug": "santa-rita-legislativo"
+},
+"5557": {
+"uf": "SP",
+"slug": "campo-limpo-paulista-legislativo"
+},
+"5558": {
+"uf": "SP",
+"slug": "planalto-legislativo"
+},
+"5559": {
+"uf": "SP",
+"slug": "mirante-do-paranapanema-legislativo"
+},
+"5560": {
+"uf": "SP",
+"slug": "buritama-legislativo"
+},
+"5563": {
+"uf": "MA",
+"slug": "candido-mendes-legislativo"
+}
+}
+}

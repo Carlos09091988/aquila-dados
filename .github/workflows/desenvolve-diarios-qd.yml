@@ -49,7 +49,7 @@ jobs:
           echo "coletores: $(wc -l < ../../spiders.txt)"
           INI=$(date -u -d "-${{ github.event.inputs.dias || '2' }} days" +%Y-%m-%d); FIM=$(date -u +%Y-%m-%d)
           export FILES_STORE=$PWD/arquivos SPIDERMON_ENABLED=False QUERIDODIARIO_DATABASE_URL=sqlite:///$PWD/qd.db
-          cat ../../spiders.txt | xargs -P 8 -I{} timeout 420 uv run scrapy crawl {} -a start=$INI -a end=$FIM -s LOG_LEVEL=ERROR -s CONCURRENT_REQUESTS=4 -s DOWNLOAD_DELAY=0.5 > /dev/null 2> ../../erros.txt || true
+          cat ../../spiders.txt | xargs -P 8 -I{} timeout 420 uv run scrapy crawl {} -a start=$INI -a end=$FIM -s LOG_LEVEL=ERROR -s CONCURRENT_REQUESTS=4 -s DOWNLOAD_DELAY=0.5 -s 'DOWNLOADER_MIDDLEWARES={"gazette.middlewares.ZyteSmartProxyMiddleware": null}' > /dev/null 2> ../../erros.txt || true
           echo "linhas de erro: $(grep -c ERROR ../../erros.txt || true)"; grep -a "ERROR" ../../erros.txt | sed -E 's/.*ERROR: //' | cut -c1-160 | sort | uniq -c | sort -rn | head -8 || true
           mkdir -p ../../saida && mv qd.db ../../saida/ 2>/dev/null; mv arquivos ../../saida/ 2>/dev/null || true
           echo "edicoes baixadas: $(python3 -c "import sqlite3;print(sqlite3.connect('../../saida/qd.db').execute('select count(*) from gazettes').fetchone()[0])" 2>/dev/null || echo 0)"

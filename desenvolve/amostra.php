@@ -98,17 +98,24 @@ function dv_am_orgao( $cnpj ) {
 	);
 }
 
+function dv_am_norm( $t ) { return strtolower( remove_accents( (string) $t ) ); }
 function dv_am_editais( $q, $uf ) {
-	$u = 'https://pncp.gov.br/api/search/?q=' . rawurlencode( $q ) . '&tipos_documento=edital&status=recebendo_proposta&ordenacao=-data&pagina=1&tam_pagina=15' . ( $uf ? '&ufs=' . rawurlencode( $uf ) : '' );
+	$u = 'https://pncp.gov.br/api/search/?q=' . rawurlencode( $q ) . '&tipos_documento=edital&status=recebendo_proposta&ordenacao=-data&pagina=1&tam_pagina=60' . ( $uf ? '&ufs=' . rawurlencode( $uf ) : '' );
 	$j = dv_am_get( $u, 20 ); if ( ! is_array( $j ) ) { $j = dv_am_get( $u, 25 ); }
 	if ( ! is_array( $j ) ) { return new WP_Error( 'dv_am', 'O PNCP não respondeu agora. Tente de novo em instantes.', array( 'status' => 502 ) ); }
 	$it = array_map( 'dv_am_edital', (array) ( $j['items'] ?? array() ) );
+	// relevância: primeiro os editais com o termo no próprio objeto; depois os que só têm o termo nos itens
+	$ws = array_filter( preg_split( '/[^a-z0-9]+/', dv_am_norm( $q ) ), function ( $w ) { return strlen( $w ) >= 3; } );
+	$raiz = array_map( function ( $w ) { $w = preg_replace( '/(oes|aes|ais|eis|ns|s)$/', '', $w ); return strlen( $w ) > 6 ? substr( $w, 0, 6 ) : $w; }, $ws );
+	$no = array(); $nos = array();
+	foreach ( $it as $x ) { $o = dv_am_norm( $x['objeto'] ); $ok = $raiz && count( array_filter( $raiz, function ( $r ) use ( $o ) { return strpos( $o, $r ) !== false; } ) ) === count( $raiz ); $x['em'] = $ok ? 'objeto' : 'itens'; if ( $ok ) { $no[] = $x; } else { $nos[] = $x; } }
+	$it = array_merge( $no, $nos ); $tot = (int) ( $j['total'] ?? count( $it ) );
 	return array(
-		'tipo' => 'editais', 'nome' => 'Licitações abertas: ' . $q . ( $uf ? ' (' . $uf . ')' : '' ), 'fantasia' => '',
+		'tipo' => 'editais', 'nome' => 'Licitações abertas: ' . $q . ( $uf ? ' (' . $uf . ')' : '' ), 'fantasia' => '', 'termo' => $q, 'uf' => $uf,
 		'livre' => array(),
-		'achados' => array( array( 'n' => (int) ( $j['total'] ?? count( $it ) ), 'rot' => 'licitações recebendo propostas agora', 'alerta' => false ) ),
+		'achados' => array( array( 'n' => $tot, 'rot' => 'editais abertos citam “' . $q . '”' . ( $uf ? ' em ' . $uf : '' ) . ', no objeto ou na lista de itens', 'alerta' => false ) ),
 		'editais' => array_slice( $it, 0, 3 ),
-		'bloqueado' => array( 'editais' => array_slice( $it, 3 ) ),
+		'bloqueado' => array( 'editais' => array_slice( $it, 3, 17 ) ),
 	);
 }
 
@@ -120,7 +127,7 @@ add_action( 'rest_api_init', function () {
 		$cnpj = preg_replace( '/\D/', '', $q );
 		if ( $tipo !== 'editais' && strlen( $cnpj ) !== 14 ) { return new WP_Error( 'dv_am', 'Digite um CNPJ com 14 números.', array( 'status' => 400 ) ); }
 		if ( $tipo === 'editais' && mb_strlen( $q ) < 3 ) { return new WP_Error( 'dv_am', 'Digite o que você vende, por exemplo: limpeza, merenda, vigilância.', array( 'status' => 400 ) ); }
-		$ck = 'dv_am2_' . md5( $tipo . '|' . ( $tipo === 'editais' ? strtolower( remove_accents( $q ) ) . '|' . $uf : $cnpj ) ); $c = get_transient( $ck );
+		$ck = 'dv_am3_' . md5( $tipo . '|' . ( $tipo === 'editais' ? strtolower( remove_accents( $q ) ) . '|' . $uf : $cnpj ) ); $c = get_transient( $ck );
 		if ( $c === false ) {
 			$ip = function_exists( 'dv_sg_ip' ) ? dv_sg_ip() : (string) ( $_SERVER['REMOTE_ADDR'] ?? '' ); $kl = 'dv_am_ip_' . md5( $ip . current_time( 'Ymd' ) ); $n = (int) get_transient( $kl );
 			if ( $n >= 6 && ! current_user_can( 'manage_options' ) ) { return new WP_Error( 'dv_am', 'Você já fez as consultas grátis de hoje. Entre na lista de espera para usar sem limite no lançamento.', array( 'status' => 429 ) ); }

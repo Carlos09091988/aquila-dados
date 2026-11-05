@@ -293,9 +293,10 @@ add_action( 'rest_api_init', function () {
 		return array( 'gravados' => $n );
 	} ) );
 	/* gera ou mostra o segredo do robô (só administrador) */
-	register_rest_route( 'desenvolve/v1', '/robo/segredo', array( 'methods' => 'POST', 'permission_callback' => function () { return current_user_can( 'manage_options' ); }, 'callback' => function () {
-		$t = (string) get_option( 'dv_robo_token' ); if ( $t === '' ) { $t = wp_generate_password( 48, false, false ); update_option( 'dv_robo_token', $t, false ); }
-		return array( 'token' => $t );
+	register_rest_route( 'desenvolve/v1', '/robo/segredo', array( 'methods' => 'POST', 'permission_callback' => function () { return current_user_can( 'manage_options' ); }, 'callback' => function ( WP_REST_Request $r ) {
+		$n = preg_replace( '/[^A-Za-z0-9]/', '', (string) $r['token'] );
+		if ( strlen( $n ) >= 32 ) { update_option( 'dv_robo_token', $n, false ); return array( 'ok' => 1 ); }
+		return array( 'definido' => get_option( 'dv_robo_token' ) ? 1 : 0 );
 	} ) );
 } );
 /** Avisos da base do robô no mesmo formato de dv_dm_buscar */

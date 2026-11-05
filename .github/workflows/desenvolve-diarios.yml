@@ -1,0 +1,27 @@
+name: Desenvolve - robo dos diarios municipais
+on:
+  schedule:
+    - cron: '30 2 * * *'   # 23:30 em Brasilia (edicoes do dia)
+    - cron: '20 9 * * *'   # 06:20 em Brasilia (edicoes extras da noite)
+  workflow_dispatch:
+    inputs:
+      dias:
+        description: 'Quantos dias para tras'
+        default: '2'
+permissions:
+  contents: write
+jobs:
+  diarios:
+    runs-on: ubuntu-latest
+    timeout-minutes: 120
+    steps:
+      - uses: actions/checkout@v4
+      - run: sudo apt-get install -y poppler-utils >/dev/null
+      - run: python3 scripts/diarios_robo.py
+        env:
+          DV_ROBO_TOKEN: ${{ secrets.DV_ROBO_TOKEN }}
+          DIAS: ${{ github.event.inputs.dias || '2' }}
+          LIMITE_SEG: '6000'
+      - run: |
+          git config user.name "github-actions"; git config user.email "actions@github.com"
+          git add data/diarios && (git diff --cached --quiet || (git commit -q -m "Robo dos diarios: indice de cidades e resumo" && git pull -q --rebase && git push))

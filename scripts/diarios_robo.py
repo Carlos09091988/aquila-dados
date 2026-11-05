@@ -237,6 +237,12 @@ def main():
             if not txt:
                 continue
             feitos += 1
+            if doc['plat'] == 'dosp':
+                m = RX_MUN.search(txt[:4000])
+                if m:
+                    nm = re.sub(r'\s+', ' ', m.group(1)).strip().title()
+                    nm = re.sub(r'\b(De|Da|Do|Das|Dos|E)\b', lambda x: x.group(1).lower(), nm)
+                    doc = dict(doc, municipio=nm, fonte='Diário Oficial de %s (DiOE)' % nm)
             for a in atos(txt, doc):
                 t = a['texto']; n = ' ' + norm(t) + ' '; dg = None
                 for ch, tp, v in busca:
@@ -261,8 +267,8 @@ def main():
                 if doc['plat'] != 'sigpub':
                     cab = norm(t[:500])
                     if RX_QUER.search(cab) and not RX_NAO.search(norm(t[:160])):
-                        tit = re.sub(r'\s+', ' ', t[:200]).strip()
-                        avisos.append({'id': hashlib.sha1((a['link'] + '|' + a['cod'] + '|' + t[:80]).encode()).hexdigest()[:32], 'data': doc['data'], 'uf': doc['uf'], 'municipio': a['municipio'] or doc.get('municipio', ''), 'fonte': doc['fonte'], 'link': a['link'], 'titulo': tit, 'texto': re.sub(r'[ \t]+', ' ', t)[:6000]})
+                        tit = re.sub(r'\s+', ' ', t[:200]).strip()[:200]
+                        avisos.append({'id': hashlib.sha1((a['link'] + '|' + a['cod'] + '|' + t[:80]).encode()).hexdigest()[:32], 'data': doc['data'], 'uf': doc['uf'], 'municipio': a['municipio'] or doc.get('municipio', ''), 'fonte': doc['fonte'], 'link': a['link'], 'titulo': tit, 'texto': re.sub(r'\s+', ' ', t)[:6000]})
     log('edições lidas', feitos, 'de', len(docs), '| avisos', len(avisos), '| citações', len(achados))
     log('gravados avisos', post('avisos', avisos), '| gravados citações', post('achados', achados))
     json.dump({'quando': dt.datetime.now().isoformat(), 'edicoes': len(docs), 'lidas': feitos, 'avisos': len(avisos), 'citacoes': len(achados), 'por_fonte': {p: sum(1 for d in docs if d['plat'] == p) for p in ('sigpub', 'famem', 'dosp')}}, open(os.path.join(DADOS, 'ultimo.json'), 'w'), indent=1)

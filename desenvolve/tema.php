@@ -420,3 +420,13 @@ add_action( 'wp_enqueue_scripts', 'dv_app_enxuga', 9999 );
 add_action( 'wp_print_styles', 'dv_app_enxuga', 1 );
 add_action( 'wp_print_scripts', 'dv_app_enxuga', 1 );
 add_action( 'wp_print_footer_scripts', 'dv_app_enxuga', 1 );
+
+/* administrador: remover um contato da lista de espera (ex.: testes) */
+add_action( 'rest_api_init', function () {
+	register_rest_route( 'desenvolve/v1', '/lista-remover', array( 'methods' => 'POST', 'permission_callback' => function () { return current_user_can( 'manage_options' ); }, 'callback' => function ( WP_REST_Request $r ) {
+		global $wpdb; $em = strtolower( sanitize_email( (string) $r['email'] ) ); if ( ! $em ) { return new WP_Error( 'dv', 'e-mail inválido', array( 'status' => 400 ) ); }
+		$wpdb->get_var( "SELECT GET_LOCK('dv_lista', 10)" ); wp_cache_delete( 'dv_lista', 'options' );
+		$l = (array) get_option( 'dv_lista', array() ); $tinha = isset( $l[ $em ] ); unset( $l[ $em ] ); if ( $tinha ) { update_option( 'dv_lista', $l, false ); }
+		$wpdb->query( "SELECT RELEASE_LOCK('dv_lista')" ); return array( 'removido' => $tinha, 'restam' => count( $l ) );
+	} ) );
+} );

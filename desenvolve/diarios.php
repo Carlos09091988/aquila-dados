@@ -114,19 +114,60 @@ function dv_dm_saude( $k, $ok ) {
  * Busca um texto em todos os diários municipais (ou só nos estados pedidos).
  * $paginas: quantas páginas por fonte (25 resultados cada no SIGPub, 10 no DOM/SC).
  */
-function dv_dm_buscar( $texto, $desde, $ufs = array(), $ate = '', $paginas = 1 ) {
-	$texto = trim( (string) $texto ); if ( mb_strlen( $texto ) < 3 ) { return array(); }
+function dv_dm_buscar( $texto, $desde, $ufs = array(), $ate = '', $paginas = 1, $frase = false ) {
+	$texto = trim( str_replace( '"', '', (string) $texto ) ); if ( mb_strlen( $texto ) < 3 ) { return array(); }
 	$urls = array();
 	foreach ( dv_dm_fontes() as $k => $f ) {
 		if ( $ufs && ! in_array( $f['uf'], $ufs, true ) ) { continue; }
 		$np = $f['plat'] === 'domsc' ? $paginas * 2 : $paginas;
-		for ( $p = 1; $p <= $np; $p++ ) { $urls[ $k . '#' . $p ] = dv_dm_url( $k, $texto, $desde, $ate, $p ); }
+		$q = ( $frase && $f['plat'] === 'domsc' ) ? '"' . $texto . '"' : $texto;
+		for ( $p = 1; $p <= $np; $p++ ) { $urls[ $k . '#' . $p ] = dv_dm_url( $k, $q, $desde, $ate, $p ); }
 	}
 	$res = dv_dm_baixar( $urls ); $itens = array();
 	foreach ( $res as $kp => $b ) { $k = explode( '#', $kp )[0]; foreach ( dv_dm_itens( $k, $b ) as $x ) { $itens[ $x['id'] ] = $x; } }
+	if ( $frase ) { $itens = dv_dm_conferir( $itens, $texto ); }
 	$itens = array_values( $itens );
+	foreach ( $itens as &$x ) { if ( $x['municipio'] !== '' && mb_strtoupper( $x['municipio'] ) === $x['municipio'] ) { $x['municipio'] = mb_convert_case( mb_strtolower( $x['municipio'] ), MB_CASE_TITLE ); $x['municipio'] = preg_replace_callback( '/\b(De|Da|Do|Das|Dos|E)\b/u', function ( $m ) { return mb_strtolower( $m[1] ); }, $x['municipio'] ); } } unset( $x );
 	usort( $itens, function ( $a, $b ) { return strcmp( $b['data'], $a['data'] ); } );
 	return $itens;
+}
+function dv_dm_norm( $s ) { return trim( preg_replace( '/[^A-Z0-9]+/', ' ', strtoupper( remove_accents( (string) $s ) ) ) ); }
+/** Texto integral de uma matéria do SIGPub (guardado 30 dias) */
+function dv_dm_materia( $links ) {
+	$out = array(); $falta = array();
+	foreach ( $links as $l ) { $c = get_transient( 'dv_dmm_' . md5( $l ) ); if ( is_string( $c ) ) { $out[ $l ] = $c; } else { $falta[ md5( $l ) ] = $l; } }
+	foreach ( array_chunk( $falta, 8, true ) as $ch ) {
+		$res = function_exists( 'dv_ds_multi' ) ? dv_ds_multi( $ch, array( 'Accept' => 'text/html', 'User-Agent' => 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0 Safari/537.36' ), 20 ) : array();
+		foreach ( $ch as $h => $l ) {
+			$b = $res[ $h ] ?? null; if ( ! $b ) { continue; }
+			$i = strpos( $b, 'documento__corpo' ); $t = $i !== false ? substr( $b, $i, 150000 ) : $b;
+			$t = mb_substr( dv_dm_txt( preg_replace( '#<(script|style)[^>]*>.*?</\1>#s', ' ', $t ) ), 0, 60000 );
+			set_transient( 'dv_dmm_' . $h, $t, 30 * DAY_IN_SECONDS ); $out[ $l ] = $t;
+		}
+	}
+	return $out;
+}
+/** Mantém só as publicações que trazem a frase exata (o SIGPub busca palavra por palavra). Confere no texto integral quando o trecho não basta. */
+function dv_dm_conferir( $itens, $frase ) {
+	$nf = dv_dm_norm( $frase ); if ( $nf === '' ) { return $itens; }
+	$ok = array(); $cand = array();
+	foreach ( $itens as $id => $x ) {
+		if ( strpos( ' ' . dv_dm_norm( $x['titulo'] . ' ' . $x['trecho'] ) . ' ', ' ' . $nf . ' ' ) !== false ) { $ok[ $id ] = $x; continue; }
+		if ( strpos( $id, 'S' ) === 0 ) { $cand[ $id ] = $x; } /* DOM/SC já buscou a frase exata */ else { $ok[ $id ] = $x; }
+	}
+	$cand = array_slice( $cand, 0, 80, true );
+	if ( $cand ) {
+		$tx = dv_dm_materia( array_column( $cand, 'link' ) );
+		foreach ( $cand as $id => $x ) {
+			$t = $tx[ $x['link'] ] ?? ''; if ( $t === '' ) { continue; }
+			$n = dv_dm_norm( $t ); $p = strpos( ' ' . $n . ' ', ' ' . $nf . ' ' ); if ( $p === false ) { continue; }
+			/* trecho em volta da citação, no texto original (posição aproximada) */
+			$pos = mb_stripos( remove_accents( $t ), remove_accents( mb_substr( $frase, 0, 40 ) ) );
+			if ( $pos !== false ) { $x['trecho'] = '… ' . mb_substr( $t, max( 0, $pos - 260 ), 620 ) . ' …'; }
+			$ok[ $id ] = $x;
+		}
+	}
+	return $ok;
 }
 
 /** Cobertura: quantos municípios cada fonte atende (contado na lista de entidades da própria plataforma; atualiza 1x por semana) */
@@ -165,7 +206,7 @@ add_action( 'rest_api_init', function () {
 	} ) );
 	register_rest_route( 'desenvolve/v1', '/dm/teste', array( 'methods' => 'GET', 'permission_callback' => $adm, 'callback' => function ( WP_REST_Request $r ) {
 		$t0 = microtime( true ); $ufs = array_filter( explode( '|', strtoupper( (string) $r['ufs'] ) ) );
-		$it = dv_dm_buscar( (string) $r['q'], (string) ( $r['desde'] ?: gmdate( 'Y-m-d', strtotime( '-7 days' ) ) ), $ufs, '', (int) ( $r['pag'] ?: 1 ) );
+		$it = dv_dm_buscar( (string) $r['q'], (string) ( $r['desde'] ?: gmdate( 'Y-m-d', strtotime( '-7 days' ) ) ), $ufs, '', (int) ( $r['pag'] ?: 1 ), ! empty( $r['frase'] ) );
 		$por = array(); foreach ( $it as $x ) { $por[ $x['uf'] ] = ( $por[ $x['uf'] ] ?? 0 ) + 1; }
 		return array( 'ms' => (int) ( ( microtime( true ) - $t0 ) * 1000 ), 'total' => count( $it ), 'por_uf' => $por, 'itens' => array_slice( $it, 0, (int) ( $r['n'] ?: 20 ) ) );
 	} ) );

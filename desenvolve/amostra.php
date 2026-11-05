@@ -144,7 +144,7 @@ add_action( 'rest_api_init', function () {
 		$c['paginas'] = dv_am_paginas( $c );
 		// o resultado completo só sai do servidor para quem já deixou o e-mail na lista de espera
 		$em = strtolower( sanitize_email( (string) $r['email'] ) );
-		$lib = current_user_can( 'manage_options' ) || ( $em && function_exists( 'dv_lista' ) && isset( dv_lista()[ $em ] ) );
+		$lib = current_user_can( 'manage_options' ) || ( $em && function_exists( 'dv_lista_tk_ok' ) && dv_lista_tk_ok( $em, (string) $r['tk'] ) );
 		if ( $lib ) { return $c; }
 		return dv_am_trava( $c );
 	} ) );

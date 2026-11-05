@@ -1053,24 +1053,60 @@ function dv_lista() { $l = get_option( 'dv_lista', array() ); return is_array( $
 add_action( 'rest_api_init', function () {
 	register_rest_route( 'desenvolve/v1', '/lista', array( 'methods' => 'POST', 'permission_callback' => '__return_true', 'callback' => function ( WP_REST_Request $r ) {
 		if ( trim( (string) $r['site'] ) !== '' ) { return array( 'ok' => true ); } // armadilha para robôs
-		$ip = $_SERVER['REMOTE_ADDR'] ?? ''; $k = 'dv_lista_ip_' . md5( $ip ); $n = (int) get_transient( $k );
-		if ( $n >= 5 ) { return new WP_Error( 'dv_lista', 'Muitas tentativas. Tente de novo mais tarde.', array( 'status' => 429 ) ); }
+		$ip = function_exists( 'dv_sg_ip' ) ? dv_sg_ip() : (string) ( $_SERVER['REMOTE_ADDR'] ?? '' ); $k = 'dv_lista_ip_' . md5( $ip ); $n = (int) get_transient( $k );
+		if ( $n >= 12 ) { return new WP_Error( 'dv_lista', 'Muitas tentativas seguidas. Tente de novo em alguns minutos.', array( 'status' => 429 ) ); }
 		set_transient( $k, $n + 1, HOUR_IN_SECONDS );
 		$nome = sanitize_text_field( (string) $r['nome'] ); $email = sanitize_email( (string) $r['email'] );
 		$whats = preg_replace( '/[^\d()+\- ]/', '', (string) $r['whats'] ); $ramo = sanitize_text_field( (string) $r['ramo'] ); $emp = sanitize_text_field( (string) $r['empresa'] );
 		if ( ! is_email( $email ) ) { return new WP_Error( 'dv_lista', 'Informe um e-mail válido.', array( 'status' => 400 ) ); }
+		$chk = dv_lista_confere_email( $email ); if ( is_wp_error( $chk ) ) { return $chk; }
 		if ( mb_strlen( $nome ) < 2 ) { $nome = ucwords( str_replace( array( '.', '_', '-' ), ' ', strstr( $email, '@', true ) ) ); }
-		$l = dv_lista(); $em = strtolower( $email );
-		if ( isset( $l[ $em ] ) ) { return array( 'ok' => true, 'ja' => true ); }
-		$l[ $em ] = array( 'nome' => mb_substr( $nome, 0, 120 ), 'email' => $em, 'whats' => mb_substr( $whats, 0, 30 ), 'empresa' => mb_substr( $emp, 0, 120 ), 'ramo' => mb_substr( $ramo, 0, 120 ), 'data' => current_time( 'mysql' ), 'bonus' => 0 );
-		update_option( 'dv_lista', $l, false );
+		$em = strtolower( $email ); global $wpdb;
+		$trava = (int) $wpdb->get_var( "SELECT GET_LOCK('dv_lista', 10)" );
+		wp_cache_delete( 'dv_lista', 'options' ); wp_cache_delete( 'alloptions', 'options' ); wp_cache_delete( 'notoptions', 'options' );
+		$l = dv_lista();
+		if ( isset( $l[ $em ] ) ) {
+			if ( $ramo && empty( $l[ $em ]['ramo'] ) ) { $l[ $em ]['ramo'] = mb_substr( $ramo, 0, 120 ); update_option( 'dv_lista', $l, false ); }
+			if ( $trava ) { $wpdb->query( "SELECT RELEASE_LOCK('dv_lista')" ); }
+			$kr = 'dv_lista_lemb_' . md5( $em );
+			if ( ! get_transient( $kr ) ) { set_transient( $kr, 1, DAY_IN_SECONDS ); $from = dv_cfg( 'email_remetente' ) ?: 'contato@desenvolveestrategias.com.br';
+				wp_mail( $em, 'Seu lugar na lista da Desenvolve está garantido', 'Olá!' . "\n\nSeu e-mail já está na lista de espera da Desenvolve Estratégias, com o preço de fundador (R$ 79,90/mês para sempre) garantido.\n\nNo lançamento, em 17 de novembro, você recebe o acesso antes de todo mundo.\n\nEquipe Desenvolve Estratégias\nhttps://desenvolveestrategias.com.br", array( 'From: Desenvolve <' . $from . '>' ) ); }
+			return array( 'ok' => true, 'tk' => dv_lista_tk( $em ) );
+		}
+		$l[ $em ] = array( 'nome' => mb_substr( $nome, 0, 120 ), 'email' => $em, 'whats' => mb_substr( $whats, 0, 30 ), 'empresa' => mb_substr( $emp, 0, 120 ), 'ramo' => mb_substr( $ramo, 0, 120 ), 'data' => current_time( 'mysql' ), 'bonus' => 0, 'ip' => mb_substr( $ip, 0, 45 ) );
+		$gravou = update_option( 'dv_lista', $l, false );
+		if ( $trava ) { $wpdb->query( "SELECT RELEASE_LOCK('dv_lista')" ); }
+		wp_cache_delete( 'dv_lista', 'options' );
+		if ( ! $gravou || empty( dv_lista()[ $em ] ) ) { // nunca perder um contato: guarda numa reserva e avisa
+			$rs = (array) get_option( 'dv_lista_reserva', array() ); $rs[] = $l[ $em ]; update_option( 'dv_lista_reserva', $rs, false );
+			wp_mail( get_option( 'admin_email' ), 'ATENÇÃO: falha ao gravar contato da lista', "O contato $em não foi gravado na lista principal e ficou na reserva (dv_lista_reserva)." );
+		}
 		$from = dv_cfg( 'email_remetente' ) ?: 'contato@desenvolveestrategias.com.br'; $h = array( 'From: Desenvolve <' . $from . '>' );
 		$b = (int) get_option( 'dv_bonus_lista', 100 );
 		wp_mail( $em, 'Você está na lista da Desenvolve', 'Olá, ' . $nome . "!\n\nSeu nome está na lista de espera da Desenvolve Estratégias, inteligência em licitações.\n\nVocê vai receber os planos antes de todo mundo, no dia do lançamento, e ganha " . $b . " créditos de bônus para usar no primeiro mês: Raio-X do concorrente, Due Diligence e as demais ferramentas. Seu preço de fundador também fica garantido: R$ " . dv_rs( (float) str_replace( ',', '.', (string) dv_cfg( 'fundador_preco' ) ) ) . "/mês para sempre, enquanto mantiver a assinatura (depois do lançamento, o preço normal é R$ " . dv_rs( (float) dv_plano_info( 'desenvolve' )['preco'] ) . "). Para receber o bônus, assine com este mesmo e-mail: os créditos entram junto com a primeira mensalidade e valem durante o primeiro mês.\n\nAté breve!\nEquipe Desenvolve", $h );
 		wp_mail( get_option( 'admin_email' ), 'Lista de espera: ' . $nome, "Nome: $nome\nE-mail: $em\nWhatsApp: $whats\nEmpresa: $emp\nRamo: $ramo\n\nVeja a lista completa no painel: " . admin_url( 'admin.php?page=dv-lista' ), $h );
-		return array( 'ok' => true );
+		return array( 'ok' => true, 'tk' => dv_lista_tk( $em ) );
 	} ) );
 } );
+/** Chave de acesso do contato (libera os relatórios da consulta grátis sem expor quem está na lista) */
+function dv_lista_tk( $em ) { return substr( hash_hmac( 'sha256', strtolower( trim( (string) $em ) ), wp_salt( 'auth' ) . '|dv_lista' ), 0, 32 ); }
+function dv_lista_tk_ok( $em, $tk ) { $em = strtolower( trim( (string) $em ) ); return $em && is_string( $tk ) && strlen( $tk ) === 32 && hash_equals( dv_lista_tk( $em ), $tk ) && isset( dv_lista()[ $em ] ); }
+/** Confere se o e-mail existe de verdade: erro de digitação comum, domínio descartável, domínio que não recebe e-mail */
+function dv_lista_confere_email( $email ) {
+	$dom = strtolower( substr( strrchr( $email, '@' ), 1 ) );
+	$typo = array( 'gmial.com' => 'gmail.com', 'gmai.com' => 'gmail.com', 'gmail.con' => 'gmail.com', 'gmail.co' => 'gmail.com', 'gmail.com.br' => 'gmail.com', 'gamil.com' => 'gmail.com', 'gnail.com' => 'gmail.com', 'gmal.com' => 'gmail.com',
+		'hotmial.com' => 'hotmail.com', 'hotmail.con' => 'hotmail.com', 'hotmai.com' => 'hotmail.com', 'hotmal.com' => 'hotmail.com', 'hotmil.com' => 'hotmail.com', 'outlok.com' => 'outlook.com', 'outlook.con' => 'outlook.com',
+		'yaho.com' => 'yahoo.com', 'yahoo.con' => 'yahoo.com', 'yahoo.com.b' => 'yahoo.com.br', 'uol.com' => 'uol.com.br', 'bol.com' => 'bol.com.br', 'terra.com' => 'terra.com.br', 'icloud.con' => 'icloud.com' );
+	if ( isset( $typo[ $dom ] ) ) { return new WP_Error( 'dv_lista', 'Confira o e-mail: você quis dizer ' . strstr( $email, '@', true ) . '@' . $typo[ $dom ] . '?', array( 'status' => 400 ) ); }
+	$desc = array( 'mailinator.com', 'yopmail.com', 'guerrillamail.com', '10minutemail.com', 'tempmail.com', 'temp-mail.org', 'trashmail.com', 'sharklasers.com', 'getnada.com', 'dispostable.com', 'maildrop.cc', 'emailondeck.com', 'fakeinbox.com', 'throwawaymail.com' );
+	if ( in_array( $dom, $desc, true ) ) { return new WP_Error( 'dv_lista', 'Use um e-mail permanente: é por ele que você recebe o acesso e o preço de fundador.', array( 'status' => 400 ) ); }
+	if ( function_exists( 'checkdnsrr' ) ) {
+		$ck = 'dv_dns_' . md5( $dom ); $ok = get_transient( $ck );
+		if ( $ok === false ) { $ok = ( checkdnsrr( $dom, 'MX' ) || checkdnsrr( $dom, 'A' ) ) ? 'sim' : 'nao'; set_transient( $ck, $ok, $ok === 'sim' ? WEEK_IN_SECONDS : HOUR_IN_SECONDS ); }
+		if ( $ok === 'nao' ) { return new WP_Error( 'dv_lista', 'Confira o e-mail: o endereço "' . $dom . '" não recebe mensagens.', array( 'status' => 400 ) ); }
+	}
+	return true;
+}
 /* Bônus da lista de espera: entra junto com a PRIMEIRA mensalidade paga (chamado pelo webhook do Asaas) */
 function dv_bonus_lista( $uid ) {
 	$u = get_userdata( $uid ); if ( ! $u ) { return; }

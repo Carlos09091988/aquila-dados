@@ -193,7 +193,8 @@ function dv_al_dm_completar( $dia ) {
 		$t = $tx[ $x['link'] ]; $nd = dv_al_norm( $t );
 		$enc = dv_al_dt_sessao( $t ) ?: $x['encerra']; $x['encerra'] = ( $enc && substr( $enc, 0, 10 ) > $x['publicado'] ) ? $enc : '';
 		if ( preg_match( '/\bOBJETO\s*(?:DA LICITA[ÇC][ÃA]O|DO CERTAME|DO PREG[ÃA]O)?\s*[:\-–]\s*(.{20,480}?)(?:\.\s|;|\s(?:DATA|ABERTURA|SESS[ÃA]O|ENTREGA|VALOR|PRAZO|LOCAL|INFORMA[ÇC]|O EDITAL|EDITAL|OS INTERESSADOS|TIPO)\b|$)/iu', $t, $ob ) ) { $x['objeto'] = rtrim( trim( $ob[1], ' "“”' ), '.' ); }
-		$x['numero'] = dv_al_numero( $nd ) ?: $x['numero']; $x['modalidade'] = dv_al_modalidade( dv_al_norm( $x['titulo'] ) . ' ' . $nd );
+		$nl = function ( $n ) { return preg_match( '#^(14133/2021|8666/1993|10520/2002|123/2006|147/2014|13303/2016)$#', str_replace( '.', '', (string) $n ) ) ? '' : $n; };
+		$x['numero'] = $nl( dv_al_numero( dv_al_norm( $x['titulo'] ) ) ) ?: ( $nl( $x['numero'] ) ?: $nl( dv_al_numero( $nd ) ) ); $x['modalidade'] = dv_al_modalidade( dv_al_norm( $x['titulo'] ) . ' ' . $nd );
 		if ( preg_match( '#VALOR (?:TOTAL |GLOBAL )?(?:ESTIMADO|MAXIMO|DE REFERENCIA)?[^0-9]{0,25}R\$\s*([\d.]+,\d{2})#', $nd, $v ) ) { $x['valor'] = (float) str_replace( array( '.', ',' ), array( '', '.' ), $v[1] ); }
 		$x['trecho'] = mb_substr( $t, 0, 1500 );
 	}

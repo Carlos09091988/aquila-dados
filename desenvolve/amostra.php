@@ -93,8 +93,8 @@ function dv_am_orgao( $cnpj ) {
 			array( 'n' => (int) $ab['total'], 'rot' => (int) $ab['total'] === 1 ? 'licitação aberta agora' : 'licitações abertas agora', 'alerta' => false ),
 			array( 'n' => $contratos === null ? '—' : $contratos, 'rot' => 'contratos publicados no PNCP', 'alerta' => false ),
 		),
-		'editais' => array_slice( $it, 0, 2 ),
-		'bloqueado' => array( 'editais' => array_slice( $it, 2, 12 ) ),
+		'editais' => array_slice( $it, 0, 1 ),
+		'bloqueado' => array( 'editais' => array_slice( $it, 1, 15 ) ),
 	);
 }
 
@@ -114,8 +114,8 @@ function dv_am_editais( $q, $uf ) {
 		'tipo' => 'editais', 'nome' => 'Licitações abertas: ' . $q . ( $uf ? ' (' . $uf . ')' : '' ), 'fantasia' => '', 'termo' => $q, 'uf' => $uf,
 		'livre' => array(),
 		'achados' => array( array( 'n' => $tot, 'rot' => 'editais abertos citam “' . $q . '”' . ( $uf ? ' em ' . $uf : '' ) . ', no objeto ou na lista de itens', 'alerta' => false ) ),
-		'editais' => array_slice( $it, 0, 3 ),
-		'bloqueado' => array( 'editais' => array_slice( $it, 3, 17 ) ),
+		'editais' => array_slice( $it, 0, 1 ),
+		'bloqueado' => array( 'editais' => array_slice( $it, 1, 19 ) ),
 	);
 }
 
@@ -127,7 +127,7 @@ add_action( 'rest_api_init', function () {
 		$cnpj = preg_replace( '/\D/', '', $q );
 		if ( $tipo !== 'editais' && strlen( $cnpj ) !== 14 ) { return new WP_Error( 'dv_am', 'Digite um CNPJ com 14 números.', array( 'status' => 400 ) ); }
 		if ( $tipo === 'editais' && mb_strlen( $q ) < 3 ) { return new WP_Error( 'dv_am', 'Digite o que você vende, por exemplo: limpeza, merenda, vigilância.', array( 'status' => 400 ) ); }
-		$ck = 'dv_am3_' . md5( $tipo . '|' . ( $tipo === 'editais' ? strtolower( remove_accents( $q ) ) . '|' . $uf : $cnpj ) ); $c = get_transient( $ck );
+		$ck = 'dv_am4_' . md5( $tipo . '|' . ( $tipo === 'editais' ? strtolower( remove_accents( $q ) ) . '|' . $uf : $cnpj ) ); $c = get_transient( $ck );
 		if ( $c === false ) {
 			$ip = function_exists( 'dv_sg_ip' ) ? dv_sg_ip() : (string) ( $_SERVER['REMOTE_ADDR'] ?? '' ); $kl = 'dv_am_ip_' . md5( $ip . current_time( 'Ymd' ) ); $n = (int) get_transient( $kl );
 			if ( $n >= 6 && ! current_user_can( 'manage_options' ) ) { return new WP_Error( 'dv_am', 'Você já fez as consultas grátis de hoje. Entre na lista de espera para usar sem limite no lançamento.', array( 'status' => 429 ) ); }
@@ -141,6 +141,7 @@ add_action( 'rest_api_init', function () {
 		}
 		/* registra toda busca (também as que vieram do cache); marca quando é o administrador */
 		$log = (array) get_option( 'dv_am_log', array() ); array_unshift( $log, array( current_time( 'mysql' ), $tipo, ( $tipo === 'editais' ? $q . ( $uf ? ' (' . $uf . ')' : '' ) : $cnpj ) . ( current_user_can( 'manage_options' ) ? ' · teste interno' : '' ) ) ); update_option( 'dv_am_log', array_slice( $log, 0, 300 ), false );
+		$c['paginas'] = dv_am_paginas( $c );
 		// o resultado completo só sai do servidor para quem já deixou o e-mail na lista de espera
 		$em = strtolower( sanitize_email( (string) $r['email'] ) );
 		$lib = current_user_can( 'manage_options' ) || ( $em && function_exists( 'dv_lista' ) && isset( dv_lista()[ $em ] ) );
@@ -149,6 +150,15 @@ add_action( 'rest_api_init', function () {
 	} ) );
 } );
 
+/** Páginas do relatório completo (A4): capa/resumo + conteúdo, ~5 editais ou ~12 linhas de lista por página */
+function dv_am_paginas( $c ) {
+	$B = (array) ( $c['bloqueado'] ?? array() ); $p = 1;
+	if ( ! empty( $B['editais'] ) ) { $p += (int) ceil( ( count( $B['editais'] ) + count( (array) ( $c['editais'] ?? array() ) ) ) / 5 ); }
+	foreach ( array( 'grupo', 'sancoes', 'socios' ) as $k ) { if ( ! empty( $B[ $k ] ) ) { $p += (int) ceil( count( $B[ $k ] ) / 12 ); } }
+	if ( ! empty( $B['pgfn'] ) ) { $p++; }
+	if ( ( $c['tipo'] ?? '' ) !== 'empresa' ) { $p++; } // análise: prazos, fornecedor atual e concorrentes
+	return max( 2, $p );
+}
 /** Substitui o conteúdo bloqueado por marcadores (mantém só as quantidades) */
 function dv_am_trava( $c ) {
 	$B = (array) ( $c['bloqueado'] ?? array() ); $t = array();

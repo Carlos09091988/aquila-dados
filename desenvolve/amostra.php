@@ -170,6 +170,11 @@ function dv_am_trava( $c ) {
 		elseif ( array_keys( $v ) === range( 0, $n - 1 ) ) { $t[ $k ] = array_fill( 0, $n, '●●●●●●●●●●●●●●●●●●●●' ); }
 		else { $t[ $k ] = null; }
 	}
+	// sem e-mail não sai nenhum dado: nem amostra de edital, nem cadastro, nem números dos achados
+	$ne = count( (array) ( $c['editais'] ?? array() ) );
+	if ( $ne ) { $t['editais'] = array_merge( array_fill( 0, $ne, array( 'objeto' => 'Licitação liberada depois do e-mail ●●●●●●●●●●●●●●●●●●●●●●●●', 'orgao' => '●●●●●●●●●●●●', 'local' => '●●●●', 'modalidade' => '', 'fim' => '', 'valor' => 0, 'link' => '' ) ), (array) ( $t['editais'] ?? array() ) ); }
+	$c['editais'] = array(); $c['livre'] = array();
+	if ( ( $c['tipo'] ?? '' ) !== 'editais' ) { foreach ( (array) $c['achados'] as $i => $a ) { $c['achados'][ $i ]['n'] = '●'; $c['achados'][ $i ]['alerta'] = false; } }
 	$c['bloqueado'] = $t; $c['travado'] = true;
 	return $c;
 }

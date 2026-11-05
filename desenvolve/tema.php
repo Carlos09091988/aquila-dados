@@ -65,7 +65,9 @@ function dv_te_bloco( $t ) {
 		} elseif ( strpos( $p, 'background' ) === 0 ) { $papel = 'fundo'; }
 		elseif ( $p === 'color' ) { if ( $fundo_medio ) { return $m[0]; } $papel = 'texto'; }
 		else { $papel = 'borda'; }
-		return $m[1] . $m[2] . preg_replace_callback( '/#[0-9a-fA-F]{6}\b|#[0-9a-fA-F]{3}\b/', function ( $c ) use ( $papel ) { return dv_te_cor( $c[0], $papel ); }, $m[3] );
+		$v = preg_replace_callback( '/#[0-9a-fA-F]{6}\b|#[0-9a-fA-F]{3}\b/', function ( $c ) use ( $papel ) { return dv_te_cor( $c[0], $papel ); }, $m[3] );
+		if ( $papel === 'fundo' ) { $v = preg_replace( '/rgba\(\s*255\s*,\s*255\s*,\s*255\s*,\s*(0?\.[5-9]\d*|1(?:\.0+)?)\s*\)/', 'rgba(13,15,19,$1)', $v ); }
+		return $m[1] . $m[2] . $v;
 	}, $t );
 }
 function dv_te_converter( $html ) {
@@ -216,7 +218,7 @@ html.dv-rail .dv-side nav a,html.dv-rail .dv-side .lg{white-space:nowrap}
 html.dv-rail .dv-side .gt,html.dv-rail .dv-side .lg b,html.dv-rail .dv-side .lg small,html.dv-rail .dv-side .ft,html.dv-rail .dv-side nav a .bd{transition:opacity .18s}
 html.dv-rail .dv-side:not(.ab) .gt,html.dv-rail .dv-side:not(.ab) .lg b,html.dv-rail .dv-side:not(.ab) .lg small,html.dv-rail .dv-side:not(.ab) .ft,html.dv-rail .dv-side:not(.ab) nav a .bd,html.dv-rail .dv-side:not(.ab) .dv-pin{opacity:0;pointer-events:none}
 html.dv-rail .dv-side:not(.ab) .gt{height:1px;margin:10px 14px!important;background:rgba(255,255,255,.07)}
-html.dv-rail .dv-side:not(.ab) nav{overflow:hidden}
+html.dv-rail .dv-side nav{overflow-y:auto!important;overflow-x:hidden!important;scrollbar-width:none}html.dv-rail .dv-side nav::-webkit-scrollbar{display:none}html.dv-rail .dv-side:not(.ab) .ft{display:none}html.dv-rail .dv-side:not(.ab) nav a{padding-top:8px!important;padding-bottom:8px!important}
 html.dv-rail body.dv-app .dv-side:not(.ab) nav a,html.dv-rail body.dv-app .dv-side:not(.ab) nav a.on,html.dv-rail body.dv-app .dv-side:not(.ab) nav a:hover{color:transparent!important;background:transparent!important}html.dv-rail body.dv-app .dv-side:not(.ab) nav a.on .ic{color:#E6C27A!important}html.dv-rail body.dv-app .dv-side:not(.ab) nav a.on{box-shadow:inset 2px 0 0 #C9A45C!important}html.dv-rail .dv-side nav a{transition:color .18s,background .18s}
 html.dv-rail .dv-side nav a{padding-left:16px!important}
 }
@@ -281,6 +283,7 @@ html.dv-escuro body.dv-app .dv-h td{color:#8F8D86!important}html.dv-escuro body.
 html.dv-escuro body.dv-app .dv-side{background:linear-gradient(180deg,#050506,#000)!important;border-right:1px solid rgba(255,255,255,.06)!important}
 html.dv-escuro body.dv-app .dv-side nav a.on{background:linear-gradient(90deg,rgba(201,164,92,.16),rgba(201,164,92,.02))!important;box-shadow:inset 2px 0 0 #C9A45C!important;color:#fff!important}
 html.dv-escuro body.dv-app .dv-side nav a.on .ic{color:#E6C27A!important;filter:drop-shadow(0 0 6px rgba(201,164,92,.6))}
+html.dv-escuro body.dv-app .dv-rnav{background:rgba(10,11,14,.82)!important;border-color:rgba(255,255,255,.08)!important}html.dv-escuro body.dv-app .dv-rnav a{color:#A9A7A0!important}html.dv-escuro body.dv-app .dv-rnav a:hover{background:rgba(255,255,255,.05)!important;color:#ECEAE4!important}html.dv-escuro body.dv-app .dv-rnav a.on{background:rgba(201,164,92,.16)!important;color:#F4E7C6!important;box-shadow:inset 0 0 0 1px rgba(201,164,92,.45)}
 /* gráfico */
 html.dv-escuro .dv-gr rect{fill:rgba(201,164,92,.28)!important}html.dv-escuro .dv-gr rect.at{fill:#D9B86E!important;filter:drop-shadow(0 0 8px rgba(201,164,92,.7))}html.dv-escuro .dv-gr text{fill:#ECEAE4!important}html.dv-escuro .dv-gr text.lb{fill:#77756F!important}
 /* links e destaques dourados */
@@ -299,6 +302,23 @@ html.dv-escuro body.dv-app ::selection{background:#C9A45C;color:#14100A}
 
 add_action( 'wp_footer', function () {
 	if ( ! function_exists( 'dv_app_pagina' ) || ! dv_app_pagina() ) { return; } ?>
+<?php if ( dv_tema_escuro() ) { ?>
+<!--dv-tema-off--><script>(function(){
+function rgb(h){h=h.slice(1);if(h.length===3)h=h[0]+h[0]+h[1]+h[1]+h[2]+h[2];return[parseInt(h.slice(0,2),16)/255,parseInt(h.slice(2,4),16)/255,parseInt(h.slice(4,6),16)/255]}
+function hsl(r,g,b){var mx=Math.max(r,g,b),mn=Math.min(r,g,b),l=(mx+mn)/2,h=0,s=0;if(mx!==mn){var d=mx-mn;s=l>.5?d/(2-mx-mn):d/(mx+mn);h=mx===r?(g-b)/d+(g<b?6:0):mx===g?(b-r)/d+2:(r-g)/d+4;h/=6}return[h,s,l]}
+function hex(h,s,l){function f(p,q,t){if(t<0)t+=1;if(t>1)t-=1;if(t<1/6)return p+(q-p)*6*t;if(t<.5)return q;if(t<2/3)return p+(q-p)*(2/3-t)*6;return p}var r,g,b;if(!s){r=g=b=l}else{var q=l<.5?l*(1+s):l+s-l*s,p=2*l-q;r=f(p,q,h+1/3);g=f(p,q,h);b=f(p,q,h-1/3)}return'#'+[r,g,b].map(function(x){return('0'+Math.round(x*255).toString(16)).slice(-2)}).join('').toUpperCase()}
+function cor(x,papel){var c=rgb(x),k=hsl(c[0],c[1],c[2]),h=k[0],s=k[1],l=k[2],n=s<.18||l>.96;
+ if(papel==='fundo'){if(l<.78)return x;if(n)return l>.975?'#101216':'#15181D';return hex(h,Math.min(s,.5),.11)}
+ if(papel==='borda'){if(l<.62)return x;return n?'#262A31':hex(h,Math.min(s,.45),.27)}
+ if(l>.5)return x;if(n)return l<.2?'#ECEAE4':l<.36?'#C9C7C0':'#9D9B94';return hex(h,Math.min(1,s+.1),.7)}
+var RX=/(^|[^\w-])(background(?:-color)?|color|border(?:-(?:top|right|bottom|left))?(?:-color)?)(\s*:\s*)([^;]*)/g,HX=/#[0-9a-fA-F]{6}\b|#[0-9a-fA-F]{3}\b/g;
+function bloco(t){var fm=false,m=t.match(/(?:^|[^\w-])background(?:-color)?\s*:\s*[^;]*?(#[0-9a-fA-F]{6}|#[0-9a-fA-F]{3})\b/);if(m){var c=rgb(m[1]),k=hsl(c[0],c[1],c[2]);fm=k[2]>=.3&&k[2]<.78}
+ return t.replace(RX,function(a,pre,p,sep,v){p=p.toLowerCase();var papel=p.indexOf('background')===0?'fundo':p==='color'?'texto':'borda';if(papel==='texto'&&fm)return a;return pre+p+sep+v.replace(HX,function(x){return cor(x,papel)})})}
+var S=new WeakMap();function trata(el){if(el.nodeType!==1)return;var st=el.getAttribute('style');if(st&&/#[0-9a-fA-F]{3}/.test(st)&&S.get(el)!==st){var nv=bloco(st);S.set(el,nv);if(nv!==st)el.setAttribute('style',nv)}}
+function varre(r){trata(r);if(r.querySelectorAll)[].forEach.call(r.querySelectorAll('[style]'),trata)}
+var alvo=document.body;varre(alvo);new MutationObserver(function(ms){ms.forEach(function(m){if(m.type==='attributes')trata(m.target);else[].forEach.call(m.addedNodes,function(n){if(n.nodeType===1)varre(n)})})}).observe(alvo,{childList:true,subtree:true,attributes:true,attributeFilter:['style']});
+})();</script><!--/dv-tema-off-->
+<?php } ?>
 <script>(function(){var d=document.documentElement,s=document.querySelector('.dv-side');if(!s)return;
 var b=document.createElement('button');b.type='button';b.className='dv-pin';s.appendChild(b);
 function pinta(){var f=!d.classList.contains('dv-rail');b.setAttribute('aria-pressed',f?'true':'false');b.title=f?'Recolher o menu':'Deixar o menu fixo';b.setAttribute('aria-label',b.title);b.innerHTML=f?'<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M15 18l-6-6 6-6"/></svg>':'<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 17v5"/><path d="M9 10.76a2 2 0 0 1-1.11 1.79l-1.78.9A2 2 0 0 0 5 15.24V16h14v-.76a2 2 0 0 0-1.11-1.79l-1.78-.9A2 2 0 0 1 15 10.76V7a1 1 0 0 1 1-1 2 2 0 0 0 0-4H8a2 2 0 0 0 0 4 1 1 0 0 1 1 1z"/></svg>'}

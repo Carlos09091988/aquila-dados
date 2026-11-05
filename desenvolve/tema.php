@@ -26,11 +26,62 @@ function dv_tema_mapa() {
 	);
 }
 
+function dv_tema_escuro() { return get_option( 'dv_tema_modo', 'escuro' ) !== 'claro'; }
+
+/* ---- tema escuro: converte cores pelo contexto (fundo, texto, borda), preservando o matiz ---- */
+function dv_te_rgb( $h ) { $h = ltrim( $h, '#' ); if ( strlen( $h ) === 3 ) { $h = $h[0] . $h[0] . $h[1] . $h[1] . $h[2] . $h[2]; } return array( hexdec( substr( $h, 0, 2 ) ) / 255, hexdec( substr( $h, 2, 2 ) ) / 255, hexdec( substr( $h, 4, 2 ) ) / 255 ); }
+function dv_te_hsl( $r, $g, $b ) { $mx = max( $r, $g, $b ); $mn = min( $r, $g, $b ); $l = ( $mx + $mn ) / 2; if ( $mx == $mn ) { return array( 0, 0, $l ); } $d = $mx - $mn; $s = $l > .5 ? $d / ( 2 - $mx - $mn ) : $d / ( $mx + $mn ); if ( $mx == $r ) { $h = ( $g - $b ) / $d + ( $g < $b ? 6 : 0 ); } elseif ( $mx == $g ) { $h = ( $b - $r ) / $d + 2; } else { $h = ( $r - $g ) / $d + 4; } return array( $h / 6, $s, $l ); }
+function dv_te_hex( $h, $s, $l ) { $f = function ( $p, $q, $t ) { if ( $t < 0 ) { $t += 1; } if ( $t > 1 ) { $t -= 1; } if ( $t < 1 / 6 ) { return $p + ( $q - $p ) * 6 * $t; } if ( $t < .5 ) { return $q; } if ( $t < 2 / 3 ) { return $p + ( $q - $p ) * ( 2 / 3 - $t ) * 6; } return $p; };
+	if ( $s == 0 ) { $r = $g = $b = $l; } else { $q = $l < .5 ? $l * ( 1 + $s ) : $l + $s - $l * $s; $p = 2 * $l - $q; $r = $f( $p, $q, $h + 1 / 3 ); $g = $f( $p, $q, $h ); $b = $f( $p, $q, $h - 1 / 3 ); }
+	return sprintf( '#%02X%02X%02X', round( $r * 255 ), round( $g * 255 ), round( $b * 255 ) ); }
+function dv_te_cor( $hex, $papel ) {
+	list( $r, $g, $b ) = dv_te_rgb( $hex ); list( $h, $s, $l ) = dv_te_hsl( $r, $g, $b ); $neutro = $s < .18 || $l > .96;
+	if ( $papel === 'fundo' ) {
+		if ( $l < .78 ) { return $hex; }
+		if ( $neutro ) { return $l > .975 ? '#101216' : '#15181D'; }
+		return dv_te_hex( $h, min( $s, .5 ), .11 );
+	}
+	if ( $papel === 'borda' ) {
+		if ( $l < .62 ) { return $hex; }
+		return $neutro ? '#262A31' : dv_te_hex( $h, min( $s, .45 ), .27 );
+	}
+	// texto
+	if ( $l > .5 ) { return $hex; }
+	if ( $neutro ) { return $l < .2 ? '#ECEAE4' : ( $l < .36 ? '#C9C7C0' : '#9D9B94' ); }
+	return dv_te_hex( $h, min( 1, $s + .1 ), .7 );
+}
+function dv_te_bloco( $t ) {
+	// fundo do próprio bloco: se for cor média/saturada (botão dourado, selo), o texto dele fica como está
+	$fundo_medio = false;
+	if ( preg_match( '/(?<![\w-])background(?:-color)?\s*:\s*[^;}"\']*?(#[0-9a-fA-F]{6}|#[0-9a-fA-F]{3})\b/', $t, $m ) ) { list( $r, $g, $b ) = dv_te_rgb( $m[1] ); list( , $s, $l ) = dv_te_hsl( $r, $g, $b ); $fundo_medio = $l >= .3 && $l < .78; }
+	return preg_replace_callback( '/(?<![\w-])(background(?:-color)?|color|border(?:-(?:top|right|bottom|left))?(?:-color)?|outline(?:-color)?|--[\w-]+)(\s*:\s*)([^;}"\']*)/', function ( $m ) use ( $fundo_medio ) {
+		$p = strtolower( $m[1] );
+		if ( strpos( $p, '--' ) === 0 ) {
+			$n = substr( $p, 2 );
+			if ( preg_match( '/^(sf|card|paper|stone|bg|t-bg|t-card|surface|white)$/', $n ) ) { $papel = 'fundo'; }
+			elseif ( preg_match( '/^(ln|l|rule|t-ln|t-ln2|line|border)$/', $n ) ) { $papel = 'borda'; }
+			elseif ( preg_match( '/^(fg|ink|ink-2|k|t-ink|mu|m|slate|t-mu|gd|gold2|t-ouro2|am|rd|gr)$/', $n ) ) { $papel = 'texto'; }
+			else { return $m[0]; }
+		} elseif ( strpos( $p, 'background' ) === 0 ) { $papel = 'fundo'; }
+		elseif ( $p === 'color' ) { if ( $fundo_medio ) { return $m[0]; } $papel = 'texto'; }
+		else { $papel = 'borda'; }
+		return $m[1] . $m[2] . preg_replace_callback( '/#[0-9a-fA-F]{6}\b|#[0-9a-fA-F]{3}\b/', function ( $c ) use ( $papel ) { return dv_te_cor( $c[0], $papel ); }, $m[3] );
+	}, $t );
+}
+function dv_te_converter( $html ) {
+	$prot = array(); $html = preg_replace_callback( '/<!--dv-tema-off-->.*?<!--\/dv-tema-off-->/s', function ( $m ) use ( &$prot ) { $prot[] = $m[0]; return '%%DVTE' . ( count( $prot ) - 1 ) . '%%'; }, $html );
+	$html = preg_replace_callback( '/\{[^{}]*\}/', function ( $m ) { return strpos( $m[0], ':' ) === false ? $m[0] : dv_te_bloco( $m[0] ); }, $html );
+	$html = preg_replace_callback( '/style=(["\'])(.*?)\1/s', function ( $m ) { return 'style=' . $m[1] . dv_te_bloco( $m[2] ) . $m[1]; }, $html );
+	$html = preg_replace_callback( '/(fill|stroke)="(#[0-9a-fA-F]{6}|#[0-9a-fA-F]{3})"/', function ( $m ) { return $m[1] . '="' . dv_te_cor( $m[2], 'fundo' ) . '"'; }, $html );
+	return preg_replace_callback( '/%%DVTE(\d+)%%/', function ( $m ) use ( $prot ) { return $prot[ (int) $m[1] ]; }, $html );
+}
+
 add_action( 'template_redirect', function () {
 	if ( ! function_exists( 'dv_app_pagina' ) || ! dv_app_pagina() ) { return; }
 	ob_start( function ( $html ) {
 		if ( ! is_string( $html ) || $html === '' ) { return $html; }
 		$html = strtr( $html, dv_tema_mapa() );
+		if ( dv_tema_escuro() ) { return dv_te_converter( $html ); }
 		// botões dourados viram pretos só onde o dourado é FUNDO; o dourado como texto/borda continua dourado
 		$html = preg_replace( '/(background(?:-color)?\s*:\s*)#C9A45C/i', '${1}#111111', $html );
 		$html = preg_replace( '/(background(?:-color)?\s*:\s*)#B8924A/i', '${1}#2B2B2B', $html );
@@ -151,3 +202,113 @@ set(v<2);try{localStorage.setItem(k,v+1)}catch(x){}
 b.addEventListener('click',function(){set(p.hidden);try{localStorage.setItem(k,9)}catch(x){}})})();</script>
 	<?php
 }, 130 );
+
+/* ===== Tema escuro futurista + menu lateral recolhível ===== */
+add_action( 'wp_head', function () {
+	if ( ! function_exists( 'dv_app_pagina' ) || ! dv_app_pagina() ) { return; } ?>
+<script>(function(){var d=document.documentElement;<?php if ( dv_tema_escuro() ) { echo "d.classList.add('dv-escuro');"; } ?>var f=null;try{f=localStorage.getItem('dv_menu_fixo')}catch(x){}if(f!=='1')d.classList.add('dv-rail')})();</script>
+<!--dv-tema-off--><style id="dv-rail">
+@media(min-width:981px){
+html.dv-rail body.dv-app{padding-left:76px!important}
+html.dv-rail body.dv-app .dv-top{left:76px!important}
+html.dv-rail .dv-side{width:76px!important;overflow:hidden;transition:width .24s cubic-bezier(.2,.8,.2,1),box-shadow .24s}
+html.dv-rail .dv-side.ab{width:264px!important;box-shadow:30px 0 70px rgba(0,0,0,.55)}
+html.dv-rail .dv-side nav a,html.dv-rail .dv-side .lg{white-space:nowrap}
+html.dv-rail .dv-side .gt,html.dv-rail .dv-side .lg b,html.dv-rail .dv-side .lg small,html.dv-rail .dv-side .ft,html.dv-rail .dv-side nav a .bd{transition:opacity .18s}
+html.dv-rail .dv-side:not(.ab) .gt,html.dv-rail .dv-side:not(.ab) .lg b,html.dv-rail .dv-side:not(.ab) .lg small,html.dv-rail .dv-side:not(.ab) .ft,html.dv-rail .dv-side:not(.ab) nav a .bd,html.dv-rail .dv-side:not(.ab) .dv-pin{opacity:0;pointer-events:none}
+html.dv-rail .dv-side:not(.ab) .gt{height:1px;margin:10px 14px!important;background:rgba(255,255,255,.07)}
+html.dv-rail .dv-side:not(.ab) nav{overflow:hidden}
+html.dv-rail .dv-side nav a{padding-left:16px!important}
+}
+.dv-pin{position:absolute;top:24px;right:12px;width:30px;height:30px;border-radius:8px;border:1px solid rgba(255,255,255,.1);background:rgba(255,255,255,.04);color:#A1A1A1;display:flex;align-items:center;justify-content:center;cursor:pointer;z-index:2;transition:opacity .18s,color .15s,border-color .15s}
+.dv-pin:hover,.dv-pin[aria-pressed=true]{color:#E6C27A;border-color:rgba(201,164,92,.5)}
+body.admin-bar .dv-pin{top:24px}
+@media(max-width:980px){.dv-pin{display:none}}
+</style><!--/dv-tema-off-->
+<?php if ( dv_tema_escuro() ) { ?>
+<!--dv-tema-off--><style id="dv-escuro">
+html.dv-escuro body.dv-app{background:#07080A!important;color:#ECEAE4;color-scheme:dark;isolation:isolate}
+html.dv-escuro body.dv-app::before{content:"";position:fixed;inset:0;z-index:-1;pointer-events:none;background:radial-gradient(1100px 560px at 78% -12%,rgba(201,164,92,.13),transparent 62%),radial-gradient(800px 480px at 8% 112%,rgba(110,130,170,.08),transparent 60%)}
+html.dv-escuro body.dv-app::after{content:"";position:fixed;inset:0;z-index:-1;pointer-events:none;background-image:linear-gradient(rgba(255,255,255,.028) 1px,transparent 1px),linear-gradient(90deg,rgba(255,255,255,.028) 1px,transparent 1px);background-size:56px 56px;-webkit-mask-image:radial-gradient(ellipse 70% 60% at 65% 0%,#000,transparent 75%);mask-image:radial-gradient(ellipse 70% 60% at 65% 0%,#000,transparent 75%)}
+/* topo de vidro */
+html.dv-escuro body.dv-app .dv-top{background:rgba(7,8,10,.66)!important;border-bottom:1px solid rgba(255,255,255,.06)!important;-webkit-backdrop-filter:saturate(160%) blur(16px);backdrop-filter:saturate(160%) blur(16px)}
+html.dv-escuro body.dv-app .dv-k{background:rgba(255,255,255,.035)!important;border:1px solid rgba(255,255,255,.08)!important;color:#8F8D86!important;box-shadow:none!important}
+html.dv-escuro body.dv-app .dv-k kbd{background:rgba(255,255,255,.06)!important;border-color:rgba(255,255,255,.1)!important;color:#A9A7A0!important}
+html.dv-escuro body.dv-app .dv-sld{background:rgba(255,255,255,.035)!important;border:1px solid rgba(255,255,255,.08)!important;color:#ECEAE4!important}
+html.dv-escuro body.dv-app .dv-sld span{color:#8F8D86!important}html.dv-escuro body.dv-app .dv-sld b{color:#F4E7C6!important}
+html.dv-escuro body.dv-app .dv-sld a{background:linear-gradient(180deg,#E6C885,#C9A45C)!important;color:#14100A!important;font-weight:600!important}
+html.dv-escuro .dv-bell{color:#ECEAE4!important}html.dv-escuro .dv-bell svg{stroke:#ECEAE4!important}html.dv-escuro .dv-bell:hover,html.dv-escuro .dv-bell[aria-expanded=true]{background:rgba(255,255,255,.07)!important}
+html.dv-escuro .dv-bellp{background:#0F1115!important;border-color:rgba(255,255,255,.1)!important;box-shadow:0 30px 80px rgba(0,0,0,.6)!important}html.dv-escuro .dv-bellp .h{background:#0F1115!important;border-color:rgba(255,255,255,.07)!important}html.dv-escuro .dv-bellp .h b{color:#ECEAE4!important}html.dv-escuro .dv-bellp .it{color:#ECEAE4!important;border-color:rgba(255,255,255,.05)!important}html.dv-escuro .dv-bellp .it:hover{background:rgba(201,164,92,.07)!important}html.dv-escuro .dv-bellp .h a{color:#E6C27A!important}
+/* títulos */
+html.dv-escuro body.dv-app .dv-th h1,html.dv-escuro body.dv-app .dv-hi h2{background:linear-gradient(180deg,#FFFFFF 20%,#A8A59C);-webkit-background-clip:text;background-clip:text;color:transparent!important}
+html.dv-escuro body.dv-app h2,html.dv-escuro body.dv-app h3,html.dv-escuro body.dv-app h4,html.dv-escuro body.dv-app .dv-tool h2,html.dv-escuro body.dv-app .dv-tool h3,html.dv-escuro body.dv-app .dv-tool h4,html.dv-escuro body.dv-app .rp-sec h3,html.dv-escuro body.dv-app .rp-sec h4{color:#F1EFE9!important}
+html.dv-escuro body.dv-app .dv-th p,html.dv-escuro body.dv-app .dv-hi span{color:#8F8D86!important}
+html.dv-escuro .dv-ih{background:rgba(255,255,255,.04)!important;border-color:rgba(255,255,255,.1)!important;color:#A9A7A0!important}html.dv-escuro .dv-ih:hover{color:#E6C27A!important;border-color:rgba(201,164,92,.5)!important}
+/* cartões de vidro */
+html.dv-escuro body.dv-app .dv-cx,html.dv-escuro body.dv-app .dv-agc,html.dv-escuro body.dv-app .dv-hk,html.dv-escuro body.dv-app .dv-cnpj,html.dv-escuro body.dv-app .dv-next,html.dv-escuro body.dv-app .dv-tool>div:first-child:not([class*=dv-pw]),html.dv-escuro body.dv-app .dv-pp,html.dv-escuro body.dv-app .lc-vazio{background:linear-gradient(180deg,rgba(255,255,255,.04),rgba(255,255,255,.012)),#0D0F13!important;border:1px solid rgba(255,255,255,.075)!important;box-shadow:inset 0 1px 0 rgba(255,255,255,.05),0 24px 48px -24px rgba(0,0,0,.7)!important}
+html.dv-escuro body.dv-app .dv-hk{transition:transform .2s,border-color .2s,box-shadow .2s!important}
+html.dv-escuro body.dv-app .dv-hk:hover{border-color:rgba(201,164,92,.4)!important;box-shadow:inset 0 1px 0 rgba(255,255,255,.06),0 0 0 1px rgba(201,164,92,.15),0 18px 40px -18px rgba(201,164,92,.35)!important}
+html.dv-escuro body.dv-app .dv-hk b{background:linear-gradient(180deg,#F6E6BC,#C9A45C);-webkit-background-clip:text;background-clip:text;color:transparent!important;font-weight:600!important;font-variant-numeric:tabular-nums}
+html.dv-escuro body.dv-app .dv-hk:not(.at):not(.ur) b{background:linear-gradient(180deg,#FFFFFF,#8F8D86);-webkit-background-clip:text;background-clip:text}
+html.dv-escuro body.dv-app .dv-hk.ur b{background:linear-gradient(180deg,#FFC2B4,#E0705A);-webkit-background-clip:text;background-clip:text}
+html.dv-escuro body.dv-app .dv-hk.at,html.dv-escuro body.dv-app .dv-hk.ur{position:relative;overflow:hidden}
+html.dv-escuro body.dv-app .dv-hk.at::after,html.dv-escuro body.dv-app .dv-hk.ur::after{content:"";position:absolute;left:0;right:0;top:0;height:2px;background:linear-gradient(90deg,transparent,#C9A45C,transparent)}
+html.dv-escuro body.dv-app .dv-hk.ur::after{background:linear-gradient(90deg,transparent,#E0705A,transparent)}
+html.dv-escuro body.dv-app .dv-hk span{color:#ECEAE4!important}html.dv-escuro body.dv-app .dv-hk small{color:#8F8D86!important}
+/* agenda em linha do tempo */
+html.dv-escuro .dv-tl{position:relative}
+html.dv-escuro .dv-tld{border-color:rgba(255,255,255,.06)!important}
+html.dv-escuro .dv-tlk{box-shadow:0 0 0 3px rgba(255,255,255,.04),0 0 12px 1px currentColor;color:#C9A45C}
+html.dv-escuro .dv-tlt b{color:#ECEAE4!important}html.dv-escuro .dv-tlt span{color:#8F8D86!important}
+html.dv-escuro .dv-tli{border-radius:10px;padding:8px 8px!important;margin:0 -8px;transition:background .15s}html.dv-escuro .dv-tli:hover{background:rgba(255,255,255,.03)}
+/* botões: primário dourado com brilho, secundário de vidro */
+html.dv-escuro body.dv-app .dv-tla a.p,html.dv-escuro body.dv-app .dv-opf a.p,html.dv-escuro body.dv-app .dv-cnpj button.p,html.dv-escuro body.dv-app a.dv-btn,html.dv-escuro body.dv-app .dvp button:not(.dv-dd):not([data-v]):not(.dv-hmais):not(.dv-ppx):not([data-x]):not(.dv-ih),html.dv-escuro body.dv-app [style*="background:#0A0A0A"],html.dv-escuro body.dv-app [style*="background:#111111"],html.dv-escuro body.dv-app .dv-tool button[type=submit],html.dv-escuro body.dv-app .dv-tool .rx-btn{background:linear-gradient(180deg,#E8CB8A,#C9A45C)!important;color:#14100A!important;border-color:transparent!important;box-shadow:0 0 0 1px rgba(201,164,92,.35),0 10px 26px -10px rgba(201,164,92,.6)!important;font-weight:600!important}
+html.dv-escuro body.dv-app .dv-tla a.p:hover,html.dv-escuro body.dv-app .dv-opf a.p:hover,html.dv-escuro body.dv-app .dv-cnpj button.p:hover,html.dv-escuro body.dv-app a.dv-btn:hover,html.dv-escuro body.dv-app .dv-tool button[type=submit]:hover{filter:brightness(1.08);box-shadow:0 0 0 1px rgba(201,164,92,.6),0 12px 34px -8px rgba(201,164,92,.75)!important}
+html.dv-escuro body.dv-app .dv-tla a:not(.p),html.dv-escuro body.dv-app .dv-opf button,html.dv-escuro body.dv-app .dv-cnpj button:not(.p),html.dv-escuro body.dv-app .dv-agt button,html.dv-escuro body.dv-app .dv-calh button,html.dv-escuro body.dv-app .dv-calf button,html.dv-escuro body.dv-app .dv-hmais,html.dv-escuro body.dv-app .dv-qal a{background:rgba(255,255,255,.035)!important;border:1px solid rgba(255,255,255,.1)!important;color:#ECEAE4!important}
+html.dv-escuro body.dv-app .dv-tla a:not(.p):hover,html.dv-escuro body.dv-app .dv-opf button:hover,html.dv-escuro body.dv-app .dv-cnpj button:not(.p):hover,html.dv-escuro body.dv-app .dv-qal a:hover,html.dv-escuro body.dv-app .dv-agt button.on{border-color:rgba(201,164,92,.55)!important;color:#F4E7C6!important;background:rgba(201,164,92,.06)!important}
+html.dv-escuro body.dv-app .dv-cnpj button small,html.dv-escuro body.dv-app .dv-cnpj button span{color:inherit!important;opacity:.7}
+/* campos */
+html.dv-escuro body.dv-app input:not([type=checkbox]):not([type=radio]):not([type=range]),html.dv-escuro body.dv-app select,html.dv-escuro body.dv-app textarea{background:rgba(255,255,255,.03)!important;border:1px solid rgba(255,255,255,.1)!important;color:#ECEAE4!important;box-shadow:none!important}
+html.dv-escuro body.dv-app input::placeholder,html.dv-escuro body.dv-app textarea::placeholder{color:#6F6D67!important}
+html.dv-escuro body.dv-app input:focus,html.dv-escuro body.dv-app select:focus,html.dv-escuro body.dv-app textarea:focus{border-color:rgba(201,164,92,.7)!important;box-shadow:0 0 0 3px rgba(201,164,92,.16)!important;outline:0!important}
+html.dv-escuro body.dv-app select option{background:#0F1115;color:#ECEAE4}
+/* tabelas */
+html.dv-escuro body.dv-app .dv-tool th,html.dv-escuro body.dv-app table th{background:rgba(255,255,255,.03)!important;color:#8F8D86!important;border-color:rgba(255,255,255,.07)!important}
+html.dv-escuro body.dv-app td{border-color:rgba(255,255,255,.06)!important}
+html.dv-escuro body.dv-app .dv-tool tr:hover>td,html.dv-escuro body.dv-app table.dv-h tr:hover>td{background:rgba(201,164,92,.04)!important}
+html.dv-escuro body.dv-app .dv-h td{color:#8F8D86!important}html.dv-escuro body.dv-app .dv-h td:first-child{color:#ECEAE4!important}
+/* menu lateral */
+html.dv-escuro body.dv-app .dv-side{background:linear-gradient(180deg,#050506,#000)!important;border-right:1px solid rgba(255,255,255,.06)!important}
+html.dv-escuro body.dv-app .dv-side nav a.on{background:linear-gradient(90deg,rgba(201,164,92,.16),rgba(201,164,92,.02))!important;box-shadow:inset 2px 0 0 #C9A45C!important;color:#fff!important}
+html.dv-escuro body.dv-app .dv-side nav a.on .ic{color:#E6C27A!important;filter:drop-shadow(0 0 6px rgba(201,164,92,.6))}
+/* gráfico */
+html.dv-escuro .dv-gr rect{fill:rgba(201,164,92,.28)!important}html.dv-escuro .dv-gr rect.at{fill:#D9B86E!important;filter:drop-shadow(0 0 8px rgba(201,164,92,.7))}html.dv-escuro .dv-gr text{fill:#ECEAE4!important}html.dv-escuro .dv-gr text.lb{fill:#77756F!important}
+/* links e destaques dourados */
+html.dv-escuro body.dv-app .dv-cxh a,html.dv-escuro body.dv-app .dv-agm a,html.dv-escuro body.dv-app .dv-h a,html.dv-escuro body.dv-app .dv-tool a:not([class]){color:#E6C27A!important}
+/* avisos */
+html.dv-escuro body.dv-app #dv-mon{background:rgba(224,163,59,.08)!important;border:1px solid rgba(224,163,59,.3)!important;color:#F1D9A8!important}
+/* rolagem e seleção */
+html.dv-escuro{scrollbar-color:#2A2D33 #07080A}html.dv-escuro ::-webkit-scrollbar{width:10px;height:10px}html.dv-escuro ::-webkit-scrollbar-track{background:#07080A}html.dv-escuro ::-webkit-scrollbar-thumb{background:#24272D;border-radius:10px;border:2px solid #07080A}
+html.dv-escuro body.dv-app ::selection{background:#C9A45C;color:#14100A}
+/* entrada: um único momento orquestrado */
+@media(prefers-reduced-motion:no-preference){html.dv-escuro body.dv-app .dv-hk,html.dv-escuro body.dv-app .dv-cx,html.dv-escuro body.dv-app .dv-agc{animation:dvIn .5s cubic-bezier(.2,.8,.2,1) both}html.dv-escuro body.dv-app .dv-hk:nth-child(2){animation-delay:.05s}html.dv-escuro body.dv-app .dv-hk:nth-child(3){animation-delay:.1s}html.dv-escuro body.dv-app .dv-hk:nth-child(4){animation-delay:.15s}@keyframes dvIn{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:none}}}
+@media print{html.dv-escuro body.dv-app{background:#fff!important;color:#000!important}html.dv-escuro body.dv-app::before,html.dv-escuro body.dv-app::after{display:none}}
+</style><!--/dv-tema-off-->
+<?php }
+}, 200 );
+
+add_action( 'wp_footer', function () {
+	if ( ! function_exists( 'dv_app_pagina' ) || ! dv_app_pagina() ) { return; } ?>
+<script>(function(){var d=document.documentElement,s=document.querySelector('.dv-side');if(!s)return;
+var b=document.createElement('button');b.type='button';b.className='dv-pin';s.appendChild(b);
+function pinta(){var f=!d.classList.contains('dv-rail');b.setAttribute('aria-pressed',f?'true':'false');b.title=f?'Recolher o menu':'Deixar o menu fixo';b.setAttribute('aria-label',b.title);b.innerHTML=f?'<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M15 18l-6-6 6-6"/></svg>':'<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 17v5"/><path d="M9 10.76a2 2 0 0 1-1.11 1.79l-1.78.9A2 2 0 0 0 5 15.24V16h14v-.76a2 2 0 0 0-1.11-1.79l-1.78-.9A2 2 0 0 1 15 10.76V7a1 1 0 0 1 1-1 2 2 0 0 0 0-4H8a2 2 0 0 0 0 4 1 1 0 0 1 1 1z"/></svg>'}
+pinta();
+b.addEventListener('click',function(){var fixo=d.classList.contains('dv-rail');d.classList.toggle('dv-rail',!fixo);try{localStorage.setItem('dv_menu_fixo',fixo?'1':'0')}catch(x){}if(!fixo)s.classList.remove('ab');pinta()});
+var t;s.addEventListener('mouseenter',function(){if(!d.classList.contains('dv-rail'))return;clearTimeout(t);t=setTimeout(function(){s.classList.add('ab')},90)});
+s.addEventListener('mouseleave',function(){clearTimeout(t);s.classList.remove('ab')});
+s.addEventListener('focusin',function(){if(d.classList.contains('dv-rail'))s.classList.add('ab')});s.addEventListener('focusout',function(ev){if(!s.contains(ev.relatedTarget))s.classList.remove('ab')});
+if(d.classList.contains('dv-escuro')&&!(window.matchMedia&&matchMedia('(prefers-reduced-motion: reduce)').matches)){var feito=new WeakSet();function conta(el){if(feito.has(el))return;feito.add(el);var alvo=parseInt(el.textContent,10);if(!(alvo>0)||alvo>9999)return;var t0=null;function q(ts){if(!t0)t0=ts;var p=Math.min(1,(ts-t0)/700);el.textContent=Math.round(alvo*(1-Math.pow(1-p,3)));if(p<1)requestAnimationFrame(q)}el.textContent='0';requestAnimationFrame(q)}
+ var mo=new MutationObserver(function(){[].forEach.call(document.querySelectorAll('.dv-hk b'),conta)});mo.observe(document.body,{childList:true,subtree:true});setTimeout(function(){mo.disconnect()},8000)}
+})();</script>
+	<?php
+}, 140 );

@@ -345,6 +345,7 @@ html.dv-escuro body.dv-app ::selection{background:#C9A45C;color:#14100A}
 @media print{html.dv-escuro body.dv-app{background:#fff!important;color:#000!important}html.dv-escuro body.dv-app::before,html.dv-escuro body.dv-app::after{display:none}}
 html.dv-trocando body,html.dv-trocando body *{transition:background-color .38s ease,color .38s ease,border-color .38s ease,box-shadow .38s ease!important}
 </style><!--/dv-tema-off-->
+<?php
 }, 200 );
 
 add_action( 'wp_footer', function () {

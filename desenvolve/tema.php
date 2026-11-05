@@ -370,3 +370,17 @@ if(d.classList.contains('dv-escuro')&&!(window.matchMedia&&matchMedia('(prefers-
 })();</script>
 	<?php
 }, 140 );
+
+/* medição de tempo do servidor (comentário invisível no fim da página, só para administradores) */
+add_action( 'template_redirect', function () { $GLOBALS['dvt'] = array( 'tpl' => microtime( true ) ); }, 0 );
+foreach ( array( 'wp_head', 'wp_footer' ) as $dvt_h ) {
+	add_action( $dvt_h, function () use ( $dvt_h ) { $GLOBALS['dvt'][ $dvt_h . '0' ] = microtime( true ); }, -99999 );
+	add_action( $dvt_h, function () use ( $dvt_h ) { $GLOBALS['dvt'][ $dvt_h . '1' ] = microtime( true ); }, 99999 );
+}
+add_filter( 'the_content', function ( $c ) { $GLOBALS['dvt']['c0'] = microtime( true ); return $c; }, -99999 );
+add_filter( 'the_content', function ( $c ) { $GLOBALS['dvt']['c1'] = microtime( true ); return $c; }, 99999 );
+add_action( 'wp_footer', function () {
+	if ( ! current_user_can( 'manage_options' ) || empty( $GLOBALS['dvt'] ) ) { return; } $t = $GLOBALS['dvt']; $b = $_SERVER['REQUEST_TIME_FLOAT'];
+	$ms = function ( $a, $z ) use ( $t ) { return isset( $t[ $a ], $t[ $z ] ) ? round( ( $t[ $z ] - $t[ $a ] ) * 1000 ) : -1; };
+	echo '<!--dvt boot=' . round( ( $t['tpl'] - $b ) * 1000 ) . ' head=' . $ms( 'wp_head0', 'wp_head1' ) . ' conteudo=' . $ms( 'c0', 'c1' ) . ' foot_ate_aqui=' . round( ( microtime( true ) - $t['wp_footer0'] ) * 1000 ) . ' total_ate_aqui=' . round( ( microtime( true ) - $b ) * 1000 ) . '-->';
+}, 99998 );

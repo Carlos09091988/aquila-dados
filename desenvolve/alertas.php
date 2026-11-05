@@ -178,19 +178,19 @@ function dv_al_dm_itens( $lista, $termo, $a, $ufs, $excl ) {
 		if ( ! preg_match( '/AVISO|EDITAL|PREGAO|CONCORRENCIA|DISPENSA|CHAMAMENTO|CREDENCIAMENTO|TOMADA DE PRECO|LICITA|COTACAO|LEILAO|CONVITE/', $nt ) && ! ( ! empty( $g['categoria'] ) && preg_match( '/LICITA/', dv_al_norm( $g['categoria'] ) ) ) ) { continue; }
 		$ref = 'DM' . sprintf( '%u', crc32( $g['link'] ) ); $mun = $g['municipio'] ?: $g['entidade'];
 		$out[ $ref ] = array( 'ref' => $ref, 'fonte' => 'diario', 'fonte_nome' => $g['fonte_nome'], 'orgao' => $g['orgao'] ?: $g['entidade'], 'municipio' => $mun, 'uf' => $g['uf'], 'modalidade' => dv_al_modalidade( $nd ), 'numero' => dv_al_numero( $nd ),
-			'titulo' => $g['titulo'], 'objeto' => dv_al_objeto( $g['trecho'] ?: $tx ), 'trecho' => mb_substr( $tx, 0, 900 ), 'valor' => 0, 'publicado' => $g['data'], 'encerra' => $enc, 'link' => $g['link'], 'termos' => array( $termo ) );
+			'titulo' => $g['titulo'], 'objeto' => dv_al_objeto( $g['trecho'] ?: $tx ), 'trecho' => mb_substr( $tx, 0, 900 ), 'valor' => 0, 'publicado' => $g['data'], 'encerra' => $enc, 'link' => $g['link'], 'termos' => array( $termo ) ) + ( ! empty( $g['completo'] ) ? array( 'texto' => $g['trecho'] ) : array() );
 	}
 	return $out;
 }
 /** Completa os avisos dos diários municipais com o texto integral (objeto, número, sessão e valor) */
 function dv_al_dm_completar( $dia ) {
 	if ( ! function_exists( 'dv_dm_materia' ) ) { return $dia; }
-	$links = array(); foreach ( $dia as $r => $x ) { if ( strpos( $r, 'DM' ) === 0 && count( $links ) < 40 ) { $links[] = $x['link']; } }
-	if ( ! $links ) { return $dia; }
-	$tx = dv_dm_materia( $links );
+	$links = array(); foreach ( $dia as $r => $x ) { if ( strpos( $r, 'DM' ) === 0 && empty( $x['texto'] ) && count( $links ) < 40 ) { $links[] = $x['link']; } }
+	$tx = $links ? dv_dm_materia( $links ) : array();
 	foreach ( $dia as $r => &$x ) {
-		if ( strpos( $r, 'DM' ) !== 0 || empty( $tx[ $x['link'] ] ) ) { continue; }
-		$t = $tx[ $x['link'] ]; $nd = dv_al_norm( $t );
+		if ( strpos( $r, 'DM' ) !== 0 ) { continue; }
+		$t = ! empty( $x['texto'] ) ? $x['texto'] : ( $tx[ $x['link'] ] ?? '' ); unset( $x['texto'] ); if ( $t === '' ) { continue; }
+		$nd = dv_al_norm( $t );
 		$enc = dv_al_dt_sessao( $t ) ?: $x['encerra']; $x['encerra'] = ( $enc && substr( $enc, 0, 10 ) > $x['publicado'] ) ? $enc : '';
 		if ( preg_match( '/\bOBJETO\s*(?:DA LICITA[ÇC][ÃA]O|DO CERTAME|DO PREG[ÃA]O)?\s*[:\-–]\s*(.{20,480}?)(?:\.\s|;|\s(?:DATA|ABERTURA|SESS[ÃA]O|ENTREGA|VALOR|PRAZO|LOCAL|INFORMA[ÇC]|O EDITAL|EDITAL|OS INTERESSADOS|TIPO)\b|$)/iu', $t, $ob ) ) { $x['objeto'] = rtrim( trim( $ob[1], ' "“”' ), '.' ); }
 		$nl = function ( $n ) { return preg_match( '#^(14133/2021|8666/1993|10520/2002|123/2006|147/2014|13303/2016)$#', str_replace( '.', '', (string) $n ) ) ? '' : $n; };

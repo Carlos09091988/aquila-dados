@@ -126,6 +126,7 @@ function dv_dm_buscar( $texto, $desde, $ufs = array(), $ate = '', $paginas = 1, 
 	$res = dv_dm_baixar( $urls ); $itens = array();
 	foreach ( $res as $kp => $b ) { $k = explode( '#', $kp )[0]; foreach ( dv_dm_itens( $k, $b ) as $x ) { $itens[ $x['id'] ] = $x; } }
 	if ( $frase ) { $itens = dv_dm_conferir( $itens, $texto ); }
+	elseif ( function_exists( 'dv_dm_avisos_buscar' ) ) { foreach ( dv_dm_avisos_buscar( $texto, $desde, $ufs ) as $x ) { $itens[ $x['id'] ] = $x; } }
 	$itens = array_values( $itens );
 	foreach ( $itens as &$x ) { if ( $x['municipio'] !== '' && mb_strtoupper( $x['municipio'] ) === $x['municipio'] ) { $x['municipio'] = mb_convert_case( mb_strtolower( $x['municipio'] ), MB_CASE_TITLE ); $x['municipio'] = preg_replace_callback( '/\b(De|Da|Do|Das|Dos|E)\b/u', function ( $m ) { return mb_strtolower( $m[1] ); }, $x['municipio'] ); } } unset( $x );
 	usort( $itens, function ( $a, $b ) { return strcmp( $b['data'], $a['data'] ); } );
@@ -215,3 +216,97 @@ add_action( 'rest_api_init', function () {
 	} ) );
 	register_rest_route( 'desenvolve/v1', '/dm/cobertura', array( 'methods' => 'GET', 'permission_callback' => $adm, 'callback' => function ( WP_REST_Request $r ) { return dv_dm_cobertura( ! empty( $r['forcar'] ) ) + array( 'saude' => get_option( 'dv_dm_saude', array() ) ); } ) );
 } );
+
+/* =====================================================================
+ * Robô dos diários (GitHub Actions): baixa as edições do dia de todas as
+ * plataformas, extrai o texto e devolve aqui só os resultados.
+ * Autenticação: cabeçalho X-DV-Robo com o segredo guardado em dv_robo_token.
+ * Nada de cliente vai para o repositório: os termos são lidos daqui na hora.
+ * ===================================================================== */
+function dv_robo_ok( WP_REST_Request $r ) {
+	$t = (string) get_option( 'dv_robo_token' ); $h = (string) $r->get_header( 'x_dv_robo' );
+	return $t !== '' && $h !== '' && hash_equals( $t, $h );
+}
+add_action( 'init', function () {
+	if ( get_option( 'dv_dm_db' ) === '2' ) { return; }
+	global $wpdb; require_once ABSPATH . 'wp-admin/includes/upgrade.php';
+	dbDelta( "CREATE TABLE {$wpdb->prefix}dv_dm_avisos (
+		id varchar(40) NOT NULL,
+		data date NOT NULL,
+		uf char(2) NOT NULL DEFAULT '',
+		municipio varchar(120) NOT NULL DEFAULT '',
+		fonte varchar(160) NOT NULL DEFAULT '',
+		link varchar(500) NOT NULL DEFAULT '',
+		titulo varchar(300) NOT NULL DEFAULT '',
+		texto mediumtext NOT NULL,
+		PRIMARY KEY  (id),
+		KEY data (data),
+		KEY uf (uf)
+	) {$wpdb->get_charset_collate()};" );
+	$wpdb->query( "ALTER TABLE {$wpdb->prefix}dv_dm_avisos ADD FULLTEXT KEY ft (titulo,texto)" );
+	update_option( 'dv_dm_db', '2' );
+} );
+/** Termos de todos os clientes do Radar (sem identificar quem é o cliente) */
+function dv_robo_termos() {
+	$us = get_users( array( 'meta_key' => 'dv_capt_termos', 'fields' => 'ID' ) ); $out = array();
+	foreach ( $us as $uid ) {
+		foreach ( ( function_exists( 'dv_capt_termos' ) ? dv_capt_termos( $uid ) : array() ) as $t ) {
+			if ( ! empty( $t['pausado'] ) ) { continue; }
+			$ch = md5( $t['tipo'] . '|' . $t['valor'] ); if ( isset( $out[ $ch ] ) ) { continue; }
+			$v = array();
+			if ( $t['tipo'] === 'cnpj' ) { $v[] = preg_replace( '/^(\d{2})(\d{3})(\d{3})(\d{4})(\d{2})$/', '$1.$2.$3/$4-$5', $t['valor'] ); $v[] = $t['valor']; if ( ! empty( $t['nome'] ) ) { $v[] = $t['nome']; } }
+			else { $v[] = str_replace( '"', '', $t['valor'] ); }
+			$out[ $ch ] = array( 'chave' => $ch, 'tipo' => $t['tipo'], 'variantes' => array_values( array_unique( array_filter( $v ) ) ) );
+		}
+	}
+	return array_values( $out );
+}
+add_action( 'rest_api_init', function () {
+	register_rest_route( 'desenvolve/v1', '/robo/termos', array( 'methods' => 'GET', 'permission_callback' => 'dv_robo_ok', 'callback' => function () { return array( 'termos' => dv_robo_termos() ); } ) );
+	/* citações encontradas pelo robô -> Radar de cada cliente que monitora o termo */
+	register_rest_route( 'desenvolve/v1', '/robo/achados', array( 'methods' => 'POST', 'permission_callback' => 'dv_robo_ok', 'callback' => function ( WP_REST_Request $r ) {
+		if ( ! function_exists( 'dv_capt_gravar' ) ) { return new WP_Error( 'dv', 'Radar indisponível', array( 'status' => 500 ) ); }
+		$porch = array(); foreach ( (array) $r['itens'] as $x ) { $porch[ (string) ( $x['chave'] ?? '' ) ][] = $x; }
+		$us = get_users( array( 'meta_key' => 'dv_capt_termos', 'fields' => 'ID' ) ); $n = 0;
+		foreach ( $us as $uid ) {
+			foreach ( dv_capt_termos( $uid ) as $t ) {
+				if ( ! empty( $t['pausado'] ) ) { continue; } $ch = md5( $t['tipo'] . '|' . $t['valor'] ); if ( empty( $porch[ $ch ] ) ) { continue; }
+				$rot = $t['tipo'] === 'cnpj' ? dv_capt_fmt_cnpj( $t['valor'] ) : $t['valor'];
+				foreach ( $porch[ $ch ] as $x ) {
+					$n += dv_capt_gravar( $uid, $rot, substr( sanitize_text_field( (string) $x['data'] ), 0, 10 ), sanitize_text_field( (string) $x['municipio'] ), strtoupper( substr( sanitize_text_field( (string) $x['uf'] ), 0, 2 ) ), esc_url_raw( (string) $x['link'] ), '', mb_substr( sanitize_textarea_field( (string) $x['trecho'] ), 0, 1500 ) );
+				}
+			}
+		}
+		return array( 'gravados' => $n );
+	} ) );
+	/* avisos de licitação extraídos pelo robô -> base própria, consultada pelo alerta e pelo buscador */
+	register_rest_route( 'desenvolve/v1', '/robo/avisos', array( 'methods' => 'POST', 'permission_callback' => 'dv_robo_ok', 'callback' => function ( WP_REST_Request $r ) {
+		global $wpdb; $tb = $wpdb->prefix . 'dv_dm_avisos'; $n = 0;
+		foreach ( array_slice( (array) $r['itens'], 0, 3000 ) as $x ) {
+			$id = substr( preg_replace( '/[^a-z0-9]/i', '', (string) ( $x['id'] ?? '' ) ), 0, 40 ); if ( $id === '' ) { continue; }
+			$n += (int) $wpdb->replace( $tb, array( 'id' => $id, 'data' => substr( sanitize_text_field( (string) $x['data'] ), 0, 10 ), 'uf' => strtoupper( substr( sanitize_text_field( (string) $x['uf'] ), 0, 2 ) ),
+				'municipio' => mb_substr( sanitize_text_field( (string) $x['municipio'] ), 0, 120 ), 'fonte' => mb_substr( sanitize_text_field( (string) $x['fonte'] ), 0, 160 ), 'link' => esc_url_raw( (string) $x['link'] ),
+				'titulo' => mb_substr( sanitize_text_field( (string) $x['titulo'] ), 0, 300 ), 'texto' => mb_substr( sanitize_textarea_field( (string) $x['texto'] ), 0, 6000 ) ) );
+		}
+		$wpdb->query( $wpdb->prepare( "DELETE FROM {$tb} WHERE data < %s", gmdate( 'Y-m-d', strtotime( '-75 days' ) ) ) );
+		update_option( 'dv_robo_ult', array( 'quando' => current_time( 'mysql' ), 'avisos' => $n ), false );
+		return array( 'gravados' => $n );
+	} ) );
+	/* gera ou mostra o segredo do robô (só administrador) */
+	register_rest_route( 'desenvolve/v1', '/robo/segredo', array( 'methods' => 'POST', 'permission_callback' => function () { return current_user_can( 'manage_options' ); }, 'callback' => function () {
+		$t = (string) get_option( 'dv_robo_token' ); if ( $t === '' ) { $t = wp_generate_password( 48, false, false ); update_option( 'dv_robo_token', $t, false ); }
+		return array( 'token' => $t );
+	} ) );
+} );
+/** Avisos da base do robô no mesmo formato de dv_dm_buscar */
+function dv_dm_avisos_buscar( $texto, $desde, $ufs = array() ) {
+	global $wpdb; $tb = $wpdb->prefix . 'dv_dm_avisos';
+	$pal = array_filter( preg_split( '/\s+/', trim( preg_replace( '/[^\p{L}\p{N}\s]/u', ' ', (string) $texto ) ) ), function ( $w ) { return mb_strlen( $w ) >= 3; } );
+	if ( ! $pal ) { return array(); }
+	$bool = implode( ' ', array_map( function ( $w ) { return '+' . $w; }, $pal ) );
+	$sql = "SELECT * FROM {$tb} WHERE data >= %s AND MATCH(titulo,texto) AGAINST (%s IN BOOLEAN MODE)";
+	$arg = array( $desde, $bool );
+	if ( $ufs ) { $sql .= ' AND uf IN (' . implode( ',', array_fill( 0, count( $ufs ), '%s' ) ) . ')'; $arg = array_merge( $arg, $ufs ); }
+	$rows = $wpdb->get_results( $wpdb->prepare( $sql . ' ORDER BY data DESC LIMIT 300', $arg ), ARRAY_A ) ?: array();
+	return array_map( function ( $x ) { return array( 'id' => 'R' . $x['id'], 'titulo' => $x['titulo'], 'entidade' => $x['municipio'], 'municipio' => $x['municipio'], 'orgao' => 'Município de ' . $x['municipio'], 'uf' => $x['uf'], 'data' => $x['data'], 'link' => $x['link'], 'trecho' => $x['texto'], 'fonte_nome' => $x['fonte'], 'completo' => 1 ); }, $rows );
+}

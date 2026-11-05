@@ -141,9 +141,28 @@ add_action( 'rest_api_init', function () {
 		}
 		/* registra toda busca (também as que vieram do cache); marca quando é o administrador */
 		$log = (array) get_option( 'dv_am_log', array() ); array_unshift( $log, array( current_time( 'mysql' ), $tipo, ( $tipo === 'editais' ? $q . ( $uf ? ' (' . $uf . ')' : '' ) : $cnpj ) . ( current_user_can( 'manage_options' ) ? ' · teste interno' : '' ) ) ); update_option( 'dv_am_log', array_slice( $log, 0, 300 ), false );
-		return $c;
+		// o resultado completo só sai do servidor para quem já deixou o e-mail na lista de espera
+		$em = strtolower( sanitize_email( (string) $r['email'] ) );
+		$lib = current_user_can( 'manage_options' ) || ( $em && function_exists( 'dv_lista' ) && isset( dv_lista()[ $em ] ) );
+		if ( $lib ) { return $c; }
+		return dv_am_trava( $c );
 	} ) );
 } );
+
+/** Substitui o conteúdo bloqueado por marcadores (mantém só as quantidades) */
+function dv_am_trava( $c ) {
+	$B = (array) ( $c['bloqueado'] ?? array() ); $t = array();
+	foreach ( $B as $k => $v ) {
+		if ( ! is_array( $v ) ) { $t[ $k ] = null; continue; }
+		$n = count( $v );
+		if ( $k === 'editais' ) { $t[ $k ] = array_fill( 0, $n, array( 'objeto' => 'Licitação liberada depois do e-mail ●●●●●●●●●●●●●●●●●●●●●●●●', 'orgao' => '●●●●●●●●●●●●', 'local' => '●●●●●', 'modalidade' => '', 'fim' => '', 'valor' => 0, 'link' => '' ) ); }
+		elseif ( $k === 'grupo' ) { $t[ $k ] = array_fill( 0, $n, array( 'razao' => '●●●●●●●●●●●●●●●● LTDA', 'via' => 'Sócio em comum: ●●●●●●●●' ) ); }
+		elseif ( array_keys( $v ) === range( 0, $n - 1 ) ) { $t[ $k ] = array_fill( 0, $n, '●●●●●●●●●●●●●●●●●●●●' ); }
+		else { $t[ $k ] = null; }
+	}
+	$c['bloqueado'] = $t; $c['travado'] = true;
+	return $c;
+}
 
 /* Painel: últimas consultas grátis (o que os visitantes procuram) */
 add_action( 'admin_menu', function () {

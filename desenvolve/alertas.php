@@ -180,6 +180,23 @@ function dv_al_dm_itens( $lista, $termo, $a, $ufs, $excl ) {
 	}
 	return $out;
 }
+/** Completa os avisos dos diários municipais com o texto integral (objeto, número, sessão e valor) */
+function dv_al_dm_completar( $dia ) {
+	if ( ! function_exists( 'dv_dm_materia' ) ) { return $dia; }
+	$links = array(); foreach ( $dia as $r => $x ) { if ( strpos( $r, 'DM' ) === 0 && count( $links ) < 40 ) { $links[] = $x['link']; } }
+	if ( ! $links ) { return $dia; }
+	$tx = dv_dm_materia( $links );
+	foreach ( $dia as $r => &$x ) {
+		if ( strpos( $r, 'DM' ) !== 0 || empty( $tx[ $x['link'] ] ) ) { continue; }
+		$t = $tx[ $x['link'] ]; $nd = dv_al_norm( $t );
+		$x['encerra'] = dv_al_dt_sessao( $t ) ?: $x['encerra']; $x['objeto'] = dv_al_objeto( $t ) ?: $x['objeto'];
+		$x['numero'] = dv_al_numero( $nd ) ?: $x['numero']; $x['modalidade'] = dv_al_modalidade( dv_al_norm( $x['titulo'] ) . ' ' . $nd );
+		if ( preg_match( '#VALOR (?:TOTAL |GLOBAL )?(?:ESTIMADO|MAXIMO|DE REFERENCIA)?[^0-9]{0,25}R\$\s*([\d.]+,\d{2})#', $nd, $v ) ) { $x['valor'] = (float) str_replace( array( '.', ',' ), array( '', '.' ), $v[1] ); }
+		$x['trecho'] = mb_substr( $t, 0, 1500 );
+	}
+	unset( $x );
+	return $dia;
+}
 function dv_al_buscar( $a, $desde ) {
 	$termos = array_slice( array_filter( array_map( 'trim', preg_split( '/[,;\n]+/', (string) $a['termos'] ) ) ), 0, 6 );
 	$excl = array_filter( array_map( function ( $x ) { return dv_al_norm( trim( $x ) ); }, preg_split( '/[,;\n]+/', (string) ( $a['excluir'] ?? '' ) ) ) );
@@ -235,7 +252,7 @@ function dv_al_buscar( $a, $desde ) {
 		foreach ( $termos as $t ) { foreach ( dv_al_dm_itens( dv_dm_buscar( $t, $d0, $ufs ), $t, $a, $ufs, $excl ) as $r => $x ) { if ( isset( $dia[ $r ] ) ) { $dia[ $r ]['termos'][] = $t; } else { $dia[ $r ] = $x; } } }
 	}
 	/* o mesmo edital pode estar no PNCP e no diário: descarta o do diário quando o número e o município (ou órgão) batem */
-	if ( $dia ) { $dia = dv_al_dou_completar( $dia, $excl, $a ); }
+	if ( $dia ) { $dia = dv_al_dou_completar( dv_al_dm_completar( $dia ), $excl, $a ); }
 	if ( $dia ) {
 		$ja = array(); foreach ( $out as $x ) { if ( preg_match_all( '#(\d{1,6})\s*/\s*(\d{4})#', $x['titulo'] . ' ' . $x['objeto'], $mm, PREG_SET_ORDER ) ) { foreach ( $mm as $q ) { $ja[ (int) $q[1] . '/' . $q[2] . '|' . dv_al_norm( $x['municipio'] ) ] = 1; } } }
 		$dv = array();
@@ -294,7 +311,7 @@ add_action( 'rest_api_init', function () {
 		foreach ( $res as $k => $b ) { if ( ! $b ) { $g = wp_remote_get( $urls[ $k ], array( 'timeout' => 15 ) ); if ( ! is_wp_error( $g ) && wp_remote_retrieve_response_code( $g ) === 200 ) { $res[ $k ] = wp_remote_retrieve_body( $g ); } } }
 		foreach ( $res as $k => $b ) { foreach ( dv_al_diario_itens( $k, $b, $q, $a, $ufs, array() ) as $rf => $x ) { $dia[ $rf ] = $x; } }
 		if ( function_exists( 'dv_dm_buscar' ) ) { foreach ( dv_al_dm_itens( dv_dm_buscar( $q, $desde, $ufs ), $q, $a, $ufs, array() ) as $rf => $x ) { $dia[ $rf ] = $x; } }
-		$dia = dv_al_dou_completar( $dia, array(), $a ); $dv = array(); $out = array();
+		$dia = dv_al_dou_completar( dv_al_dm_completar( $dia ), array(), $a ); $dv = array(); $out = array();
 		foreach ( $dia as $x ) { $k = $x['numero'] ? $x['numero'] . '|' . dv_al_norm( $x['municipio'] ?: $x['orgao'] ) : $x['ref']; $k2 = md5( dv_al_norm( $x['orgao'] . mb_substr( $x['objeto'], 0, 120 ) ) ); if ( isset( $dv[ $k ] ) || isset( $dv[ $k2 ] ) ) { continue; } $dv[ $k ] = 1; $dv[ $k2 ] = 1; unset( $x['termos'] ); $out[] = $x; }
 		usort( $out, function ( $x, $y ) { return strcmp( $y['publicado'], $x['publicado'] ); } );
 		$out = array_slice( $out, 0, 150 );

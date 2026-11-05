@@ -140,7 +140,8 @@ function dv_dm_materia( $links ) {
 		$res = function_exists( 'dv_ds_multi' ) ? dv_ds_multi( $ch, array( 'Accept' => 'text/html', 'User-Agent' => 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0 Safari/537.36' ), 20 ) : array();
 		foreach ( $ch as $h => $l ) {
 			$b = $res[ $h ] ?? null; if ( ! $b ) { continue; }
-			$i = strpos( $b, 'documento__corpo' ); $t = $i !== false ? substr( $b, $i, 150000 ) : $b;
+			$i = false; foreach ( array( 'documento__corpo', 'modal-texto-extraido', 'extrato-ato', 'new-ato-content' ) as $mk ) { $i = strpos( $b, $mk ); if ( $i !== false ) { break; } }
+			$t = $i !== false ? substr( $b, $i, 150000 ) : $b;
 			$t = mb_substr( dv_dm_txt( preg_replace( '#<(script|style)[^>]*>.*?</\1>#s', ' ', $t ) ), 0, 60000 );
 			set_transient( 'dv_dmm_' . $h, $t, 30 * DAY_IN_SECONDS ); $out[ $l ] = $t;
 		}

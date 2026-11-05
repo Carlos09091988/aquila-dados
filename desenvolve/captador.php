@@ -96,6 +96,16 @@ function dv_capt_dou( $uid, $rot, $termo, $desde ) {
 	}
 	return $novos;
 }
+/** Diários das associações de municípios e DOM/SC (cobertura nacional). Só grava o que traz a frase exata. */
+function dv_capt_dm( $uid, $rot, $termo, $desde ) {
+	if ( ! function_exists( 'dv_dm_buscar' ) ) { return 0; }
+	$novos = 0;
+	$pg = strtotime( $desde ) < strtotime( '-30 days' ) ? 2 : 1;
+	foreach ( dv_dm_buscar( $termo, $desde, array(), '', $pg, true ) as $g ) {
+		$novos += dv_capt_gravar( $uid, $rot, $g['data'], $g['municipio'] ?: $g['entidade'], $g['uf'], $g['link'], '', trim( $g['titulo'] . ' — ' . $g['trecho'], ' —' ) );
+	}
+	return $novos;
+}
 /** Busca o termo em todas as fontes e grava o que for novo. Devolve quantas entraram. */
 function dv_capt_buscar( $uid, &$t, $desde ) {
 	if ( $t['tipo'] === 'cnpj' ) {
@@ -110,11 +120,11 @@ function dv_capt_buscar( $uid, &$t, $desde ) {
 			$n += dv_capt_qd( $uid, $rot, $q, $desde );
 		}
 		foreach ( array_slice( $docs, 0, 15 ) as $d ) { $n += dv_capt_dou( $uid, $rot, dv_capt_fmt_cnpj( $d ), $desde ); }
-		if ( ! empty( $t['nome'] ) ) { $n += dv_capt_qd( $uid, $rot, '"' . $t['nome'] . '"', $desde ) + dv_capt_dou( $uid, $rot, $t['nome'], $desde ); }
+		if ( ! empty( $t['nome'] ) ) { $n += dv_capt_qd( $uid, $rot, '"' . $t['nome'] . '"', $desde ) + dv_capt_dou( $uid, $rot, $t['nome'], $desde ) + dv_capt_dm( $uid, $rot, $t['nome'], $desde ); }
 		return $n;
 	}
 	$v = str_replace( '"', '', $t['valor'] );
-	return dv_capt_qd( $uid, $t['valor'], '"' . $v . '"', $desde ) + dv_capt_dou( $uid, $t['valor'], $v, $desde );
+	return dv_capt_qd( $uid, $t['valor'], '"' . $v . '"', $desde ) + dv_capt_dou( $uid, $t['valor'], $v, $desde ) + dv_capt_dm( $uid, $t['valor'], $v, $desde );
 }
 
 /** Cobra o mês do termo (1 crédito). Devolve true ou WP_Error. */

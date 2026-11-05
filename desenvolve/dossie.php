@@ -242,6 +242,13 @@ function dv_ds_diarios( $cnpj, $nome ) {
 				'trecho' => mb_substr( trim( preg_replace( '/\s+/', ' ', wp_strip_all_tags( html_entity_decode( ( $it['title'] ?? '' ) . ' — ' . ( $it['content'] ?? '' ), ENT_QUOTES, 'UTF-8' ) ) ) ), 0, 700 ), 'link' => $u );
 		}
 	}
+	/* diários das associações de municípios e DOM/SC (só o que traz o nome exato) */
+	if ( $nome && function_exists( 'dv_dm_buscar' ) ) {
+		foreach ( dv_dm_buscar( $nome, $desde, array(), '', 2, true ) as $g ) {
+			if ( isset( $vistos[ $g['link'] ] ) ) { continue; } $vistos[ $g['link'] ] = 1;
+			$itens[] = array( 'data' => $g['data'], 'fonte' => trim( ( $g['municipio'] ?: $g['entidade'] ) . '/' . $g['uf'], '/' ), 'tipo' => 'Municipal', 'trecho' => mb_substr( trim( $g['titulo'] . ' — ' . $g['trecho'], ' —' ), 0, 700 ), 'link' => $g['link'] );
+		}
+	}
 	usort( $itens, function ( $a, $b ) { return strcmp( $b['data'], $a['data'] ); } );
 	$re = '/PENALIDADE|PUNITIVO|DEFESA PREVIA|APURACAO DE RESPONSABILIDADE|PROCESSO (ADMINISTRATIVO )?(SANCIONATORIO|PUNITIVO|DE RESPONSABILIZACAO|DE APURACAO)|IMPEDIMENTO DE LICITAR|IMPEDID[AO] DE LICITAR|INIDONE|SUSPENSAO TEMPORARIA|APLICA(CAO|R) (DE |A )?MULTA|MULTA (CONTRATUAL|MORATORIA|COMPENSATORIA)|RESCISAO (UNILATERAL|CONTRATUAL|DO CONTRATO)|ADVERTENCIA|SANCAO|SANCIONATORIO|INADIMPLEMENTO|NOTIFICACAO (EXTRAJUDICIAL|PARA (APRESENTAR )?DEFESA)|INTIMACAO PARA (APRESENTAR )?DEFESA|DESCUMPRIMENTO CONTRATUAL/';
 	foreach ( $itens as &$i ) { $t = dv_ds_nrm( $i['trecho'] ); $i['alerta'] = (bool) preg_match( $re, $t ); } unset( $i );

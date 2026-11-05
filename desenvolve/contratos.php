@@ -106,6 +106,15 @@ function dv_ct_diarios( $c, $nome ) {
 			}
 		}
 	}
+	/* Diários das associações de municípios / DOM/SC: publicações da cidade do contrato que citam a empresa */
+	if ( $mun && $pal && function_exists( 'dv_dm_buscar' ) ) {
+		$ufc = strtoupper( (string) ( $c['uf'] ?? '' ) );
+		foreach ( dv_dm_buscar( implode( ' ', $pal ), $desde, $ufc ? array( $ufc ) : array(), '', 2 ) as $g ) {
+			if ( $norm( $g['municipio'] ) !== $mun ) { continue; }
+			$tx = trim( $g['titulo'] . ' — ' . $g['trecho'], ' —' ); if ( strpos( $norm( $tx ), $norm( implode( '', $pal ) ) ) === false && strpos( $norm( $tx ), $norm( $num ) ) === false ) { continue; }
+			$out[] = array( 'data' => $g['data'], 'fonte' => $g['municipio'] . '/' . $g['uf'], 'url' => $g['link'], 'trecho' => mb_substr( $tx, 0, 700 ) );
+		}
+	}
 	/* Diário Oficial da União: busca pelo número do contrato e fica só com o que cita a empresa */
 	if ( $pal ) {
 		$u = 'https://www.in.gov.br/consulta/-/buscar/dou?q=' . rawurlencode( '"' . $num . '"' ) . '&s=todos&exactDate=personalizado&sortType=0&delta=75&publishFrom=' . gmdate( 'd-m-Y', strtotime( $desde ) ) . '&publishTo=' . current_time( 'd-m-Y' );

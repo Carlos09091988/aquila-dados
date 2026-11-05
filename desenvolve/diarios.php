@@ -71,7 +71,7 @@ function dv_dm_itens( $k, $body ) {
 	foreach ( $partes as $p ) {
 		if ( ! preg_match( '#<a[^>]*href="([^"]+)"[^>]*>(.*?)</a>\s*</h4>#s', $p, $t ) ) { continue; }
 		$sp = preg_match( '#</h4>\s*<span[^>]*>(.*?)<br#s', $p, $x ) ? dv_dm_txt( $x[1] ) : '';
-		$tr = preg_match( '#<p[^>]*>(.*?)</p>#s', $p, $x ) ? dv_dm_txt( $x[1] ) : '';
+		$tr = ''; if ( preg_match_all( '#<p[^>]*>(.*?)</p>#s', $p, $px ) ) { foreach ( $px[1] as $pp ) { $pp = dv_dm_txt( $pp ); if ( $pp !== '' ) { $tr = $pp; break; } } }
 		$dt = preg_match( '#(\d{2})/(\d{2})/(\d{4})#', $sp, $x ) ? "$x[3]-$x[2]-$x[1]" : '';
 		$seg = array_map( 'trim', explode( ' - ', $sp ) ); $ent = end( $seg ) ?: ''; $cat = count( $seg ) >= 5 ? $seg[ count( $seg ) - 2 ] : '';
 		$link = html_entity_decode( $t[1] ); if ( strpos( $link, 'http' ) !== 0 ) { $link = 'https://diariomunicipal.sc.gov.br' . ( $link[0] === '/' ? '' : '/' ) . $link; }

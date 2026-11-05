@@ -166,6 +166,20 @@ function dv_al_diario_itens( $tipo, $body, $termo, $a, $ufs, $excl ) {
 	}
 	return $out;
 }
+/** Publicações dos diários das associações de municípios / DOM/SC -> oportunidades (fonte = diario) */
+function dv_al_dm_itens( $lista, $termo, $a, $ufs, $excl ) {
+	$out = array();
+	foreach ( (array) $lista as $g ) {
+		if ( $ufs && ! in_array( $g['uf'], $ufs, true ) ) { continue; }
+		$tx = trim( $g['titulo'] . ' — ' . $g['trecho'], ' —' ); $nd = dv_al_norm( $tx ); $enc = dv_al_dt_sessao( $tx );
+		if ( ! dv_al_aceita( $nd, $enc, $termo, $excl, $a ) ) { continue; }
+		if ( ! empty( $g['categoria'] ) && ! preg_match( '/LICITA|PREGA|EDITA/', dv_al_norm( $g['categoria'] ) ) && ! preg_match( '/AVISO|EDITAL|PREGAO|CONCORRENCIA|DISPENSA|CHAMAMENTO/', dv_al_norm( $g['titulo'] ) ) ) { continue; }
+		$ref = 'DM' . sprintf( '%u', crc32( $g['link'] ) ); $mun = $g['municipio'] ?: $g['entidade'];
+		$out[ $ref ] = array( 'ref' => $ref, 'fonte' => 'diario', 'fonte_nome' => $g['fonte_nome'], 'orgao' => $g['orgao'] ?: $g['entidade'], 'municipio' => $mun, 'uf' => $g['uf'], 'modalidade' => dv_al_modalidade( $nd ), 'numero' => dv_al_numero( $nd ),
+			'titulo' => $g['titulo'], 'objeto' => dv_al_objeto( $g['trecho'] ?: $tx ), 'trecho' => mb_substr( $tx, 0, 900 ), 'valor' => 0, 'publicado' => $g['data'], 'encerra' => $enc, 'link' => $g['link'], 'termos' => array( $termo ) );
+	}
+	return $out;
+}
 function dv_al_buscar( $a, $desde ) {
 	$termos = array_slice( array_filter( array_map( 'trim', preg_split( '/[,;\n]+/', (string) $a['termos'] ) ) ), 0, 6 );
 	$excl = array_filter( array_map( function ( $x ) { return dv_al_norm( trim( $x ) ); }, preg_split( '/[,;\n]+/', (string) ( $a['excluir'] ?? '' ) ) ) );
@@ -214,6 +228,11 @@ function dv_al_buscar( $a, $desde ) {
 				'titulo' => $i['title'] ?? '', 'objeto' => mb_substr( $desc, 0, 600 ), 'valor' => $v, 'publicado' => $pub, 'encerra' => substr( (string) ( $i['data_fim_vigencia'] ?? '' ), 0, 16 ),
 				'link' => 'https://pncp.gov.br/app/editais/' . $ref, 'termos' => array( $termo ) );
 		}
+	}
+	/* diários das associações de municípios (SIGPub) e DOM/SC: cobertura das cidades que não publicam no PNCP */
+	if ( ( ! isset( $a['diarios'] ) || $a['diarios'] ) && function_exists( 'dv_dm_buscar' ) ) {
+		$d0 = gmdate( 'Y-m-d', min( strtotime( $desde ), strtotime( current_time( 'Y-m-d' ) . ' -5 days' ) ) );
+		foreach ( $termos as $t ) { foreach ( dv_al_dm_itens( dv_dm_buscar( $t, $d0, $ufs ), $t, $a, $ufs, $excl ) as $r => $x ) { if ( isset( $dia[ $r ] ) ) { $dia[ $r ]['termos'][] = $t; } else { $dia[ $r ] = $x; } } }
 	}
 	/* o mesmo edital pode estar no PNCP e no diário: descarta o do diário quando o número e o município (ou órgão) batem */
 	if ( $dia ) { $dia = dv_al_dou_completar( $dia, $excl, $a ); }
@@ -274,6 +293,7 @@ add_action( 'rest_api_init', function () {
 		$res = function_exists( 'dv_ds_multi' ) ? dv_ds_multi( $urls, array( 'Accept' => 'text/html,application/json' ), 20 ) : array();
 		foreach ( $res as $k => $b ) { if ( ! $b ) { $g = wp_remote_get( $urls[ $k ], array( 'timeout' => 15 ) ); if ( ! is_wp_error( $g ) && wp_remote_retrieve_response_code( $g ) === 200 ) { $res[ $k ] = wp_remote_retrieve_body( $g ); } } }
 		foreach ( $res as $k => $b ) { foreach ( dv_al_diario_itens( $k, $b, $q, $a, $ufs, array() ) as $rf => $x ) { $dia[ $rf ] = $x; } }
+		if ( function_exists( 'dv_dm_buscar' ) ) { foreach ( dv_al_dm_itens( dv_dm_buscar( $q, $desde, $ufs ), $q, $a, $ufs, array() ) as $rf => $x ) { $dia[ $rf ] = $x; } }
 		$dia = dv_al_dou_completar( $dia, array(), $a ); $dv = array(); $out = array();
 		foreach ( $dia as $x ) { $k = $x['numero'] ? $x['numero'] . '|' . dv_al_norm( $x['municipio'] ?: $x['orgao'] ) : $x['ref']; $k2 = md5( dv_al_norm( $x['orgao'] . mb_substr( $x['objeto'], 0, 120 ) ) ); if ( isset( $dv[ $k ] ) || isset( $dv[ $k2 ] ) ) { continue; } $dv[ $k ] = 1; $dv[ $k2 ] = 1; unset( $x['termos'] ); $out[] = $x; }
 		usort( $out, function ( $x, $y ) { return strcmp( $y['publicado'], $x['publicado'] ); } );

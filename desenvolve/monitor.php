@@ -1,7 +1,7 @@
 <?php
 /**
  * Desenvolve — Monitor das fontes (de hora em hora)
- * Testa PNCP, Diário Oficial da União e Querido Diário. Se uma fonte falhar 3 vezes seguidas (cerca de 3 horas),
+ * Testa PNCP, Diário Oficial da União, Querido Diário, SIGPub (associações de municípios) e DOM/SC. Se uma fonte falhar 3 vezes seguidas (cerca de 3 horas),
  * aparece um comunicado no topo da plataforma para os clientes e o administrador recebe um e-mail.
  * Quando a fonte volta, o comunicado some sozinho e o administrador é avisado.
  */
@@ -12,6 +12,8 @@ function dv_mon_fontes() {
 		'pncp' => array( 'nome' => 'PNCP (Portal Nacional de Contratações Públicas)', 'efeito' => 'As licitações do PNCP podem chegar com atraso nos alertas e no buscador.', 'url' => 'https://pncp.gov.br/api/search/?q=limpeza&tipos_documento=edital&status=recebendo_proposta&pagina=1&tam_pagina=1', 'ok' => '"items"', 'accept' => 'application/json' ),
 		'dou'  => array( 'nome' => 'Diário Oficial da União', 'efeito' => 'Os avisos de licitação do Diário Oficial da União podem chegar com atraso.', 'url' => 'https://www.in.gov.br/consulta/-/buscar/dou?q=%22aviso+de+licita%C3%A7%C3%A3o%22&s=do3&delta=1', 'ok' => 'BuscaDouPortlet', 'accept' => 'text/html' ),
 		'qd'   => array( 'nome' => 'diários oficiais municipais (Querido Diário)', 'efeito' => 'Os avisos publicados nos diários oficiais dos municípios podem chegar com atraso.', 'url' => 'https://api.queridodiario.ok.org.br/gazettes?querystring=licita%C3%A7%C3%A3o&size=1', 'ok' => 'gazettes', 'accept' => 'application/json' ),
+		'sigpub' => array( 'nome' => 'diários das associações de municípios (SIGPub, 20 estados)', 'efeito' => 'Os avisos e citações nos diários dos municípios atendidos pelas associações podem chegar com atraso.', 'url' => 'https://www.diariomunicipal.com.br/amm-mg/pesquisar?busca_avancada%5Btexto%5D=licita%C3%A7%C3%A3o&busca_avancada%5BdataInicio%5D=2026-10-01', 'ok' => 'materia-card', 'accept' => 'text/html' ),
+		'domsc' => array( 'nome' => 'Diário Oficial dos Municípios de Santa Catarina (DOM/SC)', 'efeito' => 'Os avisos e citações nos diários dos municípios de Santa Catarina podem chegar com atraso.', 'url' => 'https://diariomunicipal.sc.gov.br/?q=licita%C3%A7%C3%A3o', 'ok' => 'resultado-pesquisa', 'accept' => 'text/html' ),
 	);
 }
 define( 'DV_MON_LIMITE', 3 ); // falhas seguidas para virar comunicado
@@ -21,7 +23,7 @@ add_action( 'init', function () { if ( ! wp_next_scheduled( 'dv_mon_cron' ) ) { 
 
 function dv_mon_testar( $f ) {
 	for ( $i = 0; $i < 2; $i++ ) { // duas tentativas: só conta falha se as duas derem errado
-		$g = wp_remote_get( $f['url'], array( 'timeout' => 25, 'headers' => array( 'Accept' => $f['accept'] ) ) );
+		$g = wp_remote_get( $f['url'], array( 'timeout' => 25, 'headers' => array( 'Accept' => $f['accept'], 'User-Agent' => 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0 Safari/537.36' ) ) );
 		if ( ! is_wp_error( $g ) && wp_remote_retrieve_response_code( $g ) === 200 && strpos( wp_remote_retrieve_body( $g ), $f['ok'] ) !== false ) { return ''; }
 		$erro = is_wp_error( $g ) ? $g->get_error_message() : 'HTTP ' . wp_remote_retrieve_response_code( $g );
 		if ( $i === 0 ) { sleep( 5 ); }

@@ -80,7 +80,7 @@ def docs_sigpub():
 
 def dosp_entidades():
     """Lista de cidades da plataforma DiOE/DOSP (descoberta semanal; guardada em data/diarios/dosp.json)."""
-    arq = os.path.join(DADOS, 'dosp.json')
+    arq = os.path.join(DADOS, 'dosp2.json')
     try:
         c = json.load(open(arq))
         if time.time() - c.get('quando', 0) < 7 * 86400 and c.get('ent'):
@@ -97,7 +97,7 @@ def dosp_entidades():
         ult = re.search(r'"data":\s*"(\d{4}-\d{2}-\d{2})"', t)
         return (i, m.group(1).upper(), m.group(2), ult.group(1) if ult else '') if m else None
     with cf.ThreadPoolExecutor(24) as ex:
-        for r in ex.map(sonda, range(int(os.environ.get('DOSP_DE', '3000')), int(os.environ.get('DOSP_ATE', '7000')))):
+        for r in ex.map(sonda, range(int(os.environ.get('DOSP_DE', '1')), int(os.environ.get('DOSP_ATE', '9000')))):
             if r and r[3] >= (HOJE - dt.timedelta(days=120)).isoformat():
                 ent[str(r[0])] = {'uf': r[1], 'slug': r[2]}
     if ent:
@@ -129,14 +129,17 @@ def docs_dosp():
 
 def docs_famem():
     out = []
-    h = get('https://diariooficial.famem.org.br/dom/dom/todasEdicoes')
-    if not h:
-        return out
-    for m in re.finditer(r'(\d{2})/(\d{2})/(\d{4}).{0,1500}?(https://painel\.siganet\.net\.br/upload/[^"\']+\.pdf)', h, re.S):
-        d = '%s-%s-%s' % (m.group(3), m.group(2), m.group(1))
-        if d in DATAS:
-            out.append({'fonte': 'Diário Oficial dos Municípios do Maranhão (FAMEM)', 'plat': 'famem', 'uf': 'MA', 'municipio': '', 'data': d, 'url': m.group(4), 'link': m.group(4)})
-    return list({x['url']: x for x in out}.values())
+    t = get('https://diariooficial.famem.org.br/dom/dom/pesquisaEdicoes/')
+    try:
+        j = json.loads(t or '{}')
+    except Exception:
+        j = {}
+    for x in j.get('data', []):
+        d = str(x.get('TDO_DT_GERACAO', ''))[:10]; arq = x.get('TDO_ASSINADO_ARQUIVO') or ''
+        if d in DATAS and arq.endswith('.pdf'):
+            u = 'https://painel.siganet.net.br/upload/0000000002/cms/publicacoes/diario/' + arq
+            out.append({'fonte': 'Diário Oficial dos Municípios do Maranhão (FAMEM)', 'plat': 'famem', 'uf': 'MA', 'municipio': '', 'data': d, 'url': u, 'link': u})
+    return out
 
 
 # ------------------------------------------------------------------ texto -> atos

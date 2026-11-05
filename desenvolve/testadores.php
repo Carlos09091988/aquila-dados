@@ -19,7 +19,8 @@ add_shortcode( 'dv_teste', function () {
 	if ( 'POST' === $_SERVER['REQUEST_METHOD'] && isset( $_POST['dv_ts'] ) && wp_verify_nonce( $_POST['_dvts'] ?? '', 'dv_ts' ) ) {
 		$nome = sanitize_text_field( wp_unslash( $_POST['nome'] ?? '' ) ); $email = sanitize_email( wp_unslash( $_POST['email'] ?? '' ) );
 		$doc = preg_replace( '/\D/', '', $_POST['doc'] ?? '' ); $tel = preg_replace( '/\D/', '', $_POST['tel'] ?? '' ); $senha = (string) wp_unslash( $_POST['senha'] ?? '' ); $atua = sanitize_text_field( wp_unslash( $_POST['atuacao'] ?? '' ) );
-		if ( ! $nome || ! is_email( $email ) ) { $err = 'Preencha nome e um e-mail válido.'; }
+		if ( mb_strlen( $nome ) < 2 ) { $nome = ! empty( $C[ $cod ]['rotulo'] ) ? $C[ $cod ]['rotulo'] : ucwords( str_replace( array( '.', '_', '-' ), ' ', (string) strstr( $email, '@', true ) ) ); }
+		if ( ! is_email( $email ) ) { $err = 'Informe um e-mail válido.'; }
 		elseif ( $doc !== '' && ! in_array( strlen( $doc ), array( 11, 14 ), true ) ) { $err = 'Informe um CPF ou CNPJ válido (só números).'; }
 		elseif ( strlen( $senha ) < 8 ) { $err = 'A senha precisa ter pelo menos 8 caracteres.'; }
 		elseif ( email_exists( $email ) ) { $err = 'Já existe uma conta com este e-mail. Fale com a Desenvolve para ativar o teste nela.'; }
@@ -44,11 +45,9 @@ add_shortcode( 'dv_teste', function () {
 	<span class="ts-k">Convite de especialista</span><h2><?php echo ! empty( $C[ $cod ]['rotulo'] ) ? esc_html( $C[ $cod ]['rotulo'] ) . ', teste' : 'Teste'; ?> a Desenvolve antes de todo mundo</h2>
 	<ul class="ts-l"><li><b><?php echo DV_TS_DIAS; ?> dias</b> de acesso completo e <b>ilimitado</b> ao Raio-X, à Due Diligence e às demais ferramentas</li><li>No fim, uma <b>avaliação rápida</b> (cerca de 10 minutos) com as suas sugestões</li><li>Enviou a avaliação: ganha <b>1 mês de assinatura</b> (80 créditos), liberado na hora</li></ul>
 	<?php if ( $err ) { echo '<p class="ts-err">' . esc_html( $err ) . '</p>'; } ?>
-	<label>Nome completo<input name="nome" required value="<?php echo esc_attr( $_POST['nome'] ?? ( $C[ $cod ]['rotulo'] ?? '' ) ); ?>"></label>
-	<div class="ts-2"><label>E-mail<input type="email" name="email" required value="<?php echo esc_attr( $_POST['email'] ?? '' ); ?>"></label><label>WhatsApp<input name="tel" value="<?php echo esc_attr( $_POST['tel'] ?? '' ); ?>"></label></div>
-	<div class="ts-2"><label>CPF ou CNPJ <small style="font-weight:400;opacity:.7">(opcional)</small><input name="doc" inputmode="numeric" value="<?php echo esc_attr( $_POST['doc'] ?? '' ); ?>"></label><label>Senha (mín. 8 caracteres)<input type="password" name="senha" required minlength="8"></label></div>
-	<label>Sua atuação<input name="atuacao" placeholder="Ex.: consultor de licitações há 10 anos, advogado, gerente comercial público" value="<?php echo esc_attr( $_POST['atuacao'] ?? '' ); ?>"></label>
-	<label class="ts-c"><input type="checkbox" name="termos" value="1"> <span>Li e aceito as condições do teste (acesso por <?php echo DV_TS_DIAS; ?> dias; a recompensa é liberada após o envio da avaliação completa; as sugestões podem ser usadas para melhorar a plataforma), os <a href="/termos-de-uso-plataforma/" target="_blank">Termos de uso</a> e a <a href="/politica-de-privacidade/" target="_blank">Política de privacidade</a>.</span></label>
+	<label>E-mail<input type="email" name="email" required autocomplete="email" value="<?php echo esc_attr( $_POST['email'] ?? '' ); ?>"></label>
+	<label>Crie uma senha (mín. 8 caracteres)<input type="password" name="senha" required minlength="8" autocomplete="new-password"></label>
+	<label class="ts-c"><input type="checkbox" name="termos" value="1"> <span>Aceito as condições do teste, os <a href="/termos-de-uso-plataforma/" target="_blank">Termos de uso</a> e a <a href="/politica-de-privacidade/" target="_blank">Política de privacidade</a>.</span></label>
 	<button class="ts-b" type="submit">Ativar meu teste</button>
 </form>
 	<?php return ob_get_clean() . dv_ts_css();

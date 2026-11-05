@@ -1,0 +1,10 @@
+name: Desenvolve - teste de acesso aos diarios
+on:
+  workflow_dispatch:
+jobs:
+  teste:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - run: python3 scripts/diarios_teste_acesso.py

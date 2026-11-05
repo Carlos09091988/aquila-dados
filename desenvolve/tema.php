@@ -132,3 +132,9 @@ body.dv-app ::selection{background:#0A0A0A;color:#fff}
 </style>
 	<?php
 }, 120 );
+
+/* rede de segurança: texto marrom-escuro que sobrou em cima de fundo agora preto vira branco */
+add_action( 'wp_footer', function () {
+	if ( ! function_exists( 'dv_app_pagina' ) || ! dv_app_pagina() ) { return; }
+	echo '<script>(function(){var T="rgb(36, 26, 6)";function bgDe(e){var p=e;while(p&&p.nodeType===1){var b=getComputedStyle(p).backgroundColor;if(b&&b!=="rgba(0, 0, 0, 0)"&&b!=="transparent")return b;p=p.parentElement}return "rgb(255, 255, 255)"}function fx(){var L=document.querySelectorAll(".dv-tool *,.dvp *,.dv-main *");for(var i=0;i<L.length;i++){var e=L[i];if(e.children.length>3)continue;var c=getComputedStyle(e).color;if(c!==T)continue;var m=bgDe(e).match(/\\d+/g);if(m&&(+m[0])+(+m[1])+(+m[2])<240){e.style.setProperty("color","#fff","important")}}}var t;function ag(){clearTimeout(t);t=setTimeout(fx,120)}if(document.readyState!=="loading")fx();else document.addEventListener("DOMContentLoaded",fx);new MutationObserver(ag).observe(document.body,{childList:true,subtree:true})})()</script>';
+}, 99 );

@@ -26,3 +26,11 @@ Conta 530-314-4578 (desenvolveserv@gmail.com). Atualizar a cada checagem (10h e 
 - O assistente do Google cria campanha genérica sozinho ("Consultoria para Empresas", cidades da Grande SP) → sempre revisar textos, região, destino e conversões.
 - Importar imagens: o leitor de site do Google pega no máx. 2 imagens por página e gera recortes automáticos que cortam o texto → usar páginas com até 2 imagens e remover os recortes.
 - PMax recém-aprovada pode levar várias horas (até 1 dia) para registrar as primeiras impressões; não mexer na campanha nesse período para não reiniciar o aprendizado.
+
+## 05/11/2026 — campanha de pesquisa criada
+- "Pesquisa - Consulta grátis (pré-lançamento)" (id 24428547075): R$ 25/dia, só Pesquisa Google (sem parceiros e sem Display), Brasil, presença; lance Maximizar cliques com teto CPC R$ 3; AI Max desligado.
+- Grupos: "Grupo de anúncios 1" (Editais e PNCP, ?t=editais), "Empresa, concorrente e grupo econômico" (?t=empresa), "Órgão comprador" (?t=orgao); palavras em correspondência de frase; 1 RSA por grupo.
+- 17 negativas na campanha; 4 sitelinks (Consulta grátis, Raio-X do concorrente, Raio-X do comprador, Lista de fundadores).
+- PMax reduzida de R$ 35 para R$ 10/dia. Total da conta: R$ 35/dia. Saldo em 05/11 8h: R$ 529,03.
+- PMax mostra "acompanhamento de conversões incompleto" (nenhuma conversão registrada ainda). Trocar para Maximizar conversões após ~15 conversões.
+- Obs.: o Chrome do Windows tem a extensão "Slash Commands" (zent-slash-command) que abre pop-up ao digitar "/"; remover os elementos via JS.

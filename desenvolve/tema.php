@@ -138,3 +138,16 @@ add_action( 'wp_footer', function () {
 	if ( ! function_exists( 'dv_app_pagina' ) || ! dv_app_pagina() ) { return; }
 	echo '<script>(function(){var T="rgb(36, 26, 6)";function bgDe(e){var p=e;while(p&&p.nodeType===1){var b=getComputedStyle(p).backgroundColor;if(b&&b!=="rgba(0, 0, 0, 0)"&&b!=="transparent")return b;p=p.parentElement}return "rgb(255, 255, 255)"}function fx(){var L=document.querySelectorAll(".dv-tool *,.dvp *,.dv-main *");for(var i=0;i<L.length;i++){var e=L[i];if(e.children.length>3)continue;var c=getComputedStyle(e).color;if(c!==T)continue;var m=bgDe(e).match(/\\d+/g);if(m&&(+m[0])+(+m[1])+(+m[2])<240){e.style.setProperty("color","#fff","important")}}}var t;function ag(){clearTimeout(t);t=setTimeout(fx,120)}if(document.readyState!=="loading")fx();else document.addEventListener("DOMContentLoaded",fx);new MutationObserver(ag).observe(document.body,{childList:true,subtree:true})})()</script>';
 }, 99 );
+
+/* explicação do topo das ferramentas: aberta nas 2 primeiras visitas, depois recolhida atrás de "Como funciona" */
+add_action( 'wp_footer', function () {
+	if ( ! function_exists( 'dv_app_pagina' ) || ! dv_app_pagina() ) { return; } ?>
+<style>.dv-ih{margin-left:14px;vertical-align:middle;font:600 13px/1 "Hanken Grotesk",-apple-system,sans-serif;padding:7px 12px;border:1px solid var(--t-ln2,#E0E0E0);border-radius:99px;background:#fff;color:var(--t-mu,#6B6B6B);cursor:pointer;letter-spacing:0;position:relative;top:-4px}.dv-ih:hover{border-color:#C9A45C;color:var(--t-ink,#0A0A0A)}</style>
+<script>(function(){var s=document.querySelector('section.dv-th');if(!s)return;var h=s.querySelector('h1'),p=h&&h.nextElementSibling;if(!p||p.tagName!=='P'||p.textContent.trim().length<60)return;
+var k='dv_intro_'+location.pathname,v=0;try{v=+localStorage.getItem(k)||0}catch(x){}
+var b=document.createElement('button');b.type='button';b.className='dv-ih';h.appendChild(b);
+function set(ab){p.hidden=!ab;b.textContent=ab?'Ocultar explicação':'Como funciona';b.setAttribute('aria-expanded',ab?'true':'false')}
+set(v<2);try{localStorage.setItem(k,v+1)}catch(x){}
+b.addEventListener('click',function(){set(p.hidden);try{localStorage.setItem(k,9)}catch(x){}})})();</script>
+	<?php
+}, 130 );

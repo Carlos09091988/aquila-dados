@@ -27,6 +27,7 @@ function dv_tema_mapa() {
 }
 
 function dv_tema_escuro() {
+	return false; // modo escuro retirado (05/11/2026)
 	$u = get_current_user_id(); $m = $u ? (string) get_user_meta( $u, 'dv_tema', true ) : '';
 	if ( $m === 'claro' || $m === 'escuro' ) { return $m === 'escuro'; }
 	return get_option( 'dv_tema_modo', 'escuro' ) !== 'claro';
@@ -351,7 +352,7 @@ html.dv-trocando body,html.dv-trocando body *{transition:background-color .38s e
 add_action( 'wp_footer', function () {
 	if ( ! function_exists( 'dv_app_pagina' ) || ! dv_app_pagina() ) { return; } ?>
 
-<script>(function(){var sd=document.querySelector('.dv-sld');if(!sd)return;var esc=document.documentElement.classList.contains('dv-escuro'),b=document.createElement('button');b.type='button';b.className='dv-modo';b.setAttribute('role','switch');b.setAttribute('aria-checked',esc?'true':'false');b.title=esc?'Desligar o modo escuro':'Ligar o modo escuro';b.innerHTML='<span class="tx">Modo escuro</span><span class="sw" aria-hidden="true"><i></i></span>';
+<script>(function(){var sd=document.querySelector('.dv-sld');if(!sd||true)return;var esc=document.documentElement.classList.contains('dv-escuro'),b=document.createElement('button');b.type='button';b.className='dv-modo';b.setAttribute('role','switch');b.setAttribute('aria-checked',esc?'true':'false');b.title=esc?'Desligar o modo escuro':'Ligar o modo escuro';b.innerHTML='<span class="tx">Modo escuro</span><span class="sw" aria-hidden="true"><i></i></span>';
 sd.insertBefore(b,sd.firstChild);b.addEventListener('click',function(){esc=!esc;var d=document.documentElement;b.setAttribute('aria-checked',esc?'true':'false');b.title=esc?'Desligar o modo escuro':'Ligar o modo escuro';
  d.classList.add('dv-trocando');window.dvTema(esc);setTimeout(function(){d.classList.remove('dv-trocando')},450);
  fetch('/wp-admin/admin-ajax.php?action=rest-nonce',{credentials:'same-origin',cache:'no-store'}).then(function(r){return r.text()}).then(function(nc){return fetch(<?php echo wp_json_encode( rest_url( 'desenvolve/v1/tema' ) ); ?>,{method:'POST',credentials:'same-origin',cache:'no-store',headers:{'Content-Type':'application/json','X-WP-Nonce':nc.trim()},body:JSON.stringify({modo:esc?'escuro':'claro'})})}).catch(function(){})})})();</script>
@@ -387,7 +388,8 @@ add_action( 'wp_footer', function () {
 
 /* diagnóstico temporário (só administradores): navegador, tempos, erros e uso da chave do modo escuro */
 add_action( 'rest_api_init', function () {
-	register_rest_route( 'desenvolve/v1', '/diag', array( 'methods' => 'POST', 'permission_callback' => function () { return current_user_can( 'manage_options' ); }, 'callback' => function ( WP_REST_Request $r ) {
+	register_rest_route( 'desenvolve/v1', '/diag-ver', array( 'methods' => 'GET', 'permission_callback' => function () { return current_user_can( 'manage_options' ); }, 'callback' => function () { return get_option( 'dv_diag', array() ); } ) );
+		register_rest_route( 'desenvolve/v1', '/diag', array( 'methods' => 'POST', 'permission_callback' => function () { return current_user_can( 'manage_options' ); }, 'callback' => function ( WP_REST_Request $r ) {
 		$l = (array) get_option( 'dv_diag', array() ); array_unshift( $l, array( 't' => current_time( 'mysql' ), 'd' => mb_substr( wp_json_encode( $r->get_json_params() ), 0, 3000 ) ) ); update_option( 'dv_diag', array_slice( $l, 0, 30 ), false ); return array( 'ok' => true );
 	} ) );
 } );

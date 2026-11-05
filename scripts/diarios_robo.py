@@ -195,6 +195,23 @@ def post(rota, itens):
     return n
 
 
+def docs_qd(db, base):
+    """Edições baixadas pelos coletores abertos do Querido Diário (rodados no próprio GitHub)."""
+    import sqlite3
+    out = []
+    try:
+        c = sqlite3.connect(db)
+        rows = c.execute("select g.date, g.file_path, g.file_url, t.name, t.state_code from gazettes g join territories t on t.id = g.territory_id").fetchall()
+    except Exception as e:
+        log('qd db erro', str(e)[:150]); return out
+    for d, fp, fu, nome, uf in rows:
+        d = str(d)[:10]
+        if d not in DATAS or not fp:
+            continue
+        out.append({'fonte': 'Diário Oficial de %s' % nome, 'plat': 'qd', 'uf': uf, 'municipio': nome, 'data': d, 'url': fu or '', 'link': fu or '', 'arquivo': os.path.join(base, fp)})
+    return out
+
+
 def main():
     termos = []
     if TOKEN:
@@ -215,7 +232,10 @@ def main():
     log('termos', len(termos), 'variantes', len(busca), 'datas', sorted(DATAS))
 
     docs = []
-    for nome, f in (('sigpub', docs_sigpub), ('famem', docs_famem), ('dosp', docs_dosp)):
+    fontes = (('sigpub', docs_sigpub), ('famem', docs_famem), ('dosp', docs_dosp))
+    if os.environ.get('QD_DB'):
+        fontes = (('qd', lambda: docs_qd(os.environ['QD_DB'], os.environ.get('QD_FILES', '.'))),)
+    for nome, f in fontes:
         try:
             d = f(); docs += d; log(nome, 'edições', len(d))
         except Exception as e:
@@ -224,6 +244,17 @@ def main():
     achados, avisos, vistos = [], [], set()
 
     def processa(doc):
+        if doc.get('arquivo'):
+            try:
+                b = open(doc['arquivo'], 'rb').read()
+            except Exception:
+                return doc, None
+            if b[:4] == b'%PDF':
+                return doc, pdf_texto(b)
+            t = b.decode('utf-8', 'replace')
+            if '<' in t[:2000]:
+                t = html.unescape(re.sub(r'<[^>]+>', ' ', re.sub(r'(?is)<(script|style).*?</\1>', ' ', t)))
+            return doc, t
         b = get(doc['url'], timeout=120, binario=True)
         if not b or b[:4] != b'%PDF':
             return doc, None
@@ -271,7 +302,7 @@ def main():
                         avisos.append({'id': hashlib.sha1((a['link'] + '|' + a['cod'] + '|' + t[:80]).encode()).hexdigest()[:32], 'data': doc['data'], 'uf': doc['uf'], 'municipio': a['municipio'] or doc.get('municipio', ''), 'fonte': doc['fonte'], 'link': a['link'], 'titulo': tit, 'texto': re.sub(r'\s+', ' ', t)[:6000]})
     log('edições lidas', feitos, 'de', len(docs), '| avisos', len(avisos), '| citações', len(achados))
     log('gravados avisos', post('avisos', avisos), '| gravados citações', post('achados', achados))
-    json.dump({'quando': dt.datetime.now().isoformat(), 'edicoes': len(docs), 'lidas': feitos, 'avisos': len(avisos), 'citacoes': len(achados), 'por_fonte': {p: sum(1 for d in docs if d['plat'] == p) for p in ('sigpub', 'famem', 'dosp')}}, open(os.path.join(DADOS, 'ultimo.json'), 'w'), indent=1)
+    json.dump({'quando': dt.datetime.now().isoformat(), 'edicoes': len(docs), 'lidas': feitos, 'avisos': len(avisos), 'citacoes': len(achados), 'por_fonte': {p: sum(1 for d in docs if d['plat'] == p) for p in ('sigpub', 'famem', 'dosp', 'qd')}}, open(os.path.join(DADOS, 'ultimo%s.json' % ('-qd-' + os.environ.get('GRUPO', '') if os.environ.get('QD_DB') else '')), 'w'), indent=1)
 
 
 if __name__ == '__main__':

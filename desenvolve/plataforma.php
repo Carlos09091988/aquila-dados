@@ -640,7 +640,13 @@ add_shortcode( 'dv_painel', function () {
 	if ( ! is_user_logged_in() ) {
 		return '<div class="dvp"><h2>Entre na sua conta</h2>' . wp_login_form( array( 'echo' => false, 'redirect' => home_url( '/painel/' ), 'label_username' => 'E-mail', 'label_log_in' => 'Entrar' ) ) . '<p><a href="' . esc_url( wp_lostpassword_url( home_url( '/painel/' ) ) ) . '">Esqueci a senha</a> · <a href="' . esc_url( home_url( '/assinar/' ) ) . '">Criar conta</a></p></div>';
 	}
-	return '<div id="dv-painel" class="dvp" data-api="' . esc_attr( rest_url( 'desenvolve/v1/' ) ) . '" data-nonce="' . esc_attr( wp_create_nonce( 'wp_rest' ) ) . '" data-sair="' . esc_attr( wp_logout_url( home_url( '/' ) ) ) . '"></div>';
+	// dados do Início já embutidos na página: evita uma rodada de consultas ao servidor
+	$pre = array();
+	foreach ( array( 'me', 'historico', 'agenda', 'alertas' ) as $rt ) {
+		$req = new WP_REST_Request( 'GET', '/desenvolve/v1/' . $rt ); $res = rest_do_request( $req );
+		if ( ! $res->is_error() && $res->get_status() === 200 ) { $pre[ $rt ] = rest_get_server()->response_to_data( $res, false ); }
+	}
+	return '<script>window.DVPRE=' . wp_json_encode( $pre, JSON_UNESCAPED_UNICODE | JSON_HEX_TAG | JSON_HEX_AMP ) . ';</script><div id="dv-painel" class="dvp" data-api="' . esc_attr( rest_url( 'desenvolve/v1/' ) ) . '" data-nonce="' . esc_attr( wp_create_nonce( 'wp_rest' ) ) . '" data-sair="' . esc_attr( wp_logout_url( home_url( '/' ) ) ) . '"></div>';
 } );
 
 add_shortcode( 'dv_cadastro', function () {
@@ -931,7 +937,7 @@ add_action( 'wp_footer', function () {
 </style>
 <script>
 (function(){var el=document.getElementById('dv-painel');if(!el)return;var api=el.dataset.api,n=el.dataset.nonce;
-function g(p){return fetch(api+p,{headers:{'X-WP-Nonce':n},credentials:'same-origin'}).then(function(r){return r.json()})}
+function g(p){var P=window.DVPRE;if(P&&Object.prototype.hasOwnProperty.call(P,p)){var v=P[p];delete P[p];return Promise.resolve(v)}return fetch(api+p,{headers:{'X-WP-Nonce':n},credentials:'same-origin'}).then(function(r){return r.json()})}
 function e(s){return String(s==null?'':s).replace(/[&<>"]/g,function(c){return{'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]})}
 function pp(p,b){return fetch(api+p,{method:'POST',headers:{'X-WP-Nonce':n,'Content-Type':'application/json'},credentials:'same-origin',body:JSON.stringify(b)}).then(function(r){return r.json()})}
 function lateral(S,h){

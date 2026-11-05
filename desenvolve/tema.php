@@ -20,8 +20,6 @@ function dv_tema_mapa() {
 		'#D9D3C4' => '#DADADA', '#D9D2C2' => '#DADADA',
 		// textos secundários
 		'#6E6A60' => '#666666', '#6e6a60' => '#666666', '#5E5A52' => '#5C5C5C', '#5e5a52' => '#5C5C5C', '#8E8A80' => '#8A8A8A', '#4A4F55' => '#4D4D4D',
-		// dourado de botão vira preto; texto escuro sobre o dourado vira branco
-		'#C9A45C' => '#111111', '#c9a45c' => '#111111', '#241A06' => '#FFFFFF', '#241a06' => '#FFFFFF', '#B8924A' => '#2B2B2B', '#b8924a' => '#2B2B2B',
 		// dourados de destaque viram um dourado só, mais sóbrio
 		'#86621F' => '#8C6A24', '#86621f' => '#8C6A24', '#8A6A2C' => '#8C6A24', '#A8843F' => '#8C6A24', '#8A6A2E' => '#8C6A24', '#7A5410' => '#8C6A24', '#A57C2C' => '#8C6A24', '#9A6B12' => '#8C6A24',
 		'"Hanken Grotesk"' => 'Geist', "'Hanken Grotesk'" => 'Geist', 'Hanken Grotesk' => 'Geist', 'family=Hanken+Grotesk' => 'family=Geist',
@@ -32,8 +30,15 @@ add_action( 'template_redirect', function () {
 	if ( ! function_exists( 'dv_app_pagina' ) || ! dv_app_pagina() ) { return; }
 	ob_start( function ( $html ) {
 		if ( ! is_string( $html ) || $html === '' ) { return $html; }
-		$m = dv_tema_mapa();
-		return strtr( $html, $m );
+		$html = strtr( $html, dv_tema_mapa() );
+		// botões dourados viram pretos só onde o dourado é FUNDO; o dourado como texto/borda continua dourado
+		$html = preg_replace( '/(background(?:-color)?\s*:\s*)#C9A45C/i', '${1}#111111', $html );
+		$html = preg_replace( '/(background(?:-color)?\s*:\s*)#B8924A/i', '${1}#2B2B2B', $html );
+		$html = preg_replace( '/(background(?:-color)?\s*:\s*)#CBA55C/i', '${1}#111111', $html );
+		// texto escuro que ficava sobre o dourado: branco só quando o mesmo bloco de estilo tem o fundo preto novo
+		$html = preg_replace_callback( '/\{[^{}]*background(?:-color)?\s*:\s*#111111[^{}]*\}/i', function ( $m ) { return preg_replace( '/(?<![\w-])(color\s*:\s*)#241A06/i', '${1}#FFFFFF', $m[0] ); }, $html );
+		$html = preg_replace_callback( '/style="[^"]*background(?:-color)?\s*:\s*#111111[^"]*"/i', function ( $m ) { return preg_replace( '/(?<![\w-])(color\s*:\s*)#241A06/i', '${1}#FFFFFF', $m[0] ); }, $html );
+		return $html;
 	} );
 }, 1 );
 

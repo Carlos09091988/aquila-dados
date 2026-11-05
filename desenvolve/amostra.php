@@ -100,7 +100,8 @@ function dv_am_orgao( $cnpj ) {
 
 function dv_am_editais( $q, $uf ) {
 	$u = 'https://pncp.gov.br/api/search/?q=' . rawurlencode( $q ) . '&tipos_documento=edital&status=recebendo_proposta&ordenacao=-data&pagina=1&tam_pagina=15' . ( $uf ? '&ufs=' . rawurlencode( $uf ) : '' );
-	$j = dv_am_get( $u, 25 ); if ( ! is_array( $j ) ) { return new WP_Error( 'dv_am', 'O PNCP não respondeu agora. Tente de novo em instantes.', array( 'status' => 502 ) ); }
+	$j = dv_am_get( $u, 20 ); if ( ! is_array( $j ) ) { $j = dv_am_get( $u, 25 ); }
+	if ( ! is_array( $j ) ) { return new WP_Error( 'dv_am', 'O PNCP não respondeu agora. Tente de novo em instantes.', array( 'status' => 502 ) ); }
 	$it = array_map( 'dv_am_edital', (array) ( $j['items'] ?? array() ) );
 	return array(
 		'tipo' => 'editais', 'nome' => 'Licitações abertas: ' . $q . ( $uf ? ' (' . $uf . ')' : '' ), 'fantasia' => '',

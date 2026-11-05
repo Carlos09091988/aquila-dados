@@ -173,7 +173,9 @@ function dv_al_dm_itens( $lista, $termo, $a, $ufs, $excl ) {
 		if ( $ufs && ! in_array( $g['uf'], $ufs, true ) ) { continue; }
 		$tx = trim( $g['titulo'] . ' — ' . $g['trecho'], ' —' ); $nd = dv_al_norm( $tx ); $enc = dv_al_dt_sessao( $tx );
 		if ( ! dv_al_aceita( $nd, $enc, $termo, $excl, $a ) ) { continue; }
-		if ( ! empty( $g['categoria'] ) && ! preg_match( '/LICITA|PREGA|EDITA/', dv_al_norm( $g['categoria'] ) ) && ! preg_match( '/AVISO|EDITAL|PREGAO|CONCORRENCIA|DISPENSA|CHAMAMENTO/', dv_al_norm( $g['titulo'] ) ) ) { continue; }
+		$nt = dv_al_norm( $g['titulo'] );
+		if ( preg_match( '/HOMOLOG|ADJUDICA|EXTRATO|RATIFICA|RESULTADO|REVOGA|ANULA|ADITIVO|APOSTILA|RESCIS|^CONTRATO|ATA DE REGISTRO|PORTARIA|DECRETO|^LEI |JULGAMENTO|DESERT|FRACASS|SUSPENS|ADESAO|INTENCAO DE REGISTRO|CONVOCACAO|NOTIFICA|PENALIDADE/', $nt ) ) { continue; }
+		if ( ! preg_match( '/AVISO|EDITAL|PREGAO|CONCORRENCIA|DISPENSA|CHAMAMENTO|CREDENCIAMENTO|TOMADA DE PRECO|LICITA|COTACAO|LEILAO|CONVITE/', $nt ) && ! ( ! empty( $g['categoria'] ) && preg_match( '/LICITA/', dv_al_norm( $g['categoria'] ) ) ) ) { continue; }
 		$ref = 'DM' . sprintf( '%u', crc32( $g['link'] ) ); $mun = $g['municipio'] ?: $g['entidade'];
 		$out[ $ref ] = array( 'ref' => $ref, 'fonte' => 'diario', 'fonte_nome' => $g['fonte_nome'], 'orgao' => $g['orgao'] ?: $g['entidade'], 'municipio' => $mun, 'uf' => $g['uf'], 'modalidade' => dv_al_modalidade( $nd ), 'numero' => dv_al_numero( $nd ),
 			'titulo' => $g['titulo'], 'objeto' => dv_al_objeto( $g['trecho'] ?: $tx ), 'trecho' => mb_substr( $tx, 0, 900 ), 'valor' => 0, 'publicado' => $g['data'], 'encerra' => $enc, 'link' => $g['link'], 'termos' => array( $termo ) );
@@ -189,7 +191,8 @@ function dv_al_dm_completar( $dia ) {
 	foreach ( $dia as $r => &$x ) {
 		if ( strpos( $r, 'DM' ) !== 0 || empty( $tx[ $x['link'] ] ) ) { continue; }
 		$t = $tx[ $x['link'] ]; $nd = dv_al_norm( $t );
-		$x['encerra'] = dv_al_dt_sessao( $t ) ?: $x['encerra']; $x['objeto'] = dv_al_objeto( $t ) ?: $x['objeto'];
+		$enc = dv_al_dt_sessao( $t ) ?: $x['encerra']; $x['encerra'] = ( $enc && substr( $enc, 0, 10 ) > $x['publicado'] ) ? $enc : '';
+		if ( preg_match( '/\bOBJETO\s*(?:DA LICITA[ÇC][ÃA]O|DO CERTAME|DO PREG[ÃA]O)?\s*[:\-–]\s*(.{20,480}?)(?:\.\s|;|\s(?:DATA|ABERTURA|SESS[ÃA]O|ENTREGA|VALOR|PRAZO|LOCAL|INFORMA[ÇC]|O EDITAL|EDITAL|OS INTERESSADOS|TIPO)\b|$)/iu', $t, $ob ) ) { $x['objeto'] = rtrim( trim( $ob[1], ' "“”' ), '.' ); }
 		$x['numero'] = dv_al_numero( $nd ) ?: $x['numero']; $x['modalidade'] = dv_al_modalidade( dv_al_norm( $x['titulo'] ) . ' ' . $nd );
 		if ( preg_match( '#VALOR (?:TOTAL |GLOBAL )?(?:ESTIMADO|MAXIMO|DE REFERENCIA)?[^0-9]{0,25}R\$\s*([\d.]+,\d{2})#', $nd, $v ) ) { $x['valor'] = (float) str_replace( array( '.', ',' ), array( '', '.' ), $v[1] ); }
 		$x['trecho'] = mb_substr( $t, 0, 1500 );

@@ -49,11 +49,11 @@ def norm(s):
     return re.sub(r'[^A-Z0-9]+', ' ', s).strip()
 
 
-def pdf_texto(b):
+def pdf_texto(b, limite=180):
     with tempfile.NamedTemporaryFile(suffix='.pdf') as f:
         f.write(b); f.flush()
         try:
-            return subprocess.run(['pdftotext', '-enc', 'UTF-8', f.name, '-'], capture_output=True, timeout=180).stdout.decode('utf-8', 'replace')
+            return subprocess.run(['pdftotext', '-enc', 'UTF-8', f.name, '-'], capture_output=True, timeout=limite).stdout.decode('utf-8', 'replace')
         except Exception:
             return ''
 
@@ -142,6 +142,31 @@ def docs_famem():
     return out
 
 
+def docs_dompi():
+    """Diário Oficial dos Municípios do Piauí: edições numeradas em PDF (uma por dia útil, ~100 prefeituras por edição)."""
+    arq = os.path.join(DADOS, 'dompi.json')
+    try:
+        st = json.load(open(arq))
+    except Exception:
+        st = {'ult': 5685}
+    out = []; n = st['ult']; falhas = 0
+    while falhas < 4 and len(out) < 6:
+        n += 1
+        u = 'https://www.diarioficialdosmunicipios.org/intranet/_lib/file/doc/pdfs/novo2/%d/DM_%d.pdf' % (n, n)
+        try:
+            r = urllib.request.urlopen(urllib.request.Request(u, headers=UA, method='HEAD'), timeout=40)
+            ok = r.status == 200 and 'pdf' in (r.headers.get('Content-Type') or '')
+        except Exception:
+            ok = False
+        if ok:
+            out.append({'fonte': 'Diário Oficial dos Municípios do Piauí (ed. %d)' % n, 'plat': 'dompi', 'uf': 'PI', 'municipio': '', 'data': HOJE.isoformat(), 'url': u, 'link': u, 'ed': n})
+            st['ult'] = n; falhas = 0
+        else:
+            falhas += 1
+    json.dump(st, open(arq, 'w'))
+    return out
+
+
 # ------------------------------------------------------------------ texto -> atos
 RX_MUN = re.compile(r'(?:PREFEITURA\s+MUNICIPAL\s+D[EOA]S?|MUNIC[IÍ]PIO\s+D[EOA]S?|C[AÂ]MARA\s+MUNICIPAL\s+D[EOA]S?)\s+([A-ZÀ-Ü][A-ZÀ-Ü\'\- ]{2,40}?)(?:\s*[-–/]\s*[A-Z]{2}\b|\s*\n|\s{2,}|,)', re.I)
 RX_QUER = re.compile(r'AVISO D[EO] (LICITACAO|PREGAO|ABERTURA|DISPENSA|CHAMAMENTO|EDITAL|REABERTURA|CONCORRENCIA)|AVISOS DE LICITACAO|PREGAO (ELETRONICO|PRESENCIAL)|CONCORRENCIA (ELETRONICA|PUBLICA)|TOMADA DE PRECOS|DISPENSA ELETRONICA|CHAMAMENTO PUBLICO|EDITAL DE (LICITACAO|PREGAO)|CREDENCIAMENTO')
@@ -152,7 +177,11 @@ def atos(texto, doc):
     """Divide a edição em atos. SIGPub/Siganet terminam cada ato com 'Código Identificador'."""
     partes = re.split(r'C[oó]digo\s+Identificador\s*:?\s*([A-Z0-9]{6,12})', texto)
     r = []
-    if len(partes) > 2:
+    if doc['plat'] == 'dompi':
+        pos = [m.start() for m in re.finditer(r'(?m)^[ \t]*(?:PREFEITURA|C[AÂ]MARA)\s+MUNICIPAL\s+D[EOA]', texto)]
+        pos = [0] + pos + [len(texto)]
+        r = [(texto[pos[i]:pos[i + 1]], 'a%d' % i) for i in range(len(pos) - 1)]
+    elif len(partes) > 2:
         for i in range(0, len(partes) - 1, 2):
             r.append((partes[i], partes[i + 1]))
         if partes[-1].strip():
@@ -232,7 +261,7 @@ def main():
     log('termos', len(termos), 'variantes', len(busca), 'datas', sorted(DATAS))
 
     docs = []
-    fontes = (('sigpub', docs_sigpub), ('famem', docs_famem), ('dosp', docs_dosp))
+    fontes = (('sigpub', docs_sigpub), ('famem', docs_famem), ('dosp', docs_dosp), ('dompi', docs_dompi))
     if os.environ.get('QD_DB'):
         fontes = (('qd', lambda: docs_qd(os.environ['QD_DB'], os.environ.get('QD_FILES', '.'))),)
     for nome, f in fontes:
@@ -258,7 +287,7 @@ def main():
         b = get(doc['url'], timeout=120, binario=True)
         if not b or b[:4] != b'%PDF':
             return doc, None
-        return doc, pdf_texto(b)
+        return doc, pdf_texto(b, 900 if doc['plat'] == 'dompi' else 180)
 
     feitos = 0
     with cf.ThreadPoolExecutor(6) as ex:
@@ -302,7 +331,7 @@ def main():
                         avisos.append({'id': hashlib.sha1((a['link'] + '|' + a['cod'] + '|' + t[:80]).encode()).hexdigest()[:32], 'data': doc['data'], 'uf': doc['uf'], 'municipio': a['municipio'] or doc.get('municipio', ''), 'fonte': doc['fonte'], 'link': a['link'], 'titulo': tit, 'texto': re.sub(r'\s+', ' ', t)[:6000]})
     log('edições lidas', feitos, 'de', len(docs), '| avisos', len(avisos), '| citações', len(achados))
     log('gravados avisos', post('avisos', avisos), '| gravados citações', post('achados', achados))
-    json.dump({'quando': dt.datetime.now().isoformat(), 'edicoes': len(docs), 'lidas': feitos, 'avisos': len(avisos), 'citacoes': len(achados), 'por_fonte': {p: sum(1 for d in docs if d['plat'] == p) for p in ('sigpub', 'famem', 'dosp', 'qd')}}, open(os.path.join(DADOS, 'ultimo%s.json' % ('-qd-' + os.environ.get('GRUPO', '') if os.environ.get('QD_DB') else '')), 'w'), indent=1)
+    json.dump({'quando': dt.datetime.now().isoformat(), 'edicoes': len(docs), 'lidas': feitos, 'avisos': len(avisos), 'citacoes': len(achados), 'por_fonte': {p: sum(1 for d in docs if d['plat'] == p) for p in ('sigpub', 'famem', 'dosp', 'dompi', 'qd')}}, open(os.path.join(DADOS, 'ultimo%s.json' % ('-qd-' + os.environ.get('GRUPO', '') if os.environ.get('QD_DB') else '')), 'w'), indent=1)
 
 
 if __name__ == '__main__':

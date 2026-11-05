@@ -120,14 +120,17 @@ add_action( 'rest_api_init', function () {
 		$cnpj = preg_replace( '/\D/', '', $q );
 		if ( $tipo !== 'editais' && strlen( $cnpj ) !== 14 ) { return new WP_Error( 'dv_am', 'Digite um CNPJ com 14 números.', array( 'status' => 400 ) ); }
 		if ( $tipo === 'editais' && mb_strlen( $q ) < 3 ) { return new WP_Error( 'dv_am', 'Digite o que você vende, por exemplo: limpeza, merenda, vigilância.', array( 'status' => 400 ) ); }
-		$ck = 'dv_am_' . md5( $tipo . '|' . ( $tipo === 'editais' ? strtolower( remove_accents( $q ) ) . '|' . $uf : $cnpj ) ); $c = get_transient( $ck );
+		$ck = 'dv_am2_' . md5( $tipo . '|' . ( $tipo === 'editais' ? strtolower( remove_accents( $q ) ) . '|' . $uf : $cnpj ) ); $c = get_transient( $ck );
 		if ( $c === false ) {
 			$ip = function_exists( 'dv_sg_ip' ) ? dv_sg_ip() : (string) ( $_SERVER['REMOTE_ADDR'] ?? '' ); $kl = 'dv_am_ip_' . md5( $ip . current_time( 'Ymd' ) ); $n = (int) get_transient( $kl );
 			if ( $n >= 6 && ! current_user_can( 'manage_options' ) ) { return new WP_Error( 'dv_am', 'Você já fez as consultas grátis de hoje. Entre na lista de espera para usar sem limite no lançamento.', array( 'status' => 429 ) ); }
 			set_transient( $kl, $n + 1, DAY_IN_SECONDS );
 			$c = $tipo === 'empresa' ? dv_am_empresa( $cnpj ) : ( $tipo === 'orgao' ? dv_am_orgao( $cnpj ) : dv_am_editais( $q, $uf ) );
 			if ( is_wp_error( $c ) ) { return $c; }
-			set_transient( $ck, $c, 12 * HOUR_IN_SECONDS );
+			$falhou = false; foreach ( (array) $c['achados'] as $a ) { if ( $a['n'] === '—' ) { $falhou = true; } }
+			$c['achados'] = array_values( array_filter( (array) $c['achados'], function ( $a ) { return $a['n'] !== '—'; } ) );
+			if ( $c['tipo'] === 'orgao' && $falhou && empty( $c['editais'] ) ) { $c['achados'] = array_values( array_filter( $c['achados'], function ( $a ) { return strpos( $a['rot'], 'aberta' ) === false; } ) ); }
+			set_transient( $ck, $c, $falhou ? 10 * MINUTE_IN_SECONDS : 12 * HOUR_IN_SECONDS );
 			$log = (array) get_option( 'dv_am_log', array() ); array_unshift( $log, array( current_time( 'mysql' ), $tipo, $tipo === 'editais' ? $q : $cnpj ) ); update_option( 'dv_am_log', array_slice( $log, 0, 300 ), false );
 		}
 		return $c;

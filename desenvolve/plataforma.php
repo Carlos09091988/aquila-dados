@@ -1000,7 +1000,8 @@ add_action( 'rest_api_init', function () {
 		set_transient( $k, $n + 1, HOUR_IN_SECONDS );
 		$nome = sanitize_text_field( (string) $r['nome'] ); $email = sanitize_email( (string) $r['email'] );
 		$whats = preg_replace( '/[^\d()+\- ]/', '', (string) $r['whats'] ); $ramo = sanitize_text_field( (string) $r['ramo'] ); $emp = sanitize_text_field( (string) $r['empresa'] );
-		if ( mb_strlen( $nome ) < 2 || ! is_email( $email ) ) { return new WP_Error( 'dv_lista', 'Informe seu nome e um e-mail válido.', array( 'status' => 400 ) ); }
+		if ( ! is_email( $email ) ) { return new WP_Error( 'dv_lista', 'Informe um e-mail válido.', array( 'status' => 400 ) ); }
+		if ( mb_strlen( $nome ) < 2 ) { $nome = ucwords( str_replace( array( '.', '_', '-' ), ' ', strstr( $email, '@', true ) ) ); }
 		$l = dv_lista(); $em = strtolower( $email );
 		if ( isset( $l[ $em ] ) ) { return array( 'ok' => true, 'ja' => true ); }
 		$l[ $em ] = array( 'nome' => mb_substr( $nome, 0, 120 ), 'email' => $em, 'whats' => mb_substr( $whats, 0, 30 ), 'empresa' => mb_substr( $emp, 0, 120 ), 'ramo' => mb_substr( $ramo, 0, 120 ), 'data' => current_time( 'mysql' ), 'bonus' => 0 );

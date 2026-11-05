@@ -131,8 +131,9 @@ add_action( 'rest_api_init', function () {
 			$c['achados'] = array_values( array_filter( (array) $c['achados'], function ( $a ) { return $a['n'] !== '—'; } ) );
 			if ( $c['tipo'] === 'orgao' && $falhou && empty( $c['editais'] ) ) { $c['achados'] = array_values( array_filter( $c['achados'], function ( $a ) { return strpos( $a['rot'], 'aberta' ) === false; } ) ); }
 			set_transient( $ck, $c, $falhou ? 10 * MINUTE_IN_SECONDS : 12 * HOUR_IN_SECONDS );
-			$log = (array) get_option( 'dv_am_log', array() ); array_unshift( $log, array( current_time( 'mysql' ), $tipo, $tipo === 'editais' ? $q : $cnpj ) ); update_option( 'dv_am_log', array_slice( $log, 0, 300 ), false );
 		}
+		/* registra toda busca (também as que vieram do cache); marca quando é o administrador */
+		$log = (array) get_option( 'dv_am_log', array() ); array_unshift( $log, array( current_time( 'mysql' ), $tipo, ( $tipo === 'editais' ? $q . ( $uf ? ' (' . $uf . ')' : '' ) : $cnpj ) . ( current_user_can( 'manage_options' ) ? ' · teste interno' : '' ) ) ); update_option( 'dv_am_log', array_slice( $log, 0, 300 ), false );
 		return $c;
 	} ) );
 } );

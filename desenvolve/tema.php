@@ -403,3 +403,20 @@ function envia(motivo){try{var n=performance.getEntriesByType('navigation')[0]||
 window.addEventListener('load',function(){setTimeout(function(){envia('carregou')},2500)})})();</script>
 	<?php
 }, 1 );
+
+/* Plataforma: não carrega arquivos de plugins/tema que ela não usa (Elementor, formulário de contato, Hostinger Reach, blocos, cabeçalho/rodapé do tema) */
+function dv_app_enxuga() {
+	if ( is_admin() || ! function_exists( 'dv_app_pagina' ) || ! dv_app_pagina() ) { return; }
+	$fora = '#/plugins/(elementor|contact-form-7|hostinger-reach|hostinger-easy-onboarding|hostinger/)|/wp-includes/css/dist/block-library/|/themes/kadence/assets/css/(header|footer)\.min\.css|/wp-includes/js/(underscore|backbone)(\.min)?\.js|/wp-includes/js/jquery/ui/#';
+	foreach ( array( wp_styles(), wp_scripts() ) as $dep ) {
+		foreach ( (array) $dep->queue as $h ) {
+			$src = isset( $dep->registered[ $h ] ) ? (string) $dep->registered[ $h ]->src : '';
+			if ( $src && preg_match( $fora, $src ) ) { $dep instanceof WP_Styles ? wp_dequeue_style( $h ) : wp_dequeue_script( $h ); }
+		}
+	}
+	foreach ( array( 'wp-block-library', 'wp-block-library-theme', 'global-styles', 'classic-theme-styles' ) as $h ) { wp_dequeue_style( $h ); }
+}
+add_action( 'wp_enqueue_scripts', 'dv_app_enxuga', 9999 );
+add_action( 'wp_print_styles', 'dv_app_enxuga', 1 );
+add_action( 'wp_print_scripts', 'dv_app_enxuga', 1 );
+add_action( 'wp_print_footer_scripts', 'dv_app_enxuga', 1 );

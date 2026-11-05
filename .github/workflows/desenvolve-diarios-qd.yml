@@ -53,6 +53,7 @@ jobs:
           echo "linhas de erro: $(grep -c ERROR ../../erros.txt || true)"; grep -a "ERROR" ../../erros.txt | sed -E 's/.*ERROR: //' | cut -c1-160 | sort | uniq -c | sort -rn | head -8 || true
           mkdir -p ../../saida && mv qd.db ../../saida/ 2>/dev/null; mv arquivos ../../saida/ 2>/dev/null || true
           echo "edicoes baixadas: $(python3 -c "import sqlite3;print(sqlite3.connect('../../saida/qd.db').execute('select count(*) from gazettes').fetchone()[0])" 2>/dev/null || echo 0)"
+          echo "cidades com edicao: $(python3 -c "import sqlite3;print(sqlite3.connect('../../saida/qd.db').execute('select count(distinct territory_id) from gazettes').fetchone()[0])" 2>/dev/null || echo 0)"
       - uses: actions/upload-artifact@v4
         with:
           name: qd-${{ matrix.id }}

@@ -130,7 +130,8 @@ add_action( 'rest_api_init', function () {
 		$ck = 'dv_am4_' . md5( $tipo . '|' . ( $tipo === 'editais' ? strtolower( remove_accents( $q ) ) . '|' . $uf : $cnpj ) ); $c = get_transient( $ck );
 		if ( $c === false ) {
 			$ip = function_exists( 'dv_sg_ip' ) ? dv_sg_ip() : (string) ( $_SERVER['REMOTE_ADDR'] ?? '' ); $kl = 'dv_am_ip_' . md5( $ip . current_time( 'Ymd' ) ); $n = (int) get_transient( $kl );
-			if ( $n >= 6 && ! current_user_can( 'manage_options' ) ) { return new WP_Error( 'dv_am', 'Você já fez as consultas grátis de hoje. Entre na lista de espera para usar sem limite no lançamento.', array( 'status' => 429 ) ); }
+			$em0 = strtolower( sanitize_email( (string) $r['email'] ) ); $tk0 = $em0 && function_exists( 'dv_lista_tk_ok' ) && dv_lista_tk_ok( $em0, (string) $r['tk'] );
+			if ( $n >= 6 && ! $tk0 && ! current_user_can( 'manage_options' ) ) { return new WP_Error( 'dv_am', 'Você já fez as consultas grátis de hoje. Entre na lista de espera para usar sem limite no lançamento.', array( 'status' => 429 ) ); }
 			set_transient( $kl, $n + 1, DAY_IN_SECONDS );
 			$c = $tipo === 'empresa' ? dv_am_empresa( $cnpj ) : ( $tipo === 'orgao' ? dv_am_orgao( $cnpj ) : dv_am_editais( $q, $uf ) );
 			if ( is_wp_error( $c ) ) { return $c; }

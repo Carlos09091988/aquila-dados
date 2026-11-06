@@ -1057,7 +1057,7 @@ add_action( 'rest_api_init', function () {
 		if ( $n >= 12 ) { return new WP_Error( 'dv_lista', 'Muitas tentativas seguidas. Tente de novo em alguns minutos.', array( 'status' => 429 ) ); }
 		set_transient( $k, $n + 1, HOUR_IN_SECONDS );
 		$nome = sanitize_text_field( (string) $r['nome'] ); $email = sanitize_email( (string) $r['email'] );
-		$whats = preg_replace( '/[^\d()+\- ]/', '', (string) $r['whats'] ); $ramo = sanitize_text_field( (string) $r['ramo'] ); $emp = sanitize_text_field( (string) $r['empresa'] );
+		$whats = preg_replace( '/[^\d()+\- ]/', '', (string) $r['whats'] ); $ramo = sanitize_text_field( (string) $r['ramo'] ); $emp = sanitize_text_field( (string) $r['empresa'] ); $plano = in_array( (string) $r['plano'], array( 'essencial', 'completo' ), true ) ? (string) $r['plano'] : '';
 		if ( ! is_email( $email ) ) { return new WP_Error( 'dv_lista', 'Informe um e-mail válido.', array( 'status' => 400 ) ); }
 		$chk = dv_lista_confere_email( $email ); if ( is_wp_error( $chk ) ) { return $chk; }
 		if ( mb_strlen( $nome ) < 2 ) { $nome = ucwords( str_replace( array( '.', '_', '-' ), ' ', strstr( $email, '@', true ) ) ); }
@@ -1066,14 +1066,17 @@ add_action( 'rest_api_init', function () {
 		wp_cache_delete( 'dv_lista', 'options' ); wp_cache_delete( 'alloptions', 'options' ); wp_cache_delete( 'notoptions', 'options' );
 		$l = dv_lista();
 		if ( isset( $l[ $em ] ) ) {
-			if ( $ramo && empty( $l[ $em ]['ramo'] ) ) { $l[ $em ]['ramo'] = mb_substr( $ramo, 0, 120 ); update_option( 'dv_lista', $l, false ); }
+			$mud = false; if ( $ramo && empty( $l[ $em ]['ramo'] ) ) { $l[ $em ]['ramo'] = mb_substr( $ramo, 0, 120 ); $mud = true; }
+			if ( $plano && ( $l[ $em ]['plano'] ?? '' ) !== $plano ) { $l[ $em ]['plano'] = $plano; $mud = true; }
+			if ( $whats && empty( $l[ $em ]['whats'] ) ) { $l[ $em ]['whats'] = mb_substr( $whats, 0, 30 ); $mud = true; }
+			if ( $mud ) { update_option( 'dv_lista', $l, false ); }
 			if ( $trava ) { $wpdb->query( "SELECT RELEASE_LOCK('dv_lista')" ); }
 			$kr = 'dv_lista_lemb_' . md5( $em );
 			if ( ! get_transient( $kr ) ) { set_transient( $kr, 1, DAY_IN_SECONDS ); $from = dv_cfg( 'email_remetente' ) ?: 'contato@desenvolveestrategias.com.br';
 				wp_mail( $em, 'Seu lugar na lista da Desenvolve está garantido', 'Olá!' . "\n\nSeu e-mail já está na lista de espera da Desenvolve Estratégias, com o preço de fundador (R$ 79,90/mês para sempre) garantido.\n\nNo lançamento, em 17 de novembro, você recebe o acesso antes de todo mundo.\n\nEquipe Desenvolve Estratégias\nhttps://desenvolveestrategias.com.br", array( 'From: Desenvolve <' . $from . '>' ) ); }
 			return array( 'ok' => true, 'tk' => dv_lista_tk( $em ) );
 		}
-		$l[ $em ] = array( 'nome' => mb_substr( $nome, 0, 120 ), 'email' => $em, 'whats' => mb_substr( $whats, 0, 30 ), 'empresa' => mb_substr( $emp, 0, 120 ), 'ramo' => mb_substr( $ramo, 0, 120 ), 'data' => current_time( 'mysql' ), 'bonus' => 0, 'ip' => mb_substr( $ip, 0, 45 ) );
+		$l[ $em ] = array( 'nome' => mb_substr( $nome, 0, 120 ), 'email' => $em, 'whats' => mb_substr( $whats, 0, 30 ), 'empresa' => mb_substr( $emp, 0, 120 ), 'ramo' => mb_substr( $ramo, 0, 120 ), 'plano' => $plano, 'data' => current_time( 'mysql' ), 'bonus' => 0, 'ip' => mb_substr( $ip, 0, 45 ) );
 		$gravou = update_option( 'dv_lista', $l, false );
 		if ( $trava ) { $wpdb->query( "SELECT RELEASE_LOCK('dv_lista')" ); }
 		wp_cache_delete( 'dv_lista', 'options' );
@@ -1135,9 +1138,9 @@ add_action( 'admin_menu', function () {
 		echo '<form method="post" style="background:#fff;padding:12px 16px;border:1px solid #ddd;margin:12px 0">'; wp_nonce_field( 'dv_lanc' );
 		echo '<p><label><input type="radio" name="dv_lanc" value="1"' . checked( $pre, true, false ) . '> <b>Pré-lançamento</b> (assinatura leva à lista)</label> &nbsp; <label><input type="radio" name="dv_lanc" value="0"' . checked( $pre, false, false ) . '> <b>Lançado</b> (assinatura aberta)</label></p>';
 		echo '<p>Bônus para quem está na lista: <input type="number" name="dv_bonus" value="' . (int) get_option( 'dv_bonus_lista', 100 ) . '" style="width:70px"> créditos</p><p><button class="button button-primary">Salvar</button> &nbsp; <a class="button" href="' . esc_url( wp_nonce_url( admin_url( 'admin-post.php?action=dv_lista_csv' ), 'dv_lista_csv' ) ) . '">Baixar planilha</a></p></form>';
-		echo '<table class="widefat striped"><thead><tr><th>Data</th><th>Nome</th><th>E-mail</th><th>WhatsApp</th><th>Empresa</th><th>Ramo</th><th>Situação</th></tr></thead><tbody>';
-		foreach ( $l as $x ) { echo '<tr><td>' . esc_html( mysql2date( 'd/m/Y H:i', $x['data'] ) ) . '</td><td>' . esc_html( $x['nome'] ) . '</td><td>' . esc_html( $x['email'] ) . '</td><td>' . esc_html( $x['whats'] ) . '</td><td>' . esc_html( $x['empresa'] ?? '' ) . '</td><td>' . esc_html( $x['ramo'] ) . '</td><td>' . ( $x['bonus'] ? 'pagou (bônus dado)' : ( ! empty( $x['conta'] ) ? 'conta criada' : '—' ) ) . '</td></tr>'; }
-		if ( ! $l ) { echo '<tr><td colspan="7">Ninguém ainda.</td></tr>'; }
+		echo '<table class="widefat striped"><thead><tr><th>Data</th><th>Nome</th><th>E-mail</th><th>WhatsApp</th><th>Empresa</th><th>Ramo</th><th>Plano</th><th>Situação</th></tr></thead><tbody>';
+		foreach ( $l as $x ) { echo '<tr><td>' . esc_html( mysql2date( 'd/m/Y H:i', $x['data'] ) ) . '</td><td>' . esc_html( $x['nome'] ) . '</td><td>' . esc_html( $x['email'] ) . '</td><td>' . esc_html( $x['whats'] ) . '</td><td>' . esc_html( $x['empresa'] ?? '' ) . '</td><td>' . esc_html( $x['ramo'] ) . '</td><td>' . esc_html( array( 'essencial' => 'Essencial (MEI/ME/EPP)', 'completo' => 'Completo' )[ $x['plano'] ?? '' ] ?? '—' ) . '</td><td>' . ( $x['bonus'] ? 'pagou (bônus dado)' : ( ! empty( $x['conta'] ) ? 'conta criada' : '—' ) ) . '</td></tr>'; }
+		if ( ! $l ) { echo '<tr><td colspan="8">Ninguém ainda.</td></tr>'; }
 		echo '</tbody></table></div>';
 	} );
 }, 20 );

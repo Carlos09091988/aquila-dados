@@ -73,6 +73,39 @@ add_action( 'rest_api_init', function () {
 		} ) );
 } );
 
+
+/* Matriz e filiais: qualquer CNPJ informado (matriz ou filial) vira o dossiê da matriz, com todas as unidades */
+function dv_uni_matriz( $cnpj ) { return function_exists( 'dv_ds_dv' ) ? dv_ds_dv( substr( $cnpj, 0, 8 ) ) : $cnpj; }
+add_filter( 'rest_request_before_callbacks', function ( $resp, $handler, $req ) {
+	$rota = $req->get_route();
+	if ( ! preg_match( '#^/desenvolve/v1/dossie(/job)?$#', $rota ) ) { return $resp; }
+	$c = preg_replace( '/\D/', '', (string) $req->get_param( 'cnpj' ) );
+	if ( strlen( $c ) === 14 && substr( $c, 8, 4 ) !== '0001' ) {
+		$m = dv_uni_matriz( $c );
+		if ( $m !== $c ) { set_transient( 'dv_ds_orig_' . get_current_user_id() . '_' . $m, $c, DAY_IN_SECONDS ); $req->set_param( 'cnpj', $m ); }
+	}
+	return $resp;
+}, 10, 3 );
+function dv_unidades( $cnpj ) {
+	$raiz = substr( $cnpj, 0, 8 ); $ck = 'dv_uni2_' . $raiz; $c = get_transient( $ck ); if ( is_array( $c ) ) { return $c; }
+	$l = array();
+	if ( function_exists( 'dv_ds_gz' ) ) {
+		$o = dv_ds_gz( 'filiais/' . substr( $raiz, 0, 3 ) . '.json.gz' ); $lista = (array) ( $o[ $raiz ] ?? array() ); unset( $o );
+		$pg = dv_ds_gz( 'pgfn/' . substr( $raiz, 0, 3 ) . '.json.gz' );
+		foreach ( $lista as $x ) { $p = explode( '|', (string) $x ); $u = $p[0];
+			$l[] = array( 'cnpj' => $u, 'uf' => $p[1] ?? '', 'matriz' => substr( $u, 8, 4 ) === '0001', 'pgfn' => isset( $pg[ $u ] ) ? (float) $pg[ $u ][0] : 0 ); }
+		unset( $pg );
+	}
+	set_transient( $ck, $l, 7 * DAY_IN_SECONDS ); return $l;
+}
+add_filter( 'rest_post_dispatch', function ( $res, $server, $req ) {
+	if ( $req->get_route() !== '/desenvolve/v1/dossie' || ! ( $res instanceof WP_REST_Response ) ) { return $res; }
+	$d = $res->get_data(); if ( ! is_array( $d ) || empty( $d['cnpj'] ) ) { return $res; }
+	$d['unidades'] = dv_unidades( $d['cnpj'] );
+	$o = get_transient( 'dv_ds_orig_' . get_current_user_id() . '_' . $d['cnpj'] ); if ( $o ) { $d['consultado'] = $o; }
+	$res->set_data( $d ); return $res;
+}, 10, 3 );
+
 /* Página do dossiê: espera em segundo plano + parecer de habilitação */
 add_action( 'wp_footer', function () {
 	global $post; if ( ! is_user_logged_in() || ! $post ) { return; }
@@ -214,6 +247,7 @@ function itens(d){
   add('fis',cob>0?'vm':'am','Dívida ativa da União: '+mc(p.total),p.inscricoes+' inscrição(ões)'+(p.ajuizadas?', '+p.ajuizadas+' ajuizada(s)':'')+(cob>0?'. Desse total, '+mc(cob)+' está em cobrança, sem suspensão: a certidão federal provavelmente sai positiva.':'. Há sinais de suspensão ou garantia, o que pode permitir uma certidão positiva com efeito de negativa.'),'Lei 14.133, art. 68, III; CTN, art. 206',M==='concorrente'?'Confira a certidão federal que ela apresentou: só vale se for negativa ou positiva com efeito de negativa, e dentro da validade.':'Peça a Certidão Conjunta da Receita/PGFN atualizada. Só serve se for negativa ou positiva com efeito de negativa.');
   if(+p.fgts>0)add('fis','vm','Débito de FGTS inscrito: '+mc(p.fgts),'Com FGTS em dívida ativa, o Certificado de Regularidade do FGTS tende a sair negado.','Lei 14.133, art. 68, IV',M==='concorrente'?'Confira o CRF que ela apresentou e consulte o site da Caixa no dia da sessão.':'Peça o CRF atualizado (Caixa).');
  } else if(p===null)add('fis','ok','Sem dívida ativa da União','Nada consta na base da PGFN para este CNPJ.','Lei 14.133, art. 68, III');
+ var fD=(d.unidades||[]).filter(function(u){return!u.matriz&&u.pgfn>0});if(fD.length)add('fis','am','Dívida ativa em '+fD.length+' filial(is): '+mc(fD.reduce(function(a,u){return a+u.pgfn},0)),'Além da matriz, filiais têm inscrições próprias na dívida ativa da União. A certidão conjunta federal vale para a matriz e todas as filiais: débito em qualquer unidade pode torná-la positiva.','Lei 14.133, art. 68, III',M==='concorrente'?'Confira se a certidão apresentada é posterior às inscrições das filiais.':'Peça a certidão conjunta atualizada e o detalhamento das inscrições das filiais.');
  var tx=+X.pt.trab_execucao||0,tt=(+X.pt.trabalhista||0)+tx;
  if(tx)add('fis',tx>20?'vm':'am','Execuções trabalhistas: '+tx,'Processos trabalhistas em fase de execução (condenação não paga). Execução sem pagamento nem garantia faz a Certidão Negativa de Débitos Trabalhistas sair positiva.','Lei 14.133, art. 68, V; CLT, art. 642-A',M==='concorrente'?'Emita a CNDT dela no site do TST no dia da sessão e compare com a apresentada.':'Peça a CNDT emitida no dia (TST).');
  else if(tt)add('fis','ok','Processos trabalhistas sem execução',tt+' processo(s) trabalhista(s) em andamento, nenhum em fase de execução encontrado.','Lei 14.133, art. 68, V');
@@ -280,7 +314,7 @@ var TEMAS=[
  ['san','Sanções e punições','Cadastros de punidos e processos administrativos',/san[cç][oõ]es e restri|processos administrativos/i],
  ['fin','Saúde financeira','Dívida ativa e histórico de pagamento',/d[ií]vida ativa|adimpl/i],
  ['gov','Experiência com o governo','Contratos públicos já assinados',/contratos p[uú]blicos|contratos e pagamentos|federal/i],
- ['pes','Quem está por trás','Cadastro, sócios e empresas ligadas',/cadastro na receita|s[oó]cios e admin|grupo econ/i],
+ ['pes','Quem está por trás','Cadastro, matriz e filiais, sócios e empresas ligadas',/cadastro na receita|s[oó]cios e admin|grupo econ/i],
  ['rep','Justiça e reputação','Processos, diários oficiais e imprensa',/processos judiciais|di[aá]rios oficiais|imprensa|publica[cç][oõ]es/i]
 ];
 function statusTemas(d){var X=dados(d),p=X.p,pt=X.pt,o={};
@@ -289,7 +323,7 @@ function statusTemas(d){var X=dados(d),p=X.p,pt=X.pt,o={};
  var vV=X.vig.reduce(function(a,x){return a+x.valor},0);
  o.gov=X.cons.length?['ok',X.cons.length+' contrato(s) público(s)'+(X.vig.length?', '+X.vig.length+' ativo(s) ('+mc(vV)+')':'')]:['am','Nenhum contrato público encontrado'];
  var novos=(X.c.qsa||[]).filter(function(s){return s.data_entrada_sociedade&&(Date.now()-new Date(s.data_entrada_sociedade))/31557600000<2}).length;
- o.pes=X.pep.length?['am',X.pep.length+' sócio(s) politicamente exposto(s)']:novos?['am',novos+' sócio(s) entrou(aram) há menos de 2 anos']:['ok',(X.c.qsa||[]).length+' sócio(s) · '+X.grupo.length+' empresa(s) ligada(s)'];
+ o.pes=X.pep.length?['am',X.pep.length+' sócio(s) politicamente exposto(s)']:novos?['am',novos+' sócio(s) entrou(aram) há menos de 2 anos']:['ok',(X.c.qsa||[]).length+' sócio(s) · '+((d.unidades||[]).length||1)+' unidade(s) · '+X.grupo.length+' empresa(s) ligada(s)'];
  var grav=(+pt.criminal||0)+(+pt.improbidade||0)+(+pt.falencia||0),tx=+pt.trab_execucao||0;
  o.rep=grav?['vm',grav+' processo(s) grave(s) (criminal, improbidade ou falência)']:tx?['am',tx+' execução(ões) trabalhista(s)']:['ok','Nenhum processo grave encontrado'];
  var L=itens(d),v=veredito(L);o.hab=[v[0]==='ok'?'ok':v[0],v[1]];o._v=v;o._L=L;return o}
@@ -298,16 +332,30 @@ function acoes(L){var M=ST.modo;if(M==='concorrente'){var f=L.filter(function(x)
  return a}
 function capa(r,d){var o=statusTemas(d),v=o._v,X=dados(d),p=X.p,c=X.c,vV=X.vig.reduce(function(a,x){return a+x.valor},0),pt=X.pt;
  var proc=(+pt.criminal||0)+(+pt.improbidade||0)+(+pt.falencia||0)+(+pt.coletiva||0);
- var K=[[X.sanc.length?X.sanc.length:'Nada consta','Sanções',X.sanc.length?'vm':''],[p&&p.total>0?mc(p.total):'Nada consta','Dívida ativa da União',p&&p.total>0?'am':''],[X.vig.length+' · '+mc(vV),'Contratos públicos ativos',''],[proc||'Nenhum','Processos graves',proc?'vm':''],[c.capital_social?mc(c.capital_social):'—','Capital social','']];
+ var UU=d.unidades||[],pT=UU.length?UU.reduce(function(a,u){return a+(+u.pgfn||0)},0):(p&&p.total>0?p.total:0);
+ var K=[[X.sanc.length?X.sanc.length:'Nada consta','Sanções',X.sanc.length?'vm':''],[pT>0?mc(pT):'Nada consta','Dívida ativa da União'+(UU.length>1?' (todas as unidades)':''),pT>0?'am':''],[X.vig.length+' · '+mc(vV),'Contratos públicos ativos',''],[proc||'Nenhum','Processos graves',proc?'vm':''],[(d.unidades||[]).length?(d.unidades.length+' ('+d.unidades.filter(function(u){return!u.matriz}).length+' filiais)'):'1 (só matriz)','Unidades ativas','']];
  var M=MODOS.filter(function(m){return m[0]===ST.modo})[0][1];
  var H='<div class="q"><div class="v '+v[0]+'"><small>Conclusão · avaliando como '+e(M.toLowerCase())+'</small><b>'+e(v[1])+'</b><p>'+e(v[2])+'</p></div><div class="acoes"><b>O que fazer agora</b><ol>'+acoes(o._L).map(function(x){return'<li>'+e(x)+'</li>'}).join('')+'</ol></div></div>';
  H+='<div class="kpi">'+K.map(function(k){return'<div class="'+k[2]+'"><b>'+e(k[0])+'</b><span>'+e(k[1])+'</span></div>'}).join('')+'</div>';
+ if(d.consultado&&d.consultado!==d.cnpj)H='<p style="margin:0 0 12px;padding:10px 14px;border-radius:10px;background:#F5F1E8;font-size:.9rem">Você informou a filial '+fcnpj(d.consultado)+'. O dossiê foi feito pela matriz ('+fcnpj(d.cnpj)+') e cobre todas as '+((d.unidades||[]).length||1)+' unidades da empresa.</p>'+H;
  var cp=document.getElementById('dv-capa');cp.innerHTML=H;
  var nv=r.querySelector('.rp-hd .nv');if(nv){nv.className='nv '+v[0];nv.innerHTML='<b>'+e(v[1])+'</b><span>Parecer de habilitação</span>'}
  document.getElementById('dv-mapa').innerHTML='<p>Os seis temas do relatório. Clique para ir direto ao detalhe.</p><nav>'+TEMAS.map(function(t){var s=o[t[0]]||['na',''];return'<a href="#dv-t-'+t[0]+'" class="'+s[0]+'" data-t="'+t[0]+'"><b>'+e(t[1])+'</b><span>'+e(s[1])+'</span></a>'}).join('')+'</nav>';
  document.querySelectorAll('#dv-mapa a').forEach(function(a){a.onclick=function(ev){var dt=document.getElementById('dv-t-'+a.dataset.t);if(dt){ev.preventDefault();dt.open=true;dt.scrollIntoView({behavior:'smooth',block:'start'})}}});
  TEMAS.forEach(function(t){var dt=document.getElementById('dv-t-'+t[0]);if(!dt)return;var s=o[t[0]]||['na',''];dt.className='dv-tema '+s[0];dt.querySelector('summary span').textContent=s[1]});
 }
+
+function fcnpj(c){return String(c).replace(/^(\d{2})(\d{3})(\d{3})(\d{4})(\d{2})$/,'$1.$2.$3/$4-$5')}
+function secUnidades(d){var U=d.unidades||[];var s=document.createElement('section');s.className='rp-sec';s.id='dv-uni';
+ var fil=U.filter(function(u){return!u.matriz}),ufs={};U.forEach(function(u){ufs[u.uf||'—']=(ufs[u.uf||'—']||0)+1});
+ var comD=U.filter(function(u){return u.pgfn>0});
+ var H='<h3>Matriz e filiais</h3>';
+ if(!U.length){H+='<p>A empresa não tem filiais ativas no cadastro da Receita: o relatório cobre a única unidade, o CNPJ '+fcnpj(d.cnpj)+'.</p>'}
+ else{H+='<p>'+(U.length)+' unidade(s) ativa(s): a matriz e '+fil.length+' filial(is), em '+Object.keys(ufs).length+' estado(s) ('+Object.keys(ufs).sort().map(function(k){return k+' '+ufs[k]}).join(', ')+'). Os contratos públicos acima já somam as filiais. A dívida ativa da União é inscrita por CNPJ, por isso aparece unidade por unidade.</p>';
+  H+='<div style="overflow-x:auto"><table style="width:100%;border-collapse:collapse;font-size:.9rem"><thead><tr><th style="text-align:left;padding:6px 8px;border-bottom:1px solid #E3DED2">CNPJ</th><th style="text-align:left;padding:6px 8px;border-bottom:1px solid #E3DED2">Unidade</th><th style="text-align:left;padding:6px 8px;border-bottom:1px solid #E3DED2">UF</th><th style="text-align:right;padding:6px 8px;border-bottom:1px solid #E3DED2">Dívida ativa da União</th></tr></thead><tbody>'+
+  U.slice().sort(function(a,b){return(b.matriz-a.matriz)||(b.pgfn-a.pgfn)}).map(function(u){return'<tr><td style="padding:6px 8px;border-bottom:1px solid #F0ECE3">'+fcnpj(u.cnpj)+(u.cnpj===d.consultado?' <b>(consultada)</b>':'')+'</td><td style="padding:6px 8px;border-bottom:1px solid #F0ECE3">'+(u.matriz?'Matriz':'Filial')+'</td><td style="padding:6px 8px;border-bottom:1px solid #F0ECE3">'+e(u.uf)+'</td><td style="padding:6px 8px;border-bottom:1px solid #F0ECE3;text-align:right;'+(u.pgfn>0?'color:#9A3B2C;font-weight:700':'color:#6E6A60')+'">'+(u.pgfn>0?mc(u.pgfn):'Nada consta')+'</td></tr>'}).join('')+'</tbody></table></div>';
+  if(comD.length)H+='<p class="mu" style="margin-top:8px">'+comD.length+' unidade(s) com dívida ativa. Na licitação, a regularidade fiscal federal é comprovada pela certidão conjunta, que vale para a matriz e todas as filiais.</p>'}
+ s.innerHTML=H;return s}
 function organiza(r,d){if(r.dataset.org===String(d.cnpj))return;r.dataset.org=String(d.cnpj);r.classList.add('dv-org');
  var secs=[].slice.call(r.querySelectorAll(':scope > .rp-sec'));
  secs.forEach(function(s){var h=s.querySelector('h3');var t=h?h.textContent.replace(/^\s*[0-9!]+[a-z]?\s*/,''):'';if(/resumo executivo|riscos em destaque/i.test(t))s.style.display='none'});
@@ -319,6 +367,7 @@ function organiza(r,d){if(r.dataset.org===String(d.cnpj))return;r.dataset.org=St
   dt.innerHTML='<summary><i class="st" aria-hidden="true"></i><div><b>'+e(t[1])+'</b><span>'+e(t[2])+'</span></div></summary>';
   if(t[0]==='hab'){var pa=document.getElementById('dv-par');if(pa)dt.appendChild(pa)}
   else secs.forEach(function(s){if(usados.indexOf(s)>=0||s.style.display==='none')return;var h=s.querySelector('h3');if(h&&t[3].test(h.textContent)){dt.appendChild(s);usados.push(s)}});
+  if(t[0]==='pes')dt.appendChild(secUnidades(d));
   ult.parentNode.insertBefore(dt,ult.nextSibling);ult=dt});
  var resto=secs.filter(function(s){return usados.indexOf(s)<0&&s.style.display!=='none'});
  if(resto.length){var dt=document.createElement('details');dt.id='dv-t-out';dt.className='dv-tema';dt.innerHTML='<summary><i class="st" aria-hidden="true"></i><div><b>Outras informações</b><span>Dados complementares</span></div></summary>';resto.forEach(function(s){dt.appendChild(s)});ult.parentNode.insertBefore(dt,ult.nextSibling)}

@@ -884,7 +884,7 @@ function dv_seo_desc() {
 }
 add_action( 'wp_head', function () {
 	if ( is_admin() ) { return; }
-	$img = 'https://desenvolveestrategias.com.br/wp-content/uploads/2026/11/desenvolve-og-3.jpg';
+	$img = 'https://desenvolveestrategias.com.br/wp-content/uploads/2026/11/desenvolve-og-4.jpg';
 	$t = is_front_page() ? 'Desenvolve Estratégias · Inteligência em licitações' : wp_get_document_title();
 	$d = dv_seo_desc();
 	$o = is_page() ? get_queried_object() : null; $slug = $o && ! empty( $o->post_name ) ? $o->post_name : '';

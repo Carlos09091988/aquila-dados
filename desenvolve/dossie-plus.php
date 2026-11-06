@@ -93,18 +93,62 @@ add_action( 'wp_footer', function () {
 #dv-par .ver{display:flex;gap:16px;align-items:flex-start;padding:16px 18px;border-radius:14px;margin-bottom:18px;border:1px solid}
 #dv-par .ver.ok{background:#EEF7F1;border-color:#A9D5BC}#dv-par .ver.am{background:#FFF8E6;border-color:#E8C877}#dv-par .ver.vm{background:#FCEDEA;border-color:#F0A08F}
 #dv-par .ver b{display:block;font:600 1.15rem "Fraunces",Georgia,serif;margin-bottom:2px}
-#dv-par .ver p{margin:0;font-size:.93rem}
+#dv-par .ver p{margin:0;font-size:.93rem;color:#16191E;font-weight:400}#dv-par .ver b{color:#16191E}
 #dv-par ol{list-style:none;margin:0;padding:0;display:grid;gap:10px}
 #dv-par li{border:1px solid #E3DED2;border-left-width:5px;border-radius:10px;padding:12px 14px;background:#fff}
 #dv-par li.ok{border-left-color:#5E9E79}#dv-par li.am{border-left-color:#D9A93A}#dv-par li.vm{border-left-color:#C2513D}#dv-par li.na{border-left-color:#B9B4A7}
-#dv-par li h4{margin:0 0 3px;font-size:.98rem}#dv-par li p{margin:0;font-size:.9rem;color:#33363B}
+#dv-par li,#dv-par li *{font-weight:400}#dv-par li h4{margin:0 0 3px;font-size:.98rem;font-weight:700;color:#16191E}#dv-par li p{margin:0;font-size:.9rem;color:#33363B}
 #dv-par li .fu{margin-top:5px;font-size:.8rem;color:#8A6A2E}
-#dv-par li .ac{margin-top:6px;font-size:.86rem;color:#16191E}#dv-par li .ac:before{content:"Próximo passo: ";font-weight:700}
+#dv-par li .ac{margin-top:6px;font-size:.86rem;color:#16191E}#dv-par li .ac:before{content:"Próximo passo: ";font-weight:700}#dv-par li .fu{font-weight:600}
 #dv-par h4.grp{margin:20px 0 8px;font:700 .82rem "Hanken Grotesk",sans-serif;color:#6E6A60}
 #dv-par .docs{margin:16px 0 0;padding:14px 16px;border-radius:12px;background:#F5F1E8;font-size:.9rem}
 #dv-par .docs ul{margin:6px 0 0;padding-left:18px}
+#dv-par .docs b{color:#16191E}#dv-par .docs .it{margin:6px 0 0;padding-left:26px;position:relative;color:#16191E;font-weight:400}#dv-par .docs .it:before{content:"";position:absolute;left:2px;top:3px;width:13px;height:13px;border:2px solid #A8843F;border-radius:3px}
+#dv-par .nota,#dv-par .nota *{font-weight:400}#dv-par .nota b{font-weight:700}
+#dv-par .okd{margin-top:16px;border:1px solid #E3DED2;border-radius:12px;padding:4px 14px;background:#fff}#dv-par .okd summary{cursor:pointer;padding:10px 0;font-weight:700;font-size:.9rem;color:#2F6B4F}
+
 #dv-par .nota{margin-top:14px;font-size:.8rem;color:#6E6A60}
 @media print{#dv-par .modos,#dv-par .ent{display:none}}
+/* Leitura guiada */
+.rp.dv-org .rp-sec h3 i{display:none}
+#dv-capa{padding:26px 30px 8px;background:#FFFDF8}
+#dv-capa .q{display:grid;grid-template-columns:minmax(0,1.3fr) minmax(0,1fr);gap:18px;align-items:stretch}
+@media(max-width:760px){#dv-capa .q{grid-template-columns:1fr}}
+#dv-capa .v{border-radius:16px;padding:20px 22px;color:#fff}
+#dv-capa .v.ok{background:#2F6B4F}#dv-capa .v.am{background:#8A6516}#dv-capa .v.vm{background:#9A3B2C}
+#dv-capa .v small{display:block;font-weight:700;font-size:.78rem;opacity:.85;margin-bottom:6px}
+#dv-capa .v b{display:block;font:600 1.6rem/1.15 "Fraunces",Georgia,serif;margin-bottom:8px}
+#dv-capa .v p{margin:0;font-size:.95rem;opacity:.95}
+#dv-capa .acoes{border:1px solid #E3DED2;border-radius:16px;padding:18px 20px;background:#fff}
+#dv-capa .acoes b{display:block;margin-bottom:8px;font-size:.95rem}
+#dv-capa .acoes ol{margin:0;padding-left:20px;font-size:.92rem}#dv-capa .acoes li{margin:0 0 6px}
+#dv-capa .kpi{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:10px;margin:18px 0 6px}@media(max-width:760px){#dv-capa .kpi{grid-template-columns:repeat(2,minmax(0,1fr))}}
+#dv-capa .kpi div{border:1px solid #E3DED2;border-radius:12px;padding:12px 14px;background:#fff}
+#dv-capa .kpi b{display:block;font:600 1.35rem "Fraunces",Georgia,serif;color:#16191E}
+#dv-capa .kpi span{font-size:.8rem;color:#6E6A60}
+#dv-capa .kpi .vm b{color:#9A3B2C}#dv-capa .kpi .am b{color:#8A6516}
+#dv-mapa{padding:8px 30px 22px;background:#FFFDF8;border-bottom:1px solid #E3DED2}
+#dv-mapa p{margin:0 0 10px;font-size:.85rem;color:#6E6A60}
+#dv-mapa nav{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px}@media(max-width:640px){#dv-mapa nav{grid-template-columns:repeat(2,minmax(0,1fr))}}
+#dv-mapa a{display:block;text-decoration:none;color:#16191E;border:1px solid #E3DED2;border-top:4px solid #B9B4A7;border-radius:12px;padding:10px 12px;background:#fff}
+#dv-mapa a.ok{border-top-color:#5E9E79}#dv-mapa a.am{border-top-color:#D9A93A}#dv-mapa a.vm{border-top-color:#C2513D}
+#dv-mapa a b{display:block;font-size:.9rem}#dv-mapa a span{font-size:.8rem;color:#6E6A60}
+#dv-mapa a:focus-visible,.dv-tema>summary:focus-visible{outline:3px solid #C9A45C;outline-offset:2px}
+.dv-tema{border-bottom:1px solid #E3DED2}
+.dv-tema>summary{list-style:none;cursor:pointer;padding:18px 30px;display:flex;gap:14px;align-items:center}
+.dv-tema>summary::-webkit-details-marker{display:none}
+.dv-tema>summary .st{flex:none;width:12px;height:12px;border-radius:50%;background:#B9B4A7}
+.dv-tema.ok>summary .st{background:#5E9E79}.dv-tema.am>summary .st{background:#D9A93A}.dv-tema.vm>summary .st{background:#C2513D}
+.dv-tema>summary b{display:block;font:600 1.12rem "Fraunces",Georgia,serif;color:#16191E}
+.dv-tema>summary span{display:block;font-size:.88rem;color:#4A4D52}
+.dv-tema>summary:after{content:"Ver detalhes";margin-left:auto;flex:none;font-size:.8rem;font-weight:700;color:#8A6A2E}
+.dv-tema[open]>summary:after{content:"Fechar"}
+.dv-tema>.rp-sec{border-bottom:0;padding-top:6px}
+.dv-tema>.rp-sec+.rp-sec{border-top:1px dashed #E3DED2}
+.dv-tema #dv-par{border-bottom:0;padding-top:4px}
+.dv-tema #dv-par>h3,.dv-tema #dv-par>.sub{display:none}
+@media print{.dv-tema>summary:after{display:none}.dv-tema>*{display:block!important}}
+
 </style>
 <script>
 (function(){
@@ -152,7 +196,7 @@ function itens(d){
  else add('imp','ok','CNPJ ativo','Situação cadastral ativa na Receita Federal desde '+(c.data_inicio_atividade?String(c.data_inicio_atividade).split('-').reverse().join('/'):'—')+'.','Lei 14.133, art. 68, I');
  if(X.sanc.length){var txt=norm(JSON.stringify(X.sanc)),ini=/inidone/.test(txt),imped=/impediment|impedid/.test(txt),susp=/suspens/.test(txt);
   if(ini)add('imp','vm','Declarada inidônea','Há registro de declaração de inidoneidade. Essa sanção vale para toda a Administração Pública, de todos os entes, por 3 a 6 anos.','Lei 14.133, art. 14, III, e art. 156, IV e §5º','Confira a data de término da sanção no CEIS/TCU; se vigente, a empresa não pode disputar nem ser contratada.');
-  if(imped)add('imp','vm','Impedimento de licitar e contratar','Há registro de impedimento. Ele vale só no ente federativo que aplicou a sanção (a União, o estado ou o município), por até 3 anos.','Lei 14.133, art. 156, III e §4º','Veja quem aplicou: se for o mesmo ente da sua licitação, a empresa está impedida; se for outro, ela pode participar.');
+  if(imped)add('imp','vm','Impedimento de licitar e contratar','Há registro de impedimento. Ele vale só no ente federativo que aplicou a sanção (a União, o estado ou o município), por até 3 anos.','Lei 14.133, art. 156, III e §4º',M==='concorrente'?'Veja quem aplicou: se for o mesmo ente desta licitação, ela não pode participar. Leve o registro do CEIS à sessão.':'Veja quem aplicou: se for o mesmo ente da sua licitação, a empresa está impedida; se for outro, ela pode participar.');
   if(susp&&!ini&&!imped)add('imp','am','Suspensão temporária (Lei 8.666)','Há registro de suspensão. Pela regra antiga, ela alcança o órgão que aplicou a sanção.','Lei 8.666/1993, art. 87, III','Confira o órgão que aplicou e a data de término.');
   if(!ini&&!imped&&!susp)add('imp','am','Registro em cadastro de sanções',X.sanc.length+' registro(s) em CEIS, CNEP, TCU, CEPIM ou TCE-SP. Leia o tipo e a abrangência na seção de sanções abaixo.','Lei 14.133, art. 14, III','Confira a abrangência e a vigência de cada registro.');
  } else add('imp','ok','Sem sanções nos cadastros oficiais','Nada consta em CEIS, CNEP, TCU (inidôneos), CEPIM, leniência e TCE-SP na data deste relatório.','Lei 14.133, art. 14, III');
@@ -163,13 +207,13 @@ function itens(d){
  /* Regularidade fiscal, social e trabalhista (art. 68) */
  var p=X.p;
  if(p&&p.total>0){var cob=+p.em_cobranca||0;
-  add('fis',cob>0?'vm':'am','Dívida ativa da União: '+mc(p.total),p.inscricoes+' inscrição(ões)'+(p.ajuizadas?', '+p.ajuizadas+' ajuizada(s)':'')+(cob>0?'. Desse total, '+mc(cob)+' está em cobrança, sem suspensão: a certidão federal provavelmente sai positiva.':'. Há sinais de suspensão ou garantia, o que pode permitir uma certidão positiva com efeito de negativa.'),'Lei 14.133, art. 68, III; CTN, art. 206','Peça a Certidão Conjunta da Receita/PGFN atualizada. Só serve se for negativa ou positiva com efeito de negativa.');
-  if(+p.fgts>0)add('fis','vm','Débito de FGTS inscrito: '+mc(p.fgts),'Com FGTS em dívida ativa, o Certificado de Regularidade do FGTS tende a sair negado.','Lei 14.133, art. 68, IV','Peça o CRF atualizado (Caixa).');
+  add('fis',cob>0?'vm':'am','Dívida ativa da União: '+mc(p.total),p.inscricoes+' inscrição(ões)'+(p.ajuizadas?', '+p.ajuizadas+' ajuizada(s)':'')+(cob>0?'. Desse total, '+mc(cob)+' está em cobrança, sem suspensão: a certidão federal provavelmente sai positiva.':'. Há sinais de suspensão ou garantia, o que pode permitir uma certidão positiva com efeito de negativa.'),'Lei 14.133, art. 68, III; CTN, art. 206',M==='concorrente'?'Confira a certidão federal que ela apresentou: só vale se for negativa ou positiva com efeito de negativa, e dentro da validade.':'Peça a Certidão Conjunta da Receita/PGFN atualizada. Só serve se for negativa ou positiva com efeito de negativa.');
+  if(+p.fgts>0)add('fis','vm','Débito de FGTS inscrito: '+mc(p.fgts),'Com FGTS em dívida ativa, o Certificado de Regularidade do FGTS tende a sair negado.','Lei 14.133, art. 68, IV',M==='concorrente'?'Confira o CRF que ela apresentou e consulte o site da Caixa no dia da sessão.':'Peça o CRF atualizado (Caixa).');
  } else if(p===null)add('fis','ok','Sem dívida ativa da União','Nada consta na base da PGFN para este CNPJ.','Lei 14.133, art. 68, III');
  var tx=+X.pt.trab_execucao||0,tt=(+X.pt.trabalhista||0)+tx;
- if(tx)add('fis',tx>20?'vm':'am','Execuções trabalhistas: '+tx,'Processos trabalhistas em fase de execução (condenação não paga). Execução sem pagamento nem garantia faz a Certidão Negativa de Débitos Trabalhistas sair positiva.','Lei 14.133, art. 68, V; CLT, art. 642-A','Peça a CNDT emitida no dia (TST).');
+ if(tx)add('fis',tx>20?'vm':'am','Execuções trabalhistas: '+tx,'Processos trabalhistas em fase de execução (condenação não paga). Execução sem pagamento nem garantia faz a Certidão Negativa de Débitos Trabalhistas sair positiva.','Lei 14.133, art. 68, V; CLT, art. 642-A',M==='concorrente'?'Emita a CNDT dela no site do TST no dia da sessão e compare com a apresentada.':'Peça a CNDT emitida no dia (TST).');
  else if(tt)add('fis','ok','Processos trabalhistas sem execução',tt+' processo(s) trabalhista(s) em andamento, nenhum em fase de execução encontrado.','Lei 14.133, art. 68, V');
- if(X.pt.execucao_fiscal)add('fis','am','Execuções fiscais: '+X.pt.execucao_fiscal,'Há cobranças judiciais de tributos (podem ser estaduais ou municipais, que não aparecem na PGFN).','Lei 14.133, art. 68, III','Peça também as certidões estadual e municipal.');
+ if(X.pt.execucao_fiscal)add('fis','am','Execuções fiscais: '+X.pt.execucao_fiscal,'Há cobranças judiciais de tributos (podem ser estaduais ou municipais, que não aparecem na PGFN).','Lei 14.133, art. 68, III',M==='concorrente'?'Confira as certidões estadual e municipal que ela apresentou.':'Peça também as certidões estadual e municipal.');
  /* Econômico-financeira (art. 69) */
  if(X.pt.falencia)add('eco','am','Falência ou recuperação judicial',X.pt.falencia+' processo(s). O edital exige certidão negativa de falência. A recuperação judicial, por si só, não impede a participação, mas a empresa precisa demonstrar capacidade econômica.','Lei 14.133, art. 69, II','Descubra se é falência (impede) ou recuperação (cabe análise do plano e dos balanços).');
  if(cap>0){var lim=cap*10;
@@ -199,20 +243,23 @@ function veredito(L){var M=ST.modo,vm=L.filter(function(x){return x.s==='vm'}),a
  return['ok','Apta pelos dados públicos','Nenhum ponto de impedimento ou de inabilitação encontrado nas fontes oficiais.']}
 var GR={imp:'Pode disputar? (impedimentos e sanções)',fis:'Regularidade fiscal e trabalhista',eco:'Qualificação econômico-financeira',tec:'Qualificação técnica e capacidade',mpe:'Tratamento de ME/EPP'};
 var MODOS=[['parceiro','Parceiro de consórcio'],['sub','Subcontratada'],['concorrente','Concorrente']];
-function docs(L){var M=ST.modo;if(M==='concorrente')return'<div class="docs"><b>Como usar no certame</b><ul><li>Na habilitação, peça diligência ao agente de contratação sobre os pontos acima (Lei 14.133, art. 64).</li><li>Se ela for habilitada mesmo assim, manifeste a intenção de recorrer na sessão e apresente o recurso em 3 dias úteis (art. 165, I e §1º).</li><li>Junte as certidões e os prints das fontes, com data: a prova tem de ser do dia da sessão.</li></ul></div>';
+function docs(L){var M=ST.modo;if(M==='concorrente')return'<div class="docs"><b>Como usar no certame</b><p class="it">Na habilitação, peça diligência ao agente de contratação sobre os pontos acima (Lei 14.133, art. 64).</p><p class="it">Se ela for habilitada mesmo assim, manifeste a intenção de recorrer na sessão e apresente o recurso em 3 dias úteis (art. 165, I e §1º).</p><p class="it">Junte as certidões e os prints das fontes, com data: a prova tem de ser do dia da sessão.</p></div>';
  var b=['Certidão Conjunta Receita/PGFN, CRF do FGTS e CNDT emitidos no dia','Certidões estadual e municipal do domicílio','Balanços dos 2 últimos exercícios e certidão negativa de falência','Atestados de capacidade técnica com as notas fiscais correspondentes','Contrato social consolidado e procuração de quem assina'];
  if(M==='parceiro')b.push('Minuta do compromisso de consórcio: os consorciados respondem solidariamente pelos atos do consórcio (art. 15, V)');
  if(M==='sub')b.push('Comprovação de capacidade técnica da subcontratada para a parcela que vai executar (art. 122)');
- return'<div class="docs"><b>Documentos para pedir antes de fechar</b><ul>'+b.map(function(x){return'<li>'+e(x)+'</li>'}).join('')+'</ul></div>'}
+ return'<div class="docs"><b>Documentos para pedir antes de fechar</b>'+b.map(function(x){return'<p class="it">'+e(x)+'</p>'}).join('')+'</div>'}
 function pinta(){var s=document.getElementById('dv-par'),d=window.DVDS;if(!s||!d)return;var L=itens(d),v=veredito(L),M=ST.modo;
  var extra=M==='parceiro'?'Em consórcio, as dívidas e os processos dela passam a ser um risco seu: a responsabilidade é solidária (art. 15, V). Para a qualificação econômico-financeira, os valores das consorciadas se somam, e o edital pode pedir de 10% a 30% a mais do que pediria de uma empresa sozinha (art. 15, III e §1º).':M==='sub'?'Na subcontratação, quem responde perante o órgão continua sendo você. Cheque principalmente a regularidade trabalhista: passivo da subcontratada pode respingar no contrato.':'Cada ponto abaixo traz o fundamento para usar em diligência, impugnação ou recurso.';
  var H='<h3>Parecer de habilitação</h3><p class="sub">Leitura dos dados deste dossiê à luz da Lei 14.133/2021. Escolha para que você está avaliando a empresa.</p>';
  H+='<div class="modos" role="group" aria-label="Finalidade da análise">'+MODOS.map(function(m){return'<button type="button" data-m="'+m[0]+'" aria-pressed="'+(M===m[0])+'">'+m[1]+'</button>'}).join('')+'</div>';
  H+='<div class="ent"><div><label for="dv-pv">Valor estimado da licitação</label><input id="dv-pv" inputmode="decimal" placeholder="Ex.: 2.500.000" value="'+(ST.valor?e(ST.valor.toLocaleString('pt-BR')):'')+'"></div><div><label for="dv-po">Objeto (palavras-chave)</label><input id="dv-po" placeholder="Ex.: limpeza hospitalar" value="'+e(ST.obj)+'"></div></div>';
  H+='<div class="ver '+v[0]+'"><div><b>'+e(v[1])+'</b><p>'+e(v[2])+'</p><p style="margin-top:6px">'+e(extra)+'</p></div></div>';
- var gs={};L.forEach(function(x){(gs[x.g]=gs[x.g]||[]).push(x)});
- Object.keys(GR).forEach(function(g){if(!gs[g])return;var arr=gs[g];if(M==='concorrente')arr=arr.slice().sort(function(a,b){var o={vm:0,am:1,na:2,ok:3};return o[a.s]-o[b.s]});
-  H+='<h4 class="grp">'+GR[g]+'</h4><ol>'+arr.map(function(x){return'<li class="'+x.s+'"><h4>'+e(x.t)+'</h4><p>'+e(x.a)+'</p>'+(x.f?'<div class="fu">'+e(x.f)+'</div>':'')+(x.ac?'<div class="ac">'+e(x.ac)+'</div>':'')+'</li>'}).join('')+'</ol>'});
+ function grupos(arr){var gs={},h='';arr.forEach(function(x){(gs[x.g]=gs[x.g]||[]).push(x)});
+  Object.keys(GR).forEach(function(g){if(!gs[g])return;var a=gs[g].slice().sort(function(x,y){var o={vm:0,am:1,na:2,ok:3};return o[x.s]-o[y.s]});
+   h+='<h4 class="grp">'+GR[g]+'</h4><ol>'+a.map(function(x){return'<li class="'+x.s+'"><h4>'+e(x.t)+'</h4><p>'+e(x.a)+'</p>'+(x.f?'<div class="fu">'+e(x.f)+'</div>':'')+(x.ac?'<div class="ac">'+e(x.ac)+'</div>':'')+'</li>'}).join('')+'</ol>'});return h}
+ var Pn=L.filter(function(x){return x.s==='vm'||x.s==='am'}),Qn=L.filter(function(x){return x.s!=='vm'&&x.s!=='am'});
+ H+=Pn.length?'<h4 class="grp" style="color:#16191E;font-size:.95rem">'+(M==='concorrente'?'Pontos fracos dela':'Pontos que pedem atenção')+' ('+Pn.length+')</h4>'+grupos(Pn):'<p class="sub">Nenhum ponto de atenção nos dados públicos.</p>';
+ if(Qn.length)H+='<details class="okd"><summary>Itens sem pendência ('+Qn.length+')</summary>'+grupos(Qn)+'</details>';
  H+=docs(L);
  if((d.parcial||[]).length)H+='<p class="nota"><b>Atenção:</b> estas fontes não responderam a tempo e ficaram fora do parecer: '+e(d.parcial.join(', '))+'.</p>';
  H+='<p class="nota">Parecer automático, feito com dados públicos na data do relatório. Certidões mudam: confira todas no dia da sessão. Para um parecer assinado por advogado, use “Acionar um consultor”.</p>';
@@ -220,10 +267,62 @@ function pinta(){var s=document.getElementById('dv-par'),d=window.DVDS;if(!s||!d
  s.querySelectorAll('[data-m]').forEach(function(b){b.onclick=function(){ST.modo=b.getAttribute('data-m');pinta()}});
  var pv=s.querySelector('#dv-pv'),po=s.querySelector('#dv-po'),tm;
  pv.onchange=function(){ST.valor=num(pv.value);pinta()};po.onchange=function(){ST.obj=po.value;pinta()};
+ var rr=document.querySelector('.rp.dv-org');if(rr&&document.getElementById('dv-capa'))capa(rr,d);
 }
+
+/* 3. Leitura guiada: capa com veredito, mapa de temas e seções agrupadas */
+var TEMAS=[
+ ['hab','Pode ser contratada?','Parecer de habilitação pela Lei 14.133',null],
+ ['san','Sanções e punições','Cadastros de punidos e processos administrativos',/san[cç][oõ]es e restri|processos administrativos/i],
+ ['fin','Saúde financeira','Dívida ativa e histórico de pagamento',/d[ií]vida ativa|adimpl/i],
+ ['gov','Experiência com o governo','Contratos públicos já assinados',/contratos p[uú]blicos|contratos e pagamentos|federal/i],
+ ['pes','Quem está por trás','Cadastro, sócios e empresas ligadas',/cadastro na receita|s[oó]cios e admin|grupo econ/i],
+ ['rep','Justiça e reputação','Processos, diários oficiais e imprensa',/processos judiciais|di[aá]rios oficiais|imprensa|publica[cç][oõ]es/i]
+];
+function statusTemas(d){var X=dados(d),p=X.p,pt=X.pt,o={};
+ o.san=X.sanc.length||X.ls?['vm',X.sanc.length?X.sanc.length+' registro(s) em cadastros de sanção':'Aparece na lista suja do trabalho escravo']:['ok','Nada consta nos cadastros oficiais'];
+ o.fin=p&&p.total>0?[(+p.em_cobranca>0||+p.fgts>0)?'vm':'am',mc(p.total)+' em dívida ativa da União']:['ok','Sem dívida ativa da União'];
+ var vV=X.vig.reduce(function(a,x){return a+x.valor},0);
+ o.gov=X.cons.length?['ok',X.cons.length+' contrato(s) público(s)'+(X.vig.length?', '+X.vig.length+' ativo(s) ('+mc(vV)+')':'')]:['am','Nenhum contrato público encontrado'];
+ var novos=(X.c.qsa||[]).filter(function(s){return s.data_entrada_sociedade&&(Date.now()-new Date(s.data_entrada_sociedade))/31557600000<2}).length;
+ o.pes=X.pep.length?['am',X.pep.length+' sócio(s) politicamente exposto(s)']:novos?['am',novos+' sócio(s) entrou(aram) há menos de 2 anos']:['ok',(X.c.qsa||[]).length+' sócio(s) · '+X.grupo.length+' empresa(s) ligada(s)'];
+ var grav=(+pt.criminal||0)+(+pt.improbidade||0)+(+pt.falencia||0),tx=+pt.trab_execucao||0;
+ o.rep=grav?['vm',grav+' processo(s) grave(s) (criminal, improbidade ou falência)']:tx?['am',tx+' execução(ões) trabalhista(s)']:['ok','Nenhum processo grave encontrado'];
+ var L=itens(d),v=veredito(L);o.hab=[v[0]==='ok'?'ok':v[0],v[1]];o._v=v;o._L=L;return o}
+function acoes(L){var M=ST.modo;if(M==='concorrente'){var f=L.filter(function(x){return x.s==='vm'||x.s==='am'}).sort(function(x,y){return(x.s==='vm'?0:1)-(y.s==='vm'?0:1)});if(f.length){var r=f.slice(0,2).map(function(x){return'Na sessão, peça diligência sobre: '+x.t.toLowerCase()+' ('+x.f+').'});r.push('Se ela for habilitada, registre a intenção de recorrer e apresente o recurso em 3 dias úteis (art. 165).');return r}}var a=L.filter(function(x){return(x.s==='vm'||x.s==='am')&&x.ac}).sort(function(x,y){return(x.s==='vm'?0:1)-(y.s==='vm'?0:1)}).slice(0,3).map(function(x){return x.ac});
+ if(!a.length)a=M==='concorrente'?['Analise a proposta e a exequibilidade do preço dela: na habilitação, os dados públicos não mostram ponto fraco.']:['Peça as certidões do dia da sessão (federal, FGTS e trabalhista).','Peça os atestados de capacidade técnica dos contratos listados.'];
+ return a}
+function capa(r,d){var o=statusTemas(d),v=o._v,X=dados(d),p=X.p,c=X.c,vV=X.vig.reduce(function(a,x){return a+x.valor},0),pt=X.pt;
+ var proc=(+pt.criminal||0)+(+pt.improbidade||0)+(+pt.falencia||0)+(+pt.coletiva||0);
+ var K=[[X.sanc.length?X.sanc.length:'Nada consta','Sanções',X.sanc.length?'vm':''],[p&&p.total>0?mc(p.total):'Nada consta','Dívida ativa da União',p&&p.total>0?'am':''],[X.vig.length+' · '+mc(vV),'Contratos públicos ativos',''],[proc||'Nenhum','Processos graves',proc?'vm':''],[c.capital_social?mc(c.capital_social):'—','Capital social','']];
+ var M=MODOS.filter(function(m){return m[0]===ST.modo})[0][1];
+ var H='<div class="q"><div class="v '+v[0]+'"><small>Conclusão · avaliando como '+e(M.toLowerCase())+'</small><b>'+e(v[1])+'</b><p>'+e(v[2])+'</p></div><div class="acoes"><b>O que fazer agora</b><ol>'+acoes(o._L).map(function(x){return'<li>'+e(x)+'</li>'}).join('')+'</ol></div></div>';
+ H+='<div class="kpi">'+K.map(function(k){return'<div class="'+k[2]+'"><b>'+e(k[0])+'</b><span>'+e(k[1])+'</span></div>'}).join('')+'</div>';
+ var cp=document.getElementById('dv-capa');cp.innerHTML=H;
+ var nv=r.querySelector('.rp-hd .nv');if(nv){nv.className='nv '+v[0];nv.innerHTML='<b>'+e(v[1])+'</b><span>Parecer de habilitação</span>'}
+ document.getElementById('dv-mapa').innerHTML='<p>Os seis temas do relatório. Clique para ir direto ao detalhe.</p><nav>'+TEMAS.map(function(t){var s=o[t[0]]||['na',''];return'<a href="#dv-t-'+t[0]+'" class="'+s[0]+'" data-t="'+t[0]+'"><b>'+e(t[1])+'</b><span>'+e(s[1])+'</span></a>'}).join('')+'</nav>';
+ document.querySelectorAll('#dv-mapa a').forEach(function(a){a.onclick=function(ev){var dt=document.getElementById('dv-t-'+a.dataset.t);if(dt){ev.preventDefault();dt.open=true;dt.scrollIntoView({behavior:'smooth',block:'start'})}}});
+ TEMAS.forEach(function(t){var dt=document.getElementById('dv-t-'+t[0]);if(!dt)return;var s=o[t[0]]||['na',''];dt.className='dv-tema '+s[0];dt.querySelector('summary span').textContent=s[1]});
+}
+function organiza(r,d){if(r.dataset.org===String(d.cnpj))return;r.dataset.org=String(d.cnpj);r.classList.add('dv-org');
+ var secs=[].slice.call(r.querySelectorAll(':scope > .rp-sec'));
+ secs.forEach(function(s){var h=s.querySelector('h3');var t=h?h.textContent.replace(/^\s*[0-9!]+[a-z]?\s*/,''):'';if(/resumo executivo|riscos em destaque/i.test(t))s.style.display='none'});
+ var anc=r.querySelector('.ds-parc')||r.querySelector('.rp-bar');
+ var cp=document.createElement('section');cp.id='dv-capa';var mp=document.createElement('section');mp.id='dv-mapa';
+ anc.parentNode.insertBefore(cp,anc.nextSibling);cp.parentNode.insertBefore(mp,cp.nextSibling);
+ var ult=mp,usados=[];
+ TEMAS.forEach(function(t,i){var dt=document.createElement('details');dt.id='dv-t-'+t[0];dt.className='dv-tema';if(i===0)dt.open=true;
+  dt.innerHTML='<summary><i class="st" aria-hidden="true"></i><div><b>'+e(t[1])+'</b><span>'+e(t[2])+'</span></div></summary>';
+  if(t[0]==='hab'){var pa=document.getElementById('dv-par');if(pa)dt.appendChild(pa)}
+  else secs.forEach(function(s){if(usados.indexOf(s)>=0||s.style.display==='none')return;var h=s.querySelector('h3');if(h&&t[3].test(h.textContent)){dt.appendChild(s);usados.push(s)}});
+  ult.parentNode.insertBefore(dt,ult.nextSibling);ult=dt});
+ var resto=secs.filter(function(s){return usados.indexOf(s)<0&&s.style.display!=='none'});
+ if(resto.length){var dt=document.createElement('details');dt.id='dv-t-out';dt.className='dv-tema';dt.innerHTML='<summary><i class="st" aria-hidden="true"></i><div><b>Outras informações</b><span>Dados complementares</span></div></summary>';resto.forEach(function(s){dt.appendChild(s)});ult.parentNode.insertBefore(dt,ult.nextSibling)}
+ capa(r,d)}
+window.addEventListener('beforeprint',function(){document.querySelectorAll('.dv-tema').forEach(function(x){x.open=true})});
 function monta(){var r=document.querySelector('.dv-tool .rp')||document.querySelector('.rp');if(!r||!window.DVDS)return;var s=document.getElementById('dv-par');
- if(s&&s.parentNode===r&&s.dataset.c===String(window.DVDS.cnpj))return;if(s)s.remove();s=document.createElement('section');s.id='dv-par';s.dataset.c=String(window.DVDS.cnpj);
- var bar=r.querySelector('.rp-bar'),ap=r.querySelector('.ds-parc');var ref=(ap||bar);if(ref&&ref.nextSibling)r.insertBefore(s,ref.nextSibling);else r.insertBefore(s,r.firstChild);pinta()}
+ if(s&&r.contains(s)&&s.dataset.c===String(window.DVDS.cnpj))return;if(s)s.remove();s=document.createElement('section');s.id='dv-par';s.dataset.c=String(window.DVDS.cnpj);
+ var bar=r.querySelector('.rp-bar'),ap=r.querySelector('.ds-parc');var ref=(ap||bar);if(ref&&ref.nextSibling)r.insertBefore(s,ref.nextSibling);else r.insertBefore(s,r.firstChild);pinta();organiza(r,window.DVDS)}
 new MutationObserver(function(){monta()}).observe(document.body,{childList:true,subtree:true});
 })();
 </script>

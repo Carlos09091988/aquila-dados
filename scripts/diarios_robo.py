@@ -167,6 +167,151 @@ def docs_dompi():
     return out
 
 
+# ---- Plataformas de diário por cidade (DOEM e Atende.net) -------------------------------
+# Muitas prefeituras não publicam no diário da associação: contratam uma empresa de diário
+# eletrônico, e cada empresa publica todas as suas cidades no mesmo formato. Descobrimos uma
+# vez por semana quais municípios do IBGE existem em cada plataforma (data/diarios/doem.json e
+# atende.json) e, todo dia, baixamos só as edições novas dessas cidades.
+# Formatos de página conferidos nos coletores abertos do Querido Diário (MIT, okfn-brasil).
+DOEM_UFS = ['BA', 'SE', 'PE', 'AL', 'PI', 'MA', 'CE', 'PB', 'RN', 'PR', 'MG', 'TO', 'GO', 'RJ', 'SP', 'ES', 'MT', 'MS', 'PA']
+ATENDE_UFS = ['PR', 'RS', 'SC']
+MESES = {'JANEIRO': 1, 'FEVEREIRO': 2, 'MARCO': 3, 'ABRIL': 4, 'MAIO': 5, 'JUNHO': 6, 'JULHO': 7, 'AGOSTO': 8, 'SETEMBRO': 9, 'OUTUBRO': 10, 'NOVEMBRO': 11, 'DEZEMBRO': 12}
+
+
+def slug_cidade(nome):
+    return re.sub(r'[^a-z0-9]', '', unicodedata.normalize('NFKD', nome).encode('ascii', 'ignore').decode().lower())
+
+
+def data_texto(t):
+    """'05/11/2026', '2026-11-05' ou '5 de novembro de 2026' -> '2026-11-05'"""
+    t = t or ''
+    m = re.search(r'(\d{1,2})/(\d{1,2})/(\d{4})', t)
+    if m:
+        return '%s-%02d-%02d' % (m.group(3), int(m.group(2)), int(m.group(1)))
+    m = re.search(r'(\d{4})-(\d{2})-(\d{2})', t)
+    if m:
+        return m.group(0)
+    m = re.search(r'(\d{1,2})\s+de\s+([A-Za-zçÇ]+)\s+de\s+(\d{4})', t)
+    if m and norm(m.group(2)) in MESES:
+        return '%s-%02d-%02d' % (m.group(3), MESES[norm(m.group(2))], int(m.group(1)))
+    return ''
+
+
+def ibge_municipios(ufs):
+    out = []
+    for uf in ufs:
+        t = get('https://servicodados.ibge.gov.br/api/v1/localidades/estados/%s/municipios' % uf, timeout=60)
+        try:
+            out += [(uf, x['nome']) for x in json.loads(t or '[]')]
+        except Exception:
+            log('ibge erro', uf)
+    return out
+
+
+def doem_url(uf, slug, d):
+    return 'https://doem.org.br/%s/%s/diarios/%d/%02d' % (uf.lower(), slug, d.year, d.month)
+
+
+def doem_edicoes(h):
+    """Pares (data, link do PDF) de uma página mensal do DOEM."""
+    r = []
+    for bloco in re.split(r'class="[^"]*box-diario', h or '')[1:]:
+        bloco = bloco[:4000]
+        a = re.search(r'<a[^>]+title="Baixar Publica[^"]*"[^>]*href="([^"]+)"', bloco) or re.search(r'<a[^>]+href="([^"]+)"[^>]*title="Baixar Publica', bloco)
+        dt_ = re.search(r'class="[^"]*data-diario[^"]*"[^>]*>([^<]+)<', bloco)
+        if a and dt_:
+            d = data_texto(html.unescape(dt_.group(1)))
+            if d:
+                r.append((d, urllib.parse.urljoin('https://doem.org.br/', html.unescape(a.group(1)).replace('previsualizar', 'baixar'))))
+    return r
+
+
+ATENDE_PARAMS = {'rot': '54015', 'aca': '101', 'ajax': 't', 'processo': 'loadPluginDiarioOficial', 'parametro': '{"codigoPlugin":1,"filtroPlugin":{"pagina":"1"}}'}
+
+
+def atende_url(sub):
+    return 'https://%s.atende.net/diariooficial/edicao/pagina/atende.php?%s' % (sub, urllib.parse.urlencode(ATENDE_PARAMS))
+
+
+def atende_edicoes(h, sub):
+    r = []
+    for bloco in re.split(r'class="[^"]*\blinha\b', h or '')[1:]:
+        bloco = bloco[:5000]
+        dt_ = re.search(r'class="[^"]*\bdata\b[^"]*"[^>]*>([^<]+)<', bloco)
+        links = re.findall(r'data-link="([^"]+)"', bloco)
+        if dt_ and links:
+            d = data_texto(html.unescape(dt_.group(1)))
+            if d:
+                r.append((d, urllib.parse.urljoin('https://%s.atende.net/' % sub, html.unescape(links[-1]))))
+    return r
+
+
+def descobrir(arq, plat, ufs, testa):
+    """Lista semanal das cidades que publicam em uma plataforma (guardada em data/diarios)."""
+    caminho = os.path.join(DADOS, arq)
+    try:
+        c = json.load(open(caminho))
+        if time.time() - c.get('quando', 0) < 7 * 86400 and c.get('cidades'):
+            return c['cidades']
+    except Exception:
+        c = {}
+    muns = ibge_municipios(ufs)
+    if not muns:
+        return c.get('cidades', [])
+    achadas = []
+    with cf.ThreadPoolExecutor(24) as ex:
+        for uf, nome, ok in ex.map(lambda x: (x[0], x[1], testa(x[0], slug_cidade(x[1]))), muns):
+            if ok:
+                achadas.append([uf, slug_cidade(nome), nome])
+    log(plat, 'descoberta:', len(achadas), 'cidades de', len(muns), 'municípios testados')
+    if achadas:
+        json.dump({'quando': time.time(), 'cidades': sorted(achadas)}, open(caminho, 'w'), ensure_ascii=False, indent=0)
+    return achadas or c.get('cidades', [])
+
+
+def doem_testa(uf, slug):
+    for d in (HOJE, HOJE.replace(day=1) - dt.timedelta(days=1), HOJE.replace(day=1) - dt.timedelta(days=40)):
+        h = get(doem_url(uf, slug, d), timeout=25, tent=1)
+        if h is None:
+            return False
+        if doem_edicoes(h):
+            return True
+    return False
+
+
+def atende_testa(uf, slug):
+    h = get(atende_url(slug), timeout=20, tent=1)
+    return bool(h) and bool(atende_edicoes(h, slug))
+
+
+def docs_cidades(plat, arq, ufs, testa, edicoes_de):
+    cidades = descobrir(arq, plat, ufs, testa)
+    meses = {(d.year, d.month) for d in (dt.date.fromisoformat(x) for x in DATAS)}
+    out = []
+
+    def ed(c):
+        uf, slug, nome = c; r = []
+        for ano, mes in sorted(meses):
+            for d, link in edicoes_de(uf, slug, dt.date(ano, mes, 1)):
+                if d in DATAS:
+                    r.append({'fonte': 'Diário Oficial de %s' % nome, 'plat': plat, 'uf': uf, 'municipio': nome, 'data': d, 'url': link, 'link': link})
+        return r
+    with cf.ThreadPoolExecutor(16) as ex:
+        for r in ex.map(ed, cidades):
+            out += r
+    log(plat, 'cidades', len(cidades), 'edições no período', len(out))
+    return out
+
+
+def docs_doem():
+    return docs_cidades('doem', 'doem.json', DOEM_UFS, doem_testa, lambda uf, slug, d: doem_edicoes(get(doem_url(uf, slug, d), timeout=30)))
+
+
+def docs_atende():
+    # a página 1 traz as edições mais recentes; basta para o período do robô (2 dias)
+    return docs_cidades('atende', 'atende.json', ATENDE_UFS, atende_testa, lambda uf, slug, d: atende_edicoes(get(atende_url(slug), timeout=30), slug) if d.month == HOJE.month else [])
+
+
 # ------------------------------------------------------------------ texto -> atos
 RX_MUN = re.compile(r'(?:PREFEITURA\s+MUNICIPAL\s+D[EOA]S?|MUNIC[IÍ]PIO\s+D[EOA]S?|C[AÂ]MARA\s+MUNICIPAL\s+D[EOA]S?)\s+([A-ZÀ-Ü][A-ZÀ-Ü\'\- ]{2,40}?)(?:\s*[-–/]\s*[A-Z]{2}\b|\s*\n|\s{2,}|,)', re.I)
 RX_QUER = re.compile(r'AVISO D[EO] (LICITACAO|PREGAO|ABERTURA|DISPENSA|CHAMAMENTO|EDITAL|REABERTURA|CONCORRENCIA)|AVISOS DE LICITACAO|PREGAO (ELETRONICO|PRESENCIAL)|CONCORRENCIA (ELETRONICA|PUBLICA)|TOMADA DE PRECOS|DISPENSA ELETRONICA|CHAMAMENTO PUBLICO|EDITAL DE (LICITACAO|PREGAO)|CREDENCIAMENTO')
@@ -261,7 +406,9 @@ def main():
     log('termos', len(termos), 'variantes', len(busca), 'datas', sorted(DATAS))
 
     docs = []
-    fontes = (('sigpub', docs_sigpub), ('famem', docs_famem), ('dosp', docs_dosp), ('dompi', docs_dompi))
+    fontes = (('sigpub', docs_sigpub), ('famem', docs_famem), ('dosp', docs_dosp), ('dompi', docs_dompi), ('doem', docs_doem), ('atende', docs_atende))
+    if os.environ.get('SO_FONTES'):
+        fontes = tuple(f for f in fontes if f[0] in os.environ['SO_FONTES'].split(','))
     if os.environ.get('QD_DB'):
         fontes = (('qd', lambda: docs_qd(os.environ['QD_DB'], os.environ.get('QD_FILES', '.'))),)
     for nome, f in fontes:
@@ -331,7 +478,7 @@ def main():
                         avisos.append({'id': hashlib.sha1((a['link'] + '|' + a['cod'] + '|' + t[:80]).encode()).hexdigest()[:32], 'data': doc['data'], 'uf': doc['uf'], 'municipio': a['municipio'] or doc.get('municipio', ''), 'fonte': doc['fonte'], 'link': a['link'], 'titulo': tit, 'texto': re.sub(r'\s+', ' ', t)[:6000]})
     log('edições lidas', feitos, 'de', len(docs), '| avisos', len(avisos), '| citações', len(achados))
     log('gravados avisos', post('avisos', avisos), '| gravados citações', post('achados', achados))
-    json.dump({'quando': dt.datetime.now().isoformat(), 'edicoes': len(docs), 'lidas': feitos, 'avisos': len(avisos), 'citacoes': len(achados), 'por_fonte': {p: sum(1 for d in docs if d['plat'] == p) for p in ('sigpub', 'famem', 'dosp', 'dompi', 'qd')}}, open(os.path.join(DADOS, 'ultimo%s.json' % ('-qd-' + os.environ.get('GRUPO', '') if os.environ.get('QD_DB') else '')), 'w'), indent=1)
+    json.dump({'quando': dt.datetime.now().isoformat(), 'edicoes': len(docs), 'lidas': feitos, 'avisos': len(avisos), 'citacoes': len(achados), 'por_fonte': {p: sum(1 for d in docs if d['plat'] == p) for p in ('sigpub', 'famem', 'dosp', 'dompi', 'doem', 'atende', 'qd')}}, open(os.path.join(DADOS, 'ultimo%s.json' % ('-qd-' + os.environ.get('GRUPO', '') if os.environ.get('QD_DB') else '')), 'w'), indent=1)
 
 
 if __name__ == '__main__':

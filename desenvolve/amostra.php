@@ -8,7 +8,13 @@
 if ( ! defined( 'ABSPATH' ) ) { exit; }
 
 function dv_am_get( $url, $t = 20 ) {
-	$r = wp_remote_get( $url, array( 'timeout' => $t, 'headers' => array( 'Accept' => 'application/json' ) ) );
+	for ( $i = 0; $i < 3; $i++ ) {
+		$r = wp_remote_get( $url, array( 'timeout' => $t, 'headers' => array( 'Accept' => 'application/json', 'User-Agent' => 'Mozilla/5.0 (compatible; DesenvolveBot/1.0; +https://desenvolveestrategias.com.br)' ) ) );
+		$c = is_wp_error( $r ) ? $r->get_error_message() : wp_remote_retrieve_response_code( $r ); $GLOBALS['dv_am_ult'] = $c;
+		if ( $c === 200 ) { break; }
+		if ( is_int( $c ) && $c >= 400 && $c < 500 && $c !== 429 ) { return null; }
+		usleep( 700000 );
+	}
 	if ( is_wp_error( $r ) || wp_remote_retrieve_response_code( $r ) !== 200 ) { return null; }
 	return json_decode( wp_remote_retrieve_body( $r ), true );
 }
@@ -131,7 +137,7 @@ function dv_am_editais( $q, $uf, $cid = 0, $raio = 0 ) {
 	$onde = $mun ? ( $raio > 0 ? 'até ' . $raio . ' km de ' : 'em ' ) . $M[ $cid ][0] . '/' . $M[ $cid ][1] : ( $uf ? $uf : '' );
 	$u = 'https://pncp.gov.br/api/search/?q=' . rawurlencode( $q ) . '&tipos_documento=edital&status=recebendo_proposta&ordenacao=-data&pagina=1&tam_pagina=60' . ( $mun ? '&municipios=' . implode( '%7C', array_keys( $mun ) ) : ( $uf ? '&ufs=' . rawurlencode( $uf ) : '' ) );
 	$j = dv_am_get( $u, 20 ); if ( ! is_array( $j ) ) { $j = dv_am_get( $u, 25 ); }
-	if ( ! is_array( $j ) ) { return new WP_Error( 'dv_am', 'O PNCP não respondeu agora. Tente de novo em instantes.', array( 'status' => 502 ) ); }
+	if ( ! is_array( $j ) ) { return new WP_Error( 'dv_am', 'O PNCP não respondeu agora. Tente de novo em instantes.', array( 'status' => 502, 'pncp' => current_user_can( 'manage_options' ) ? ( $GLOBALS['dv_am_ult'] ?? '' ) : '' ) ); }
 	$it = array_map( 'dv_am_edital', (array) ( $j['items'] ?? array() ) );
 	// relevância: primeiro os editais com o termo no próprio objeto; depois os que só têm o termo nos itens
 	if ( $mun ) { $ix = array(); foreach ( $mun as $c => $d ) { $ix[ dv_am_norm( $M[ $c ][0] ) . '/' . $M[ $c ][1] ] = $d; } foreach ( $it as &$x ) { $k = dv_am_norm( $x['local'] ); if ( isset( $ix[ $k ] ) && $raio > 0 ) { $x['local'] .= $ix[ $k ] > 0 ? ' · a ' . round( $ix[ $k ] ) . ' km' : ' · na cidade'; } } unset( $x ); }

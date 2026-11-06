@@ -144,7 +144,7 @@ function dv_am_editais( $q, $uf, $cid = 0, $raio = 0 ) {
 	$ws = array_filter( preg_split( '/[^a-z0-9]+/', dv_am_norm( $q ) ), function ( $w ) { return strlen( $w ) >= 3; } );
 	$raiz = array_map( function ( $w ) { $w = preg_replace( '/(oes|aes|ais|eis|ns|s)$/', '', $w ); return strlen( $w ) > 6 ? substr( $w, 0, 6 ) : $w; }, $ws );
 	$no = array(); $nos = array();
-	foreach ( $it as $x ) { $o = dv_am_norm( $x['objeto'] ); $ok = $raiz && count( array_filter( $raiz, function ( $r ) use ( $o ) { return strpos( $o, $r ) !== false; } ) ) === count( $raiz ); $x['em'] = $ok ? 'objeto' : 'itens'; if ( $ok ) { $no[] = $x; } else { $nos[] = $x; } }
+	foreach ( $it as $x ) { $o = dv_am_norm( $x['objeto'] ); $ok = $raiz && count( array_filter( $raiz, function ( $r ) use ( $o ) { return strpos( $o, $r ) !== false; } ) ) === count( $raiz ); $x['em'] = ! $raiz ? '' : ( $ok ? 'objeto' : 'itens' ); if ( $ok ) { $no[] = $x; } else { $nos[] = $x; } }
 	$it = array_merge( $no, $nos ); $tot = (int) ( $j['total'] ?? count( $it ) );
 	return array(
 		'tipo' => 'editais', 'nome' => 'Licitações abertas' . ( $q !== '' ? ': ' . $q : '' ) . ( $onde ? ' · ' . $onde : '' ), 'fantasia' => '', 'termo' => $q, 'uf' => $uf, 'cidade' => $cid, 'raio' => $raio, 'municipios' => count( $mun ),

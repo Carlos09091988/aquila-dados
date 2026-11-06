@@ -108,7 +108,9 @@ function dv_plano_libera( $uid, $tool ) {
 	if ( ! $uid || ! $tool ) { return true; }
 	if ( function_exists( 'dv_is_master' ) && dv_is_master( $uid ) ) { return true; }
 	if ( function_exists( 'dv_teste_ilimitado' ) && dv_teste_ilimitado( $uid ) ) { return true; }
-	return dv_plano( $uid ) !== 'busca' || in_array( $tool, dv_plano_busca_ferramentas(), true );
+	if ( dv_plano( $uid ) !== 'busca' || in_array( $tool, dv_plano_busca_ferramentas(), true ) ) { return true; }
+	/* no plano Busca, as ferramentas de análise funcionam com créditos avulsos ou de bônus, enquanto houver saldo */
+	return function_exists( 'dv_saldo' ) && (int) dv_saldo( $uid )['total'] > 0;
 }
 /* Custos por ferramenta para as telas (rótulos e avisos antes do clique) */
 add_action( 'wp_head', function () {
@@ -774,7 +776,7 @@ add_shortcode( 'dv_ctx', function ( $a ) {
 		$td = (int) dv_cfg( 'trial_dias' );
 		$h .= '<div class="dv-pw"><h2>Ferramenta exclusiva para assinantes</h2><p>' . ( $td ? 'Teste ' . $td . ' dias grátis, com ' . (int) dv_cfg( 'trial_creditos' ) . ' créditos, sem cartão. Depois, planos a partir de R$ 19,90/mês.' : 'Planos a partir de R$ 19,90/mês (MEI, ME e EPP).' ) . '</p><p><a class="dv-btn" href="/assinar/">' . ( $td ? 'Começar o teste grátis' : 'Assinar agora' ) . '</a> <a class="dv-btn g" href="/painel/">Já tenho conta</a></p></div><style>.dv-tool{display:none!important}</style>';
 	} elseif ( $acesso && ! dv_plano_libera( $uid, $tool ) ) {
-		$h .= '<div class="dv-pw"><h2>Esta ferramenta é do plano Completo</h2><p>O seu plano Busca inclui os editais do seu ramo por e-mail, a busca de licitações, a gestão de licitações com agenda e os documentos de habilitação. Para usar o Raio-X, a Due Diligence, os contratos vencendo e as outras ferramentas de análise, passe para o plano Completo: R$ ' . dv_rs( (float) ( dv_planos()['desenvolve']['preco'] ?? 79.90 ) ) . ' por mês, com 80 créditos.</p><a class="dv-btn" href="/assinar/">Ver o plano Completo</a> <a class="dv-btn g" href="/painel/">Voltar ao início</a></div>';
+		$h .= '<div class="dv-pw"><h2>Esta ferramenta é do plano Completo</h2><p>O seu plano Busca inclui os editais do seu ramo por e-mail, a busca de licitações, a gestão de licitações com agenda e os documentos de habilitação. Para usar o Raio-X, a Due Diligence, os contratos vencendo e as outras ferramentas de análise, passe para o plano Completo: R$ ' . dv_rs( (float) ( dv_planos()['desenvolve']['preco'] ?? 79.90 ) ) . ' por mês, com 80 créditos. Ou compre créditos avulsos e use quando precisar.</p><a class="dv-btn" href="/assinar/">Ver o plano Completo</a> <a class="dv-btn g" href="/creditos/">Comprar créditos</a> <a class="dv-btn g" href="/painel/">Voltar ao início</a></div>';
 	} elseif ( ! $acesso ) {
 		$h .= '<div class="dv-pw"><h2>Escolha um plano para continuar</h2><p>' . ( get_user_meta( $uid, 'dv_trial', true ) ? 'O seu teste grátis terminou. ' : '' ) . 'A assinatura custa R$ ' . dv_rs( dv_preco_plano( $uid, array_key_first( dv_planos() ) )['valor'] ) . '/mês, com créditos todo mês e as ferramentas de gestão sem limite.</p><p><a class="dv-btn" href="/assinar/">Ver os planos</a></p></div><style>.dv-tool{display:none!important}</style>';
 	}

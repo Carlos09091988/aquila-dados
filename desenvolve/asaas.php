@@ -52,6 +52,14 @@ function dv_checkout( $uid, $tipo, $qtd = 0, $plano = '' ) {
 	$hoje = current_time( 'Y-m-d' );
 	if ( $tipo === 'assinatura' ) {
 		$ps = dv_planos(); $plano = isset( $ps[ $plano ] ) ? $plano : ( isset( $ps[ dv_plano( $uid ) ] ) ? dv_plano( $uid ) : array_key_first( $ps ) );
+		if ( $plano === 'busca' ) { /* plano Busca é só para MEI, ME e EPP: confere o porte na Receita Federal */
+			$doc = preg_replace( '/\D/', '', (string) get_user_meta( $uid, 'dv_doc', true ) );
+			if ( strlen( $doc ) === 14 ) {
+				$porte = get_transient( 'dv_porte_' . $doc );
+				if ( $porte === false ) { $x = wp_remote_get( 'https://brasilapi.com.br/api/cnpj/v1/' . $doc, array( 'timeout' => 20 ) ); $b = is_wp_error( $x ) ? array() : (array) json_decode( wp_remote_retrieve_body( $x ), true ); $porte = ! empty( $b['porte'] ) ? strtoupper( (string) $b['porte'] ) . ( ! empty( $b['opcao_pelo_mei'] ) ? '|MEI' : '' ) : ''; if ( $porte ) { set_transient( 'dv_porte_' . $doc, $porte, 30 * DAY_IN_SECONDS ); } }
+				if ( $porte && strpos( $porte, 'DEMAIS' ) === 0 ) { return new WP_Error( 'dv_porte', 'O plano Busca é só para MEI, microempresa e empresa de pequeno porte. Pelo cadastro na Receita Federal, a sua empresa tem outro porte: escolha o plano Completo.', array( 'status' => 400 ) ); }
+			}
+		}
 		$p = $ps[ $plano ]; $pr = dv_preco_plano( $uid, $plano );
 		$desc = 'Desenvolve — plano ' . $p['nome'] . ' (' . $p['creditos'] . ' créditos por mês)' . ( $pr['fundador'] ? ' — preço de fundador' : '' );
 		$sub = get_user_meta( $uid, 'dv_asaas_assinatura', true );

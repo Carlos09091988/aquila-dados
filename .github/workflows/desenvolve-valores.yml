@@ -1,0 +1,18 @@
+name: Desenvolve - valores das licitacoes (contador)
+on:
+  schedule:
+    - cron: '17 */3 * * *'   # a cada 3 horas: atualiza as abertas e completa os dias do ano
+  workflow_dispatch:
+permissions:
+  contents: write
+concurrency: { group: valores, cancel-in-progress: false }
+jobs:
+  valores:
+    runs-on: ubuntu-latest
+    timeout-minutes: 55
+    steps:
+      - uses: actions/checkout@v4
+      - run: LIMITE_SEG=2700 python3 scripts/valores_licitacoes.py
+      - run: |
+          git config user.name "github-actions"; git config user.email "actions@github.com"
+          git add data/valores && (git diff --cached --quiet || (git commit -q -m "Valores das licitacoes" && git pull -q --rebase && git push))

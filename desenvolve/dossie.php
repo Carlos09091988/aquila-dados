@@ -46,6 +46,7 @@ function dv_ds_multi( $urls, $headers = array(), $timeout = 25 ) {
 		foreach ( $urls as $k => $u ) { $reqs[ $k ] = array( 'url' => $u, 'type' => 'GET', 'headers' => $headers + array( 'User-Agent' => 'Mozilla/5.0 (compatible; Desenvolve/1.0)', 'Accept' => 'application/json' ), 'options' => array( 'timeout' => $timeout, 'connect_timeout' => 10 ) ); }
 		try { $res = \WpOrg\Requests\Requests::request_multiple( $reqs, array( 'timeout' => $timeout ) ); } catch ( \Throwable $e ) { $res = array(); }
 		foreach ( $res as $k => $r ) { if ( is_object( $r ) && isset( $r->status_code ) && $r->status_code === 200 ) { $out[ $k ] = $r->body; } }
+		if ( function_exists( 'dv_inst_marca' ) ) { dv_inst_marca( count( $urls ), count( array_filter( $out, 'is_null' ) ) ); }
 		return $out;
 	}
 	foreach ( $urls as $k => $u ) { $r = wp_remote_get( $u, array( 'timeout' => $timeout, 'headers' => $headers ) ); if ( ! is_wp_error( $r ) && wp_remote_retrieve_response_code( $r ) === 200 ) { $out[ $k ] = wp_remote_retrieve_body( $r ); } }

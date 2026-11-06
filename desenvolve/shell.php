@@ -155,6 +155,34 @@ body.dv-app .dv-tool small{font-size:12px!important}
 	<?php
 }, 99 );
 
+/* Aviso de instabilidade: sempre que uma fonte oficial (PNCP, Tesouro, Justiça, Receita) estiver lenta ou fora,
+ * a pessoa vê uma faixa no topo explicando, em vez de só um erro. Vale para a plataforma e para a consulta grátis.
+ * 1) Servidor: dv_ds_multi registra falhas; com metade ou mais das consultas falhando, liga o aviso por 15 min.
+ * 2) Navegador: qualquer chamada às ferramentas que demore mais de 12 s, volte com erro 5xx ou caia mostra o aviso. */
+function dv_inst_marca( $total, $falhas ) {
+	if ( $total < 2 ) { return; }
+	if ( $falhas * 2 >= $total ) { set_transient( 'dv_fontes_instaveis', time(), 15 * MINUTE_IN_SECONDS ); }
+}
+add_action( 'wp_head', function () {
+	if ( ! dv_app_pagina() && ! is_page( 'consulta-gratis' ) ) { return; }
+	$ativo = (bool) get_transient( 'dv_fontes_instaveis' );
+	?>
+<style>#dv-inst{position:fixed;left:50%;top:12px;transform:translateX(-50%);z-index:99990;max-width:min(680px,calc(100vw - 32px));background:#FFF4E0;color:#5C3D00;border:1px solid #E9C46A;border-radius:10px;padding:10px 40px 10px 14px;font:500 14px/1.4 system-ui,-apple-system,sans-serif;box-shadow:0 6px 20px rgba(0,0,0,.12)}#dv-inst b{font-weight:700}#dv-inst button{position:absolute;right:8px;top:6px;background:none;border:0;font-size:20px;line-height:1;color:#5C3D00;cursor:pointer;padding:4px}#dv-inst[hidden]{display:none}</style>
+<script>(function(){var ok=0,el;
+function mostra(t){if(!document.body){document.addEventListener('DOMContentLoaded',function(){mostra(t)});return}if(!el){el=document.createElement('div');el.id='dv-inst';el.setAttribute('role','status');el.innerHTML='<span></span><button type="button" aria-label="Fechar aviso">×</button>';el.querySelector('button').onclick=function(){el.hidden=true;try{sessionStorage.setItem('dvInstX',Date.now())}catch(e){}};document.body.appendChild(el)}try{if(Date.now()-(+sessionStorage.getItem('dvInstX')||0)<300000)return}catch(e){}el.querySelector('span').innerHTML=t;el.hidden=false;ok=0}
+function some(){if(el&&!el.hidden&&++ok>=2)el.hidden=true}
+var TXT='<b>Instabilidade nas fontes oficiais.</b> O PNCP e outros sistemas do governo estão lentos ou fora do ar agora. As consultas podem demorar ou vir incompletas; se der erro, tente de novo em alguns minutos. Nada é cobrado por consulta que falhar.';
+var LENTO='<b>As fontes oficiais estão lentas agora.</b> A consulta continua rodando; pode levar mais que o normal.';
+window.dvInstabilidade=function(t){mostra(t||TXT)};
+<?php if ( $ativo ) { echo 'mostra(TXT);'; } ?>
+if(!window.fetch)return;var F=window.fetch;
+window.fetch=function(u,o){var url=String(u&&u.url||u||'');if(url.indexOf('/wp-json/dvtools/')<0&&url.indexOf('/wp-json/dv/')<0&&url.indexOf('pncp.gov.br')<0)return F.apply(this,arguments);
+var t=setTimeout(function(){mostra(LENTO)},12000);
+return F.apply(this,arguments).then(function(r){clearTimeout(t);if(r.status>=500)mostra(TXT);else some();return r},function(e){clearTimeout(t);if(!(e&&e.name==='AbortError'&&o&&o.signal&&o.signal.reason==='dv'))mostra(TXT);throw e})};
+})();</script>
+	<?php
+}, 1 );
+
 add_action( 'wp_footer', function () {
 	if ( ! dv_app_pagina() ) { return; }
 	$uid = get_current_user_id(); $u = wp_get_current_user();

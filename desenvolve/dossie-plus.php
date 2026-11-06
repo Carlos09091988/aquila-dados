@@ -407,7 +407,8 @@ function analisa(d){var f=d.fiscal||{},tk=d.tokens||[],agora=new Date().toISOStr
  var forn={},tot=0;ct.forEach(function(x){var k=x.fornecedor||'';if(!k)return;forn[k]=(forn[k]||0)+(x.valor||0);tot+=x.valor||0});
  var top=Object.keys(forn).map(function(k){return[k,forn[k]]}).sort(function(a,b){return b[1]-a[1]}),top3=tot?top.slice(0,3).reduce(function(a,x){return a+x[1]},0)/tot:0;
  var PL=d.proc_lic||[],plG=PL.filter(function(x){return x.grave}),POL=d.politicos||{},PG=d.gestor_proc||[],NW=d.news||{};
- return{pts:pts,semDados:semDados,rp:rp,ano:anos[0],sp:sp,ct:ct,ativos:ativos,abertos:abertos,abI:abI,atI:atI,ctI:ctI,top:top,top3:top3,tot:tot,PL:PL,plG:plG,POL:POL,PG:PG,NW:NW,item:d.item||'',cob:cob,nt:nt}}
+ var semCt=!ct.length&&(((d.contratos||{}).falhas||0)>0||!d.contratos);
+ return{semCt:semCt,parcial:d.parcial||[],pts:pts,semDados:semDados,rp:rp,ano:anos[0],sp:sp,ct:ct,ativos:ativos,abertos:abertos,abI:abI,atI:atI,ctI:ctI,top:top,top3:top3,tot:tot,PL:PL,plG:plG,POL:POL,PG:PG,NW:NW,item:d.item||'',cob:cob,nt:nt}}
 function veredito(A){var pag=A.semDados?'am':A.pts>=80?'ok':A.pts>=55?'am':'vm';
  if(pag==='vm')return['vm','Evite ou proteja o preço','Os dados fiscais mostram risco alto de atraso nos pagamentos (nota '+A.pts+'/100). Se for vender, ponha no preço o custo de receber com atraso e não comprometa capital de giro alto.'];
  if(pag==='am')return['am','Venda com cuidado',A.semDados?'O ente não publicou os demonstrativos fiscais que usamos para medir se ele paga em dia. Confirme a reputação de pagamento com outros fornecedores antes de investir na disputa.':'Há sinais de atraso nos pagamentos (nota '+A.pts+'/100). Vale vender, mas acompanhe os prazos de pagamento de perto.'];
@@ -415,7 +416,8 @@ function veredito(A){var pag=A.semDados?'am':A.pts>=80?'ok':A.pts>=55?'am':'vm';
 function acoes(A){var a=[];
  if(A.abI.length)a.push((A.item?'Há '+A.abI.length+' licitação(ões) aberta(s) para '+A.item:'Há '+A.abI.length+' licitação(ões) aberta(s)')+'. A primeira recebe propostas até '+br(A.abI[0].fim)+'.');
  else if(A.atI.length)a.push('O contrato atual'+(A.item?' de '+A.item:'')+' ('+A.atI[0].fornecedor+') vence em '+br(A.atI[0].fim)+'. Comece a se preparar uns 90 dias antes e acompanhe o plano de contratações do órgão.');
- else if(A.item)a.push('Não achamos contrato nem licitação aberta para '+A.item+'. Crie um alerta para ser avisado quando o órgão publicar.');
+ else if(A.item&&!A.semCt)a.push('Não achamos contrato nem licitação aberta para '+A.item+'. Crie um alerta para ser avisado quando o órgão publicar.');
+ else if(A.item)a.push('Não há licitação aberta para '+A.item+' agora. Os contratos do órgão não puderam ser lidos nesta consulta: gere de novo para saber quando vence o contrato atual.');
  if(A.top3>.6&&A.top.length)a.push('Mercado concentrado: os 3 maiores fornecedores ficam com '+Math.round(A.top3*100)+'% do valor. Entre por itens menores, dispensas ou atas abertas para carona.');
  if(!A.semDados&&A.pts<80)a.push('Ponha no preço o custo de receber com atraso e peça o cronograma de pagamento antes de assinar.');
  if(A.plG.length)a.push('Há '+A.plG.length+' processo(s) grave(s) envolvendo licitações do órgão. Leia antes de investir na disputa.');
@@ -429,13 +431,14 @@ var TEMAS=[['pag','Paga em dia?','Saúde fiscal, cobranças na Justiça e notíc
 function status(A){var o={};
  o.pag=A.semDados?['am','Sem dados fiscais publicados']:[A.pts>=80?'ok':A.pts>=55?'am':'vm','Nota '+A.pts+'/100'];
  o.opo=A.abI.length?['ok',A.abI.length+' licitação(ões) aberta(s)'+(A.item?' do seu item':'')]:A.atI.length?['am','Contrato atual vence em '+br(A.atI[0].fim)]:['na',A.item?'Nada aberto para o seu item':'Informe o que você vende'];
- o.pan=A.top3>.6?['am','Mercado concentrado: top 3 com '+Math.round(A.top3*100)+'%']:['ok',A.ativos.length+' contrato(s) ativo(s) · '+A.abertos.length+' licitação(ões) aberta(s)'];
+ o.pan=A.semCt?['na','Contratos indisponíveis nesta consulta']:A.top3>.6?['am','Mercado concentrado: top 3 com '+Math.round(A.top3*100)+'%']:['ok',A.ativos.length+' contrato(s) ativo(s) · '+A.abertos.length+' licitação(ões) aberta(s)'];
  var T=A.POL.titular;o.gov=T?['na',(A.POL.cargo||'Gestor')+': '+T.urna+(T.partido?' ('+T.partido+')':'')]:['na','Sem dados da gestão'];
  o.con=A.plG.length?['vm',A.plG.length+' processo(s) grave(s) sobre licitações']:A.PL.length||A.PG.length?['am',(A.PL.length+A.PG.length)+' processo(s) a conferir']:['ok','Nada relevante encontrado'];
  return o}
 function capa(r,A){var v=veredito(A),o=status(A);
- var K=[[A.semDados?'—':A.pts+'/100','Nota de pagamento',A.semDados?'':A.pts<55?'vm':A.pts<80?'am':''],[A.ativos.length+' · '+mc(A.ativos.reduce(function(a,x){return a+(x.valor||0)},0)),'Contratos ativos',''],[A.abertos.length+(A.item?' ('+A.abI.length+' do item)':''),'Licitações abertas',''],[A.top.length?Math.round(A.top3*100)+'%':'—','Valor com os 3 maiores fornecedores',A.top3>.6?'am':''],[A.plG.length||'Nenhum','Processos graves sobre licitações',A.plG.length?'vm':'']];
- var H='<div class="q"><div class="v '+v[0]+'"><small>Vale a pena vender para este órgão?</small><b>'+e(v[1])+'</b><p>'+e(v[2])+'</p></div><div class="acoes"><b>O que fazer agora</b><ol>'+acoes(A).map(function(x){return'<li>'+e(x)+'</li>'}).join('')+'</ol></div></div>';
+ var K=[[A.semDados?'—':A.pts+'/100','Nota de pagamento',A.semDados?'':A.pts<55?'vm':A.pts<80?'am':''],[A.semCt?'—':A.ativos.length+' · '+mc(A.ativos.reduce(function(a,x){return a+(x.valor||0)},0)),A.semCt?'Contratos (PNCP não respondeu)':'Contratos ativos',''],[A.abertos.length+(A.item?' ('+A.abI.length+' do item)':''),'Licitações abertas',''],[A.top.length?Math.round(A.top3*100)+'%':'—','Valor com os 3 maiores fornecedores',A.top3>.6?'am':''],[A.plG.length||'Nenhum','Processos graves sobre licitações',A.plG.length?'vm':'']];
+ var falta=[];if(A.semCt)falta.push('contratos do PNCP');(A.parcial||[]).forEach(function(x){var n={justica:'cobranças na Justiça',noticias:'notícias',processos:'processos sobre licitações',gestor:'processos do gestor',precos:'preços do item'}[x];if(n&&falta.indexOf(n)<0)falta.push(n)});
+ var H=(falta.length?'<p style="margin:0 0 12px;padding:10px 14px;border-radius:10px;background:#FFF8E6;border:1px solid #E8C877;font-size:.9rem"><b>Relatório incompleto:</b> estas fontes oficiais não responderam a tempo: '+e(falta.join(', '))+'. A conclusão abaixo não considera essas partes. Gere de novo em alguns minutos para completar.</p>':'')+'<div class="q"><div class="v '+v[0]+'"><small>Vale a pena vender para este órgão?</small><b>'+e(v[1])+'</b><p>'+e(v[2])+'</p></div><div class="acoes"><b>O que fazer agora</b><ol>'+acoes(A).map(function(x){return'<li>'+e(x)+'</li>'}).join('')+'</ol></div></div>';
  H+='<div class="kpi">'+K.map(function(k){return'<div class="'+k[2]+'"><b>'+e(k[0])+'</b><span>'+e(k[1])+'</span></div>'}).join('')+'</div>';
  document.getElementById('dv-capa').innerHTML=H;
  document.getElementById('dv-mapa').innerHTML='<p>Os cinco temas do relatório. Clique para ir direto ao detalhe.</p><nav>'+TEMAS.map(function(t){var s=o[t[0]]||['na',''];return'<a href="#dv-t-'+t[0]+'" class="'+s[0]+'" data-t="'+t[0]+'"><b>'+e(t[1])+'</b><span>'+e(s[1])+'</span></a>'}).join('')+'</nav>';

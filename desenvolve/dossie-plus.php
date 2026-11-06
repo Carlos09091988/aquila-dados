@@ -146,6 +146,7 @@ add_action( 'wp_footer', function () {
 #dv-par .nota{margin-top:14px;font-size:.8rem;color:#6E6A60}
 @media print{#dv-par .modos,#dv-par .ent{display:none}}
 /* Leitura guiada */
+.dv-org #dv-rs{display:none!important}#dv-mia-slot{padding:0 30px 18px;background:#FFFDF8}#dv-mia-slot .dv-mia-w{margin:0}
 #dv-capa p,#dv-capa li,#dv-capa span,#dv-mapa span,#dv-mapa p,.dv-tema>summary span{font-weight:400}
 .rp.dv-org .rp-sec h3 i{display:none}
 #dv-capa{padding:26px 30px 8px;background:#FFFDF8}
@@ -532,6 +533,11 @@ var R0;setInterval(function(){var R=document.querySelector('.rx-out');if(R&&R!==
 .rx-out.dv-org #rx-cad h2,.rx-out.dv-org #rx-cad h3{display:none}
 </style>
 <?php endif; ?>
+
+<script>
+/* Leva o botão "Analisar com a minha IA" do resumo antigo (escondido) para baixo do mapa de temas */
+setInterval(function(){var R=document.querySelector('.dv-org');if(!R)return;var w=document.querySelector('#dv-rs .dv-mia-w'),mp=document.getElementById('dv-mapa');if(!w||!mp)return;var sl=document.getElementById('dv-mia-slot');if(!sl){sl=document.createElement('div');sl.id='dv-mia-slot';mp.parentNode.insertBefore(sl,mp.nextSibling)}sl.appendChild(w)},800);
+</script>
 <script>
 /* PDF organizado: o mesmo roteiro da tela (conclusão, o que fazer, números, temas), sem repetição */
 (function(){

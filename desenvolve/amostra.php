@@ -140,7 +140,7 @@ function dv_am_editais( $q, $uf, $cid = 0, $raio = 0 ) {
 	if ( ! is_array( $j ) ) { return new WP_Error( 'dv_am', 'O PNCP não respondeu agora. Tente de novo em instantes.', array( 'status' => 502, 'pncp' => current_user_can( 'manage_options' ) ? ( $GLOBALS['dv_am_ult'] ?? '' ) : '' ) ); }
 	$it = array_map( 'dv_am_edital', (array) ( $j['items'] ?? array() ) );
 	// relevância: primeiro os editais com o termo no próprio objeto; depois os que só têm o termo nos itens
-	if ( $mun ) { $ix = array(); foreach ( $mun as $c => $d ) { $ix[ dv_am_norm( $M[ $c ][0] ) . '/' . $M[ $c ][1] ] = $d; } foreach ( $it as &$x ) { $k = dv_am_norm( $x['local'] ); if ( isset( $ix[ $k ] ) && $raio > 0 ) { $x['local'] .= $ix[ $k ] > 0 ? ' · a ' . round( $ix[ $k ] ) . ' km' : ' · na cidade'; } } unset( $x ); }
+	if ( $mun ) { $ix = array(); foreach ( $mun as $c => $d ) { $ix[ dv_am_norm( $M[ $c ][0] . '/' . $M[ $c ][1] ) ] = $d; } foreach ( $it as &$x ) { $k = dv_am_norm( $x['local'] ); $x['km'] = $ix[ $k ] ?? 999; if ( isset( $ix[ $k ] ) && $raio > 0 ) { $x['local'] .= $ix[ $k ] > 0 ? ' · a ' . round( $ix[ $k ] ) . ' km' : ' · na própria cidade'; } } unset( $x ); usort( $it, function ( $a, $b ) { return $a['km'] <=> $b['km']; } ); }
 	$ws = array_filter( preg_split( '/[^a-z0-9]+/', dv_am_norm( $q ) ), function ( $w ) { return strlen( $w ) >= 3; } );
 	$raiz = array_map( function ( $w ) { $w = preg_replace( '/(oes|aes|ais|eis|ns|s)$/', '', $w ); return strlen( $w ) > 6 ? substr( $w, 0, 6 ) : $w; }, $ws );
 	$no = array(); $nos = array();

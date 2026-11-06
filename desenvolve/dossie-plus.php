@@ -512,7 +512,7 @@ function capa(){var A=analisa(),v=veredito(A),o=status(A),cp=document.getElement
  var K=[[A.vit||'—','Licitações vencidas',''],[A.valor?mc(A.valor):'—','Valor ganho',''],[A.med!=null?pc(A.med):A.semDesc?'≈ 0%':'—','Desconto mediano',''],[A.nC||'—','Contratos no PNCP',''],[A.forte+A.sanc||'Nenhum','Pontos fracos na habilitação',A.forte+A.sanc?'am':'']];
  var H='<div class="q"><div class="v '+v[0]+'"><small>Como eu ganho dele?</small><b>'+e(v[1])+'</b><p>'+e(v[2])+'</p></div><div class="acoes"><b>O que fazer agora</b><ol>'+acoes(A).map(function(x){return'<li>'+e(x)+'</li>'}).join('')+'</ol></div></div>';
  H+='<div class="kpi">'+K.map(function(k){return'<div class="'+k[2]+'"><b>'+e(k[0])+'</b><span>'+e(k[1])+'</span></div>'}).join('')+'</div>';
- cp.innerHTML=H;
+ cp.innerHTML=H+(cnpj()?'<p style="margin:10px 0 0"><a href="/plataforma/habilitacao-concorrente/?cnpj='+cnpj()+'" style="font-weight:700;color:#8A6A2E">Ver as licitações dele com os documentos de habilitação</a></p>':'');
  document.getElementById('dv-mapa').innerHTML='<p>Os cinco temas do relatório. Clique para ir direto ao detalhe.</p><nav>'+TEMAS.map(function(t){var s=o[t[0]]||['na',''];return'<a href="#dv-t-'+t[0]+'" class="'+s[0]+'" data-t="'+t[0]+'"><b>'+e(t[1])+'</b><span>'+e(s[1])+'</span></a>'}).join('')+'</nav>';
  document.querySelectorAll('#dv-mapa a').forEach(function(a){a.onclick=function(ev){var dt=document.getElementById('dv-t-'+a.dataset.t);if(dt){ev.preventDefault();dt.open=true;dt.scrollIntoView({behavior:'smooth',block:'start'})}}});
  TEMAS.forEach(function(t){var dt=document.getElementById('dv-t-'+t[0]);if(!dt)return;var s=o[t[0]]||['na',''];dt.className='dv-tema '+s[0];dt.querySelector('summary span').textContent=s[1]});
@@ -539,6 +539,44 @@ var R0;setInterval(function(){var R=document.querySelector('.rx-out');if(R&&R!==
 </style>
 <?php endif; ?>
 
+
+<script>
+/* Painel judicial em uma página: processos por tipo, tendência e tribunais (Dossiê e Raio-X do concorrente) */
+(function(){
+var CAT=[['criminal','Penal / criminal','#9A3B2C'],['improbidade','Improbidade administrativa','#B3402A'],['coletiva','Ação civil pública / coletiva','#C2513D'],['falencia','Falência / recuperação judicial','#8A6516'],['execucao_fiscal','Execução fiscal (tributos)','#A57C2C'],['execucao','Execução e cobrança de dívidas','#C9A45C'],['trab_execucao','Trabalhista em execução','#5E5A52'],['trabalhista','Trabalhista','#8E8A80'],['outros','Cível e outros','#B9B4A7']];
+function e(s){return String(s==null?'':s).replace(/[&<>"]/g,function(c){return{'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]})}
+function nf(v){return(+v||0).toLocaleString('pt-BR')}
+function barras(L){var mx=Math.max.apply(null,L.map(function(x){return x[1]}).concat([1]));return'<div class="pj-bars">'+L.map(function(x){var w=Math.max(1.5,x[1]/mx*100);return'<div class="pj-l"><span class="pj-n">'+e(x[0])+'</span><span class="pj-t"><i style="width:'+w+'%;background:'+(x[2]||'#16191E')+'"></i></span><b>'+nf(x[1])+'</b></div>'}).join('')+'</div>'}
+function colunas(M){var ks=Object.keys(M||{}).sort().slice(-12);if(ks.length<3)return'';var mx=Math.max.apply(null,ks.map(function(k){return+M[k]||0}).concat([1]));
+ return'<div class="pj-cols">'+ks.map(function(k){var v=+M[k]||0,h=Math.max(2,v/mx*100);return'<div><span style="height:'+h+'%"></span><small>'+k.slice(5,7)+'/'+k.slice(2,4)+'</small></div>'}).join('')+'</div>'}
+window.dvPainelJudicial=function(J,M){if(!J||(!J.distintos&&!J.publicacoes))return'';var pt=J.por_tipo||{},tot=+J.distintos||0;
+ var L=CAT.map(function(c){return[c[1],+pt[c[0]]||0,c[2],c[0]]}).filter(function(x){return x[1]>0});
+ var grav=(+pt.criminal||0)+(+pt.improbidade||0)+(+pt.coletiva||0)+(+pt.falencia||0),trab=(+pt.trabalhista||0)+(+pt.trab_execucao||0),cob=(+pt.execucao||0)+(+pt.execucao_fiscal||0);
+ var tr=Object.keys(J.por_tribunal||{}).map(function(k){return[k,+J.por_tribunal[k]]}).sort(function(a,b){return b[1]-a[1]}).slice(0,6);
+ var ks=Object.keys(M||{}).sort(),u3=ks.slice(-3).reduce(function(a,k){return a+(+M[k]||0)},0),a3=ks.slice(-6,-3).reduce(function(a,k){return a+(+M[k]||0)},0);
+ var leit=[];if(grav)leit.push('<b>'+nf(grav)+' processo(s) grave(s)</b> (penal, improbidade, ação civil pública ou falência): leia cada um na lista abaixo.');else leit.push('Nenhum processo penal, de improbidade, ação civil pública ou falência encontrado.');
+ if(tot)leit.push((trab?Math.round(trab/tot*100)+'% dos processos são trabalhistas':'Sem processos trabalhistas')+(pt.trab_execucao?', '+nf(pt.trab_execucao)+' já em execução (condenação não paga)':'')+'.');
+ if(cob)leit.push(nf(cob)+' cobrança(s) judicial(is) de dívida, '+nf(pt.execucao_fiscal||0)+' delas fiscais (tributos).');
+ if(a3>10&&u3>a3*1.3)leit.push('As publicações cresceram '+Math.round((u3/a3-1)*100)+'% nos últimos 3 meses.');else if(a3>10&&u3<a3*0.7)leit.push('As publicações caíram '+Math.round((1-u3/a3)*100)+'% nos últimos 3 meses.');
+ var H='<section class="rp-sec dv-pj"><h3>Panorama judicial</h3><div class="pj-k"><div><b>'+nf(tot)+'</b><span>processos distintos'+(J.parcial?' (amostra)':'')+'</span></div><div class="'+(grav?'vm':'')+'"><b>'+nf(grav)+'</b><span>graves (penal, improbidade, ACP, falência)</span></div><div><b>'+nf(trab)+'</b><span>trabalhistas</span></div><div><b>'+nf(cob)+'</b><span>cobranças e execuções fiscais</span></div><div><b>'+nf(J.publicacoes)+'</b><span>publicações no Diário de Justiça</span></div></div>';
+ H+='<div class="pj-g"><div><h4>Processos por tipo</h4>'+barras(L)+'</div><div>'+(colunas(M)?'<h4>Publicações por mês</h4>'+colunas(M):'')+(tr.length?'<h4>Tribunais com mais processos</h4>'+barras(tr.map(function(x){return[x[0],x[1],'#16191E']})):'')+'</div></div>';
+ H+='<div class="pj-leit">'+leit.map(function(x){return'<p>'+x+'</p>'}).join('')+'</div><p class="pj-ft">Fonte: Diário de Justiça Eletrônico Nacional (CNJ), comunicações publicadas com o nome da empresa como parte. Conta processos distintos; homônimos são possíveis. Não inclui processos em segredo de justiça.</p></section>';
+ return H};
+function poe(dt,J,M){if(!dt||!J||dt.querySelector('.dv-pj'))return;var h=window.dvPainelJudicial(J,M);if(!h)return;var w=document.createElement('div');w.innerHTML=h;var s=w.firstChild,sm=dt.querySelector('summary');dt.insertBefore(s,sm?sm.nextSibling:dt.firstChild)}
+var of=window.fetch;window.fetch=function(u,o){var pr=of.apply(this,arguments);if(/\/fornecedor\/processos\?/.test(String(u)))pr.then(function(r){r.clone().json().then(function(j){if(j&&j.por_tipo)window.DVPJ=j}).catch(function(){})}).catch(function(){});return pr};
+setInterval(function(){var D=window.DVDS;if(D&&D.judicial){poe(document.getElementById('dv-t-rep'),(D.judicial||{}).empresa,(D.judicial||{}).mensal)}if(window.DVPJ){poe(document.getElementById('dv-t-rep'),window.DVPJ,window.DVPJ.mensal)}},900);
+})();
+</script>
+<style>
+.dv-pj .pj-k{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:8px;margin-bottom:14px}@media(max-width:760px){.dv-pj .pj-k{grid-template-columns:repeat(2,minmax(0,1fr))}}
+.dv-pj .pj-k div{border:1px solid #E3DED2;border-radius:10px;padding:10px 12px;background:#fff}.dv-pj .pj-k b{display:block;font:600 1.3rem "Fraunces",Georgia,serif;color:#16191E}.dv-pj .pj-k .vm b{color:#9A3B2C}.dv-pj .pj-k span{font-size:.78rem;color:#6E6A60;font-weight:400}
+.dv-pj .pj-g{display:grid;grid-template-columns:1.2fr 1fr;gap:22px}@media(max-width:760px){.dv-pj .pj-g{grid-template-columns:1fr}}
+.dv-pj h4{margin:4px 0 8px;font-size:.9rem}
+.pj-l{display:grid;grid-template-columns:minmax(120px,42%) 1fr 48px;gap:8px;align-items:center;margin:0 0 6px;font-size:.84rem}.pj-n{color:#33363B}.pj-t{height:12px;background:#F0ECE3;border-radius:6px;overflow:hidden}.pj-t i{display:block;height:100%;border-radius:6px}.pj-l b{text-align:right;font-weight:700}
+.pj-cols{display:flex;gap:4px;align-items:flex-end;height:110px;padding-bottom:18px;margin-bottom:12px}.pj-cols div{flex:1;height:100%;display:flex;flex-direction:column;justify-content:flex-end;align-items:center;position:relative}.pj-cols span{width:100%;background:#C9A45C;border-radius:3px 3px 0 0}.pj-cols small{position:absolute;bottom:-17px;font-size:.66rem;color:#6E6A60}
+.pj-leit{margin-top:12px;padding:12px 14px;border-radius:10px;background:#F5F1E8}.pj-leit p{margin:0 0 4px;font-size:.9rem;font-weight:400}.pj-ft{font-size:.76rem;color:#6E6A60;margin:8px 0 0}
+@media print{.dv-pj{break-inside:avoid}}
+</style>
 <script>
 /* Leva o botão "Analisar com a minha IA" do resumo antigo (escondido) para baixo do mapa de temas */
 setInterval(function(){var R=document.querySelector('.dv-org');if(!R)return;var w=document.querySelector('#dv-rs .dv-mia-w'),mp=document.getElementById('dv-mapa');if(!w||!mp)return;var sl=document.getElementById('dv-mia-slot');if(!sl){sl=document.createElement('div');sl.id='dv-mia-slot';mp.parentNode.insertBefore(sl,mp.nextSibling)}sl.appendChild(w)},800);
@@ -566,6 +604,7 @@ var CSS='@page{size:A4;margin:14mm 14mm 16mm}*{box-sizing:border-box;-webkit-pri
  '#dv-par .ver{border:1px solid #E3DED2;border-radius:8px;padding:8px 10px;margin-bottom:8px}#dv-par h4.grp{font:700 8.5pt Arial,sans-serif;color:#6E6A60;margin:10px 0 5px}#dv-par .docs{background:#F5F1E8;border-radius:8px;padding:8px 10px;margin-top:10px}#dv-par .docs .it:before{content:"☐ "}#dv-par .okd summary{font-weight:700;color:#2F6B4F;margin:8px 0 4px;list-style:none}#dv-par .nota{font-size:8pt;color:#6E6A60}'+
  '.kv{display:grid;grid-template-columns:repeat(3,1fr);gap:4px 14px}.kv div{padding:3px 0;border-bottom:1px dashed #EEE9DE}.kv b{display:block;font:700 7.4pt Arial,sans-serif;color:#6E6A60}'+
  '.sem{display:grid;grid-template-columns:repeat(3,1fr);gap:6px}.sem>div{border:1px solid #E3DED2;border-radius:6px;padding:6px 8px}.sem b{display:block;font-size:8pt;color:#6E6A60}.mu{color:#6E6A60}.tag{display:inline-block;background:#F0ECE3;border-radius:4px;padding:0 5px;margin:1px;font-size:8pt}'+
+ '.dv-pj .pj-k{display:grid;grid-template-columns:repeat(5,1fr);gap:6px;margin-bottom:10px}.dv-pj .pj-k div{border:1px solid #E3DED2;border-radius:6px;padding:6px 8px}.dv-pj .pj-k b{display:block;font:700 12pt Georgia,serif}.dv-pj .pj-k .vm b{color:#9A3B2C}.dv-pj .pj-k span{font-size:7.4pt;color:#6E6A60}.dv-pj .pj-g{display:grid;grid-template-columns:1.2fr 1fr;gap:14px}.pj-l{display:grid;grid-template-columns:42% 1fr 34px;gap:6px;align-items:center;margin:0 0 4px;font-size:8pt}.pj-t{height:9px;background:#F0ECE3;border-radius:5px;overflow:hidden}.pj-t i{display:block;height:100%}.pj-l b{text-align:right}.pj-cols{display:flex;gap:3px;align-items:flex-end;height:80px;padding-bottom:14px;margin-bottom:8px}.pj-cols div{flex:1;height:100%;display:flex;flex-direction:column;justify-content:flex-end;align-items:center;position:relative}.pj-cols span{width:100%;background:#C9A45C}.pj-cols small{position:absolute;bottom:-13px;font-size:6.5pt;color:#6E6A60}.pj-leit{margin-top:8px;padding:8px 10px;border-radius:6px;background:#F5F1E8}.pj-ft{font-size:7.4pt;color:#6E6A60}.dv-pj{break-inside:avoid;break-after:page}'+
  '.fim{break-before:page;font-size:8.6pt;color:#4A4D52}.fim h2{font-size:14pt;margin-bottom:8px}.rod{margin-top:16px;font-size:7.6pt;color:#8A857A;border-top:1px solid #E3DED2;padding-top:6px}';
 function monta(){var R=document.querySelector('.dv-org');if(!R)return null;var hd=R.querySelector('.rp-hd'),nome=R.dataset.nome||((hd&&hd.querySelector('h2'))||{}).textContent||'Relatório',sub=R.dataset.sub||((hd&&hd.querySelector('h2+p,p'))||{}).textContent||'',tipo=R.dataset.tipo||((hd&&hd.querySelector('small'))||{}).textContent||'Relatório';
  var hoje=new Date(),dt=hoje.toLocaleDateString('pt-BR')+' às '+hoje.toLocaleTimeString('pt-BR',{hour:'2-digit',minute:'2-digit'});
@@ -622,3 +661,45 @@ fetch('https://raw.githubusercontent.com/Carlos09091988/aquila-dados/main/data/v
 </script>
 	<?php
 }, 80 );
+
+/* Habilitação do concorrente: últimas licitações que a empresa venceu ou disputou, com link para os documentos */
+add_shortcode( 'dv_habilitacao', function () {
+	if ( ! is_user_logged_in() ) { return '<p>Entre na sua conta para usar esta ferramenta.</p>'; }
+	$nonce = wp_create_nonce( 'wp_rest' ); ob_start(); ?>
+<div class="hb" id="hb">
+<form class="hb-f" autocomplete="off"><label for="hb-c">CNPJ do concorrente</label><div class="hb-r"><input id="hb-c" inputmode="numeric" placeholder="00.000.000/0000-00" maxlength="18"><button type="submit">Buscar licitações</button></div>
+<p class="hb-h">Mostramos as licitações mais recentes que a empresa venceu ou disputou, com o link para os arquivos de cada uma no PNCP (edital, atas e documentos de habilitação, quando o órgão publicou). Sem custo de créditos.</p><p class="hb-m" role="status"></p></form>
+<div class="hb-out"></div></div>
+<style>
+.hb{font-family:"Hanken Grotesk",-apple-system,sans-serif;color:#16191E}.hb-f label{display:block;font-weight:700;margin-bottom:8px}.hb-r{display:flex;gap:10px;flex-wrap:wrap}.hb-r input{flex:1;min-width:220px;border:1px solid #CFC8B8;border-radius:10px;padding:13px 14px;font:inherit;font-size:1.05rem;background:#fff}
+.hb-r button{background:#16191E;color:#fff;border:0;border-radius:10px;padding:12px 20px;font:inherit;font-weight:700;cursor:pointer}.hb-h{color:#6E6A60;font-size:.88rem;margin:8px 0 0}.hb-m{font-weight:600;margin:8px 0 0}.hb-m.e{color:#9A3B2C}
+.hb-s{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px;margin:22px 0 14px}@media(max-width:700px){.hb-s{grid-template-columns:repeat(2,minmax(0,1fr))}}.hb-s div{border:1px solid #E3DED2;border-radius:12px;padding:12px 14px;background:#fff}.hb-s b{display:block;font:600 1.3rem "Fraunces",Georgia,serif}.hb-s span{font-size:.8rem;color:#6E6A60}
+.hb-l{display:grid;gap:10px}.hb-i{border:1px solid #E3DED2;border-left:5px solid #C9A45C;border-radius:12px;padding:14px 16px;background:#fff}.hb-i.v{border-left-color:#2F6B4F}
+.hb-i h4{margin:0 0 4px;font-size:1rem}.hb-i p{margin:0 0 6px;font-size:.9rem;color:#33363B}.hb-i .mt{font-size:.82rem;color:#6E6A60}.hb-i .tg{display:inline-block;font-size:.76rem;font-weight:700;border-radius:999px;padding:2px 10px;margin-right:6px;background:#EEF7F1;color:#2F6B4F}.hb-i .tg.p{background:#FFF8E6;color:#8A6516}
+.hb-i .bt{display:flex;gap:8px;flex-wrap:wrap;margin-top:8px}.hb-i .bt a{font-size:.85rem;font-weight:700;text-decoration:none;border:1px solid #CFC8B8;border-radius:8px;padding:7px 12px;color:#16191E;background:#fff}.hb-i .bt a.pr{background:#16191E;color:#fff;border-color:#16191E}
+.hb-i .bt a:focus-visible,.hb-r button:focus-visible,.hb-r input:focus-visible{outline:3px solid #C9A45C;outline-offset:2px}
+</style>
+<script>
+(function(){var R=document.getElementById('hb'),NONCE=<?php echo wp_json_encode( $nonce ); ?>,out=R.querySelector('.hb-out'),msg=R.querySelector('.hb-m');
+function e(s){return String(s==null?'':s).replace(/[&<>"]/g,function(c){return{'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]})}
+function mc(v){v=+v||0;return v>=1e6?'R$ '+(v/1e6).toLocaleString('pt-BR',{maximumFractionDigits:1})+' mi':v>=1e3?'R$ '+Math.round(v/1e3).toLocaleString('pt-BR')+' mil':'R$ '+Math.round(v).toLocaleString('pt-BR')}
+function br(d){var m=String(d||'').match(/(\d{4})-(\d{2})-(\d{2})/);return m?m[3]+'/'+m[2]+'/'+m[1]:''}
+function fc(c){return String(c).replace(/^(\d{2})(\d{3})(\d{3})(\d{4})(\d{2})$/,'$1.$2.$3/$4-$5')}
+function busca(c){msg.className='hb-m';msg.textContent='Buscando as licitações no PNCP… pode levar até 40 segundos.';out.innerHTML='';
+ fetch('/wp-json/desenvolve/v1/vencidas?cnpj='+c,{credentials:'same-origin',headers:{'X-WP-Nonce':NONCE}}).then(function(r){return r.json().then(function(j){return{s:r.status,j:j}})}).then(function(x){
+  if(x.s>=400){msg.className='hb-m e';msg.textContent=(x.j&&x.j.message)||'Não foi possível buscar agora. Tente de novo em alguns minutos.';return}
+  var V=(x.j.vencidas||{}),P=(x.j.participacoes||{}),L=[];
+  (V.itens||[]).forEach(function(i){L.push({v:1,ref:i.ref,orgao:i.orgao,mun:i.municipio,uf:i.uf,obj:i.objeto,mod:i.modalidade,num:i.numero,data:i.data,valor:i.valor,desc:i.desconto,link:i.link})});
+  (P.itens||[]).forEach(function(i){if(L.some(function(y){return y.ref===i.ref}))return;var pos=Math.min.apply(null,(i.itens||[]).map(function(t){return t.posicao||99}));L.push({v:pos===1?1:0,pos:pos,ref:i.ref,orgao:i.orgao,obj:i.objeto,data:i.data,link:i.link})});
+  L.sort(function(a,b){return String(b.data).localeCompare(String(a.data))});
+  msg.textContent=L.length?'':'Não encontramos licitações dessa empresa no PNCP nos últimos 3 anos.';if(V.incompleto)msg.textContent='O PNCP respondeu só em parte: a lista pode estar incompleta. Tente de novo em alguns minutos.';
+  if(!L.length)return;var ufs=Object.keys(V.ufs||{}).slice(0,3).join(', ');
+  var H='<div class="hb-s"><div><b>'+(V.total||0)+'</b><span>licitações vencidas (3 anos)</span></div><div><b>'+mc(V.valor)+'</b><span>valor homologado a ela</span></div><div><b>'+(V.desconto_medio!=null?String(V.desconto_medio).replace('.',',')+'%':'—')+'</b><span>desconto médio</span></div><div><b>'+(ufs||'—')+'</b><span>estados onde mais ganha</span></div></div><div class="hb-l">';
+  H+=L.slice(0,40).map(function(i){var oc=String(i.ref||'').split('/')[0];return'<article class="hb-i'+(i.v?' v':'')+'"><span class="tg'+(i.v?'':' p')+'">'+(i.v?'Venceu':'Participou'+(i.pos&&i.pos<99?' · '+i.pos+'º lugar':''))+'</span><span class="mt">'+e(br(i.data))+'</span><h4>'+e(i.orgao||'Órgão '+fc(oc))+(i.mun?' · '+e(i.mun)+'/'+e(i.uf):'')+'</h4><p>'+e(i.obj||'')+'</p><p class="mt">'+e([i.mod,i.num].filter(Boolean).join(' '))+(i.valor?' · Homologado: '+mc(i.valor):'')+(i.desc!=null?' · Desconto: '+String(i.desc).replace('.',',')+'%':'')+'</p><div class="bt"><a class="pr" href="'+e(i.link)+'" target="_blank" rel="noopener">Documentos da licitação no PNCP</a>'+(oc?'<a href="/plataforma/raio-x-comprador/?cnpj='+oc+'">Raio-X do órgão</a>':'')+'</div></article>'}).join('')+'</div>';
+  out.innerHTML=H}).catch(function(){msg.className='hb-m e';msg.textContent='Não foi possível buscar agora. Tente de novo em alguns minutos.'})}
+R.querySelector('.hb-f').addEventListener('submit',function(ev){ev.preventDefault();var c=R.querySelector('#hb-c').value.replace(/\D/g,'');if(c.length!==14){msg.className='hb-m e';msg.textContent='Digite o CNPJ com 14 números.';return}history.replaceState(null,'','?cnpj='+c);busca(c)});
+var q=(new URLSearchParams(location.search).get('cnpj')||'').replace(/\D/g,'');if(q.length===14){R.querySelector('#hb-c').value=fc(q);busca(q)}
+})();
+</script>
+	<?php return ob_get_clean();
+} );

@@ -182,7 +182,7 @@ add_shortcode( 'dv_creditos', function () {
 	$pac = dv_pacotes(); $val = (int) dv_cfg( 'validade_extra' ); $rx = max( 1, dv_custo( 'raiox' ) );
 	$css = '<style>
 .dvk{--k:#16191E;--m:#6E6A60;--l:#E6E1D6;--g:#C9A45C;--g2:#A8843F;color:var(--k);font-family:"Hanken Grotesk",-apple-system,sans-serif}
-.dvk .hd{display:flex;flex-wrap:wrap;justify-content:space-between;align-items:flex-end;gap:18px;margin-bottom:22px}.dvk h2{margin:0;font-size:1.9rem;letter-spacing:-.03em}.dvk .hd p{margin:6px 0 0;color:var(--m);max-width:560px}
+.dvk .hd{display:flex;flex-wrap:wrap;justify-content:space-between;align-items:flex-end;gap:18px;margin-bottom:22px}.dvk h1,.dvk h2{margin:0;font-size:1.9rem;letter-spacing:-.03em}.dvk .hd p{margin:6px 0 0;color:var(--m);max-width:560px}
 .dvk .sd{display:flex;gap:10px;flex-wrap:wrap}.dvk .sd div{background:#fff;border:1px solid var(--l);border-radius:14px;padding:12px 16px;min-width:120px}.dvk .sd small{display:block;color:var(--m);font-size:.78rem}.dvk .sd b{font-size:1.5rem;letter-spacing:-.02em}.dvk .sd .t{background:var(--k);border-color:var(--k);color:#F4F2EC}.dvk .sd .t small{color:#B9B4A8}.dvk .sd .t b{color:#E8D29A}
 .dvk .pk{display:grid;grid-template-columns:repeat(auto-fit,minmax(210px,1fr));gap:16px}
 .dvk .c{position:relative;background:#fff;border:1px solid var(--l);border-radius:18px;padding:22px 20px 20px;display:flex;flex-direction:column;box-shadow:0 1px 2px rgba(22,25,30,.04);transition:transform .15s,box-shadow .15s}.dvk .c:hover{transform:translateY(-2px);box-shadow:0 12px 28px rgba(22,25,30,.08)}
@@ -197,7 +197,7 @@ add_shortcode( 'dv_creditos', function () {
 .dvk .bx p{margin:0 0 10px;color:var(--m);font-size:.9rem;line-height:1.55}.dvk .bx p b{color:var(--k)}.dvk .pg{display:flex;gap:8px;flex-wrap:wrap;margin-top:4px}.dvk .pg span{background:#F4F2EC;border-radius:8px;padding:5px 10px;font-size:.82rem;font-weight:700}
 </style>';
 	$h = $css . '<div class="dvp dvk" id="dv-cred" data-api="' . esc_attr( rest_url( 'desenvolve/v1/' ) ) . '" data-nonce="' . esc_attr( wp_create_nonce( 'wp_rest' ) ) . '">';
-	$h .= '<div class="hd"><div><h2>Comprar créditos</h2><p>Para não parar no meio de uma análise quando os créditos do mês acabarem. Os créditos entram assim que o pagamento é confirmado.</p></div>';
+	$h .= '<div class="hd"><div><h1>Comprar créditos</h1><p>Para não parar no meio de uma análise quando os créditos do mês acabarem. Os créditos entram assim que o pagamento é confirmado.</p></div>';
 	$h .= '<div class="sd">' . ( $master ? '<div class="t"><small>Seu saldo</small><b>Ilimitado</b></div>' : '<div class="t"><small>Seu saldo</small><b>' . (int) $s['total'] . '</b></div><div><small>Do mês</small><b>' . (int) $s['mes'] . '</b></div><div><small>Comprados</small><b>' . (int) ( $s['extra'] + $s['cortesia'] ) . '</b></div>' ) . '</div></div>';
 	if ( ! $ativo ) { return $h . '<div class="bx"><h3>Créditos extras são para assinantes</h3><p>Ative a assinatura para receber os créditos do mês e poder comprar mais quando precisar.</p><p><a class="dv-btn" href="/assinar/">Ver a assinatura</a></p></div></div>'; }
 	$ks = array_keys( $pac ); $dest = count( $ks ) >= 3 ? $ks[1] : 0;

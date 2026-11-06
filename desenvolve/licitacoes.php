@@ -86,9 +86,55 @@ function dv_lic_calc( $it, $hoje ) {
 	return $it;
 }
 
+/* ---------- Agenda no celular (Google Agenda, Outlook, iPhone) ----------
+ * Cada assinante tem um link de calendário só dele. O Google, o Outlook e o iPhone buscam o link sozinhos
+ * (sem login), por isso ele é protegido por um código derivado da chave do site. Trocar o código invalida o link antigo. */
+function dv_lic_ics_token( $uid, $novo = false ) {
+	$v = (int) get_user_meta( $uid, 'dv_lic_ics_v', true ); if ( $novo ) { $v++; update_user_meta( $uid, 'dv_lic_ics_v', $v ); }
+	return substr( hash_hmac( 'sha256', 'agenda|' . $uid . '|' . $v, wp_salt( 'auth' ) ), 0, 24 );
+}
+function dv_lic_ics_url( $uid ) { return add_query_arg( 'dv_agenda', $uid . '.' . dv_lic_ics_token( $uid ), home_url( '/' ) ); }
+function dv_ics_esc( $t ) { return str_replace( array( '\\', ';', ',', "\r", "\n" ), array( '\\\\', '\;', '\,', '', '\n' ), (string) $t ); }
+function dv_ics_dobra( $l ) { $o = ''; while ( strlen( $l ) > 74 ) { $c = mb_strcut( $l, 0, 74, 'UTF-8' ); $o .= $c . "\r\n "; $l = substr( $l, strlen( $c ) ); } return $o . $l . "\r\n"; }
+add_action( 'init', function () {
+	if ( empty( $_GET['dv_agenda'] ) ) { return; }
+	$p = explode( '.', sanitize_text_field( wp_unslash( $_GET['dv_agenda'] ) ) ); $uid = (int) ( $p[0] ?? 0 ); $tk = (string) ( $p[1] ?? '' );
+	if ( ! $uid || ! get_userdata( $uid ) || ! hash_equals( dv_lic_ics_token( $uid ), $tk ) ) { status_header( 404 ); exit; }
+	do_action( 'litespeed_control_set_nocache', 'agenda pessoal' ); nocache_headers();
+	$livre = ! function_exists( 'dv_plano_libera' ) || dv_plano_libera( $uid, 'licitacoes' );
+	$hoje = current_time( 'Y-m-d' ); $stamp = gmdate( 'Ymd\THis\Z' ); $site = wp_parse_url( home_url(), PHP_URL_HOST );
+	$utc = function ( $local ) { return gmdate( 'Ymd\THis\Z', strtotime( $local . ' +3 hours' ) ); }; // horário de Brasília (UTC-3)
+	$L = array( 'BEGIN:VCALENDAR', 'VERSION:2.0', 'PRODID:-//Desenvolve Estrategias//Agenda de licitacoes//PT', 'CALSCALE:GREGORIAN', 'METHOD:PUBLISH',
+		'X-WR-CALNAME:Licitações (Desenvolve)', 'X-WR-TIMEZONE:America/Sao_Paulo', 'REFRESH-INTERVAL;VALUE=DURATION:PT2H', 'X-PUBLISHED-TTL:PT2H' );
+	$link = home_url( '/plataforma/licitacoes/' );
+	foreach ( $livre ? dv_lic_itens( $uid ) : array() as $x ) {
+		if ( empty( $x['abertura'] ) || in_array( $x['status'] ?? '', array( 'ganhou', 'perdeu', 'desistiu' ), true ) ) { continue; }
+		$x = dv_lic_calc( $x, $hoje ); if ( substr( $x['abertura'], 0, 10 ) < gmdate( 'Y-m-d', strtotime( $hoje . ' -30 days' ) ) ) { continue; }
+		$rot = trim( ( $x['orgao'] ?? '' ) . ( ! empty( $x['numero'] ) ? ' · ' . $x['numero'] : '' ) ); $obj = mb_substr( (string) ( $x['objeto'] ?? '' ), 0, 400 );
+		$ini = strlen( $x['abertura'] ) > 10 ? str_replace( 'T', ' ', $x['abertura'] ) : $x['abertura'] . ' 09:00';
+		$desc = $obj . "\n\nEdital: " . ( $x['link'] ?: '—' ) . "\nMinhas licitações: " . $link;
+		/* sessão */
+		array_push( $L, 'BEGIN:VEVENT', 'UID:ses-' . $x['id'] . '@' . $site, 'DTSTAMP:' . $stamp, 'DTSTART:' . $utc( $ini ), 'DTEND:' . $utc( $ini . ' +1 hour' ),
+			'SUMMARY:' . dv_ics_esc( 'Sessão: ' . $rot ), 'DESCRIPTION:' . dv_ics_esc( $desc ), 'URL:' . $link,
+			'BEGIN:VALARM', 'ACTION:DISPLAY', 'DESCRIPTION:' . dv_ics_esc( 'Sessão amanhã: ' . $rot ), 'TRIGGER:-P1D', 'END:VALARM',
+			'BEGIN:VALARM', 'ACTION:DISPLAY', 'DESCRIPTION:' . dv_ics_esc( 'Sessão em 1 hora: ' . $rot ), 'TRIGGER:-PT1H', 'END:VALARM', 'END:VEVENT' );
+		/* último dia para impugnar ou pedir esclarecimento (art. 164) */
+		if ( ! empty( $x['prazo_imp'] ) ) {
+			$d = str_replace( '-', '', $x['prazo_imp'] );
+			array_push( $L, 'BEGIN:VEVENT', 'UID:imp-' . $x['id'] . '@' . $site, 'DTSTAMP:' . $stamp, 'DTSTART;VALUE=DATE:' . $d, 'DTEND;VALUE=DATE:' . gmdate( 'Ymd', strtotime( $x['prazo_imp'] . ' +1 day' ) ),
+				'SUMMARY:' . dv_ics_esc( 'Último dia para impugnar ou pedir esclarecimento: ' . $rot ), 'DESCRIPTION:' . dv_ics_esc( "Até 3 dias úteis antes da abertura (art. 164 da Lei 14.133/2021), considerando feriados nacionais. Confira o edital e os feriados locais.\n\n" . $desc ),
+				'TRANSP:TRANSPARENT', 'BEGIN:VALARM', 'ACTION:DISPLAY', 'DESCRIPTION:' . dv_ics_esc( 'Prazo de impugnação: ' . $rot ), 'TRIGGER:-PT15H', 'END:VALARM', 'END:VEVENT' );
+		}
+	}
+	$L[] = 'END:VCALENDAR';
+	header( 'Content-Type: text/calendar; charset=utf-8' ); header( 'Content-Disposition: inline; filename="licitacoes.ics"' );
+	echo implode( '', array_map( 'dv_ics_dobra', $L ) ); exit;
+}, 1 );
+
 add_action( 'rest_api_init', function () {
 	$perm = function () { return function_exists( 'dv_tools_perm' ) && dv_tools_perm(); };
 	$ns = 'desenvolve/v1';
+	register_rest_route( $ns, '/lic/agenda-novo', array( 'methods' => 'POST', 'permission_callback' => $perm, 'callback' => function () { $u = get_current_user_id(); dv_lic_ics_token( $u, true ); return array( 'url' => dv_lic_ics_url( $u ) ); } ) );
 	register_rest_route( $ns, '/lic', array( 'methods' => 'GET', 'permission_callback' => $perm, 'callback' => function () {
 		$uid = get_current_user_id(); $hoje = current_time( 'Y-m-d' );
 		$l = array_map( function ( $x ) use ( $hoje ) { return dv_lic_calc( $x, $hoje ); }, dv_lic_itens( $uid ) );
@@ -268,6 +314,14 @@ add_shortcode( 'dv_licitacoes', function () {
 	ob_start(); ?>
 <div class="lc" id="dv-lic" data-api="<?php echo esc_attr( rest_url( 'desenvolve/v1/' ) ); ?>" data-nonce="<?php echo esc_attr( wp_create_nonce( 'wp_rest' ) ); ?>">
 	<form class="lc-imp" autocomplete="off"><label>Adicionar licitação</label><div class="lc-row"><input placeholder="Cole o link do edital no PNCP (pncp.gov.br/app/editais/...)"><button>Importar</button><button type="button" class="g lc-man">Preencher à mão</button></div><p class="lc-h lc-msg">Importamos órgão, objeto, data da sessão, valor e os arquivos do edital. O prazo de impugnação é calculado sozinho.</p></form>
+	<?php $dv_ics = dv_lic_ics_url( get_current_user_id() ); $dv_wc = preg_replace( '#^https?://#', 'webcal://', $dv_ics ); ?>
+	<details class="lc-cal"><summary>Ver os prazos na agenda do celular</summary>
+		<p class="lc-h">As sessões e o último dia para impugnar entram sozinhos na sua agenda, com lembrete um dia antes. Quando você muda uma data aqui, a agenda atualiza em algumas horas.</p>
+		<div class="lc-row"><a class="lc-cb" href="<?php echo esc_url( 'https://calendar.google.com/calendar/r?cid=' . rawurlencode( $dv_wc ) ); ?>" target="_blank" rel="noopener">Google Agenda</a><a class="lc-cb" href="<?php echo esc_url( $dv_wc, array( 'webcal' ) ); ?>">iPhone ou Mac</a><a class="lc-cb" href="<?php echo esc_url( 'https://outlook.live.com/calendar/0/addfromweb?url=' . rawurlencode( $dv_ics ) . '&name=' . rawurlencode( 'Licitações' ) ); ?>" target="_blank" rel="noopener">Outlook</a><button type="button" class="g lc-cc" data-u="<?php echo esc_attr( $dv_ics ); ?>">Copiar link</button></div>
+		<p class="lc-h">No Outlook da empresa: Calendário › Adicionar calendário › Assinar da Web, e cole o link. O link é pessoal: não compartilhe.</p>
+	</details>
+	<style>.lc-cal{margin:14px 0;border:1px solid #E6DFD0;border-radius:12px;padding:10px 14px;background:#FFFDF8}.lc-cal summary{cursor:pointer;font-weight:600}.lc-cal .lc-row{display:flex;flex-wrap:wrap;gap:8px;margin:8px 0}.lc-cb{display:inline-block;padding:9px 14px;border-radius:999px;background:#151515;color:#fff!important;text-decoration:none;font-weight:600;font-size:14px}</style>
+	<script>document.addEventListener('click',function(e){var b=e.target.closest&&e.target.closest('.lc-cc');if(!b)return;var u=b.getAttribute('data-u');(navigator.clipboard?navigator.clipboard.writeText(u):Promise.reject()).then(function(){b.textContent='Link copiado'},function(){window.prompt('Copie o link:',u)})});</script>
 	<div class="lc-tabs"></div>
 	<div class="lc-list"><p class="lc-h">Carregando…</p></div>
 	<dialog class="lc-dlg"><form method="dialog" class="lc-f">

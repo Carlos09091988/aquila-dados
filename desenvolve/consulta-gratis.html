@@ -119,7 +119,7 @@
    <label class="fq"><span>O que você vende?</span><input name="q" autocomplete="off"></label>
    <label class="fu so-ed"><span>Estado</span><select name="uf"><option value="">Todo o Brasil</option></select></label>
    <label class="fc so-ed"><span>Cidade <small>(opcional)</small></span><input name="cid" autocomplete="off" placeholder="Digite e escolha na lista"><div class="sug" hidden></div></label>
-   <label class="fr so-ed"><span>Raio de atendimento</span><select name="raio"><option value="0">Só nesta cidade</option><option value="10">Até 10 km</option><option value="25" selected>Até 25 km</option><option value="50">Até 50 km</option><option value="100">Até 100 km</option></select></label>
+   <label class="fr so-ed"><span>Raio de atendimento <small>(km)</small></span><input name="raio" type="number" min="0" max="3000" step="1" inputmode="numeric" placeholder="Ex.: 30" disabled></label>
    
    <input class="hp" name="site" tabindex="-1" autocomplete="off" aria-hidden="true">
    <button class="bt" type="submit">Buscar licitações</button>

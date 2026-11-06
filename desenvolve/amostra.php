@@ -120,11 +120,11 @@ function dv_mun_all() {
 	return $m;
 }
 function dv_mun_km( $a, $b ) { $la1 = deg2rad( $a[2] ); $la2 = deg2rad( $b[2] ); $dl = deg2rad( $b[3] - $a[3] ); $x = sin( ( $la2 - $la1 ) / 2 ) ** 2 + cos( $la1 ) * cos( $la2 ) * sin( $dl / 2 ) ** 2; return 12742 * asin( min( 1, sqrt( $x ) ) ); }
-function dv_mun_raio( $cod, $km ) {
+function dv_mun_raio( $cod, $km, $cap = 400 ) {
 	$m = dv_mun_all(); if ( ! isset( $m[ $cod ] ) ) { return array(); }
 	$o = array( $cod => 0.0 ); if ( $km <= 0 ) { return $o; }
 	foreach ( $m as $c => $x ) { if ( $c === $cod || abs( $x[2] - $m[ $cod ][2] ) > $km / 100 ) { continue; } $d = dv_mun_km( $m[ $cod ], $x ); if ( $d <= $km ) { $o[ $c ] = round( $d, 1 ); } }
-	asort( $o ); return array_slice( $o, 0, 150, true );
+	asort( $o ); return $cap ? array_slice( $o, 0, $cap, true ) : $o;
 }
 function dv_mun_busca( $q, $uf = '' ) {
 	$q = dv_am_norm( trim( $q ) ); if ( mb_strlen( $q ) < 2 ) { return array(); }
@@ -133,19 +133,19 @@ function dv_mun_busca( $q, $uf = '' ) {
 	return array_slice( array_merge( $a, $b ), 0, 12 );
 }
 function dv_am_editais( $q, $uf, $cid = 0, $raio = 0 ) {
-	$mun = $cid ? dv_mun_raio( $cid, $raio ) : array(); $M = $mun ? dv_mun_all() : array();
+	$mun = $cid ? dv_mun_raio( $cid, $raio, 0 ) : array(); $M = $mun ? dv_mun_all() : array(); $porUf = count( $mun ) > 400; $ufsR = array(); if ( $porUf ) { foreach ( $mun as $c => $d ) { $ufsR[ $M[ $c ][1] ] = 1; } }
 	$onde = $mun ? ( $raio > 0 ? 'até ' . $raio . ' km de ' : 'em ' ) . $M[ $cid ][0] . '/' . $M[ $cid ][1] : ( $uf ? $uf : '' );
-	$u = 'https://pncp.gov.br/api/search/?q=' . rawurlencode( $q ) . '&tipos_documento=edital&status=recebendo_proposta&ordenacao=-data&pagina=1&tam_pagina=60' . ( $mun ? '&municipios=' . implode( '%7C', array_keys( $mun ) ) : ( $uf ? '&ufs=' . rawurlencode( $uf ) : '' ) );
+	$u = 'https://pncp.gov.br/api/search/?q=' . rawurlencode( $q ) . '&tipos_documento=edital&status=recebendo_proposta&ordenacao=-data&pagina=1&tam_pagina=' . ( $porUf ? 500 : 60 ) . ( $mun ? ( $porUf ? '&ufs=' . implode( '%7C', array_keys( $ufsR ) ) : '&municipios=' . implode( '%7C', array_keys( $mun ) ) ) : ( $uf ? '&ufs=' . rawurlencode( $uf ) : '' ) );
 	$j = dv_am_get( $u, 20 ); if ( ! is_array( $j ) ) { $j = dv_am_get( $u, 25 ); }
 	if ( ! is_array( $j ) ) { return new WP_Error( 'dv_am', 'O PNCP não respondeu agora. Tente de novo em instantes.', array( 'status' => 502, 'pncp' => current_user_can( 'manage_options' ) ? ( $GLOBALS['dv_am_ult'] ?? '' ) : '' ) ); }
 	$it = array_map( 'dv_am_edital', (array) ( $j['items'] ?? array() ) );
 	// relevância: primeiro os editais com o termo no próprio objeto; depois os que só têm o termo nos itens
-	if ( $mun ) { $ix = array(); foreach ( $mun as $c => $d ) { $ix[ dv_am_norm( $M[ $c ][0] . '/' . $M[ $c ][1] ) ] = $d; } foreach ( $it as &$x ) { $k = dv_am_norm( $x['local'] ); $x['km'] = $ix[ $k ] ?? 999; if ( isset( $ix[ $k ] ) && $raio > 0 ) { $x['local'] .= $ix[ $k ] > 0 ? ' · a ' . round( $ix[ $k ] ) . ' km' : ' · na própria cidade'; } } unset( $x ); usort( $it, function ( $a, $b ) { return $a['km'] <=> $b['km']; } ); }
+	if ( $mun ) { $ix = array(); foreach ( $mun as $c => $d ) { $ix[ dv_am_norm( $M[ $c ][0] . '/' . $M[ $c ][1] ) ] = $d; } foreach ( $it as &$x ) { $k = dv_am_norm( $x['local'] ); $x['km'] = $ix[ $k ] ?? 99999; if ( isset( $ix[ $k ] ) && $raio > 0 ) { $x['local'] .= $ix[ $k ] > 0 ? ' · a ' . round( $ix[ $k ] ) . ' km' : ' · na própria cidade'; } } unset( $x ); if ( $porUf ) { $it = array_values( array_filter( $it, function ( $x ) { return $x['km'] < 99999; } ) ); } usort( $it, function ( $a, $b ) { return $a['km'] <=> $b['km']; } ); }
 	$ws = array_filter( preg_split( '/[^a-z0-9]+/', dv_am_norm( $q ) ), function ( $w ) { return strlen( $w ) >= 3; } );
 	$raiz = array_map( function ( $w ) { $w = preg_replace( '/(oes|aes|ais|eis|ns|s)$/', '', $w ); return strlen( $w ) > 6 ? substr( $w, 0, 6 ) : $w; }, $ws );
 	$no = array(); $nos = array();
 	foreach ( $it as $x ) { $o = dv_am_norm( $x['objeto'] ); $ok = $raiz && count( array_filter( $raiz, function ( $r ) use ( $o ) { return strpos( $o, $r ) !== false; } ) ) === count( $raiz ); $x['em'] = ! $raiz ? '' : ( $ok ? 'objeto' : 'itens' ); if ( $ok ) { $no[] = $x; } else { $nos[] = $x; } }
-	$it = array_merge( $no, $nos ); $tot = (int) ( $j['total'] ?? count( $it ) );
+	$it = array_merge( $no, $nos ); $tot = ! empty( $porUf ) ? count( $it ) : (int) ( $j['total'] ?? count( $it ) );
 	return array(
 		'tipo' => 'editais', 'nome' => 'Licitações abertas' . ( $q !== '' ? ': ' . $q : '' ) . ( $onde ? ' · ' . $onde : '' ), 'fantasia' => '', 'termo' => $q, 'uf' => $uf, 'cidade' => $cid, 'raio' => $raio, 'municipios' => count( $mun ),
 		'livre' => array(),
@@ -157,7 +157,7 @@ function dv_am_editais( $q, $uf, $cid = 0, $raio = 0 ) {
 
 add_action( 'rest_api_init', function () {
 	register_rest_route( 'desenvolve/v1', '/municipios', array( 'methods' => 'GET', 'permission_callback' => '__return_true', 'callback' => function ( WP_REST_Request $r ) {
-		if ( (int) $r['c'] ) { $M = dv_mun_all(); $o = array(); foreach ( dv_mun_raio( (int) $r['c'], min( 150, max( 0, (int) $r['raio'] ) ) ) as $c => $d ) { $o[] = array( 'c' => $c, 'n' => $M[ $c ][0], 'uf' => $M[ $c ][1], 'km' => $d ); } return $o; }
+		if ( (int) $r['c'] ) { $M = dv_mun_all(); $o = array(); foreach ( dv_mun_raio( (int) $r['c'], min( 3000, max( 0, (int) $r['raio'] ) ), 0 ) as $c => $d ) { $o[] = array( 'c' => $c, 'n' => $M[ $c ][0], 'uf' => $M[ $c ][1], 'km' => $d ); } return $o; }
 		$uf = strtoupper( preg_replace( '/[^A-Za-z]/', '', (string) $r['uf'] ) ); $uf = strlen( $uf ) === 2 ? $uf : '';
 		return array_map( function ( $x ) { return array( 'c' => $x[0], 'n' => $x[1], 'uf' => $x[2] ); }, dv_mun_busca( (string) $r['q'], $uf ) );
 	} ) );
@@ -167,7 +167,7 @@ add_action( 'rest_api_init', function () {
 		if ( ! in_array( $tipo, array( 'empresa', 'orgao', 'editais' ), true ) ) { $tipo = 'editais'; }
 		$cnpj = preg_replace( '/\D/', '', $q );
 		if ( $tipo !== 'editais' && strlen( $cnpj ) !== 14 ) { return new WP_Error( 'dv_am', 'Digite um CNPJ com 14 números.', array( 'status' => 400 ) ); }
-		$cid = (int) $r['cidade']; $raio = in_array( (int) $r['raio'], array( 0, 10, 25, 50, 100 ), true ) ? (int) $r['raio'] : 0; if ( $cid && ! isset( dv_mun_all()[ $cid ] ) ) { $cid = 0; }
+		$cid = (int) $r['cidade']; $raio = max( 0, min( 3000, (int) $r['raio'] ) ); if ( $cid && ! isset( dv_mun_all()[ $cid ] ) ) { $cid = 0; }
 		if ( $tipo === 'editais' && mb_strlen( $q ) < 3 && ! $cid && ! $uf ) { return new WP_Error( 'dv_am', 'Digite o que você vende, por exemplo: limpeza, merenda, vigilância.', array( 'status' => 400 ) ); }
 		$ck = 'dv_am5_' . md5( $tipo . '|' . ( $tipo === 'editais' ? strtolower( remove_accents( $q ) ) . '|' . $uf . '|' . $cid . '|' . $raio : $cnpj ) ); $c = get_transient( $ck );
 		if ( $c === false ) {

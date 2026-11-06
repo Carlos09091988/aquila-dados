@@ -74,21 +74,28 @@ function dv_est_html( $html ) {
 		$u = dv_est_file( trim( $m[1] ), 'js', 'sn' );
 		return $u ? '<script src="' . esc_url( $u ) . '"></script>' : $m[0];
 	}, $html );
-	/* c) blocos de CSS grandes, sem url() relativa */
-	$html = preg_replace_callback( '~<style([^>]*)>(.{2048,}?)</style>~s', function ( $m ) {
-		$css = $m[2];
-		if ( preg_match( '~url\(\s*["\']?(?!https?:|data:|/|//)~i', $css ) ) { return $m[0]; }
-		$id = preg_match( '/id=["\']([^"\']+)/', $m[1], $x ) ? $x[1] : '';
-		$u = dv_est_file( $css, 'css', $id ? $id : 'css' );
-		return $u ? '<link rel="stylesheet" href="' . esc_url( $u ) . '"' . ( $id ? ' id="' . esc_attr( $id ) . '"' : '' ) . '>' : $m[0];
-	}, $html );
-	/* 3) lazy loading nas imagens depois das três primeiras */
+	/* c) e 3): só fora de <script>, para não mexer em HTML que está dentro de strings de JavaScript */
+	$parts = preg_split( '~(<script\b.*?</script>)~si', $html, -1, PREG_SPLIT_DELIM_CAPTURE );
 	$n = 0;
-	$html = preg_replace_callback( '~<img\b([^>]*)>~i', function ( $m ) use ( &$n ) {
-		$n++;
-		if ( $n <= 3 || stripos( $m[1], 'loading=' ) !== false ) { return $m[0]; }
-		return '<img' . $m[1] . ' loading="lazy" decoding="async">';
-	}, $html );
+	foreach ( $parts as $k => $part ) {
+		if ( $k % 2 === 1 ) { continue; }
+		/* c) blocos de CSS grandes, sem url() relativa */
+		$part = preg_replace_callback( '~<style([^>]*)>(.{2048,}?)</style>~s', function ( $m ) {
+			$css = $m[2];
+			if ( preg_match( '~url\(\s*["\']?(?!https?:|data:|/|//)~i', $css ) ) { return $m[0]; }
+			$id = preg_match( '/id=["\']([^"\']+)/', $m[1], $x ) ? $x[1] : '';
+			$u = dv_est_file( $css, 'css', $id ? $id : 'css' );
+			return $u ? '<link rel="stylesheet" href="' . esc_url( $u ) . '"' . ( $id ? ' id="' . esc_attr( $id ) . '"' : '' ) . '>' : $m[0];
+		}, $part );
+		/* 3) lazy loading nas imagens depois das três primeiras */
+		$part = preg_replace_callback( '~<img\b([^>]*)>~i', function ( $m ) use ( &$n ) {
+			$n++;
+			if ( $n <= 3 || stripos( $m[1], 'loading=' ) !== false ) { return $m[0]; }
+			return '<img' . $m[1] . ' loading="lazy" decoding="async">';
+		}, $part );
+		$parts[ $k ] = $part;
+	}
+	$html = implode( '', $parts );
 	return $html;
 }
 add_action( 'template_redirect', function () {

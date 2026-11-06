@@ -320,7 +320,7 @@ add_shortcode( 'dv_licitacoes', function () {
 .lc-ig{margin:8px 0 10px}.lc-ig b{display:block}.lc-ig small{display:block;opacity:.75;margin:2px 0 4px}
 </style>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
-<script>
+<script>/*DVSTATIC*/
 (function(){var R=document.getElementById('dv-lic');if(!R)return;var api=R.dataset.api,nonce=R.dataset.nonce,S=null,aba='ativas',cur=null,ED='',imp=null,CJ=null;
 if(window.pdfjsLib)pdfjsLib.GlobalWorkerOptions.workerSrc='https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
 var ST={analise:'Em análise',participar:'Vai participar',proposta:'Proposta enviada',disputa:'Disputa / habilitação',recurso:'Recurso',ganhou:'Ganhou',perdeu:'Perdeu',desistiu:'Desistiu'};
@@ -443,7 +443,7 @@ carregar().then(function(){var v=location.search.match(/[?&]ver=([a-z0-9]+)/);wi
 .hs-t{overflow-x:auto}.hs-t table{width:100%;border-collapse:collapse;font-size:.86rem}.hs-t th{text-align:left;font-size:.72rem;text-transform:uppercase;letter-spacing:.05em;color:#8A867C;padding:6px 8px;border-bottom:1px solid #E3DED2}.hs-t td{padding:9px 8px;border-bottom:1px solid #EFEBE2;vertical-align:top}.hs-t td small{display:block;color:#6E6A60;font-size:.78rem;margin-top:2px}.hs-t a{color:#86621F;font-weight:700}.hs-t td b{color:#1F5A3B}
 @media(max-width:640px){.hs-k{grid-template-columns:1fr}}
 </style>
-<script>
+<script>/*DVSTATIC*/
 (function(){var R=document.getElementById('dv-lic');if(!R)return;var api=R.dataset.api,nonce=R.dataset.nonce,CUSTO={comprador:(window.DVC&&DVC.comprador)||5,raiox:(window.DVC&&DVC.raiox)||5,dossie:(window.DV&&DV.cr_dossie)||10};
  function forn(c,n,info){return'<div class="fo"><b>'+e(n||'CNPJ '+fc(c))+'</b><small>CNPJ '+fc(c)+(info?' · '+e(info):'')+'</small><span class="op"><label><input type="checkbox" data-t="raiox" data-c="'+c+'" data-n="'+e(n||fc(c))+'"> Raio-X · '+CUSTO.raiox+' créd.</label><label><input type="checkbox" data-t="dossie" data-c="'+c+'" data-n="'+e(n||fc(c))+'"> Dossiê completo · '+CUSTO.dossie+' créd.</label></span></div>'}
 function e(s){return String(s==null?'':s).replace(/[&<>"]/g,function(c){return{'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]})}

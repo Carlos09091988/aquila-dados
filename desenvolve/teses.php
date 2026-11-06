@@ -141,7 +141,7 @@ add_shortcode( 'dv_teses', function () {
 #dv-ts button.g{background:#fff!important;color:#16191E!important;border:1px solid var(--ln)!important;text-transform:none!important;letter-spacing:0!important;box-shadow:none!important}
 @media(max-width:700px){.ts{padding:16px}.ts-b{flex-direction:column}}
 </style>
-<script>
+<script>/*DVSTATIC*/
 (function(){var R=document.getElementById('dv-ts');if(!R)return;var api=R.dataset.api,nonce=R.dataset.nonce,O=R.querySelector('.ts-r'),SEL={},Q='',TEMA='',PAG=1,BASE=null,FONTE='';
 var IAS=[['ChatGPT','https://chatgpt.com/','chatgpt.com'],['Claude','https://claude.ai/new','claude.ai'],['Perplexity','https://www.perplexity.ai/','perplexity.ai'],['Grok','https://grok.com/','grok.com'],['DeepSeek','https://chat.deepseek.com/','deepseek.com']];
 var COL={'Plenário':'Plenário','Primeira Câmara':'1ª Câmara','Segunda Câmara':'2ª Câmara'};

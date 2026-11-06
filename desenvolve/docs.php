@@ -275,7 +275,7 @@ add_shortcode( 'dv_documentos', function () {
 @media(max-width:700px){.dc{padding:16px}.dc-r{grid-template-columns:1fr}.dc-r .a{grid-column:1/-1;justify-content:flex-start}.dc-add input{width:100%}.dc-add{width:100%}}
 </style>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
-<script>
+<script>/*DVSTATIC*/
 (function(){var R=document.getElementById('dv-docs');if(!R)return;var api=R.dataset.api,nonce=R.dataset.nonce,S=null,emp='',radar={},sel={},dlg=R.querySelector('.dc-dlg'),F=R.querySelector('.dc-f'),edit=0;
 if(window.pdfjsLib)pdfjsLib.GlobalWorkerOptions.workerSrc='https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
 function e(s){return String(s==null?'':s).replace(/[&<>"]/g,function(c){return{'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]})}

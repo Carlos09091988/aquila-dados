@@ -782,7 +782,7 @@ body .dv-tool .aq h2,body .dv-tool .aq h3,body .dv-tool .aq h4,body .dv-tool .aq
 .dv-wm{position:fixed;left:14px;bottom:12px;z-index:9998;font:600 11px "Hanken Grotesk",sans-serif;color:rgba(20,24,30,.45);background:rgba(255,255,255,.7);padding:4px 10px;border-radius:999px;pointer-events:none}
 @media print{.dv-wm{position:fixed;bottom:0;left:0;color:#555}.dv-tbar,.dv-cons{display:none!important}}
 </style>
-<script>
+<script>/*DVSTATIC*/
 (function(){var D=window.DV;if(!D||!D.logado)return;
 var tool=document.querySelector('.dv-tool');if(!tool)return;
 var ok={},ACT=/consult|buscar|pesquis|calcul|compar|gerar|analis|simul|verific|estimar/i;
@@ -936,7 +936,7 @@ add_action( 'wp_footer', function () {
 .dv-h{width:100%;border-collapse:collapse;font-size:.92rem}.dv-h td{padding:10px 8px;border-bottom:1px solid var(--ln);color:var(--mu)}.dv-h td:first-child{color:var(--fg)}
 @media(max-width:700px){.dv-g,.dv-tools{grid-template-columns:1fr}}
 </style>
-<script>
+<script>/*DVSTATIC*/
 (function(){var el=document.getElementById('dv-painel');if(!el)return;var api=el.dataset.api,n=el.dataset.nonce;
 function g(p){var P=window.DVPRE;if(P&&Object.prototype.hasOwnProperty.call(P,p)){var v=P[p];delete P[p];return Promise.resolve(v)}return fetch(api+p,{headers:{'X-WP-Nonce':n},credentials:'same-origin'}).then(function(r){return r.json()})}
 function e(s){return String(s==null?'':s).replace(/[&<>"]/g,function(c){return{'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]})}

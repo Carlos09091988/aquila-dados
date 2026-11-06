@@ -33,7 +33,7 @@ add_action( 'wp_footer', function () {
 html body #rx-full{display:flex!important;align-items:center;justify-content:center;gap:8px;width:100%!important;max-width:100%!important;box-sizing:border-box!important;white-space:normal!important;text-align:center!important;line-height:1.25!important;font-size:1rem!important;padding:14px 18px!important;height:auto!important;overflow:visible!important}
 @media print{.dv-rs .ac{display:none}.dv-rs{box-shadow:none!important}}
 </style>
-<script>
+<script>/*DVSTATIC*/
 /* DV_RESUMO_V1 */
 (function(){
 var path=location.pathname,PG=/raio-x-comprador/.test(path)?'comprador':/dossie/.test(path)?'dossie':'concorrente';

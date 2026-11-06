@@ -131,7 +131,7 @@ add_shortcode( 'dv_meus_contratos', function () {
 .mc-d{border:0;border-radius:16px;padding:0;max-width:620px;width:94vw}.mc-d::backdrop{background:rgba(12,15,19,.55)}.mc-f{padding:22px}.mc-2{display:grid;grid-template-columns:1fr 1fr;gap:10px}.mc-3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px}.mc-x{display:flex;justify-content:flex-end;gap:8px}
 @media(max-width:640px){.mc{padding:16px}.mc-kp{grid-template-columns:1fr 1fr}.mc-2,.mc-3{grid-template-columns:1fr}}
 </style>
-<script>
+<script>/*DVSTATIC*/
 (function(){var R=document.getElementById('dv-mc');if(!R)return;var api=R.dataset.api,nonce=R.dataset.nonce,S={c:[],g:[]},aba='c',CAND=[],WA='https://wa.me/5511993500950?text=';
 function e(s){return String(s==null?'':s).replace(/[&<>"]/g,function(c){return{'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]})}
 function br(d){return d?String(d).slice(0,10).split('-').reverse().join('/'):'—'}

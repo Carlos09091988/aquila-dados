@@ -335,7 +335,7 @@ add_shortcode( 'dv_contratos', function () {
 .ct-vazio{border:1px dashed var(--ln);border-radius:14px;padding:22px;text-align:center;color:var(--mu);margin-top:10px}
 @media(max-width:700px){.ct{padding:16px}.ct-3{grid-template-columns:1fr}.ct-c{grid-template-columns:1fr}.ct-c .ac{flex-direction:row;flex-wrap:wrap;min-width:0}.ct-emps input{width:100%}}
 </style>
-<script>
+<script>/*DVSTATIC*/
 (function(){var R=document.getElementById('dv-ct');if(!R)return;var api=R.dataset.api,nonce=R.dataset.nonce,S=null,emp='',aba='atencao',F=R.querySelector('form.ct-f'),D=F.closest('dialog'),M=R.querySelector('.ct-msg');
 function e(s){return String(s==null?'':s).replace(/[&<>"]/g,function(c){return{'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]})}
 function br(d){return d?d.slice(0,10).split('-').reverse().join('/'):''}

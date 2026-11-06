@@ -243,7 +243,7 @@ add_shortcode( 'dv_recursos', function () {
 .rc-vazio{border:1px dashed var(--ln);border-radius:14px;padding:22px;text-align:center;color:var(--mu);margin-top:10px}
 @media(max-width:700px){.rc{padding:16px}.rc-2,.rc-3{grid-template-columns:1fr}.rc-c{grid-template-columns:1fr}.rc-c .ac{flex-direction:row;flex-wrap:wrap;min-width:0}}
 </style>
-<script>
+<script>/*DVSTATIC*/
 (function(){var R=document.getElementById('dv-rc');if(!R)return;var api=R.dataset.api,nonce=R.dataset.nonce,S=null,F=R.querySelector('.rc-dlg .rc-f'),D=F.closest('dialog'),D2=R.querySelector('.rc-ia'),cur=null,CONC='';
 var IAS=[['ChatGPT','https://chatgpt.com/','chatgpt.com'],['Claude','https://claude.ai/new','claude.ai'],['Perplexity','https://www.perplexity.ai/','perplexity.ai'],['Grok','https://grok.com/','grok.com'],['DeepSeek','https://chat.deepseek.com/','deepseek.com']];
 function e(s){return String(s==null?'':s).replace(/[&<>"]/g,function(c){return{'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]})}

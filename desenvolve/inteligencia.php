@@ -443,7 +443,7 @@ add_action( 'wp_footer', function () {
 @media(max-width:700px){.dv-ix .n{grid-template-columns:repeat(2,minmax(0,1fr))}}
 @media print{.dv-ix .bt,.dv-ix .calc{display:none!important}}
 </style>
-<script>
+<script>/*DVSTATIC*/
 /* DV_INT_V1 */
 (function(){
 var path=location.pathname,PG=/raio-x-lote/.test(path)?'lote':/raio-x-comprador/.test(path)?'comprador':/dossie/.test(path)?'dossie':'concorrente';

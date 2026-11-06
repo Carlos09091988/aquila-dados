@@ -49,7 +49,7 @@ add_shortcode( 'dv_buscador', function () {
 .bq2-dio{border-left:3px solid #8FA7C2}.bq2-fo{display:inline-block;background:#EEF2F7;color:#2B4A6B;border-radius:6px;padding:1px 7px;font-size:.7rem;text-transform:uppercase;letter-spacing:.04em;margin-right:4px}
 @media(max-width:760px){.bq2{padding:16px}.bq2-g,.bq2-g3{grid-template-columns:1fr}.bq2-a .x{margin-left:0}}
 .bq2-cid{position:relative}.bq2-sug{position:absolute;top:100%;left:0;right:0;margin-top:4px;background:#fff;border:1px solid #DDD6C6;border-radius:10px;box-shadow:0 14px 34px -18px rgba(0,0,0,.35);z-index:30;max-height:260px;overflow:auto;padding:4px}.bq2-sug button{display:flex;justify-content:space-between;width:100%;text-align:left;background:none;border:0;padding:9px 10px;border-radius:7px;font:inherit;cursor:pointer}.bq2-sug button:hover{background:#F4F2EC}.bq2-sug small{color:#8A8F96}.bq2-sug p{margin:6px 10px;color:#5E636B}.bq2-sug[hidden]{display:none!important}.bq2-perto .bq2-pinfo{grid-column:1/-1;margin:0}</style>
-<script>
+<script>/*DVSTATIC*/
 (function(){var R=document.getElementById('bq2');if(!R)return;var T=R.closest('.dv-tool');if(T)T.setAttribute('data-sem-portao','');
 var api=R.dataset.api,nonce=R.dataset.nonce,F=R.querySelector('#bq-form'),UF='AC AL AM AP BA CE DF ES GO MA MG MS MT PA PB PE PI PR RJ RN RO RR RS SC SE SP TO'.split(' '),ufs={},tipo='',fonte='',ALL=[],VIS=[],aba='',DIO=null,PN=null,pag=1,POR=20,GEST={},DESC={},VAL={},verDesc=false,QS=new URLSearchParams(location.search);
 try{DESC=JSON.parse(localStorage.getItem('dv_bq_desc')||'{}')}catch(x){}

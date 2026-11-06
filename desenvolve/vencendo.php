@@ -82,7 +82,7 @@ add_shortcode( 'dv_vencendo', function () {
 .vc-i .f{margin-top:8px;font-size:.9rem}.vc-i .a{display:flex;flex-wrap:wrap;gap:6px;margin-top:10px}.vc-i .a a,.vc-i .a button{font-size:.8rem;font-weight:600;border:1px solid var(--ln);border-radius:9px;padding:6px 10px;text-decoration:none;color:#16191E;background:#fff;cursor:pointer}.vc-i .a a.p{background:#C9A45C;border-color:#C9A45C;color:#241A06}
 @media(max-width:640px){.vc{padding:16px}.vc-row{grid-template-columns:1fr}}
 </style>
-<script>
+<script>/*DVSTATIC*/
 (function(){var R=document.getElementById('dv-vc');if(!R)return;var api=R.dataset.api,nonce=R.dataset.nonce,RAW=R.dataset.raw,RA=JSON.parse(R.dataset.ramos),UF='AC AL AM AP BA CE DF ES GO MA MG MS MT PA PB PE PI PR RJ RN RO RR RS SC SE SP TO'.split(' '),ufs={},ras={},C={},LIST=[],P={},q=new URLSearchParams(location.search),FO=q.get('orgao')||'',FF=q.get('fornecedor')||'',QQ=q.get('q')||'',M=R.querySelector('.vc-m');if(/^\d{14}$/.test(FF))R.insertAdjacentHTML('afterbegin','<p class="vc-h" style="font-size:1rem;margin:0 0 12px"><b>Contratos deste fornecedor a vencer</b> · CNPJ '+FF.replace(/^(\d{2})(\d{3})(\d{3})(\d{4})(\d{2})$/,'$1.$2.$3/$4-$5')+' · <a href="/plataforma/contratos-vencendo/">ver contratos de todos os fornecedores</a></p>');var PG={};try{PG=JSON.parse(localStorage.getItem('dv_vc_pg')||'{}')}catch(x){}function pago(k){var d=PG[k];return d&&Date.now()-d<29*864e5}function marca(k){PG[k]=Date.now();try{localStorage.setItem('dv_vc_pg',JSON.stringify(PG))}catch(x){}}
 function e(s){return String(s==null?'':s).replace(/[&<>"]/g,function(c){return{'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]})}
 function br(d){return d?d.split('-').reverse().join('/'):''}

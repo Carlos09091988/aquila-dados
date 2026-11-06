@@ -455,7 +455,7 @@ add_shortcode( 'dv_alertas', function () {
 .al-ba{display:flex;flex-wrap:wrap;gap:6px;margin-top:10px}.al-ba a,.al-ba button{font-size:.8rem!important;font-weight:600!important;border:1px solid var(--ln)!important;border-radius:9px!important;padding:7px 11px!important;text-decoration:none;color:#16191E!important;background:#fff!important;cursor:pointer}.al-ba .p{background:#C9A45C!important;border-color:#C9A45C!important;color:#241A06!important}.al-ba .ok{background:#EAF5EE!important;color:#1F5A3B!important}.al-ba .x{margin-left:auto;color:#6E6A60!important}
 @media(max-width:700px){.al{padding:16px}.al-2{grid-template-columns:1fr}.al-ba .x{margin-left:0}}
 </style>
-<script>
+<script>/*DVSTATIC*/
 (function(){var R=document.getElementById('dv-al');if(!R)return;var api=R.dataset.api,nonce=R.dataset.nonce,S=null,F=R.querySelector('.al-f'),M=R.querySelector('.al-m'),ufs={};
 var UF='AC AL AP AM BA CE DF ES GO MA MT MS MG PA PB PR PE PI RJ RN RS RO RR SC SP SE TO'.split(' ');
 function e(s){return String(s==null?'':s).replace(/[&<>"]/g,function(c){return{'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]})}

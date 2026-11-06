@@ -824,13 +824,59 @@ add_action( 'wp_footer', function () {
 /* Título da home no navegador e no Google */
 add_filter( 'pre_get_document_title', function ( $t ) { return is_front_page() ? 'Desenvolve Estratégias · Inteligência em licitações' : $t; }, 99 );
 
-/* Prévia de link (WhatsApp, LinkedIn etc.) com a marca nova */
+/* SEO: descrição própria por página, prévia de link (WhatsApp, LinkedIn), noindex nas páginas de conta e dados estruturados na home */
+function dv_seo_desc() {
+	$o = is_page() ? get_queried_object() : null; $slug = $o && ! empty( $o->post_name ) ? $o->post_name : '';
+	if ( is_front_page() ) { $slug = 'front'; }
+	$m = array(
+		'front' => 'Encontre licitações abertas perto de você, receba os editais do seu ramo todo dia por e-mail e confira concorrentes e órgãos com dados oficiais. Planos a partir de R$ 19,90 por mês.',
+		'consulta-gratis' => 'Busque grátis licitações abertas por cidade, estado e raio de atendimento, ou consulte uma empresa ou um órgão público pelo CNPJ. Dados oficiais do PNCP e da Receita Federal.',
+		'assinar' => 'Planos da Desenvolve: Busca por R$ 19,90/mês, com os editais do seu ramo todo dia, e Completo por R$ 79,90/mês, com Raio-X de concorrentes, gestão de licitações e contratos vencendo.',
+		'termos-de-uso-plataforma' => 'Termos de uso da plataforma Desenvolve Estratégias: planos, créditos, cancelamento, fontes de dados e limites de responsabilidade.',
+		'politica-de-privacidade' => 'Como a Desenvolve Estratégias coleta, usa e protege os seus dados, conforme a LGPD.',
+		'plataforma' => 'A plataforma da Desenvolve para quem vende ao Poder Público: editais do seu ramo todo dia, Raio-X de concorrentes e órgãos, gestão de licitações, agenda de prazos e contratos vencendo.',
+		'buscador' => 'Buscador de licitações abertas por palavra, estado, cidade e raio de atendimento em km, com dados do PNCP e dos diários oficiais.',
+		'raio-x' => 'Raio-X do concorrente: punições em cadastros oficiais, dívida ativa, sócios, grupo econômico e contratos públicos de qualquer empresa pelo CNPJ.',
+		'raio-x-comprador' => 'Raio-X do comprador: licitações abertas, contratos, fornecedores atuais e histórico de pagamento de prefeituras e órgãos públicos.',
+		'dossie' => 'Due Diligence completa de uma empresa em PDF: processos judiciais, grupo econômico, sanções, imprensa e análise de risco.',
+		'raio-x-lote' => 'Raio-X em lote: analise vários CNPJs de uma vez e compare os concorrentes de uma licitação.',
+		'alertas' => 'Alertas de oportunidades: as licitações novas do seu ramo, no seu estado ou perto da sua cidade, todo dia por e-mail.',
+		'contratos-vencendo' => 'Contratos públicos do seu ramo que estão acabando: órgão, fornecedor atual, valor e data de vencimento.',
+		'noticias' => 'Notícias de licitações: o que mudou na lei, decisões do TCU e dos tribunais e o que os órgãos que compram de você estão fazendo.',
+		'licitacoes' => 'Gestão de licitações: organize cada disputa por etapa, com prazos, documentos, conferência do edital e agenda.',
+		'banco-de-precos' => 'Banco de preços: quanto o governo já pagou pelo que você vende, para montar a proposta com segurança.',
+		'documentos' => 'Documentos e certidões de habilitação com aviso antes de vencer.',
+		'meus-contratos' => 'Meus contratos e garantias: a carteira de contratos públicos da sua empresa, com prazos, reajustes e garantias.',
+		'recursos' => 'Impugnações, recursos e defesas: prazos da Lei 14.133/2021 contados certos e roteiro da peça.',
+		'prazos' => 'Calculadora de prazos da Lei 14.133/2021 para impugnação, esclarecimento, recurso e contrarrazões.',
+		'comparador' => 'Comparador de licitantes: compare os concorrentes de uma licitação lado a lado.',
+		'captador' => 'Radar do Diário Oficial: aviso quando o nome da sua empresa ou dos concorrentes sai nos diários oficiais.',
+		'banco-de-teses' => 'Banco de teses: jurisprudência do TCU e súmulas para fundamentar impugnações, recursos e defesas.',
+	);
+	return isset( $m[ $slug ] ) ? $m[ $slug ] : 'Editais do seu ramo todo dia, prazos da Lei 14.133 avisados, Raio-X de concorrentes e órgãos e as notícias do seu mercado numa plataforma só.';
+}
 add_action( 'wp_head', function () {
 	if ( is_admin() ) { return; }
 	$img = 'https://desenvolveestrategias.com.br/wp-content/uploads/2026/11/desenvolve-og-3.jpg';
 	$t = is_front_page() ? 'Desenvolve Estratégias · Inteligência em licitações' : wp_get_document_title();
-	$d = 'Editais do seu ramo todo dia, prazos da Lei 14.133 avisados, Raio-X de concorrentes e órgãos e as notícias do seu mercado numa plataforma só.';
-	echo "\n" . '<meta property="og:type" content="website"><meta property="og:site_name" content="Desenvolve Estratégias"><meta property="og:title" content="' . esc_attr( $t ) . '"><meta property="og:description" content="' . esc_attr( $d ) . '"><meta name="description" content="' . esc_attr( $d ) . '"><meta property="og:url" content="' . esc_url( home_url( add_query_arg( array() ) ) ) . '"><meta property="og:image" content="' . $img . '"><meta property="og:image:width" content="1200"><meta property="og:image:height" content="630"><meta name="twitter:card" content="summary_large_image">' . "\n";
+	$d = dv_seo_desc();
+	$o = is_page() ? get_queried_object() : null; $slug = $o && ! empty( $o->post_name ) ? $o->post_name : '';
+	if ( in_array( $slug, array( 'painel', 'creditos', 'teste', 'nova-home-previa', 'avaliacao' ), true ) ) { echo "\n" . '<meta name="robots" content="noindex,follow">'; }
+	echo "\n" . '<meta property="og:type" content="website"><meta property="og:site_name" content="Desenvolve Estratégias"><meta property="og:title" content="' . esc_attr( $t ) . '"><meta property="og:description" content="' . esc_attr( $d ) . '"><meta name="description" content="' . esc_attr( $d ) . '"><meta property="og:url" content="' . esc_url( home_url( add_query_arg( array() ) ) ) . '"><meta property="og:image" content="' . esc_url( $img ) . '"><meta property="og:image:width" content="1200"><meta property="og:image:height" content="630"><meta property="og:locale" content="pt_BR"><meta name="twitter:card" content="summary_large_image"><meta name="twitter:title" content="' . esc_attr( $t ) . '"><meta name="twitter:description" content="' . esc_attr( $d ) . '"><meta name="twitter:image" content="' . esc_url( $img ) . '">' . "\n";
+	if ( ! is_front_page() ) { return; }
+	$org = array( '@type' => 'Organization', '@id' => home_url( '/#org' ), 'name' => 'Desenvolve Estratégias Empresariais', 'url' => home_url( '/' ), 'logo' => $img, 'email' => 'contato@desenvolveestrategias.com.br', 'telephone' => '+55 11 99350-0950', 'address' => array( '@type' => 'PostalAddress', 'streetAddress' => 'Av. Eng. Luís Carlos Berrini, 1681', 'addressLocality' => 'São Paulo', 'addressRegion' => 'SP', 'addressCountry' => 'BR' ) );
+	$site = array( '@type' => 'WebSite', '@id' => home_url( '/#site' ), 'url' => home_url( '/' ), 'name' => 'Desenvolve Estratégias', 'inLanguage' => 'pt-BR', 'publisher' => array( '@id' => home_url( '/#org' ) ) );
+	$app = array( '@type' => 'SoftwareApplication', 'name' => 'Plataforma Desenvolve', 'applicationCategory' => 'BusinessApplication', 'operatingSystem' => 'Web', 'url' => home_url( '/' ), 'description' => $d, 'offers' => array(
+		array( '@type' => 'Offer', 'name' => 'Plano Busca', 'price' => '19.90', 'priceCurrency' => 'BRL', 'url' => home_url( '/#planos' ), 'availability' => 'https://schema.org/PreOrder' ),
+		array( '@type' => 'Offer', 'name' => 'Plano Completo', 'price' => '79.90', 'priceCurrency' => 'BRL', 'url' => home_url( '/#planos' ), 'availability' => 'https://schema.org/PreOrder' ),
+	) );
+	$g = array( $org, $site, $app );
+	$po = get_post( (int) get_option( 'page_on_front' ) ); $qa = array();
+	if ( $po && preg_match_all( '~<summary>(.*?)</summary>\s*<p>(.*?)</p>~s', (string) $po->post_content, $mm, PREG_SET_ORDER ) ) {
+		foreach ( $mm as $x ) { $qa[] = array( '@type' => 'Question', 'name' => wp_strip_all_tags( $x[1] ), 'acceptedAnswer' => array( '@type' => 'Answer', 'text' => wp_strip_all_tags( $x[2] ) ) ); }
+	}
+	if ( $qa ) { $g[] = array( '@type' => 'FAQPage', 'mainEntity' => $qa ); }
+	echo '<script type="application/ld+json">' . wp_json_encode( array( '@context' => 'https://schema.org', '@graph' => $g ), JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE ) . '</script>' . "\n";
 }, 1 );
 
 /* Páginas do site antigo levam ao site novo (301). As páginas continuam salvas no WordPress. */

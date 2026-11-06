@@ -198,13 +198,24 @@ def data_texto(t):
 
 
 def ibge_municipios(ufs):
+    """Municípios do IBGE (lista guardada em data/diarios/municipios_ibge.csv, do Querido Diário; API do IBGE como reserva)."""
     out = []
+    try:
+        import csv
+        with open(os.path.join(DADOS, 'municipios_ibge.csv'), encoding='utf-8') as f:
+            out = [(r['state_code'], r['name']) for r in csv.DictReader(f) if r['state_code'] in ufs]
+    except Exception as e:
+        log('lista de municípios erro', str(e)[:120])
+    if out:
+        return out
     for uf in ufs:
         t = get('https://servicodados.ibge.gov.br/api/v1/localidades/estados/%s/municipios' % uf, timeout=60)
         try:
             out += [(uf, x['nome']) for x in json.loads(t or '[]')]
         except Exception:
             log('ibge erro', uf)
+    if not out:
+        log('nenhum município carregado')
     return out
 
 
@@ -285,6 +296,9 @@ def atende_testa(uf, slug):
 
 
 def docs_cidades(plat, arq, ufs, testa, edicoes_de):
+    amostra = {'doem': ('BA', 'catu'), 'atende': ('PR', 'castro')}.get(plat)
+    if amostra:
+        log(plat, 'teste com', amostra, '->', testa(*amostra))
     cidades = descobrir(arq, plat, ufs, testa)
     meses = {(d.year, d.month) for d in (dt.date.fromisoformat(x) for x in DATAS)}
     out = []

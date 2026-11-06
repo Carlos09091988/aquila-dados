@@ -156,6 +156,18 @@ function dv_am_editais( $q, $uf, $cid = 0, $raio = 0, $rapida = 0 ) {
 }
 
 add_action( 'rest_api_init', function () {
+	/* Contador público: licitações abertas agora no Brasil e por estado (PNCP), em cache por 6 horas */
+	register_rest_route( 'desenvolve/v1', '/contador', array( 'methods' => 'GET', 'permission_callback' => '__return_true', 'callback' => function ( WP_REST_Request $r ) {
+		$uf = strtoupper( preg_replace( '/[^A-Za-z]/', '', (string) $r['uf'] ) ); $uf = strlen( $uf ) === 2 ? $uf : '';
+		$k = 'dv_contador_' . ( $uf ? $uf : 'BR' ); $c = get_transient( $k );
+		if ( ! is_array( $c ) ) {
+			$base = 'https://pncp.gov.br/api/search/?q=&tipos_documento=edital&status=recebendo_proposta&pagina=1&tam_pagina=1' . ( $uf ? '&ufs=' . $uf : '' );
+			$t = dv_am_get( $base, 15 ); $q = dv_am_get( $base . '&modalidades=8%7C9', 15 );
+			$c = array( 'abertas' => (int) ( $t['total'] ?? 0 ), 'rapidas' => (int) ( $q['total'] ?? 0 ), 'uf' => $uf, 'quando' => current_time( 'Y-m-d H:i' ) );
+			if ( $c['abertas'] > 0 ) { set_transient( $k, $c, 6 * HOUR_IN_SECONDS ); }
+		}
+		return new WP_REST_Response( $c, 200, array( 'Cache-Control' => 'public, max-age=3600' ) );
+	} ) );
 	register_rest_route( 'desenvolve/v1', '/municipios', array( 'methods' => 'GET', 'permission_callback' => '__return_true', 'callback' => function ( WP_REST_Request $r ) {
 		if ( (int) $r['c'] ) { $M = dv_mun_all(); $o = array(); foreach ( dv_mun_raio( (int) $r['c'], min( 3000, max( 0, (int) $r['raio'] ) ), 0 ) as $c => $d ) { $o[] = array( 'c' => $c, 'n' => $M[ $c ][0], 'uf' => $M[ $c ][1], 'km' => $d ); } return $o; }
 		$uf = strtoupper( preg_replace( '/[^A-Za-z]/', '', (string) $r['uf'] ) ); $uf = strlen( $uf ) === 2 ? $uf : '';

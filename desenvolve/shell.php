@@ -147,6 +147,9 @@ body.dv-app #ht-ctc-chat{bottom:18px!important}
  body.dv-app .dv-th{padding:20px 16px 4px!important}body.dv-app .dv-tool{padding:0 12px!important}body.dv-app .dvp{padding:0 14px}
  body.dv-app .dv-cons,body.dv-app .dv-next{margin:0 12px 16px!important}
 }
+
+/* celular: nada do relatório passa da largura da tela */
+@media(max-width:640px){body.dv-app{overflow-x:hidden}body.dv-app .dv-tool>*,body.dv-app .rx-out>*,body.dv-app .rp>*{max-width:100%;box-sizing:border-box}body.dv-app .dv-tool table{display:block;overflow-x:auto;max-width:100%}body.dv-app .dv-tool pre{white-space:pre-wrap;word-break:break-word}}
 </style>
 	<?php
 }, 99 );

@@ -146,6 +146,7 @@ add_action( 'wp_footer', function () {
 #dv-par .nota{margin-top:14px;font-size:.8rem;color:#6E6A60}
 @media print{#dv-par .modos,#dv-par .ent{display:none}}
 /* Leitura guiada */
+.rp-bar button.g,.rp-bar .g{color:#16191E!important;background:#fff!important;border:1px solid #CFC8B8!important}
 .dv-org #dv-rs{display:none!important}#dv-mia-slot{padding:0 30px 18px;background:#FFFDF8}#dv-mia-slot .dv-mia-w{margin:0}
 #dv-capa p,#dv-capa li,#dv-capa span,#dv-mapa span,#dv-mapa p,.dv-tema>summary span{font-weight:400}
 .rp.dv-org .rp-sec h3 i{display:none}

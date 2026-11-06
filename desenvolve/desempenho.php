@@ -80,8 +80,9 @@ function dv_est_html( $html ) {
 	foreach ( $parts as $k => $part ) {
 		if ( $k % 2 === 1 ) { continue; }
 		/* c) blocos de CSS grandes, sem url() relativa */
-		$part = preg_replace_callback( '~<style([^>]*)>(.{2048,}?)</style>~s', function ( $m ) {
+		$part = preg_replace_callback( '~<style([^>]*)>(.*?)</style>~s', function ( $m ) {
 			$css = $m[2];
+			if ( strlen( $css ) < 2048 ) { return $m[0]; }
 			if ( preg_match( '~url\(\s*["\']?(?!https?:|data:|/|//)~i', $css ) ) { return $m[0]; }
 			$id = preg_match( '/id=["\']([^"\']+)/', $m[1], $x ) ? $x[1] : '';
 			$u = dv_est_file( $css, 'css', $id ? $id : 'css' );

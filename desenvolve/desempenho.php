@@ -36,6 +36,19 @@ add_action( 'init', function () {
 add_filter( 'hostinger_ai_assistant_chatbot_enabled', '__return_false' );
 add_action( 'wp_footer', function () { echo '<style>#hostinger-chatbot,.hostinger-chatbot,[id^="hostinger-chatbot"]{display:none!important}</style>'; }, 999 );
 
+/* 1b) Home e consulta grátis têm cabeçalho e rodapé próprios: não carregam o cabeçalho/rodapé do tema nem o CSS de blocos,
+ *     e os scripts do WordPress (jQuery etc.) passam a carregar com defer para o visitante, sem segurar a tela. */
+function dv_pub_propria() { return ! is_admin() && ! is_user_logged_in() && ( is_front_page() || is_page( 'consulta-gratis' ) ); }
+add_action( 'wp_enqueue_scripts', function () {
+	if ( ! dv_pub_propria() ) { return; }
+	foreach ( array( 'kadence-header', 'kadence-footer', 'wp-block-library', 'wp-block-library-theme', 'global-styles', 'classic-theme-styles' ) as $h ) { wp_dequeue_style( $h ); }
+}, 101 );
+add_filter( 'script_loader_tag', function ( $tag, $handle ) {
+	if ( is_admin() || is_user_logged_in() || strpos( $tag, ' defer' ) !== false || strpos( $tag, ' async' ) !== false ) { return $tag; }
+	if ( in_array( $handle, array( 'jquery-core', 'jquery', 'wp-hooks', 'wp-i18n', 'ht_ctc_app_js', 'kadence-navigation', 'kadence-splide' ), true ) ) { $tag = str_replace( ' src=', ' defer src=', $tag ); }
+	return $tag;
+}, 10, 2 );
+
 /* 2) Arquivos estáticos */
 function dv_est_dir() {
 	$u = wp_upload_dir();

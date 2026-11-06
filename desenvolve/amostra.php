@@ -228,6 +228,8 @@ function dv_am_trava( $c ) {
 	// sem e-mail não sai nenhum dado: nem amostra de edital, nem cadastro, nem números dos achados
 	$ne = count( (array) ( $c['editais'] ?? array() ) );
 	if ( $ne ) { $t['editais'] = array_merge( array_fill( 0, $ne, array( 'objeto' => 'Licitação liberada depois do e-mail ●●●●●●●●●●●●●●●●●●●●●●●●', 'orgao' => '●●●●●●●●●●●●', 'local' => '●●●●', 'modalidade' => '', 'fim' => '', 'valor' => 0, 'link' => '' ) ), (array) ( $t['editais'] ?? array() ) ); }
+	// um gostinho de verdade, sem entregar: o começo do objeto da primeira licitação (sem órgão, local, prazo ou link)
+	if ( ( $c['tipo'] ?? '' ) === 'editais' ) { $o1 = (string) ( $c['editais'][0]['objeto'] ?? $c['bloqueado']['editais'][0]['objeto'] ?? '' ); $o1 = trim( mb_substr( $o1, 0, 64 ) ); if ( $o1 && mb_strlen( $o1 ) >= 64 ) { $o1 = preg_replace( '/\s+\S*$/u', '', $o1 ); } $c['teaser'] = $o1; }
 	$c['editais'] = array(); $c['livre'] = array();
 	if ( ( $c['tipo'] ?? '' ) !== 'editais' ) { foreach ( (array) $c['achados'] as $i => $a ) { $c['achados'][ $i ]['n'] = '●'; $c['achados'][ $i ]['alerta'] = false; } }
 	$c['bloqueado'] = $t; $c['travado'] = true;

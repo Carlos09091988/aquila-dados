@@ -38,7 +38,7 @@ function dv_cp_siconfi( $id_ente, $esfera ) {
 		$urls[ 'pes' . $per ] = $B . 'rgf?an_exercicio=' . $ano . '&in_periodicidade=' . $per . '&nr_periodo=' . $n . '&co_tipo_demonstrativo=RGF&no_anexo=RGF-Anexo%2001&co_esfera=' . $esf . '&co_poder=E&id_ente=' . $id_ente;
 		$urls[ 'cx' . $per ] = $B . 'rgf?an_exercicio=' . $ano . '&in_periodicidade=' . $per . '&nr_periodo=' . $n . '&co_tipo_demonstrativo=RGF&no_anexo=RGF-Anexo%2005&co_esfera=' . $esf . '&co_poder=E&id_ente=' . $id_ente;
 	}
-	$b = dv_ds_multi( $urls, array(), 40 ); $it = function ( $k ) use ( $b ) { $j = ! empty( $b[ $k ] ) ? json_decode( $b[ $k ], true ) : null; return (array) ( $j['items'] ?? array() ); };
+	$b = dv_ds_multi( $urls, array(), 18 ); $it = function ( $k ) use ( $b ) { $j = ! empty( $b[ $k ] ) ? json_decode( $b[ $k ], true ) : null; return (array) ( $j['items'] ?? array() ); };
 	foreach ( array( $ano, $ano - 1 ) as $a ) {
 		$r = array();
 		foreach ( $it( 'rp' . $a ) as $i ) {
@@ -83,9 +83,9 @@ function dv_cp_contratos( $cnpj ) {
 	/* cache por órgão (12h): a mesma consulta com outro item não refaz a busca */
 	$ck = 'dv_cpct2_' . $cnpj; $c = get_transient( $ck ); if ( is_array( $c ) ) { return $c; }
 	/* os 4 anos em paralelo; páginas extras só para órgãos médios (órgão grande = amostra de 500 por ano, que já basta para o perfil) */
-	$t0 = microtime( true ); $b = function_exists( 'dv_cp_resta' ) && dv_cp_resta() < 60 ? dv_ds_multi( $u, array(), 25 ) : dv_ds_multi_lento( $u, 4, 35 ); unset( $b['__falhas'] ); $mais = array(); $treg = 0;
+	$t0 = microtime( true ); $b = dv_ds_multi( $u, array(), 20 ); unset( $b['__falhas'] ); $mais = array(); $treg = 0;
 	foreach ( $b as $k => $body ) { $j = $body ? json_decode( $body, true ) : null; $tp = (int) ( $j['totalPaginas'] ?? 1 ); $treg += (int) ( $j['totalRegistros'] ?? 0 ); if ( $tp <= 3 ) { for ( $p = 2; $p <= $tp; $p++ ) { $mais[ str_replace( '_1', '_' . $p, $k ) ] = str_replace( '&pagina=1', '&pagina=' . $p, $u[ $k ] ); } } }
-	if ( $mais && microtime( true ) - $t0 < 25 ) { $mm = dv_ds_multi_lento( $mais, 6, 30 ); unset( $mm['__falhas'] ); $b += $mm; }
+	if ( $mais && microtime( true ) - $t0 < 12 && dv_cp_resta() > 25 ) { $mm = dv_ds_multi( $mais, array(), 12 ); unset( $mm['__falhas'] ); $b += $mm; }
 	$o = array(); $v = array(); $erro = 0;
 	foreach ( $b as $body ) {
 		$j = $body ? json_decode( $body, true ) : null; if ( ! $j ) { $erro++; continue; }
@@ -102,7 +102,7 @@ function dv_cp_contratos( $cnpj ) {
 }
 function dv_cp_abertas( $cnpj ) {
 	$u = 'https://pncp.gov.br/api/consulta/v1/contratacoes/proposta?cnpj=' . $cnpj . '&dataFinal=' . gmdate( 'Ymd', strtotime( '+1 year' ) ) . '&pagina=1&tamanhoPagina=50';
-	$b = dv_ds_multi( array( 1 => $u ), array(), 40 ); $j = $b[1] ? json_decode( $b[1], true ) : null; $o = array();
+	$b = dv_ds_multi( array( 1 => $u ), array(), 15 ); $j = $b[1] ? json_decode( $b[1], true ) : null; $o = array();
 	foreach ( (array) ( $j['data'] ?? array() ) as $i ) {
 		$a = $i['anoCompra'] ?? ''; $s = $i['sequencialCompra'] ?? '';
 		$o[] = array( 'titulo' => trim( ( $i['modalidadeNome'] ?? '' ) . ' ' . ( $i['numeroCompra'] ?? '' ) ), 'objeto' => mb_substr( trim( (string) ( $i['objetoCompra'] ?? '' ) ), 0, 300 ),
@@ -116,7 +116,7 @@ function dv_cp_abertas( $cnpj ) {
 function dv_cp_precos( $cnpj, $compras, $toks ) {
 	$alvo = array_slice( $compras, 0, 12 );
 	$u = array(); foreach ( $alvo as $k => $e ) { $u[ $k ] = 'https://pncp.gov.br/api/pncp/v1/orgaos/' . $cnpj . '/compras/' . $e['ano'] . '/' . $e['seq'] . '/itens?pagina=1&tamanhoPagina=100'; }
-	$b = $u ? dv_ds_multi_lento( $u, 4, 40 ) : array(); unset( $b['__falhas'] ); $itens = array(); $res = array();
+	$b = $u ? dv_ds_multi( $u, array(), 15 ) : array(); unset( $b['__falhas'] ); $itens = array(); $res = array();
 	$algum = false; foreach ( $b as $body ) { foreach ( (array) ( $body ? json_decode( $body, true ) : array() ) as $i ) { if ( dv_cp_casa( $i['descricao'] ?? '', $toks ) ) { $algum = true; break 2; } } }
 	foreach ( $b as $k => $body ) {
 		$nk = 0;
@@ -130,7 +130,7 @@ function dv_cp_precos( $cnpj, $compras, $toks ) {
 		}
 	}
 	if ( $res ) {
-		$rr = dv_ds_multi_lento( $res, 5, 30 ); unset( $rr['__falhas'] );
+		$rr = dv_ds_multi( $res, array(), 12 ); unset( $rr['__falhas'] );
 		foreach ( $rr as $k => $body ) {
 			$r = $body ? json_decode( $body, true ) : null; $r = is_array( $r ) && isset( $r[0] ) ? $r[0] : $r;
 			if ( $r ) { $itens[ $k ]['homologado'] = isset( $r['valorUnitarioHomologado'] ) ? (float) $r['valorUnitarioHomologado'] : null; $itens[ $k ]['vencedor'] = $r['nomeRazaoSocialFornecedor'] ?? ''; }
@@ -165,7 +165,7 @@ function dv_cp_politicos( $cad, $esfera ) {
 function dv_cp_proc_lic( $nome, $termos, $tj = '' ) {
 	$base = 'https://comunicaapi.pje.jus.br/api/v1/comunicacao?nomeParte=' . rawurlencode( $nome ) . '&itensPorPagina=100&pagina=1' . ( $tj ? '&siglaTribunal=' . $tj : '' ) . '&texto=';
 	$u = array(); foreach ( $termos as $k => $t ) { $u[ $k ] = $base . rawurlencode( $t ); }
-	$b = dv_ds_multi_lento( $u, 4, 40 ); unset( $b['__falhas'] ); $alvo = dv_ds_nrm( $nome ); $o = array();
+	$b = dv_ds_multi( $u, array(), 15 ); unset( $b['__falhas'] ); $alvo = dv_ds_nrm( $nome ); $o = array();
 	foreach ( $b as $k => $body ) {
 		$j = $body ? json_decode( $body, true ) : null; if ( ! $j ) { continue; }
 		foreach ( (array) ( $j['items'] ?? array() ) as $i ) {
@@ -190,7 +190,7 @@ function dv_cp_proc_lic( $nome, $termos, $tj = '' ) {
 function dv_cp_news( $consultas ) {
 	$g = function ( $q ) { return 'https://news.google.com/rss/search?q=' . rawurlencode( $q ) . '&hl=pt-BR&gl=BR&ceid=BR:pt-419'; };
 	$u = array(); foreach ( $consultas as $k => $q ) { $u[ $k ] = $g( $q ); }
-	$b = dv_ds_multi( $u, array( 'User-Agent' => 'Mozilla/5.0' ), 20 ); $o = array();
+	$b = dv_ds_multi( $u, array( 'User-Agent' => 'Mozilla/5.0' ), 10 ); $o = array();
 	foreach ( $b as $k => $body ) {
 		$o[ $k ] = array(); $vis = array(); if ( ! $body || ! function_exists( 'dv_nt_rss' ) ) { continue; }
 		foreach ( dv_nt_rss( $body ) as $i ) { $h = md5( $i['url'] ); if ( isset( $vis[ $h ] ) ) { continue; } $vis[ $h ] = 1; $o[ $k ][] = array( 'titulo' => $i['titulo'], 'fonte' => $i['fonte'], 'url' => $i['url'], 'data' => $i['data'] ); }
@@ -202,14 +202,14 @@ function dv_cp_news( $consultas ) {
 /* Orçamento de tempo: o relatório consulta várias fontes em sequência; quando uma fonte está lenta, as etapas
  * opcionais são puladas (o relatório sai parcial) e cada etapa concluída fica em cache, para a próxima tentativa completar. */
 function dv_cp_t0( $set = false ) { static $t0 = 0; if ( $set ) { $t0 = microtime( true ); } return $t0; }
-function dv_cp_resta() { return 85 - ( microtime( true ) - dv_cp_t0() ); }
+function dv_cp_resta() { return 50 - ( microtime( true ) - dv_cp_t0() ); } // o servidor corta a resposta aos 60 s
 function dv_cp_etapa( $chave, $ttl, $fn ) {
 	$ck = 'dv_cpe_' . md5( $chave ); $c = get_transient( $ck ); if ( $c !== false ) { return $c; }
 	$r = $fn(); if ( $r !== null ) { set_transient( $ck, $r, $ttl ); } return $r;
 }
 function dv_comprador( $cnpj, $item ) {
 	$ck = 'dv_cp7_' . $cnpj . '_' . md5( $item ); $c = get_transient( $ck ); if ( $c ) { return $c; }
-	dv_cp_t0( true ); $pulou = array();
+	dv_cp_t0( true ); $pulou = array(); @ignore_user_abort( true ); // se o servidor cortar a resposta, a coleta termina e fica em cache para a próxima tentativa
 	$x = wp_remote_get( 'https://brasilapi.com.br/api/cnpj/v1/' . $cnpj, array( 'timeout' => 20 ) );
 	$cad = is_wp_error( $x ) ? array() : (array) json_decode( wp_remote_retrieve_body( $x ), true );
 	if ( empty( $cad['razao_social'] ) ) { return new WP_Error( 'dv_cnpj', 'CNPJ não encontrado na Receita Federal.', array( 'status' => 404 ) ); }

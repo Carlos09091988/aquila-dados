@@ -150,6 +150,7 @@ body.dv-app #ht-ctc-chat{bottom:18px!important}
 
 /* celular: nada do relatório passa da largura da tela */
 @media(max-width:640px){body.dv-app{overflow-x:hidden}body.dv-app .dv-tool>*,body.dv-app .rx-out>*,body.dv-app .rp>*{max-width:100%;box-sizing:border-box}body.dv-app .dv-tool table{display:block;overflow-x:auto;max-width:100%}body.dv-app .dv-tool pre{white-space:pre-wrap;word-break:break-word}}
+body.dv-app .dv-tool small{font-size:12px!important}
 </style>
 	<?php
 }, 99 );

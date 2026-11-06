@@ -159,7 +159,6 @@ add_action( 'rest_api_init', function () {
 	register_rest_route( 'desenvolve/v1', '/municipios', array( 'methods' => 'GET', 'permission_callback' => '__return_true', 'callback' => function ( WP_REST_Request $r ) {
 		if ( (int) $r['c'] ) { $M = dv_mun_all(); $o = array(); foreach ( dv_mun_raio( (int) $r['c'], min( 3000, max( 0, (int) $r['raio'] ) ), 0 ) as $c => $d ) { $o[] = array( 'c' => $c, 'n' => $M[ $c ][0], 'uf' => $M[ $c ][1], 'km' => $d ); } return $o; }
 		$uf = strtoupper( preg_replace( '/[^A-Za-z]/', '', (string) $r['uf'] ) ); $uf = strlen( $uf ) === 2 ? $uf : '';
-		if ( $uf && $r['todos'] ) { $o = array(); foreach ( dv_mun_all() as $c => $x ) { if ( $x[1] === $uf ) { $o[] = array( 'c' => $c, 'n' => $x[0] ); } } usort( $o, function ( $a, $b ) { return strcoll( remove_accents( $a['n'] ), remove_accents( $b['n'] ) ); } ); return new WP_REST_Response( $o, 200, array( 'Cache-Control' => 'public, max-age=86400' ) ); }
 		return array_map( function ( $x ) { return array( 'c' => $x[0], 'n' => $x[1], 'uf' => $x[2] ); }, dv_mun_busca( (string) $r['q'], $uf ) );
 	} ) );
 	register_rest_route( 'desenvolve/v1', '/amostra', array( 'methods' => 'POST', 'permission_callback' => '__return_true', 'callback' => function ( WP_REST_Request $r ) {

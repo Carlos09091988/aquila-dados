@@ -475,34 +475,35 @@ var TEMAS=[['lan','Como ele dá preço','Descontos, ramos em que atua e onde ven
  ['pes','Quem é a empresa','Cadastro na Receita',['rx-cad']],
  ['rep','Justiça e imprensa','Processos judiciais e notícias',['dv-s2','dv-s1']]];
 function onde(id){for(var i=0;i<TEMAS.length;i++)if(TEMAS[i][3].indexOf(id)>=0)return TEMAS[i][0];return null}
-function cnpj(){var m=location.search.match(/cnpj=(\d{14})/);return m?m[1]:''}
-function nome(){var F=window.DVFO||{},c=F.cadastro||F;if(c.razao_social)return c.razao_social;var cad=document.getElementById('rx-cad');if(cad){var l=cad.innerText.split('\n').map(function(x){return x.trim()}).filter(Boolean);return l[1]||''}return''}
+function cnpj(){var m=location.search.match(/cnpj=(\d{14})/);if(m)return m[1];var x=document.querySelector('#dv-rs .id')||document.getElementById('rx-cad');var k=x&&x.textContent.match(/\d{2}\.\d{3}\.\d{3}\/\d{4}-\d{2}/);return k?k[0].replace(/\D/g,''):''}
+function nome(){var F=window.DVFO||{},c=F.cadastro||F;if(c.razao_social)return c.razao_social;var id=document.querySelector('#dv-rs .id b, #dv-rs .id h2, #dv-rs .id strong');if(id&&id.textContent.trim())return id.textContent.trim();var cad=document.querySelector('#rx-cad h2, #rx-cad h3');return cad?cad.textContent.trim():''}
 function analisa(){var R=document.querySelector('.rx-out'),I=window.DVIC||{},rs=I.resumo||{},pf=I.perfil||{},ex=I.experiencia||[];
  var pts=[].slice.call(document.querySelectorAll('#rx-pts li')),forte=pts.filter(function(x){return/n2|n3|vm/.test(x.className)}).length;
- var sanc=['rx-ceis','rx-cnep','rx-tcu'].filter(function(id){var x=document.getElementById(id);return x&&!/nenhum registro|n[aã]o consta/i.test(x.innerText)}).length;
+ var sanc=['rx-ceis','rx-cnep','rx-tcu'].filter(function(id){var x=document.getElementById(id);return x&&x.textContent.trim().length>40&&!/nenhum registro|n[aã]o consta/i.test(x.textContent)}).length;
  var ufs=Object.keys(pf.uf||{}).map(function(k){return[k,pf.uf[k].n,pf.uf[k].media]}).sort(function(a,b){return b[1]-a[1]});
- var ctr=document.getElementById('rx-ctr'),nC=0;if(ctr){var m=ctr.innerText.match(/(\d[\d.]*)\s*\n?\s*contratos no PNCP/i);if(m)nC=+m[1].replace(/\./g,'')}
- return{vit:+rs.vitorias||0,valor:+rs.valor||0,med:pf.mediana,media:pf.media,nd:+pf.n||0,ufs:ufs,ramo:ex[0]||null,ramos:ex,pts:pts.length,forte:forte,sanc:sanc,nC:nC||(+rs.contratos||0),temI:!!window.DVIC}}
+ var ctr=document.getElementById('rx-ctr'),nC=0;if(ctr){var m=ctr.textContent.match(/(\d[\d.]*)\s*contratos no PNCP/i);if(m)nC=+m[1].replace(/\./g,'')}
+ return{vit:+rs.vitorias||0,valor:+rs.valor||0,med:(pf.mediana!=null&&+pf.mediana>0.5)?+pf.mediana:null,semDesc:pf.mediana!=null&&+pf.mediana<=0.5,media:pf.media,nd:+pf.n||0,ufs:ufs,ramo:ex[0]||null,ramos:ex,pts:pts.length,forte:forte,sanc:sanc,nC:nC||(+rs.contratos||0),temI:!!window.DVIC}}
 function veredito(A){if(!A.temI)return['am','Analisando o concorrente…','Estamos juntando as vitórias e os descontos dele. Esta conclusão se completa em alguns segundos.'];
  var forca=A.vit>=30||A.valor>=20e6?'forte':A.vit>=5||A.valor>=2e6?'médio':'pequeno';
  var t=forca==='forte'?'Concorrente forte':forca==='médio'?'Concorrente de porte médio':'Concorrente pequeno';
- var d=A.vit+' licitação(ões) vencida(s) no PNCP, somando '+mc(A.valor)+'.'+(A.med!=null?' Dá, em mediana, '+pc(A.med)+' de desconto sobre o valor estimado.':'');
+ var d=A.vit+' licitação(ões) vencida(s) no PNCP, somando '+mc(A.valor)+'.'+(A.med!=null?' Dá, em mediana, '+pc(A.med)+' de desconto sobre o valor estimado.':A.semDesc?' Costuma vencer sem desconto relevante.':'');
  if(A.forte||A.sanc)d+=' Tem '+(A.forte+A.sanc)+' ponto(s) fraco(s) na habilitação para explorar.';
  return[forca==='forte'?'vm':forca==='médio'?'am':'ok',t,d]}
 function acoes(A){var a=[];
  if(A.med!=null&&A.nd>=3)a.push('Para vencer dele, sua proposta precisa suportar desconto acima de '+pc(A.med)+' (a mediana dele em '+A.nd+' disputas). Confira antes se o seu preço continua exequível.');
+ else if(A.semDesc)a.push('Ele costuma vencer sem desconto relevante, o que é típico de contratação direta (dispensa ou inexigibilidade). Mostre ao órgão que há concorrência: um orçamento seu pode levar o próximo processo para pregão.');
  else if(A.temI)a.push('Há poucas disputas com desconto conhecido. Acompanhe as próximas sessões dele para calibrar o seu lance.');
  if(A.ufs.length){var top=A.ufs.slice(0,2).map(function(u){return u[0]}).join(' e ');a.push('Ele concentra as vitórias em '+top+'. Em outros estados a concorrência com ele tende a ser menor.')}
  if(A.forte||A.sanc)a.push('Use os pontos fracos dele na habilitação (veja o tema): peça diligência na sessão (Lei 14.133, art. 64) e, se for o caso, recorra (art. 165).');
  else a.push('Na habilitação, os dados públicos não mostram ponto fraco dele: a disputa vai ser no preço e nos atestados.');
  return a.slice(0,3)}
 function status(A){var o={};
- o.lan=A.med!=null?['am','Desconto mediano de '+pc(A.med)+(A.ramo?' · forte em '+A.ramo.ramo:'')]:['na',A.temI?'Sem desconto conhecido':'Carregando…'];
+ o.lan=A.med!=null?['am','Desconto mediano de '+pc(A.med)+(A.ramo?' · forte em '+A.ramo.ramo:'')]:['na',A.semDesc?'Vence sem desconto relevante'+(A.ramo?' · forte em '+A.ramo.ramo:''):A.temI?'Sem desconto conhecido':'Carregando…'];
  o.hab=A.forte||A.sanc?['ok',(A.forte+A.sanc)+' ponto(s) fraco(s) para explorar']:A.pts?['am',A.pts+' ponto(s) de atenção leve(s)']:['na','Sem ponto fraco nos dados públicos'];
  o.gov=['na',A.nC?A.nC+' contrato(s) no PNCP':'Contratos públicos'];
  o.pes=['na','Cadastro na Receita'];o.rep=['na','Processos e notícias'];return o}
 function capa(){var A=analisa(),v=veredito(A),o=status(A),cp=document.getElementById('dv-capa');if(!cp)return;
- var K=[[A.vit||'—','Licitações vencidas',''],[A.valor?mc(A.valor):'—','Valor ganho',''],[A.med!=null?pc(A.med):'—','Desconto mediano',''],[A.nC||'—','Contratos no PNCP',''],[A.forte+A.sanc||'Nenhum','Pontos fracos na habilitação',A.forte+A.sanc?'am':'']];
+ var K=[[A.vit||'—','Licitações vencidas',''],[A.valor?mc(A.valor):'—','Valor ganho',''],[A.med!=null?pc(A.med):A.semDesc?'≈ 0%':'—','Desconto mediano',''],[A.nC||'—','Contratos no PNCP',''],[A.forte+A.sanc||'Nenhum','Pontos fracos na habilitação',A.forte+A.sanc?'am':'']];
  var H='<div class="q"><div class="v '+v[0]+'"><small>Como eu ganho dele?</small><b>'+e(v[1])+'</b><p>'+e(v[2])+'</p></div><div class="acoes"><b>O que fazer agora</b><ol>'+acoes(A).map(function(x){return'<li>'+e(x)+'</li>'}).join('')+'</ol></div></div>';
  H+='<div class="kpi">'+K.map(function(k){return'<div class="'+k[2]+'"><b>'+e(k[0])+'</b><span>'+e(k[1])+'</span></div>'}).join('')+'</div>';
  cp.innerHTML=H;

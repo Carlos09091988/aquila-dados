@@ -146,6 +146,7 @@ add_action( 'wp_footer', function () {
 #dv-par .nota{margin-top:14px;font-size:.8rem;color:#6E6A60}
 @media print{#dv-par .modos,#dv-par .ent{display:none}}
 /* Leitura guiada */
+.dv-org .dv-tema .dv-pdf-top,.dv-org .dv-tema .dv-rnav{display:none!important}
 .rp-bar button.g,.rp-bar .g{color:#16191E!important;background:#fff!important;border:1px solid #CFC8B8!important}
 .dv-org #dv-rs{display:none!important}#dv-mia-slot{padding:0 30px 18px;background:#FFFDF8}#dv-mia-slot .dv-mia-w{margin:0}
 #dv-capa p,#dv-capa li,#dv-capa span,#dv-mapa span,#dv-mapa p,.dv-tema>summary span{font-weight:400}
@@ -546,7 +547,7 @@ setInterval(function(){var R=document.querySelector('.dv-org');if(!R)return;var 
 /* PDF organizado: o mesmo roteiro da tela (conclusão, o que fazer, números, temas), sem repetição */
 (function(){
 function e(s){return String(s==null?'':s).replace(/[&<>"]/g,function(c){return{'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]})}
-function limpa(el){var c=el.cloneNode(true);if(c.id==='rx-cad')[].forEach.call(c.querySelectorAll('h2,h3'),function(x){x.remove()});[].forEach.call(c.querySelectorAll('button,input,select,textarea,script,style,.modos,.ent,.dv-mia-w,.dv-rnav,.dv-pdf-top,[data-mia-r]'),function(x){x.remove()});
+function limpa(el){var c=el.cloneNode(true);if(c.id==='rx-cad')[].forEach.call(c.querySelectorAll('h2,h3'),function(x){x.remove()});[].forEach.call(c.querySelectorAll('#dv-rs,.dv-rs,.dv-pdf-top,.dv-ia,.dv-rnav,button,input,select,textarea,script,style,.modos,.ent,.dv-mia-w,.dv-rnav,.dv-pdf-top,[data-mia-r]'),function(x){x.remove()});
  [].forEach.call(c.querySelectorAll('details'),function(d){d.setAttribute('open','')});[].forEach.call(c.querySelectorAll('[hidden]'),function(x){x.removeAttribute('hidden')});
  [].forEach.call(c.querySelectorAll('h3 i'),function(x){x.remove()});[].forEach.call(c.querySelectorAll('[style*="display: none"],[style*="display:none"]'),function(x){x.remove()});
  [].forEach.call(c.querySelectorAll('a[href^="/"],a[href^="#"]'),function(a){var s=document.createElement('span');s.innerHTML=a.innerHTML;a.replaceWith(s)});return c}
@@ -575,7 +576,7 @@ function monta(){var R=document.querySelector('.dv-org');if(!R)return null;var h
  H+='<h3 style="font-size:11pt;margin:4px 0 6px">Resumo por tema</h3><div class="temas">'+T.map(function(t){var cl=(t.className.match(/\b(ok|am|vm|na)\b/)||['','na'])[1],b=t.querySelector('summary b'),sp=t.querySelector('summary span');return'<div class="'+cl+'"><i></i><b>'+e(b?b.textContent:'')+'</b><span>'+e(sp?sp.textContent:'')+'</span></div>'}).join('')+'</div>';
  T.forEach(function(t){var cl=(t.className.match(/\b(ok|am|vm|na)\b/)||['','na'])[1],b=t.querySelector('summary b'),sp=t.querySelector('summary span');
   H+='<section class="tema '+cl+'"><h2>'+e(b?b.textContent:'')+'</h2><p class="st">'+e(sp?sp.textContent:'')+'</p>';
-  [].slice.call(t.children).forEach(function(ch){if(ch.tagName==='SUMMARY')return;var x=limpa(ch);if(x.id==='dv-par'){[].forEach.call(x.querySelectorAll('h3,.sub'),function(y){y.remove()});H+='<div id="dv-par" class="sec">'+x.innerHTML+'</div>'}else H+='<div class="sec">'+x.innerHTML+'</div>'});
+  [].slice.call(t.children).forEach(function(ch){if(ch.tagName==='SUMMARY'||/^(dv-rs)$/.test(ch.id)||/dv-pdf-top|dv-rnav|dv-ia\b/.test(ch.className))return;var x=limpa(ch);if(x.id==='dv-par'){[].forEach.call(x.querySelectorAll('h3,.sub'),function(y){y.remove()});H+='<div id="dv-par" class="sec">'+x.innerHTML+'</div>'}else H+='<div class="sec">'+x.innerHTML+'</div>'});
   H+='</section>'});
  H+='<section class="fim"><h2>Fontes e aviso</h2><p>Relatório montado com dados públicos oficiais (Receita Federal, PGFN, Portal da Transparência/CGU, TCU, CNJ, PNCP, Tesouro Nacional e diários oficiais), consultados na data acima. As informações podem mudar depois da consulta: confira as certidões no dia da sessão.</p><p>Ausência de registro numa fonte não prova que o registro não existe. Processos e notícias encontrados pelo nome podem envolver homônimos.</p><p>Este relatório não substitui parecer jurídico. Para análise assinada por advogado, fale com a Desenvolve Estratégias.</p><div class="rod">Desenvolve Estratégias · desenvolveestrategias.com.br</div></section></body></html>';
  return H}

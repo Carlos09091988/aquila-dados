@@ -906,6 +906,14 @@ add_action( 'wp_head', function () {
 	echo '<script type="application/ld+json">' . wp_json_encode( array( '@context' => 'https://schema.org', '@graph' => $g ), JSON_UNESCAPED_SLASHES | JSON_UNESCAPED_UNICODE ) . '</script>' . "\n";
 }, 1 );
 
+/* /plataforma/ é a mesma coisa que o Início do assinante */
+add_action( 'template_redirect', function () {
+	if ( is_admin() || ! is_page( 'plataforma' ) ) { return; }
+	$o = get_queried_object(); if ( ! $o || (int) $o->post_parent !== 0 ) { return; }
+	wp_safe_redirect( home_url( is_user_logged_in() ? '/painel/' : '/' ), 302 ); exit;
+}, 1 );
+/* Título da aba: "Página | Desenvolve Estratégias" */
+add_filter( 'document_title_separator', function () { return '|'; } );
 /* Páginas do site antigo levam ao site novo (301). As páginas continuam salvas no WordPress. */
 add_action( 'template_redirect', function () {
 	if ( is_admin() || ! is_page() ) { return; }
@@ -1182,7 +1190,7 @@ add_action( 'rest_api_init', function () {
 		}
 		$from = dv_cfg( 'email_remetente' ) ?: 'contato@desenvolveestrategias.com.br'; $h = array( 'From: Desenvolve <' . $from . '>' );
 		$b = (int) get_option( 'dv_bonus_lista', 100 );
-		wp_mail( $em, 'Você está na lista da Desenvolve', 'Olá, ' . $nome . "!\n\nSeu nome está na lista de espera da Desenvolve Estratégias, inteligência em licitações.\n\nVocê vai receber os planos antes de todo mundo, no dia do lançamento, e ganha " . $b . " créditos de bônus para usar no primeiro mês: Raio-X do concorrente, Due Diligence e as demais ferramentas. Seu preço de fundador também fica garantido enquanto mantiver a assinatura: " . ( $plano === 'completo' ? 'plano Completo, R$ 79,90/mês.' : ( $plano ? 'plano Busca, R$ 19,90/mês (para MEI, ME e EPP).' : 'plano Busca, R$ 19,90/mês (MEI, ME e EPP), ou Completo, R$ 79,90/mês.' ) ) . " Para receber o bônus, assine com este mesmo e-mail: os créditos entram junto com a primeira mensalidade e valem durante o primeiro mês.\n\nAté breve!\nEquipe Desenvolve", $h );
+		wp_mail( $em, 'Você está na lista da Desenvolve', 'Olá, ' . $nome . "!\n\nSeu nome está na lista de espera da Desenvolve Estratégias, inteligência em licitações.\n\nVocê vai receber os planos antes de todo mundo, no dia do lançamento, e ganha " . $b . " créditos de bônus no primeiro mês. Com eles você experimenta as ferramentas de análise (Raio-X do concorrente, Raio-X do comprador, Due Diligence e contratos vencendo), em qualquer um dos planos. O preço de lançamento fica garantido enquanto você mantiver a assinatura: " . ( $plano === 'completo' ? 'plano Completo, R$ 79,90/mês.' : ( $plano ? 'plano Busca, R$ 19,90/mês (para MEI, ME e EPP).' : 'plano Busca, R$ 19,90/mês (MEI, ME e EPP), ou Completo, R$ 79,90/mês.' ) ) . " Para receber o bônus, assine com este mesmo e-mail: os créditos entram junto com a primeira mensalidade e valem durante o primeiro mês.\n\nAté breve!\nEquipe Desenvolve", $h );
 		wp_mail( get_option( 'admin_email' ), 'Lista de espera: ' . $nome, "Nome: $nome\nE-mail: $em\nWhatsApp: $whats\nEmpresa: $emp\nRamo: $ramo\n\nVeja a lista completa no painel: " . admin_url( 'admin.php?page=dv-lista' ), $h );
 		return array( 'ok' => true, 'tk' => dv_lista_tk( $em ) );
 	} ) );

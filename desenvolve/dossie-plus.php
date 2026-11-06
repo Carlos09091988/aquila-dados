@@ -536,7 +536,7 @@ var R0;setInterval(function(){var R=document.querySelector('.rx-out');if(R&&R!==
 /* PDF organizado: o mesmo roteiro da tela (conclusão, o que fazer, números, temas), sem repetição */
 (function(){
 function e(s){return String(s==null?'':s).replace(/[&<>"]/g,function(c){return{'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]})}
-function limpa(el){var c=el.cloneNode(true);[].forEach.call(c.querySelectorAll('button,input,select,textarea,script,style,.modos,.ent,.dv-mia-w,.dv-rnav,.dv-pdf-top,[data-mia-r]'),function(x){x.remove()});
+function limpa(el){var c=el.cloneNode(true);if(c.id==='rx-cad')[].forEach.call(c.querySelectorAll('h2,h3'),function(x){x.remove()});[].forEach.call(c.querySelectorAll('button,input,select,textarea,script,style,.modos,.ent,.dv-mia-w,.dv-rnav,.dv-pdf-top,[data-mia-r]'),function(x){x.remove()});
  [].forEach.call(c.querySelectorAll('details'),function(d){d.setAttribute('open','')});[].forEach.call(c.querySelectorAll('[hidden]'),function(x){x.removeAttribute('hidden')});
  [].forEach.call(c.querySelectorAll('h3 i'),function(x){x.remove()});[].forEach.call(c.querySelectorAll('[style*="display: none"],[style*="display:none"]'),function(x){x.remove()});
  [].forEach.call(c.querySelectorAll('a[href^="/"],a[href^="#"]'),function(a){var s=document.createElement('span');s.innerHTML=a.innerHTML;a.replaceWith(s)});return c}

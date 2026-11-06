@@ -96,12 +96,12 @@ add_action( 'init', function () {
 }, 8 );
 /* Planos (nov/2026): Busca R$ 19,90 (MEI, ME e EPP: editais por e-mail, busca, gestão e agenda) e Completo R$ 79,90 (80 créditos, todas as ferramentas) */
 add_action( 'init', function () {
-	if ( (int) get_option( 'dv_precos_ver' ) >= 4 ) { return; }
+	if ( (int) get_option( 'dv_precos_ver' ) >= 7 ) { return; }
 	$c = (array) get_option( 'dv_cfg', array() );
 	$c['planos'] = 'busca:Busca:19.90:0:1|desenvolve:Completo:79.90:80:5';
 	$c['fundador_preco'] = ''; $c['fundador_desc'] = 0; $c['fundador_vagas'] = 0; /* os preços de lançamento já são os finais; sem desconto extra */
-	update_option( 'dv_cfg', $c, false ); update_option( 'dv_precos_ver', '4', false );
-}, 9 );
+	update_option( 'dv_cfg', $c, false ); update_option( 'dv_precos_ver', '7', false );
+}, 12 );
 /* Ferramentas liberadas no plano Busca; as outras são do plano Completo */
 function dv_plano_busca_ferramentas() { return array( 'buscador', 'alertas', 'licitacoes', 'documentos' ); }
 function dv_plano_libera( $uid, $tool ) {

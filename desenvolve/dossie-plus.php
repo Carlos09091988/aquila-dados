@@ -408,3 +408,36 @@ window.addEventListener('beforeprint',function(){document.querySelectorAll('.dv-
 <?php endif; ?>
 	<?php
 }, 70 );
+
+/* Contador em valores: R$ em licitações abertas agora e publicadas nos últimos 12 meses (robô diário no GitHub) */
+add_action( 'wp_footer', function () {
+	global $post; $c = $post ? (string) $post->post_content : '';
+	if ( ! is_front_page() && strpos( $c, 'id="viva"' ) === false && ! is_page( 'consulta-gratis' ) ) { return; } ?>
+<style>
+#dv-val{margin:14px 0 0;display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px;max-width:880px}
+@media(max-width:700px){#dv-val{grid-template-columns:1fr}}
+#dv-val div{border:1px solid rgba(201,164,92,.45);border-radius:14px;padding:12px 14px;background:rgba(255,255,255,.04)}
+#dv-val b{display:block;font:600 1.45rem/1.15 "Fraunces",Georgia,serif;color:#C9A45C}
+#dv-val span{display:block;font-size:.86rem;line-height:1.4;opacity:.9}
+#dv-val-n{margin:8px 0 0;font-size:.78rem;opacity:.7}
+</style>
+<script>
+(function(){
+function mc(v){v=+v||0;return v>=1e9?'R$ '+(v/1e9).toLocaleString('pt-BR',{maximumFractionDigits:1})+' bilhões':v>=1e6?'R$ '+(v/1e6).toLocaleString('pt-BR',{maximumFractionDigits:0})+' milhões':'R$ '+Math.round(v).toLocaleString('pt-BR')}
+function n(v){return(+v||0).toLocaleString('pt-BR')}
+fetch('https://raw.githubusercontent.com/Carlos09091988/aquila-dados/main/data/valores/valores.json',{cache:'no-store'}).then(function(r){return r.json()}).then(function(j){
+ var A=j.abertas&&j.abertas.BR,Y=j.ano&&j.ano.BR,ok=A&&A.todas&&A.todas.valor>0;if(!ok)return;
+ var alvo=document.getElementById('viva')||document.querySelector('.cg-hero, .hero, main h1');if(!alvo)return;
+ var box=document.getElementById('dv-val');if(!box){box=document.createElement('div');box.id='dv-val';alvo.parentNode.insertBefore(box,alvo.nextSibling)}
+ var H='<div><b>'+mc(A.todas.valor)+'</b><span>em '+n(A.todas.n)+' licitações abertas agora no Brasil</span></div>';
+ H+='<div><b>'+mc(A.rapidas.valor)+'</b><span>em '+n(A.rapidas.n)+' contratações rápidas (dispensa e inexigibilidade) abertas agora</span></div>';
+ if(Y&&j.dias_cobertos>=360)H+='<div><b>'+mc(Y.todas.valor)+'</b><span>por ano em licitações publicadas, '+mc(Y.rapidas.valor)+' delas em contratações rápidas. Quanto disso é do seu ramo?</span></div>';
+ else H+='<div><b>'+n(A.todas.n+0)+'</b><span>oportunidades abertas hoje. Quanto disso é do seu ramo? Faça a consulta grátis.</span></div>';
+ box.innerHTML=H;
+ var nt=document.getElementById('dv-val-n');if(!nt){nt=document.createElement('p');nt.id='dv-val-n';box.parentNode.insertBefore(nt,box.nextSibling)}
+ nt.textContent='Valores estimados pelos órgãos no PNCP, atualizados em '+String(j.abertas_em||'').split(' ')[0].split('-').reverse().join('/')+'. Licitações com valor sigiloso não entram na soma.';
+}).catch(function(){});
+})();
+</script>
+	<?php
+}, 80 );

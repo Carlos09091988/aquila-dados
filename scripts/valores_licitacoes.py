@@ -23,17 +23,36 @@ MODALIDADES = range(1, 14)
 UA = {'User-Agent': 'desenvolve-valores/1.0', 'Accept': 'application/json'}
 
 
-def get(url, tent=4):
+ERROS = {}
+
+
+def get(url, tent=6):
     for t in range(tent):
         try:
-            with urllib.request.urlopen(urllib.request.Request(url, headers=UA), timeout=60) as r:
+            with urllib.request.urlopen(urllib.request.Request(url, headers=UA), timeout=90) as r:
+                if r.status == 204:
+                    return {}
                 b = r.read()
                 return json.loads(b) if b.strip() else {}
         except Exception as e:  # noqa: BLE001
-            if getattr(e, 'code', 0) == 204:
+            c = getattr(e, 'code', 0) or type(e).__name__
+            if c == 204:
                 return {}
-            time.sleep(2 + 3 * t)
+            ERROS[c] = ERROS.get(c, 0) + 1
+            time.sleep(min(60, 3 * (2 ** t)))
     return None
+
+
+def paginas(base, pags):
+    """Baixa as páginas 2..pags com poucas conexões; as que falharem são tentadas de novo uma a uma."""
+    res = {}
+    with ThreadPoolExecutor(3) as ex:
+        for p, j in zip(range(2, pags + 1), ex.map(lambda p: get(base + str(p)), range(2, pags + 1))):
+            res[p] = j
+    for p in [p for p, j in res.items() if j is None]:
+        time.sleep(2); res[p] = get(base + str(p), tent=8)
+    falhas = sum(1 for j in res.values() if j is None)
+    return [j for j in res.values() if j], falhas
 
 
 def soma_vazia():
@@ -65,11 +84,9 @@ def abertas():
         if p1 is None:
             print('abertas: falhou modalidade', mod, file=sys.stderr); return None
         pags = int(p1.get('totalPaginas') or 0)
-        res = [p1]
-        with ThreadPoolExecutor(8) as ex:
-            res += list(ex.map(lambda p: get(base + str(p)), range(2, pags + 1)))
-        if any(r is None for r in res):
-            print('abertas: páginas falharam na modalidade', mod, file=sys.stderr); return None
+        mais, falhas = paginas(base, pags); res = [p1] + mais
+        if falhas > max(1, pags * 0.02):
+            print('abertas: %d de %d páginas falharam na modalidade %d' % (falhas, pags, mod), ERROS, file=sys.stderr); return None
         for j in res:
             for i in (j or {}).get('data') or []:
                 k = i.get('numeroControlePNCP')
@@ -90,11 +107,10 @@ def dia(d):
         p1 = get(base + '1')
         if p1 is None:
             return None
-        pags = int(p1.get('totalPaginas') or 0); res = [p1]
-        with ThreadPoolExecutor(8) as ex:
-            res += list(ex.map(lambda p: get(base + str(p)), range(2, pags + 1)))
-        if any(r is None for r in res):
-            return None
+        pags = int(p1.get('totalPaginas') or 0)
+        mais, falhas = paginas(base, pags); res = [p1] + mais
+        if falhas > max(1, pags * 0.02):
+            print('dia %s: %d de %d páginas falharam (modalidade %d)' % (ds, falhas, pags, mod), ERROS, file=sys.stderr); return None
         for j in res:
             for i in (j or {}).get('data') or []:
                 k = i.get('numeroControlePNCP')
@@ -151,7 +167,7 @@ def main():
     atual['ano_de'] = janela[-1].isoformat(); atual['ano_ate'] = janela[0].isoformat()
     atual['teto_por_licitacao'] = TETO
     json.dump(atual, open(saida, 'w'), ensure_ascii=False, separators=(',', ':'))
-    print('dias novos', feitos, 'cobertos', cobertos, 'de 365')
+    print('dias novos', feitos, 'cobertos', cobertos, 'de 365', 'erros', ERROS)
 
 
 if __name__ == '__main__':

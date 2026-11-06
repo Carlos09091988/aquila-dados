@@ -168,7 +168,7 @@ add_action( 'rest_api_init', function () {
 		if ( $tipo !== 'editais' && strlen( $cnpj ) !== 14 ) { return new WP_Error( 'dv_am', 'Digite um CNPJ com 14 números.', array( 'status' => 400 ) ); }
 		$cid = (int) $r['cidade']; $raio = in_array( (int) $r['raio'], array( 0, 10, 25, 50, 100 ), true ) ? (int) $r['raio'] : 0; if ( $cid && ! isset( dv_mun_all()[ $cid ] ) ) { $cid = 0; }
 		if ( $tipo === 'editais' && mb_strlen( $q ) < 3 && ! $cid ) { return new WP_Error( 'dv_am', 'Digite o que você vende, por exemplo: limpeza, merenda, vigilância.', array( 'status' => 400 ) ); }
-		$ck = 'dv_am4_' . md5( $tipo . '|' . ( $tipo === 'editais' ? strtolower( remove_accents( $q ) ) . '|' . $uf . '|' . $cid . '|' . $raio : $cnpj ) ); $c = get_transient( $ck );
+		$ck = 'dv_am5_' . md5( $tipo . '|' . ( $tipo === 'editais' ? strtolower( remove_accents( $q ) ) . '|' . $uf . '|' . $cid . '|' . $raio : $cnpj ) ); $c = get_transient( $ck );
 		if ( $c === false ) {
 			$ip = function_exists( 'dv_sg_ip' ) ? dv_sg_ip() : (string) ( $_SERVER['REMOTE_ADDR'] ?? '' ); $kl = 'dv_am_ip_' . md5( $ip . current_time( 'Ymd' ) ); $n = (int) get_transient( $kl );
 			$em0 = strtolower( sanitize_email( (string) $r['email'] ) ); $tk0 = $em0 && function_exists( 'dv_lista_tk_ok' ) && dv_lista_tk_ok( $em0, (string) $r['tk'] );

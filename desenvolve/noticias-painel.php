@@ -197,7 +197,7 @@ add_action( 'wp_footer', function () {
 	if ( function_exists( 'dv_tools_perm' ) && ! dv_tools_perm() ) { return; } ?>
 <style>
 body.dv-app.dv-tkon{padding-top:98px!important}
-body.dv-bellon #dv-tk{display:none!important}.dv-bell svg{display:block!important;flex:none!important;min-width:18px!important;max-width:none!important;width:18px!important;height:18px!important;stroke:#0A0A0A!important;fill:none!important;opacity:1!important}.dv-bellp .h b{color:#0A0A0A!important;font-weight:800!important}.dv-sld:has(.dv-bell){padding-left:5px}
+/* a faixa de notícias (#dv-tk) continua no topo; o sininho é um atalho a mais */.dv-bell svg{display:block!important;flex:none!important;min-width:18px!important;max-width:none!important;width:18px!important;height:18px!important;stroke:#0A0A0A!important;fill:none!important;opacity:1!important}.dv-bellp .h b{color:#0A0A0A!important;font-weight:800!important}.dv-sld:has(.dv-bell){padding-left:5px}
 .dv-bell{position:relative;border:0;background:transparent;width:34px;height:34px;border-radius:50%;display:flex;align-items:center;justify-content:center;cursor:pointer;color:#0A0A0A;margin-right:8px;flex:none}.dv-bell:hover,.dv-bell[aria-expanded=true]{background:#F2EFE7}
 .dv-bell i{position:absolute;top:1px;right:0;min-width:16px;height:16px;border-radius:8px;background:#B3402A;color:#fff;font:700 10px/16px -apple-system,sans-serif;font-style:normal;padding:0 4px;text-align:center}
 .dv-bellp{position:fixed;z-index:9990;width:380px;max-width:calc(100vw - 24px);max-height:70vh;overflow:auto;background:#fff;border:1px solid #E0E0E0;border-radius:14px;box-shadow:0 18px 40px rgba(0,0,0,.14);font-family:"Hanken Grotesk",-apple-system,sans-serif}

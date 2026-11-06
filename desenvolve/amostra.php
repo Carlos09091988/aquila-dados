@@ -132,10 +132,10 @@ function dv_mun_busca( $q, $uf = '' ) {
 	foreach ( dv_mun_all() as $c => $x ) { if ( $uf && $x[1] !== $uf ) { continue; } $n = dv_am_norm( $x[0] ); $p = strpos( $n, $q ); if ( $p === 0 ) { $a[] = array( $c, $x[0], $x[1] ); } elseif ( $p !== false ) { $b[] = array( $c, $x[0], $x[1] ); } if ( count( $a ) >= 12 ) { break; } }
 	return array_slice( array_merge( $a, $b ), 0, 12 );
 }
-function dv_am_editais( $q, $uf, $cid = 0, $raio = 0 ) {
+function dv_am_editais( $q, $uf, $cid = 0, $raio = 0, $rapida = 0 ) {
 	$mun = $cid ? dv_mun_raio( $cid, $raio, 0 ) : array(); $M = $mun ? dv_mun_all() : array(); $porUf = count( $mun ) > 400; $ufsR = array(); if ( $porUf ) { foreach ( $mun as $c => $d ) { $ufsR[ $M[ $c ][1] ] = 1; } }
 	$onde = $mun ? ( $raio > 0 ? 'até ' . $raio . ' km de ' : 'em ' ) . $M[ $cid ][0] . '/' . $M[ $cid ][1] : ( $uf ? $uf : '' );
-	$u = 'https://pncp.gov.br/api/search/?q=' . rawurlencode( $q ) . '&tipos_documento=edital&status=recebendo_proposta&ordenacao=-data&pagina=1&tam_pagina=' . ( $porUf ? 500 : 60 ) . ( $mun ? ( $porUf ? '&ufs=' . implode( '%7C', array_keys( $ufsR ) ) : '&municipios=' . implode( '%7C', array_keys( $mun ) ) ) : ( $uf ? '&ufs=' . rawurlencode( $uf ) : '' ) );
+	$u = 'https://pncp.gov.br/api/search/?q=' . rawurlencode( $q ) . '&tipos_documento=edital&status=recebendo_proposta&ordenacao=-data' . ( $rapida ? '&modalidades=8%7C9' : '' ) . '&pagina=1&tam_pagina=' . ( $porUf ? 500 : 60 ) . ( $mun ? ( $porUf ? '&ufs=' . implode( '%7C', array_keys( $ufsR ) ) : '&municipios=' . implode( '%7C', array_keys( $mun ) ) ) : ( $uf ? '&ufs=' . rawurlencode( $uf ) : '' ) );
 	$j = dv_am_get( $u, 20 ); if ( ! is_array( $j ) ) { $j = dv_am_get( $u, 25 ); }
 	if ( ! is_array( $j ) ) { return new WP_Error( 'dv_am', 'O PNCP não respondeu agora. Tente de novo em instantes.', array( 'status' => 502, 'pncp' => current_user_can( 'manage_options' ) ? ( $GLOBALS['dv_am_ult'] ?? '' ) : '' ) ); }
 	$it = array_map( 'dv_am_edital', (array) ( $j['items'] ?? array() ) );
@@ -147,9 +147,9 @@ function dv_am_editais( $q, $uf, $cid = 0, $raio = 0 ) {
 	foreach ( $it as $x ) { $o = dv_am_norm( $x['objeto'] ); $ok = $raiz && count( array_filter( $raiz, function ( $r ) use ( $o ) { return strpos( $o, $r ) !== false; } ) ) === count( $raiz ); $x['em'] = ! $raiz ? '' : ( $ok ? 'objeto' : 'itens' ); if ( $ok ) { $no[] = $x; } else { $nos[] = $x; } }
 	$it = array_merge( $no, $nos ); $tot = ! empty( $porUf ) ? count( $it ) : (int) ( $j['total'] ?? count( $it ) );
 	return array(
-		'tipo' => 'editais', 'nome' => 'Licitações abertas' . ( $q !== '' ? ': ' . $q : '' ) . ( $onde ? ' · ' . $onde : '' ), 'fantasia' => '', 'termo' => $q, 'uf' => $uf, 'cidade' => $cid, 'raio' => $raio, 'municipios' => count( $mun ),
+		'tipo' => 'editais', 'nome' => ( $rapida ? 'Contratação rápida' : 'Licitações abertas' ) . ( $q !== '' ? ': ' . $q : '' ) . ( $onde ? ' · ' . $onde : '' ), 'fantasia' => '', 'termo' => $q, 'uf' => $uf, 'cidade' => $cid, 'raio' => $raio, 'municipios' => count( $mun ),
 		'livre' => array(),
-		'achados' => array( array( 'n' => $tot, 'rot' => ( $q !== '' ? 'editais abertos citam “' . $q . '”' : 'editais abertos' ) . ( $onde ? ( $mun ? ' ' . $onde . ( $raio > 0 ? ' (' . count( $mun ) . ' municípios)' : '' ) : ' em ' . $onde ) : '' ) . ( $q !== '' ? ', no objeto ou na lista de itens' : '' ), 'alerta' => false ) ),
+		'achados' => array( array( 'n' => $tot, 'rot' => ( $q !== '' ? ( $rapida ? 'contratações rápidas (dispensa ou inexigibilidade) citam “' : 'editais abertos citam “' ) . $q . '”' : ( $rapida ? 'contratações rápidas abertas (dispensa ou inexigibilidade)' : 'editais abertos' ) ) . ( $onde ? ( $mun ? ' ' . $onde . ( $raio > 0 ? ' (' . count( $mun ) . ' municípios)' : '' ) : ' em ' . $onde ) : '' ) . ( $q !== '' ? ', no objeto ou na lista de itens' : '' ), 'alerta' => false ) ),
 		'editais' => array_slice( $it, 0, 1 ),
 		'bloqueado' => array( 'editais' => array_slice( $it, 1, 19 ) ),
 	);
@@ -167,15 +167,15 @@ add_action( 'rest_api_init', function () {
 		if ( ! in_array( $tipo, array( 'empresa', 'orgao', 'editais' ), true ) ) { $tipo = 'editais'; }
 		$cnpj = preg_replace( '/\D/', '', $q );
 		if ( $tipo !== 'editais' && strlen( $cnpj ) !== 14 ) { return new WP_Error( 'dv_am', 'Digite um CNPJ com 14 números.', array( 'status' => 400 ) ); }
-		$cid = (int) $r['cidade']; $raio = max( 0, min( 3000, (int) $r['raio'] ) ); if ( $cid && ! isset( dv_mun_all()[ $cid ] ) ) { $cid = 0; }
+		$cid = (int) $r['cidade']; $raio = max( 0, min( 3000, (int) $r['raio'] ) ); $rapida = ! empty( $r['rapida'] ) ? 1 : 0; if ( $cid && ! isset( dv_mun_all()[ $cid ] ) ) { $cid = 0; }
 		if ( $tipo === 'editais' && mb_strlen( $q ) < 3 && ! $cid && ! $uf ) { return new WP_Error( 'dv_am', 'Digite o que você vende, por exemplo: limpeza, merenda, vigilância.', array( 'status' => 400 ) ); }
-		$ck = 'dv_am5_' . md5( $tipo . '|' . ( $tipo === 'editais' ? strtolower( remove_accents( $q ) ) . '|' . $uf . '|' . $cid . '|' . $raio : $cnpj ) ); $c = get_transient( $ck );
+		$ck = 'dv_am5_' . md5( $tipo . '|' . ( $tipo === 'editais' ? strtolower( remove_accents( $q ) ) . '|' . $uf . '|' . $cid . '|' . $raio . '|' . $rapida : $cnpj ) ); $c = get_transient( $ck );
 		if ( $c === false ) {
 			$ip = function_exists( 'dv_sg_ip' ) ? dv_sg_ip() : (string) ( $_SERVER['REMOTE_ADDR'] ?? '' ); $kl = 'dv_am_ip_' . md5( $ip . current_time( 'Ymd' ) ); $n = (int) get_transient( $kl );
 			$em0 = strtolower( sanitize_email( (string) $r['email'] ) ); $tk0 = $em0 && function_exists( 'dv_lista_tk_ok' ) && dv_lista_tk_ok( $em0, (string) $r['tk'] );
 			if ( $n >= 15 && ! $tk0 && ! current_user_can( 'manage_options' ) ) { return new WP_Error( 'dv_am', 'Você já fez as consultas grátis de hoje. Entre na lista de espera para usar sem limite no lançamento.', array( 'status' => 429 ) ); }
 			set_transient( $kl, $n + 1, DAY_IN_SECONDS );
-			$c = $tipo === 'empresa' ? dv_am_empresa( $cnpj ) : ( $tipo === 'orgao' ? dv_am_orgao( $cnpj ) : dv_am_editais( $q, $uf, $cid, $raio ) );
+			$c = $tipo === 'empresa' ? dv_am_empresa( $cnpj ) : ( $tipo === 'orgao' ? dv_am_orgao( $cnpj ) : dv_am_editais( $q, $uf, $cid, $raio, $rapida ) );
 			if ( is_wp_error( $c ) ) { return $c; }
 			$falhou = false; foreach ( (array) $c['achados'] as $a ) { if ( $a['n'] === '—' ) { $falhou = true; } }
 			$c['achados'] = array_values( array_filter( (array) $c['achados'], function ( $a ) { return $a['n'] !== '—'; } ) );

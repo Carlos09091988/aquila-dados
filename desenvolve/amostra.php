@@ -157,6 +157,7 @@ function dv_am_editais( $q, $uf, $cid = 0, $raio = 0 ) {
 
 add_action( 'rest_api_init', function () {
 	register_rest_route( 'desenvolve/v1', '/municipios', array( 'methods' => 'GET', 'permission_callback' => '__return_true', 'callback' => function ( WP_REST_Request $r ) {
+		if ( (int) $r['c'] ) { $M = dv_mun_all(); $o = array(); foreach ( dv_mun_raio( (int) $r['c'], min( 150, max( 0, (int) $r['raio'] ) ) ) as $c => $d ) { $o[] = array( 'c' => $c, 'n' => $M[ $c ][0], 'uf' => $M[ $c ][1], 'km' => $d ); } return $o; }
 		$uf = strtoupper( preg_replace( '/[^A-Za-z]/', '', (string) $r['uf'] ) ); $uf = strlen( $uf ) === 2 ? $uf : '';
 		return array_map( function ( $x ) { return array( 'c' => $x[0], 'n' => $x[1], 'uf' => $x[2] ); }, dv_mun_busca( (string) $r['q'], $uf ) );
 	} ) );

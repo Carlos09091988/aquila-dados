@@ -14,11 +14,12 @@ add_shortcode( 'dv_buscador', function () {
 		<label>O que você fornece<input id="bq-q" name="q" placeholder="Ex.: limpeza hospitalar, vigilância, merenda escolar"><small>Mostramos só os editais com todas as palavras. Para uma expressão exata, use aspas.</small></label>
 		<label>Tipo<span class="bq2-seg" data-k="tipo"><b data-v="servico">Serviços</b><b data-v="compra">Compras</b><b data-v="" class="on">Tudo</b></span></label>
 	</div>
-	<label>Estados <small>(escolha um ou mais; nenhum = Brasil todo)</small><div class="bq2-ufs"></div></label>
+	<div class="bq2-g3 bq2-perto"><label class="bq2-cid">Perto de uma cidade <small>(opcional)</small><input name="cid" placeholder="Digite e escolha na lista" autocomplete="off"><div class="bq2-sug" hidden></div></label><label>Distância<select name="raio" disabled><option value="0">Só nesta cidade</option><option value="10">Até 10 km</option><option value="25" selected>Até 25 km</option><option value="50">Até 50 km</option><option value="100">Até 100 km</option></select></label><p class="bq2-h bq2-pinfo"></p></div>
+	<label class="bq2-ufl">Estados <small>(escolha um ou mais; nenhum = Brasil todo)</small><div class="bq2-ufs"></div></label>
 	<input type="hidden" id="bq-uf" name="uf">
 	<div class="bq2-g3">
 		<label>Modalidade<select name="mod"><option value="">Todas</option><option value="6|7">Pregão</option><option value="4|5">Concorrência</option><option value="8">Dispensa</option><option value="12">Credenciamento</option><option value="9">Inexigibilidade</option><option value="1|13">Leilão</option></select></label>
-		<label>Cidade ou órgão <small>(opcional)</small><input name="loc" placeholder="Ex.: Campinas, Exército, Hospital"></label>
+		<label>Órgão <small>(opcional)</small><input name="loc" placeholder="Ex.: Prefeitura, Exército, Hospital"></label>
 		<label>Ordenar por<select name="ord"><option value="rel">Mais parecidos com a busca</option><option value="prazo">Prazo mais próximo</option><option value="novos">Publicados mais recentemente</option></select></label>
 	</div>
 	<div class="bq2-act"><button type="submit">🔎 Buscar licitações</button><span class="bq2-cnt" id="bq-count"></span></div>
@@ -47,7 +48,7 @@ add_shortcode( 'dv_buscador', function () {
 .bq2-foot{font-size:.78rem;margin-top:14px}
 .bq2-dio{border-left:3px solid #8FA7C2}.bq2-fo{display:inline-block;background:#EEF2F7;color:#2B4A6B;border-radius:6px;padding:1px 7px;font-size:.7rem;text-transform:uppercase;letter-spacing:.04em;margin-right:4px}
 @media(max-width:760px){.bq2{padding:16px}.bq2-g,.bq2-g3{grid-template-columns:1fr}.bq2-a .x{margin-left:0}}
-</style>
+.bq2-cid{position:relative}.bq2-sug{position:absolute;top:100%;left:0;right:0;margin-top:4px;background:#fff;border:1px solid #DDD6C6;border-radius:10px;box-shadow:0 14px 34px -18px rgba(0,0,0,.35);z-index:30;max-height:260px;overflow:auto;padding:4px}.bq2-sug button{display:flex;justify-content:space-between;width:100%;text-align:left;background:none;border:0;padding:9px 10px;border-radius:7px;font:inherit;cursor:pointer}.bq2-sug button:hover{background:#F4F2EC}.bq2-sug small{color:#8A8F96}.bq2-sug p{margin:6px 10px;color:#5E636B}.bq2-sug[hidden]{display:none!important}.bq2-perto .bq2-pinfo{grid-column:1/-1;margin:0}</style>
 <script>
 (function(){var R=document.getElementById('bq2');if(!R)return;var T=R.closest('.dv-tool');if(T)T.setAttribute('data-sem-portao','');
 var api=R.dataset.api,nonce=R.dataset.nonce,F=R.querySelector('#bq-form'),UF='AC AL AM AP BA CE DF ES GO MA MG MS MT PA PB PE PI PR RJ RN RO RR RS SC SE SP TO'.split(' '),ufs={},tipo='',fonte='',ALL=[],VIS=[],aba='',DIO=null,PN=null,pag=1,POR=20,GEST={},DESC={},VAL={},verDesc=false,QS=new URLSearchParams(location.search);
@@ -65,14 +66,23 @@ function tipoDe(d){var n=nm(d);var serv=/servic|prestacao de|contratacao de empr
 function chips(){R.querySelector('.bq2-ufs').innerHTML=UF.map(function(u){return'<span data-uf="'+u+'" class="'+(ufs[u]?'on':'')+'">'+u+'</span>'}).join('');R.querySelector('#bq-uf').value=Object.keys(ufs).filter(function(k){return ufs[k]}).join(',')}
 function seg(){R.querySelectorAll('.bq2-seg b').forEach(function(b){b.classList.toggle('on',b.dataset.v===tipo)})}
 function guarda(){try{localStorage.setItem('dv_bq_pref',JSON.stringify({q:F.q.value,ufs:Object.keys(ufs).filter(function(k){return ufs[k]}),tipo:tipo,mod:F.mod.value,ord:F.ord.value}))}catch(x){}}
-function buscar(){var q=F.q.value.trim(),M=R.querySelector('#bq-count'),L=R.querySelector('.bq2-l');if(q.length<3){M.textContent='Digite pelo menos 3 letras.';return}guarda();
- var us=Object.keys(ufs).filter(function(k){return ufs[k]}),u='https://pncp.gov.br/api/search/?q='+encodeURIComponent(q.replace(/"/g,''))+'&tipos_documento=edital&ordenacao=-data&pagina=1&tam_pagina=500&status=recebendo_proposta'+(us.length?'&ufs='+us.join('|'):'')+(F.mod.value?'&modalidades='+F.mod.value:'');
+var REG=null,MUNB={},tmb;
+function regB(){var c=MUNB[F.cid.value.trim().toLowerCase()];F.raio.disabled=!c;R.querySelector('.bq2-ufl').style.opacity=c?.4:1;var inf=R.querySelector('.bq2-pinfo');if(!c){REG=null;inf.textContent='';return Promise.resolve()}
+ return fetch('/wp-json/desenvolve/v1/municipios?c='+c.c+'&raio='+F.raio.value).then(function(r){return r.json()}).then(function(L){REG={cods:[],ufs:[],nomes:{}};(L||[]).forEach(function(m){REG.cods.push(m.c);if(REG.ufs.indexOf(m.uf)<0)REG.ufs.push(m.uf);REG.nomes[nm(m.n)+'|'+m.uf]=m.km});inf.textContent=+F.raio.value?'Busca em '+REG.cods.length+' cidade(s) até '+F.raio.value+' km de '+c.n+'/'+c.uf+'. Os estados marcados abaixo são ignorados.':'Busca só em '+c.n+'/'+c.uf+'.'})}
+(function(){var sg=R.querySelector('.bq2-sug'),ci=F.cid;function esc(k){ci.value=k;sg.hidden=true;regB()}
+ sg.addEventListener('mousedown',function(ev){var b=ev.target.closest('button');if(b){ev.preventDefault();esc(b.getAttribute('data-k'))}});
+ ci.addEventListener('blur',function(){setTimeout(function(){sg.hidden=true},150)});
+ ci.addEventListener('keydown',function(ev){if(ev.key==='Enter'&&!sg.hidden&&sg.querySelector('button')){ev.preventDefault();esc(sg.querySelector('button').getAttribute('data-k'))}});
+ F.raio.addEventListener('change',regB);
+ ci.addEventListener('input',function(){REG=null;regB();clearTimeout(tmb);var v=ci.value.trim();if(v.length<2){sg.hidden=true;return}tmb=setTimeout(function(){fetch('/wp-json/desenvolve/v1/municipios?q='+encodeURIComponent(v)).then(function(r){return r.json()}).then(function(L){sg.innerHTML='';(L||[]).forEach(function(m){var k=m.n+' - '+m.uf;MUNB[k.toLowerCase()]=m;var b=document.createElement('button');b.type='button';b.setAttribute('data-k',k);b.innerHTML=e(m.n)+' <small>'+m.uf+'</small>';sg.appendChild(b)});if(!sg.firstChild)sg.innerHTML='<p>Nenhuma cidade com esse nome.</p>';sg.hidden=false}).catch(function(){})},180)})})();
+function buscar(){var q=F.q.value.trim(),M=R.querySelector('#bq-count'),L=R.querySelector('.bq2-l');if(q.length<3&&!REG){M.textContent=F.cid.value.trim()?'Escolha a cidade na lista que aparece enquanto você digita.':'Digite o que você fornece ou escolha uma cidade.';return}guarda();
+ var us=Object.keys(ufs).filter(function(k){return ufs[k]}),u='https://pncp.gov.br/api/search/?q='+encodeURIComponent(q.replace(/"/g,''))+'&tipos_documento=edital&ordenacao=-data&pagina=1&tam_pagina=500&status=recebendo_proposta'+(REG?'&municipios='+REG.cods.join('|'):(us.length?'&ufs='+us.join('|'):''))+(F.mod.value?'&modalidades='+F.mod.value:'');
  M.textContent='Buscando no PNCP e nos diários oficiais…';L.innerHTML='<p class="bq2-h">Buscando…</p>';var tk=Date.now();R.dataset.tk=tk;DIO=null;PN=null;ALL=[];fonte='';
- req('GET','buscador/diarios?q='+encodeURIComponent(q)+'&ufs='+us.join('|')).then(function(j){if(R.dataset.tk!=tk)return;DIO=j.itens||[];junta(q)}).catch(function(){if(R.dataset.tk!=tk)return;DIO=[];junta(q)});R.querySelector('.bq2-tabs').innerHTML='';R.querySelector('.bq2-pag').innerHTML='';
+ req('GET','buscador/diarios?q='+encodeURIComponent(q)+'&ufs='+(REG?REG.ufs.join('|'):us.join('|'))).then(function(j){if(R.dataset.tk!=tk)return;DIO=(j.itens||[]).filter(function(x){return!REG||REG.nomes[nm(x.municipio)+'|'+x.uf]!==undefined});junta(q)}).catch(function(){if(R.dataset.tk!=tk)return;DIO=[];junta(q)});R.querySelector('.bq2-tabs').innerHTML='';R.querySelector('.bq2-pag').innerHTML='';
  fetch(u).then(function(r){return r.json()}).then(function(j){var tm=termos(q),loc=nm(F.loc.value.trim());
   ALL=(j.items||[]).filter(function(x){return!x.cancelado}).map(function(x){var d=nm(x.description),org=nm((x.orgao_nome||'')+' '+(x.unidade_nome||'')+' '+(x.municipio_nome||'')),sc=0,ok=true;
    tm.w.forEach(function(w){if(d.indexOf(w)>=0)sc+=2;else if(org.indexOf(w)>=0)sc+=1;else ok=false});tm.fr.forEach(function(f){if(d.indexOf(f)>=0)sc+=4;else ok=false});if(d.indexOf(nm(q.replace(/"/g,'')))>=0)sc+=3;
-   return{x:x,ok:ok,sc:sc,tipo:tipoDe(x.description),ref:ref(x),fim:x.data_fim_vigencia||'',loc:!loc||org.indexOf(loc)>=0}}).filter(function(o){return o.ok&&o.loc});
+   if(REG){var km=REG.nomes[nm(x.municipio_nome)+'|'+x.uf];if(km!==undefined)x.dist=km}return{x:x,ok:ok,sc:sc,tipo:tipoDe(x.description),ref:ref(x),fim:x.data_fim_vigencia||'',loc:!loc||org.indexOf(loc)>=0}}).filter(function(o){return o.ok&&o.loc});
   if(R.dataset.tk!=tk)return;PN={n:ALL.length,tot:j.total||0};aba='';pag=1;junta(q)})
  .catch(function(){if(R.dataset.tk!=tk)return;ALL=[];PN={n:0,tot:0,erro:1};junta(q)})}
 /* diários oficiais: avisos de municípios (Querido Diário) e do DOU seção 3 que não estão no PNCP */
@@ -102,7 +112,7 @@ function cardD(o){var x=o.x,dd=dias(o.fim),g=GEST[o.ref]||GEST[x.link],cl=dd===n
 function dioLic(x){return{orgao:x.orgao,objeto:x.objeto,municipio:x.municipio,uf:x.uf,modalidade:x.modalidade,numero:x.numero||'',abertura:x.encerra?String(x.encerra).replace(' ','T'):'',link:x.link,status:'analise',notas:'Encontrada no '+(x.fonte_nome||'diário oficial')+' em '+br(x.publicado).slice(0,10)+'. Confira o aviso completo e baixe o edital no site do órgão.\n\nTrecho: '+String(x.trecho||'').slice(0,700)}}
 function dioTxt(x){var lc=[x.municipio,x.uf].filter(Boolean).join('/');return'Órgão: '+x.orgao+(lc?'\nLocal: '+lc:'')+'\nModalidade: '+x.modalidade+(x.numero?' nº '+x.numero:'')+(x.encerra?'\nSessão: '+br(x.encerra):'')+'\nPublicado em: '+br(x.publicado).slice(0,10)+' ('+(x.fonte_nome||'diário oficial')+')\n\nTrecho do aviso:\n'+(x.trecho||x.objeto)+'\n\nLink: '+x.link}
 function card(o,i){if(o.dio)return cardD(o);var x=o.x,dd=dias(o.fim),g=GEST[o.ref],c=o.ref.split('/'),cl=dd===null?'':dd<=3?'r':dd<=7?'a':'';
- return'<div class="bq2-i'+(DESC[o.ref]?' desc':'')+'" data-r="'+e(o.ref)+'"><div class="t"><span>'+e(x.modalidade_licitacao_nome)+' · '+e(x.municipio_nome)+'/'+e(x.uf)+' · '+e(x.esfera_nome)+' · '+(o.tipo==='servico'?'Serviço':'Compra')+'</span><span>'+e(x.title||'')+'</span></div>'+
+ return'<div class="bq2-i'+(DESC[o.ref]?' desc':'')+'" data-r="'+e(o.ref)+'"><div class="t"><span>'+e(x.modalidade_licitacao_nome)+' · '+e(x.municipio_nome)+'/'+e(x.uf)+(x.dist!=null?(x.dist>0?' (a '+Math.round(x.dist)+' km)':' (na cidade)'):'')+' · '+e(x.esfera_nome)+' · '+(o.tipo==='servico'?'Serviço':'Compra')+'</span><span>'+e(x.title||'')+'</span></div>'+
  '<div class="o cl" title="Clique para ver tudo">'+e(x.description)+'</div><div class="u">'+e(x.orgao_nome)+(x.unidade_nome&&x.unidade_nome!==x.orgao_nome?' · '+e(x.unidade_nome):'')+'</div>'+
  '<div class="bq2-ch">'+(dd!==null?'<span class="'+cl+'">'+(dd>1?'⏳ faltam '+dd+' dias':dd===1?'⏳ termina amanhã':'⏳ termina hoje')+'</span><span>Sessão '+br(o.fim)+'</span>':'')+'<span class="bq2-val">Valor estimado: …</span><span>Publicado '+br(x.data_publicacao_pncp).slice(0,10)+'</span></div>'+
  '<div class="bq2-a">'+(g?'<a class="ok" href="/plataforma/licitacoes/?ver='+g+'">✓ Na sua Gestão · abrir</a>':'<button type="button" class="p" data-g>+ Acompanhar na Gestão</button>')+'<button type="button" data-an>Analisar edital</button>'+

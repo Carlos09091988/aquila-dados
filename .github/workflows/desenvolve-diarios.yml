@@ -8,6 +8,9 @@ on:
       dias:
         description: 'Quantos dias para tras'
         default: '2'
+      fontes:
+        description: 'So estas fontes (ex.: doem,atende); vazio = todas'
+        default: ''
 permissions:
   contents: write
 jobs:
@@ -22,6 +25,7 @@ jobs:
           DV_ROBO_TOKEN: ${{ secrets.DV_ROBO_TOKEN }}
           DIAS: ${{ github.event.inputs.dias || '2' }}
           LIMITE_SEG: '6000'
+          SO_FONTES: ${{ github.event.inputs.fontes || '' }}
       - run: |
           git config user.name "github-actions"; git config user.email "actions@github.com"
           git add data/diarios && (git diff --cached --quiet || (git commit -q -m "Robo dos diarios: indice de cidades e resumo" && git pull -q --rebase && git push))

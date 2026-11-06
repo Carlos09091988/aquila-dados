@@ -1057,7 +1057,7 @@ add_action( 'rest_api_init', function () {
 		if ( $n >= 12 ) { return new WP_Error( 'dv_lista', 'Muitas tentativas seguidas. Tente de novo em alguns minutos.', array( 'status' => 429 ) ); }
 		set_transient( $k, $n + 1, HOUR_IN_SECONDS );
 		$nome = sanitize_text_field( (string) $r['nome'] ); $email = sanitize_email( (string) $r['email'] );
-		$whats = preg_replace( '/[^\d()+\- ]/', '', (string) $r['whats'] ); $ramo = sanitize_text_field( (string) $r['ramo'] ); $emp = sanitize_text_field( (string) $r['empresa'] ); $plano = in_array( (string) $r['plano'], array( 'essencial', 'completo' ), true ) ? (string) $r['plano'] : '';
+		$whats = preg_replace( '/[^\d()+\- ]/', '', (string) $r['whats'] ); $ramo = sanitize_text_field( (string) $r['ramo'] ); $emp = sanitize_text_field( (string) $r['empresa'] ); $plano = in_array( (string) $r['plano'], array( 'busca', 'essencial', 'completo' ), true ) ? (string) $r['plano'] : '';
 		if ( ! is_email( $email ) ) { return new WP_Error( 'dv_lista', 'Informe um e-mail válido.', array( 'status' => 400 ) ); }
 		$chk = dv_lista_confere_email( $email ); if ( is_wp_error( $chk ) ) { return $chk; }
 		if ( mb_strlen( $nome ) < 2 ) { $nome = ucwords( str_replace( array( '.', '_', '-' ), ' ', strstr( $email, '@', true ) ) ); }
@@ -1139,7 +1139,7 @@ add_action( 'admin_menu', function () {
 		echo '<p><label><input type="radio" name="dv_lanc" value="1"' . checked( $pre, true, false ) . '> <b>Pré-lançamento</b> (assinatura leva à lista)</label> &nbsp; <label><input type="radio" name="dv_lanc" value="0"' . checked( $pre, false, false ) . '> <b>Lançado</b> (assinatura aberta)</label></p>';
 		echo '<p>Bônus para quem está na lista: <input type="number" name="dv_bonus" value="' . (int) get_option( 'dv_bonus_lista', 100 ) . '" style="width:70px"> créditos</p><p><button class="button button-primary">Salvar</button> &nbsp; <a class="button" href="' . esc_url( wp_nonce_url( admin_url( 'admin-post.php?action=dv_lista_csv' ), 'dv_lista_csv' ) ) . '">Baixar planilha</a></p></form>';
 		echo '<table class="widefat striped"><thead><tr><th>Data</th><th>Nome</th><th>E-mail</th><th>WhatsApp</th><th>Empresa</th><th>Ramo</th><th>Plano</th><th>Situação</th></tr></thead><tbody>';
-		foreach ( $l as $x ) { echo '<tr><td>' . esc_html( mysql2date( 'd/m/Y H:i', $x['data'] ) ) . '</td><td>' . esc_html( $x['nome'] ) . '</td><td>' . esc_html( $x['email'] ) . '</td><td>' . esc_html( $x['whats'] ) . '</td><td>' . esc_html( $x['empresa'] ?? '' ) . '</td><td>' . esc_html( $x['ramo'] ) . '</td><td>' . esc_html( array( 'essencial' => 'Essencial (MEI/ME/EPP)', 'completo' => 'Completo' )[ $x['plano'] ?? '' ] ?? '—' ) . '</td><td>' . ( $x['bonus'] ? 'pagou (bônus dado)' : ( ! empty( $x['conta'] ) ? 'conta criada' : '—' ) ) . '</td></tr>'; }
+		foreach ( $l as $x ) { echo '<tr><td>' . esc_html( mysql2date( 'd/m/Y H:i', $x['data'] ) ) . '</td><td>' . esc_html( $x['nome'] ) . '</td><td>' . esc_html( $x['email'] ) . '</td><td>' . esc_html( $x['whats'] ) . '</td><td>' . esc_html( $x['empresa'] ?? '' ) . '</td><td>' . esc_html( $x['ramo'] ) . '</td><td>' . esc_html( array( 'busca' => 'Busca R$ 19,90 (MEI/ME/EPP)', 'essencial' => 'Busca R$ 19,90 (MEI/ME/EPP)', 'completo' => 'Completo R$ 79,90' )[ $x['plano'] ?? '' ] ?? '—' ) . '</td><td>' . ( $x['bonus'] ? 'pagou (bônus dado)' : ( ! empty( $x['conta'] ) ? 'conta criada' : '—' ) ) . '</td></tr>'; }
 		if ( ! $l ) { echo '<tr><td colspan="8">Ninguém ainda.</td></tr>'; }
 		echo '</tbody></table></div>';
 	} );

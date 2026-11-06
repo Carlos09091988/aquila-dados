@@ -75,7 +75,9 @@ add_action( 'rest_api_init', function () {
 
 /* Página do dossiê: espera em segundo plano + parecer de habilitação */
 add_action( 'wp_footer', function () {
-	global $post; if ( ! is_user_logged_in() || ! $post || strpos( (string) $post->post_content, 'tool="dossie"' ) === false ) { return; }
+	global $post; if ( ! is_user_logged_in() || ! $post ) { return; }
+	$ds = strpos( (string) $post->post_content, 'tool="dossie"' ) !== false; $cp = strpos( (string) $post->post_content, 'id="cp2"' ) !== false;
+	if ( ! $ds && ! $cp ) { return; }
 	$api = esc_url_raw( rest_url( 'desenvolve/v1/' ) ); $nonce = wp_create_nonce( 'wp_rest' ); ?>
 <style>
 #dv-esp{position:fixed;inset:auto 18px 18px auto;z-index:9999;max-width:360px;background:#16191E;color:#F3EFE6;border-radius:16px;padding:18px 20px;box-shadow:0 18px 50px rgba(22,25,30,.35);font:500 .92rem/1.5 "Hanken Grotesk",-apple-system,sans-serif}
@@ -110,6 +112,7 @@ add_action( 'wp_footer', function () {
 #dv-par .nota{margin-top:14px;font-size:.8rem;color:#6E6A60}
 @media print{#dv-par .modos,#dv-par .ent{display:none}}
 /* Leitura guiada */
+#dv-capa p,#dv-capa li,#dv-capa span,#dv-mapa span,#dv-mapa p,.dv-tema>summary span{font-weight:400}
 .rp.dv-org .rp-sec h3 i{display:none}
 #dv-capa{padding:26px 30px 8px;background:#FFFDF8}
 #dv-capa .q{display:grid;grid-template-columns:minmax(0,1.3fr) minmax(0,1fr);gap:18px;align-items:stretch}
@@ -150,6 +153,7 @@ add_action( 'wp_footer', function () {
 @media print{.dv-tema>summary:after{display:none}.dv-tema>*{display:block!important}}
 
 </style>
+<?php if ( $ds ) : ?>
 <script>
 (function(){
 var API=<?php echo wp_json_encode( $api ); ?>,NONCE=<?php echo wp_json_encode( $nonce ); ?>,of=window.fetch;
@@ -326,5 +330,81 @@ function monta(){var r=document.querySelector('.dv-tool .rp')||document.querySel
 new MutationObserver(function(){monta()}).observe(document.body,{childList:true,subtree:true});
 })();
 </script>
+<?php endif; if ( $cp ) : ?>
+<script>
+(function(){
+/* Raio-X do comprador: capa "vale a pena vender?", mapa de temas e seções agrupadas */
+var of=window.fetch;window.fetch=function(u,o){var pr=of.apply(this,arguments);if(/\/dvtools\/v1\/comprador\?/.test(String(u))){pr.then(function(r){r.clone().json().then(function(j){if(j&&j.cadastro){window.DVCP=j;tenta(0)}}).catch(function(){})}).catch(function(){})}return pr};
+function e(s){return String(s==null?'':s).replace(/[&<>"]/g,function(c){return{'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]})}
+function mc(v){v=+v||0;return v>=1e9?'R$ '+(v/1e9).toLocaleString('pt-BR',{maximumFractionDigits:1})+' bi':v>=1e6?'R$ '+(v/1e6).toLocaleString('pt-BR',{maximumFractionDigits:1})+' mi':v>=1e3?'R$ '+Math.round(v/1e3).toLocaleString('pt-BR')+' mil':'R$ '+Math.round(v).toLocaleString('pt-BR')}
+function br(d){var m=String(d||'').match(/(\d{4})-(\d{2})-(\d{2})/);return m?m[3]+'/'+m[2]+'/'+m[1]:''}
+function nrm(s){return String(s||'').normalize('NFD').replace(/[̀-ͯ]/g,'').toUpperCase()}
+function casa(t,tk){if(!tk.length)return true;t=nrm(t);var h=0;tk.forEach(function(k){if(t.indexOf(k)>=0)h++});return h>=Math.max(1,Math.ceil(tk.length*.6))}
+function analisa(d){var f=d.fiscal||{},tk=d.tokens||[],agora=new Date().toISOString().slice(0,16),hoje=agora.slice(0,10);
+ var ct=(d.contratos||{}).itens||[],ed=(d.editais||{}).itens||[],J=d.justica||{},nt=d.noticias||[];
+ var ativos=ct.filter(function(x){return x.fim&&x.fim.slice(0,10)>=hoje}),abertos=ed.filter(function(x){return x.fim&&x.fim>=agora});
+ var ctI=ct.filter(function(x){return casa(x.objeto,tk)}),atI=ctI.filter(function(x){return x.fim&&x.fim.slice(0,10)>=hoje}).sort(function(a,b){return a.fim.localeCompare(b.fim)}),abI=abertos.filter(function(x){return casa(x.objeto,tk)}).sort(function(a,b){return String(a.fim).localeCompare(String(b.fim))});
+ var anos=Object.keys(f.rp||{}).sort().reverse(),rp=anos.length?f.rp[anos[0]]:null,pts=100;
+ if(rp&&rp.proc_pct_pago!=null){var pp=rp.proc_pct_pago;pts-=pp<50?30:pp<75?15:pp<90?5:0}
+ var sp=rp&&rp.proc_saldo!=null&&f.rcl?rp.proc_saldo/f.rcl:null;if(sp!=null)pts-=sp>.10?20:sp>.05?10:sp>.02?5:0;
+ if(f.pessoal_pct!=null){if(f.pessoal_max&&f.pessoal_pct>f.pessoal_max)pts-=20;else if(f.pessoal_prud&&f.pessoal_pct>f.pessoal_prud)pts-=10}
+ if(f.caixa_liquida!=null&&f.caixa_liquida<0)pts-=15;
+ var cob=(J.cobranca||0)+(J.monitoria||0)+(J.execucao||0);pts-=cob>50?10:cob>10?5:0;pts-=nt.length>=3?10:nt.length?5:0;
+ var semDados=!rp&&f.pessoal_pct==null;pts=Math.max(0,Math.round(pts));
+ var forn={},tot=0;ct.forEach(function(x){var k=x.fornecedor||'';if(!k)return;forn[k]=(forn[k]||0)+(x.valor||0);tot+=x.valor||0});
+ var top=Object.keys(forn).map(function(k){return[k,forn[k]]}).sort(function(a,b){return b[1]-a[1]}),top3=tot?top.slice(0,3).reduce(function(a,x){return a+x[1]},0)/tot:0;
+ var PL=d.proc_lic||[],plG=PL.filter(function(x){return x.grave}),POL=d.politicos||{},PG=d.gestor_proc||[],NW=d.news||{};
+ return{pts:pts,semDados:semDados,rp:rp,ano:anos[0],sp:sp,ct:ct,ativos:ativos,abertos:abertos,abI:abI,atI:atI,ctI:ctI,top:top,top3:top3,tot:tot,PL:PL,plG:plG,POL:POL,PG:PG,NW:NW,item:d.item||'',cob:cob,nt:nt}}
+function veredito(A){var pag=A.semDados?'am':A.pts>=80?'ok':A.pts>=55?'am':'vm';
+ if(pag==='vm')return['vm','Evite ou proteja o preço','Os dados fiscais mostram risco alto de atraso nos pagamentos (nota '+A.pts+'/100). Se for vender, ponha no preço o custo de receber com atraso e não comprometa capital de giro alto.'];
+ if(pag==='am')return['am','Venda com cuidado',A.semDados?'O ente não publicou os demonstrativos fiscais que usamos para medir se ele paga em dia. Confirme a reputação de pagamento com outros fornecedores antes de investir na disputa.':'Há sinais de atraso nos pagamentos (nota '+A.pts+'/100). Vale vender, mas acompanhe os prazos de pagamento de perto.'];
+ return['ok','Bom pagador: vale disputar','Os dados fiscais indicam que o órgão paga em dia (nota '+A.pts+'/100).'+(A.top3>.6?' Atenção: o mercado é concentrado.':'')]}
+function acoes(A){var a=[];
+ if(A.abI.length)a.push((A.item?'Há '+A.abI.length+' licitação(ões) aberta(s) para '+A.item:'Há '+A.abI.length+' licitação(ões) aberta(s)')+'. A primeira recebe propostas até '+br(A.abI[0].fim)+'.');
+ else if(A.atI.length)a.push('O contrato atual'+(A.item?' de '+A.item:'')+' ('+A.atI[0].fornecedor+') vence em '+br(A.atI[0].fim)+'. Comece a se preparar uns 90 dias antes e acompanhe o plano de contratações do órgão.');
+ else if(A.item)a.push('Não achamos contrato nem licitação aberta para '+A.item+'. Crie um alerta para ser avisado quando o órgão publicar.');
+ if(A.top3>.6&&A.top.length)a.push('Mercado concentrado: os 3 maiores fornecedores ficam com '+Math.round(A.top3*100)+'% do valor. Entre por itens menores, dispensas ou atas abertas para carona.');
+ if(!A.semDados&&A.pts<80)a.push('Ponha no preço o custo de receber com atraso e peça o cronograma de pagamento antes de assinar.');
+ if(A.plG.length)a.push('Há '+A.plG.length+' processo(s) grave(s) envolvendo licitações do órgão. Leia antes de investir na disputa.');
+ if(a.length<2)a.push('Crie um alerta para este órgão e receba as próximas licitações por e-mail.');
+ return a.slice(0,3)}
+var TEMAS=[['pag','Paga em dia?','Saúde fiscal, cobranças na Justiça e notícias de atraso',/paga em dia|cobran[cç]as na justi|atraso de pagamento/i],
+ ['opo','Oportunidades para você','Licitações abertas e contratos do seu item',/^seu item/i],
+ ['pan','Como e de quem compra','Contratos, fornecedores e licitações do órgão',/panorama de compras/i],
+ ['gov','Quem governa','Gestão, câmara e movimentos sindicais',/quem governa|sindica/i],
+ ['con','Controle e polêmicas','Processos e notícias sobre licitações e o gestor',/na mira/i]];
+function status(A){var o={};
+ o.pag=A.semDados?['am','Sem dados fiscais publicados']:[A.pts>=80?'ok':A.pts>=55?'am':'vm','Nota '+A.pts+'/100'];
+ o.opo=A.abI.length?['ok',A.abI.length+' licitação(ões) aberta(s)'+(A.item?' do seu item':'')]:A.atI.length?['am','Contrato atual vence em '+br(A.atI[0].fim)]:['na',A.item?'Nada aberto para o seu item':'Informe o que você vende'];
+ o.pan=A.top3>.6?['am','Mercado concentrado: top 3 com '+Math.round(A.top3*100)+'%']:['ok',A.ativos.length+' contrato(s) ativo(s) · '+A.abertos.length+' licitação(ões) aberta(s)'];
+ var T=A.POL.titular;o.gov=T?['na',(A.POL.cargo||'Gestor')+': '+T.urna+(T.partido?' ('+T.partido+')':'')]:['na','Sem dados da gestão'];
+ o.con=A.plG.length?['vm',A.plG.length+' processo(s) grave(s) sobre licitações']:A.PL.length||A.PG.length?['am',(A.PL.length+A.PG.length)+' processo(s) a conferir']:['ok','Nada relevante encontrado'];
+ return o}
+function capa(r,A){var v=veredito(A),o=status(A);
+ var K=[[A.semDados?'—':A.pts+'/100','Nota de pagamento',A.semDados?'':A.pts<55?'vm':A.pts<80?'am':''],[A.ativos.length+' · '+mc(A.ativos.reduce(function(a,x){return a+(x.valor||0)},0)),'Contratos ativos',''],[A.abertos.length+(A.item?' ('+A.abI.length+' do item)':''),'Licitações abertas',''],[A.top.length?Math.round(A.top3*100)+'%':'—','Valor com os 3 maiores fornecedores',A.top3>.6?'am':''],[A.plG.length||'Nenhum','Processos graves sobre licitações',A.plG.length?'vm':'']];
+ var H='<div class="q"><div class="v '+v[0]+'"><small>Vale a pena vender para este órgão?</small><b>'+e(v[1])+'</b><p>'+e(v[2])+'</p></div><div class="acoes"><b>O que fazer agora</b><ol>'+acoes(A).map(function(x){return'<li>'+e(x)+'</li>'}).join('')+'</ol></div></div>';
+ H+='<div class="kpi">'+K.map(function(k){return'<div class="'+k[2]+'"><b>'+e(k[0])+'</b><span>'+e(k[1])+'</span></div>'}).join('')+'</div>';
+ document.getElementById('dv-capa').innerHTML=H;
+ document.getElementById('dv-mapa').innerHTML='<p>Os cinco temas do relatório. Clique para ir direto ao detalhe.</p><nav>'+TEMAS.map(function(t){var s=o[t[0]]||['na',''];return'<a href="#dv-t-'+t[0]+'" class="'+s[0]+'" data-t="'+t[0]+'"><b>'+e(t[1])+'</b><span>'+e(s[1])+'</span></a>'}).join('')+'</nav>';
+ document.querySelectorAll('#dv-mapa a').forEach(function(a){a.onclick=function(ev){var dt=document.getElementById('dv-t-'+a.dataset.t);if(dt){ev.preventDefault();dt.open=true;dt.scrollIntoView({behavior:'smooth',block:'start'})}}});
+ TEMAS.forEach(function(t){var dt=document.getElementById('dv-t-'+t[0]);if(!dt)return;var s=o[t[0]]||['na',''];dt.className='dv-tema '+s[0];dt.querySelector('summary span').textContent=s[1]})}
+function organiza(r,d){var key=d.cnpj+'|'+(d.item||'');if(r.dataset.org===key)return;r.dataset.org=key;r.classList.add('dv-org');var A=analisa(d);
+ var secs=[].slice.call(r.querySelectorAll(':scope > .rp-sec'));
+ secs.forEach(function(s){var h=s.querySelector('h3');var t=h?h.textContent:'';if(/^\s*(resumo|riscos em destaque)\s*$/i.test(t.replace(/^!/,'')))s.style.display='none'});
+ var anc=r.querySelector('.rp-bar')||r.querySelector('.rp-hd');var cp=document.createElement('section');cp.id='dv-capa';var mp=document.createElement('section');mp.id='dv-mapa';
+ anc.parentNode.insertBefore(cp,anc.nextSibling);cp.parentNode.insertBefore(mp,cp.nextSibling);var ult=mp,usados=[];
+ TEMAS.forEach(function(t,i){var dt=document.createElement('details');dt.id='dv-t-'+t[0];dt.className='dv-tema';if(i===0)dt.open=true;
+  dt.innerHTML='<summary><i class="st" aria-hidden="true"></i><div><b>'+e(t[1])+'</b><span>'+e(t[2])+'</span></div></summary>';
+  secs.forEach(function(s){if(usados.indexOf(s)>=0||s.style.display==='none')return;var h=s.querySelector('h3');if(h&&t[3].test(h.textContent.trim())){dt.appendChild(s);usados.push(s)}});
+  if(dt.querySelector('.rp-sec')){ult.parentNode.insertBefore(dt,ult.nextSibling);ult=dt}});
+ var resto=secs.filter(function(s){return usados.indexOf(s)<0&&s.style.display!=='none'});
+ if(resto.length){var dt=document.createElement('details');dt.id='dv-t-out';dt.className='dv-tema';dt.innerHTML='<summary><i class="st" aria-hidden="true"></i><div><b>Outras informações</b><span>Dados complementares</span></div></summary>';resto.forEach(function(s){dt.appendChild(s)});ult.parentNode.insertBefore(dt,ult.nextSibling)}
+ capa(r,A)}
+function tenta(n){var r=document.querySelector('.cp2 .rp')||document.querySelector('.rp');if(!r||!window.DVCP){if(n<60)setTimeout(function(){tenta(n+1)},300);return}organiza(r,window.DVCP)}
+new MutationObserver(function(){if(window.DVCP){var r=document.querySelector('.cp2 .rp');if(r&&!r.dataset.org)organiza(r,window.DVCP)}}).observe(document.body,{childList:true,subtree:true});
+window.addEventListener('beforeprint',function(){document.querySelectorAll('.dv-tema').forEach(function(x){x.open=true})});
+})();
+</script>
+<?php endif; ?>
 	<?php
 }, 70 );

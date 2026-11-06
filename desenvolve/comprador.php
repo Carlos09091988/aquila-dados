@@ -83,7 +83,7 @@ function dv_cp_contratos( $cnpj ) {
 	/* cache por órgão (12h): a mesma consulta com outro item não refaz a busca */
 	$ck = 'dv_cpct2_' . $cnpj; $c = get_transient( $ck ); if ( is_array( $c ) ) { return $c; }
 	/* os 4 anos em paralelo; páginas extras só para órgãos médios (órgão grande = amostra de 500 por ano, que já basta para o perfil) */
-	$t0 = microtime( true ); $b = dv_ds_multi_lento( $u, 4, 40 ); unset( $b['__falhas'] ); $mais = array(); $treg = 0;
+	$t0 = microtime( true ); $b = function_exists( 'dv_cp_resta' ) && dv_cp_resta() < 60 ? dv_ds_multi( $u, array(), 25 ) : dv_ds_multi_lento( $u, 4, 35 ); unset( $b['__falhas'] ); $mais = array(); $treg = 0;
 	foreach ( $b as $k => $body ) { $j = $body ? json_decode( $body, true ) : null; $tp = (int) ( $j['totalPaginas'] ?? 1 ); $treg += (int) ( $j['totalRegistros'] ?? 0 ); if ( $tp <= 3 ) { for ( $p = 2; $p <= $tp; $p++ ) { $mais[ str_replace( '_1', '_' . $p, $k ) ] = str_replace( '&pagina=1', '&pagina=' . $p, $u[ $k ] ); } } }
 	if ( $mais && microtime( true ) - $t0 < 25 ) { $mm = dv_ds_multi_lento( $mais, 6, 30 ); unset( $mm['__falhas'] ); $b += $mm; }
 	$o = array(); $v = array(); $erro = 0;
@@ -199,8 +199,17 @@ function dv_cp_news( $consultas ) {
 	return $o;
 }
 
+/* Orçamento de tempo: o relatório consulta várias fontes em sequência; quando uma fonte está lenta, as etapas
+ * opcionais são puladas (o relatório sai parcial) e cada etapa concluída fica em cache, para a próxima tentativa completar. */
+function dv_cp_t0( $set = false ) { static $t0 = 0; if ( $set ) { $t0 = microtime( true ); } return $t0; }
+function dv_cp_resta() { return 85 - ( microtime( true ) - dv_cp_t0() ); }
+function dv_cp_etapa( $chave, $ttl, $fn ) {
+	$ck = 'dv_cpe_' . md5( $chave ); $c = get_transient( $ck ); if ( $c !== false ) { return $c; }
+	$r = $fn(); if ( $r !== null ) { set_transient( $ck, $r, $ttl ); } return $r;
+}
 function dv_comprador( $cnpj, $item ) {
 	$ck = 'dv_cp7_' . $cnpj . '_' . md5( $item ); $c = get_transient( $ck ); if ( $c ) { return $c; }
+	dv_cp_t0( true ); $pulou = array();
 	$x = wp_remote_get( 'https://brasilapi.com.br/api/cnpj/v1/' . $cnpj, array( 'timeout' => 20 ) );
 	$cad = is_wp_error( $x ) ? array() : (array) json_decode( wp_remote_retrieve_body( $x ), true );
 	if ( empty( $cad['razao_social'] ) ) { return new WP_Error( 'dv_cnpj', 'CNPJ não encontrado na Receita Federal.', array( 'status' => 404 ) ); }
@@ -212,7 +221,7 @@ function dv_comprador( $cnpj, $item ) {
 	$toks = dv_cp_tok( $item );
 	$D = array( 'cnpj' => $cnpj, 'item' => $item, 'tokens' => $toks, 'gerado_em' => current_time( 'mysql' ), 'cadastro' => $cad, 'publico' => (bool) $publico, 'esfera' => $esfera, 'id_ente' => $id_ente );
 	$D['fiscal'] = $id_ente ? dv_cp_siconfi( $id_ente, $esfera ) : null;
-	$ct = dv_cp_contratos( $cnpj ); $ed = dv_cp_abertas( $cnpj );
+	$ct = dv_cp_contratos( $cnpj ); $ed = dv_cp_etapa( 'ab|' . $cnpj, HOUR_IN_SECONDS, function () use ( $cnpj ) { return dv_cp_abertas( $cnpj ); } );
 	$D['contratos'] = $ct; $D['editais'] = $ed;
 	$compras = array(); $vis = array();
 	if ( $toks ) {
@@ -223,7 +232,7 @@ function dv_comprador( $cnpj, $item ) {
 			$compras[] = array( 'ano' => $m[2], 'seq' => (int) $m[1], 'objeto' => $x['objeto'], 'titulo' => 'Compra ' . (int) $m[1] . '/' . $m[2] . ' (' . $x['fornecedor'] . ')', 'link' => 'https://pncp.gov.br/app/editais/' . $cnpj . '/' . $m[2] . '/' . (int) $m[1], 'data' => $x['assinatura'] );
 		}
 	}
-	$D['precos'] = $toks ? dv_cp_precos( $cnpj, $compras, $toks ) : array();
+	$D['precos'] = $toks ? ( dv_cp_resta() > 20 ? dv_cp_etapa( 'pr|' . $cnpj . '|' . md5( $item ), 6 * HOUR_IN_SECONDS, function () use ( $cnpj, $compras, $toks ) { return dv_cp_precos( $cnpj, $compras, $toks ); } ) : ( $pulou[] = 'precos' ) && array() ) : array();
 	/* cobranças na Justiça contra o órgão (12 meses) */
 	$nome = dv_ds_nrm( $cad['razao_social'] ); $munN = dv_ds_nrm( $cad['municipio'] ?? '' ); $tj = $esfera ? 'TJ' . strtoupper( (string) ( $cad['uf'] ?? '' ) ) : '';
 	/* secretarias e órgãos do Executivo municipal não têm personalidade jurídica: na Justiça a parte é o Município */
@@ -232,9 +241,14 @@ function dv_comprador( $cnpj, $item ) {
 	$bj = 'https://comunicaapi.pje.jus.br/api/v1/comunicacao?nomeParte=' . rawurlencode( $nome ) . '&dataDisponibilizacaoInicio=' . $ini . '&dataDisponibilizacaoFim=' . $fim . '&itensPorPagina=1&pagina=1' . ( $tj ? '&siglaTribunal=' . $tj : '' );
 	$q = array( 'total' => $bj );
 	foreach ( array( 'cobranca' => 'ação de cobrança', 'monitoria' => 'monitória', 'execucao' => 'execução de título extrajudicial', 'precatorio' => 'precatório', 'rpv' => 'requisição de pequeno valor' ) as $k => $t ) { $q[ $k ] = $bj . '&texto=' . rawurlencode( $t ); }
-	$rj = dv_ds_multi( $q, array(), 30 ); $J = array();
-	foreach ( $rj as $k => $b ) { $j = $b ? json_decode( $b, true ) : null; $J[ $k ] = $j ? (int) ( $j['count'] ?? 0 ) : null; }
-	$D['justica'] = $J; $D['justica_nome'] = $nome;
+	if ( dv_cp_resta() > 15 ) {
+		$J = dv_cp_etapa( 'ju|' . $nome . '|' . $tj . '|' . $fim, 12 * HOUR_IN_SECONDS, function () use ( $q ) {
+			$rj = dv_ds_multi( $q, array(), 25 ); $J = array(); $ok = false;
+			foreach ( $rj as $k => $b ) { $j = $b ? json_decode( $b, true ) : null; $J[ $k ] = $j ? (int) ( $j['count'] ?? 0 ) : null; if ( $j ) { $ok = true; } }
+			return $ok ? $J : null;
+		} );
+	} else { $J = null; $pulou[] = 'justica'; }
+	$D['justica'] = is_array( $J ) ? $J : array(); $D['justica_nome'] = $nome;
 	/* quem governa */
 	$D['politicos'] = dv_cp_politicos( $cad, $esfera );
 	$tit = $D['politicos']['titular'] ?? null;
@@ -251,16 +265,20 @@ function dv_comprador( $cnpj, $item ) {
 	if ( $toks ) { $cons['objeto'] = '"' . $alvoN . '"' . $it1 . ' (licitação OR contrato OR empresa)'; }
 	if ( $tit && $esfera === 'M' ) { $cons['gestor'] = '"' . $tit['urna'] . '" ' . $loc . ' (investigação OR operação OR denúncia OR improbidade OR cassação OR "Ministério Público" OR polêmica OR condenado OR processo)'; }
 	elseif ( $tit ) { $cons['gestor'] = '"' . $tit['urna'] . '" governador (investigação OR operação OR denúncia OR improbidade OR polêmica OR processo)'; }
-	$N = dv_cp_news( $cons );
+	if ( dv_cp_resta() > 12 ) { $N = dv_cp_etapa( 'nw|' . $cnpj . '|' . md5( serialize( $cons ) ), 3 * HOUR_IN_SECONDS, function () use ( $cons ) { return dv_cp_news( $cons ); } ); }
+	else { $N = array(); $pulou[] = 'noticias'; }
 	$D['noticias'] = $N['pagamento'] ?? array(); $D['noticias_termo'] = $alvoN;
 	$D['news'] = array( 'licitacoes' => $N['licitacoes'] ?? array(), 'sindical' => $N['sindical'] ?? array(), 'objeto' => $N['objeto'] ?? array(), 'gestor' => $N['gestor'] ?? array() );
 	/* processos ligados a licitações e ao objeto */
 	$termos = array( 'licitação', 'pregão', 'improbidade', 'ação popular' ); if ( $toks ) { $termos[] = $item; }
-	$D['proc_lic'] = dv_cp_proc_lic( $nome, $termos, $tj );
+	if ( dv_cp_resta() > 15 ) { $D['proc_lic'] = dv_cp_etapa( 'pl|' . $nome . '|' . $tj . '|' . md5( serialize( $termos ) ), 12 * HOUR_IN_SECONDS, function () use ( $nome, $termos, $tj ) { return dv_cp_proc_lic( $nome, $termos, $tj ); } ); }
+	else { $D['proc_lic'] = array(); $pulou[] = 'processos'; }
 	/* processos do gestor (criminal / improbidade) */
 	$D['gestor_proc'] = array();
-	if ( $tit && count( explode( ' ', dv_ds_nrm( $tit['nome'] ) ) ) >= 3 ) { $g = dv_ds_djen( dv_ds_nrm( $tit['nome'] ), 2, false ); $D['gestor_proc'] = array_values( array_filter( $g['processos'], function ( $x ) { return in_array( $x['tipo'], array( 'criminal', 'improbidade', 'coletiva' ), true ) || preg_match( '/ELEITORAL|CASSACAO|INVESTIGACAO JUDICIAL/', dv_ds_nrm( $x['classe'] ) ); } ) ); }
-	set_transient( $ck, $D, 6 * HOUR_IN_SECONDS );
+	if ( $tit && count( explode( ' ', dv_ds_nrm( $tit['nome'] ) ) ) >= 3 && dv_cp_resta() <= 15 ) { $pulou[] = 'gestor'; }
+	elseif ( $tit && count( explode( ' ', dv_ds_nrm( $tit['nome'] ) ) ) >= 3 ) { $g = dv_cp_etapa( 'gp|' . $tit['nome'], 12 * HOUR_IN_SECONDS, function () use ( $tit ) { return dv_ds_djen( dv_ds_nrm( $tit['nome'] ), 2, false ); } ); $D['gestor_proc'] = array_values( array_filter( $g['processos'], function ( $x ) { return in_array( $x['tipo'], array( 'criminal', 'improbidade', 'coletiva' ), true ) || preg_match( '/ELEITORAL|CASSACAO|INVESTIGACAO JUDICIAL/', dv_ds_nrm( $x['classe'] ) ); } ) ); }
+	$D['parcial'] = array_values( array_unique( $pulou ) ); $D['segundos'] = (int) round( microtime( true ) - dv_cp_t0() );
+	set_transient( $ck, $D, $pulou ? 10 * MINUTE_IN_SECONDS : 6 * HOUR_IN_SECONDS );
 	return $D;
 }
 
@@ -271,7 +289,7 @@ add_action( 'rest_api_init', function () {
 			$cnpj = preg_replace( '/\D/', '', (string) $r['cnpj'] );
 			if ( strlen( $cnpj ) !== 14 ) { return new WP_Error( 'dv_cnpj', 'Informe o CNPJ do órgão (14 números).', array( 'status' => 400 ) ); }
 			if ( ! function_exists( 'dv_ds_multi' ) ) { return new WP_Error( 'dv_dep', 'Ferramenta indisponível no momento.', array( 'status' => 503 ) ); }
-			set_time_limit( 120 );
+			set_time_limit( 300 );
 			return dv_comprador( $cnpj, mb_substr( sanitize_text_field( (string) $r['item'] ), 0, 120 ) );
 		} ) );
 } );

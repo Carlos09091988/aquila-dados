@@ -184,9 +184,21 @@ function dv_dm_cobertura( $forcar = false ) {
 			foreach ( $o[1] as $t ) { $t = dv_dm_txt( $t ); if ( preg_match( '/^(prefeitura|munic[íi]pio|c[âa]mara)/iu', $t ) ) { $mun[ $f['uf'] . '|' . remove_accents( mb_strtolower( dv_dm_municipio( $t ) ) ) ] = 1; } }
 		}
 	}
-	foreach ( array_keys( $mun ) as $x ) { $u = explode( '|', $x )[0]; $por[ $u ] = ( $por[ $u ] ?? 0 ) + 1; }
+	/* cidades lidas pelo robô (DiOE/DOSP, DOEM, Atende.net): listas semanais publicadas no repositório */
+	$raw = 'https://raw.githubusercontent.com/Carlos09091988/aquila-dados/main/data/diarios/';
+	$lj = function_exists( 'dv_ds_multi' ) ? dv_ds_multi( array( 'dosp' => $raw . 'dosp2.json', 'doem' => $raw . 'doem.json', 'atende' => $raw . 'atende.json' ), array(), 20 ) : array();
+	$robo = array();
+	foreach ( $lj as $k => $b ) {
+		$j = $b ? json_decode( $b, true ) : null; if ( ! is_array( $j ) ) { continue; }
+		$lista = $k === 'dosp' ? array_map( function ( $e ) { return array( $e['uf'], $e['slug'] ); }, array_values( (array) ( $j['ent'] ?? array() ) ) ) : (array) ( $j['cidades'] ?? array() );
+		$robo[ $k ] = count( $lista );
+		foreach ( $lista as $c ) { if ( empty( $c[0] ) || empty( $c[1] ) ) { continue; } $nm = isset( $c[2] ) ? remove_accents( mb_strtolower( $c[2] ) ) : str_replace( '-', ' ', $c[1] ); $mun[ strtoupper( $c[0] ) . '|' . preg_replace( '/[^a-z0-9]/', '', $nm ) ] = 1; }
+	}
+	/* mesma cidade em duas fontes conta uma vez só */
+	$un = array(); foreach ( array_keys( $mun ) as $x ) { list( $u, $n ) = explode( '|', $x, 2 ); $un[ $u . '|' . preg_replace( '/[^a-z0-9]/', '', $n ) ] = 1; } $mun = $un;
+	foreach ( array_keys( $mun ) as $x ) { $u = explode( '|', $x )[0]; if ( $u !== 'SC' ) { $por[ $u ] = ( $por[ $u ] ?? 0 ) + 1; } }
 	$por['SC'] = 295; /* DOM/SC atende todos os municípios catarinenses */
-	$c = array( 'quando' => current_time( 'mysql' ), 'por_uf' => $por, 'total' => array_sum( $por ) );
+	ksort( $por ); $c = array( 'quando' => current_time( 'mysql' ), 'por_uf' => $por, 'total' => array_sum( $por ), 'robo' => $robo );
 	update_option( 'dv_dm_cob', $c, false );
 	return $c;
 }

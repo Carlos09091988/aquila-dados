@@ -110,7 +110,8 @@ add_filter( 'rest_post_dispatch', function ( $res, $server, $req ) {
 add_action( 'wp_footer', function () {
 	global $post; if ( ! is_user_logged_in() || ! $post ) { return; }
 	$ds = strpos( (string) $post->post_content, 'tool="dossie"' ) !== false; $cp = strpos( (string) $post->post_content, 'id="cp2"' ) !== false;
-	if ( ! $ds && ! $cp ) { return; }
+	$rx = (bool) preg_match( '#/plataforma/raio-x/?(\?|$)#', (string) ( $_SERVER['REQUEST_URI'] ?? '' ) );
+	if ( ! $ds && ! $cp && ! $rx ) { return; }
 	$api = esc_url_raw( rest_url( 'desenvolve/v1/' ) ); $nonce = wp_create_nonce( 'wp_rest' ); ?>
 <style>
 #dv-esp{position:fixed;inset:auto 18px 18px auto;z-index:9999;max-width:360px;background:#16191E;color:#F3EFE6;border-radius:16px;padding:18px 20px;box-shadow:0 18px 50px rgba(22,25,30,.35);font:500 .92rem/1.5 "Hanken Grotesk",-apple-system,sans-serif}
@@ -456,6 +457,80 @@ window.addEventListener('beforeprint',function(){document.querySelectorAll('.dv-
 })();
 </script>
 <?php endif; ?>
+<?php if ( $rx ) : ?>
+<script>
+(function(){
+/* Raio-X do concorrente: capa "como eu ganho dele?", mapa de temas e seções agrupadas */
+var of=window.fetch;window.fetch=function(u,o){var pr=of.apply(this,arguments),U=String(u);
+ if(/\/int\/concorrente\?/.test(U))pr.then(function(r){r.clone().json().then(function(j){if(j&&j.resumo){window.DVIC=j;atualiza()}}).catch(function(){})}).catch(function(){});
+ if(/\/dvtools\/v1\/fornecedor\?/.test(U))pr.then(function(r){r.clone().json().then(function(j){if(j&&(j.cadastro||j.razao_social)){window.DVFO=j;atualiza()}}).catch(function(){})}).catch(function(){});
+ return pr};
+function e(s){return String(s==null?'':s).replace(/[&<>"]/g,function(c){return{'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]})}
+function mc(v){v=+v||0;return v>=1e9?'R$ '+(v/1e9).toLocaleString('pt-BR',{maximumFractionDigits:1})+' bi':v>=1e6?'R$ '+(v/1e6).toLocaleString('pt-BR',{maximumFractionDigits:1})+' mi':v>=1e3?'R$ '+Math.round(v/1e3).toLocaleString('pt-BR')+' mil':'R$ '+Math.round(v).toLocaleString('pt-BR')}
+function pc(v){return v==null?'—':(+v).toFixed(1).replace('.',',')+'%'}
+function fc(c){return String(c).replace(/^(\d{2})(\d{3})(\d{3})(\d{4})(\d{2})$/,'$1.$2.$3/$4-$5')}
+var TEMAS=[['lan','Como ele dá preço','Descontos, ramos em que atua e onde vence',['dv-ic','dv-pv']],
+ ['hab','Pontos fracos na habilitação','Pontos de atenção, sanções, dívida e certidões',['rx-pts','rx-ceis','rx-cnep','rx-tcu','rx-ext','rx-pago','rx-cert']],
+ ['gov','Experiência com o governo','Contratos públicos e recebimentos',['rx-ctr']],
+ ['pes','Quem é a empresa','Cadastro na Receita',['rx-cad']],
+ ['rep','Justiça e imprensa','Processos judiciais e notícias',['dv-s2','dv-s1']]];
+function onde(id){for(var i=0;i<TEMAS.length;i++)if(TEMAS[i][3].indexOf(id)>=0)return TEMAS[i][0];return null}
+function cnpj(){var m=location.search.match(/cnpj=(\d{14})/);return m?m[1]:''}
+function nome(){var F=window.DVFO||{},c=F.cadastro||F;if(c.razao_social)return c.razao_social;var cad=document.getElementById('rx-cad');if(cad){var l=cad.innerText.split('\n').map(function(x){return x.trim()}).filter(Boolean);return l[1]||''}return''}
+function analisa(){var R=document.querySelector('.rx-out'),I=window.DVIC||{},rs=I.resumo||{},pf=I.perfil||{},ex=I.experiencia||[];
+ var pts=[].slice.call(document.querySelectorAll('#rx-pts li')),forte=pts.filter(function(x){return/n2|n3|vm/.test(x.className)}).length;
+ var sanc=['rx-ceis','rx-cnep','rx-tcu'].filter(function(id){var x=document.getElementById(id);return x&&!/nenhum registro|n[aã]o consta/i.test(x.innerText)}).length;
+ var ufs=Object.keys(pf.uf||{}).map(function(k){return[k,pf.uf[k].n,pf.uf[k].media]}).sort(function(a,b){return b[1]-a[1]});
+ var ctr=document.getElementById('rx-ctr'),nC=0;if(ctr){var m=ctr.innerText.match(/(\d[\d.]*)\s*\n?\s*contratos no PNCP/i);if(m)nC=+m[1].replace(/\./g,'')}
+ return{vit:+rs.vitorias||0,valor:+rs.valor||0,med:pf.mediana,media:pf.media,nd:+pf.n||0,ufs:ufs,ramo:ex[0]||null,ramos:ex,pts:pts.length,forte:forte,sanc:sanc,nC:nC||(+rs.contratos||0),temI:!!window.DVIC}}
+function veredito(A){if(!A.temI)return['am','Analisando o concorrente…','Estamos juntando as vitórias e os descontos dele. Esta conclusão se completa em alguns segundos.'];
+ var forca=A.vit>=30||A.valor>=20e6?'forte':A.vit>=5||A.valor>=2e6?'médio':'pequeno';
+ var t=forca==='forte'?'Concorrente forte':forca==='médio'?'Concorrente de porte médio':'Concorrente pequeno';
+ var d=A.vit+' licitação(ões) vencida(s) no PNCP, somando '+mc(A.valor)+'.'+(A.med!=null?' Dá, em mediana, '+pc(A.med)+' de desconto sobre o valor estimado.':'');
+ if(A.forte||A.sanc)d+=' Tem '+(A.forte+A.sanc)+' ponto(s) fraco(s) na habilitação para explorar.';
+ return[forca==='forte'?'vm':forca==='médio'?'am':'ok',t,d]}
+function acoes(A){var a=[];
+ if(A.med!=null&&A.nd>=3)a.push('Para vencer dele, sua proposta precisa suportar desconto acima de '+pc(A.med)+' (a mediana dele em '+A.nd+' disputas). Confira antes se o seu preço continua exequível.');
+ else if(A.temI)a.push('Há poucas disputas com desconto conhecido. Acompanhe as próximas sessões dele para calibrar o seu lance.');
+ if(A.ufs.length){var top=A.ufs.slice(0,2).map(function(u){return u[0]}).join(' e ');a.push('Ele concentra as vitórias em '+top+'. Em outros estados a concorrência com ele tende a ser menor.')}
+ if(A.forte||A.sanc)a.push('Use os pontos fracos dele na habilitação (veja o tema): peça diligência na sessão (Lei 14.133, art. 64) e, se for o caso, recorra (art. 165).');
+ else a.push('Na habilitação, os dados públicos não mostram ponto fraco dele: a disputa vai ser no preço e nos atestados.');
+ return a.slice(0,3)}
+function status(A){var o={};
+ o.lan=A.med!=null?['am','Desconto mediano de '+pc(A.med)+(A.ramo?' · forte em '+A.ramo.ramo:'')]:['na',A.temI?'Sem desconto conhecido':'Carregando…'];
+ o.hab=A.forte||A.sanc?['ok',(A.forte+A.sanc)+' ponto(s) fraco(s) para explorar']:A.pts?['am',A.pts+' ponto(s) de atenção leve(s)']:['na','Sem ponto fraco nos dados públicos'];
+ o.gov=['na',A.nC?A.nC+' contrato(s) no PNCP':'Contratos públicos'];
+ o.pes=['na','Cadastro na Receita'];o.rep=['na','Processos e notícias'];return o}
+function capa(){var A=analisa(),v=veredito(A),o=status(A),cp=document.getElementById('dv-capa');if(!cp)return;
+ var K=[[A.vit||'—','Licitações vencidas',''],[A.valor?mc(A.valor):'—','Valor ganho',''],[A.med!=null?pc(A.med):'—','Desconto mediano',''],[A.nC||'—','Contratos no PNCP',''],[A.forte+A.sanc||'Nenhum','Pontos fracos na habilitação',A.forte+A.sanc?'am':'']];
+ var H='<div class="q"><div class="v '+v[0]+'"><small>Como eu ganho dele?</small><b>'+e(v[1])+'</b><p>'+e(v[2])+'</p></div><div class="acoes"><b>O que fazer agora</b><ol>'+acoes(A).map(function(x){return'<li>'+e(x)+'</li>'}).join('')+'</ol></div></div>';
+ H+='<div class="kpi">'+K.map(function(k){return'<div class="'+k[2]+'"><b>'+e(k[0])+'</b><span>'+e(k[1])+'</span></div>'}).join('')+'</div>';
+ cp.innerHTML=H;
+ document.getElementById('dv-mapa').innerHTML='<p>Os cinco temas do relatório. Clique para ir direto ao detalhe.</p><nav>'+TEMAS.map(function(t){var s=o[t[0]]||['na',''];return'<a href="#dv-t-'+t[0]+'" class="'+s[0]+'" data-t="'+t[0]+'"><b>'+e(t[1])+'</b><span>'+e(s[1])+'</span></a>'}).join('')+'</nav>';
+ document.querySelectorAll('#dv-mapa a').forEach(function(a){a.onclick=function(ev){var dt=document.getElementById('dv-t-'+a.dataset.t);if(dt){ev.preventDefault();dt.open=true;dt.scrollIntoView({behavior:'smooth',block:'start'})}}});
+ TEMAS.forEach(function(t){var dt=document.getElementById('dv-t-'+t[0]);if(!dt)return;var s=o[t[0]]||['na',''];dt.className='dv-tema '+s[0];dt.querySelector('summary span').textContent=s[1]});
+ var R=document.querySelector('.rx-out');if(R){R.dataset.nome=nome();R.dataset.sub=cnpj()?'CNPJ '+fc(cnpj()):'';R.dataset.tipo='Raio-X do concorrente';var hd=document.getElementById('dv-rxhd');if(hd)hd.innerHTML='<small>RAIO-X DO CONCORRENTE</small><h2>'+e(R.dataset.nome)+'</h2><p>'+e(R.dataset.sub)+'</p>'}}
+function encaixa(R){[].slice.call(R.children).forEach(function(ch){if(!ch.id||ch.classList.contains('dv-tema'))return;var t=onde(ch.id);if(t){var dt=document.getElementById('dv-t-'+t);if(dt&&ch.parentNode!==dt)dt.appendChild(ch)}})}
+function organiza(){var R=document.querySelector('.rx-out');if(!R||!document.getElementById('rx-cad'))return;
+ if(!R.dataset.org){R.dataset.org='1';R.classList.add('dv-org','rp');
+  [].forEach.call(R.querySelectorAll(':scope > .dv-rnav, :scope > #dv-rs'),function(x){x.style.display='none'});
+  var hd=document.createElement('div');hd.id='dv-rxhd';hd.className='rp-hd';var cp=document.createElement('section');cp.id='dv-capa';var mp=document.createElement('section');mp.id='dv-mapa';
+  var top=R.querySelector(':scope > .dv-pdf-top');var ref=top?top.nextSibling:R.firstChild;R.insertBefore(hd,ref);R.insertBefore(cp,hd.nextSibling);R.insertBefore(mp,cp.nextSibling);
+  var ult=mp;TEMAS.forEach(function(t,i){var dt=document.createElement('details');dt.id='dv-t-'+t[0];dt.className='dv-tema';if(i===0)dt.open=true;dt.innerHTML='<summary><i class="st" aria-hidden="true"></i><div><b>'+e(t[1])+'</b><span>'+e(t[2])+'</span></div></summary>';R.insertBefore(dt,ult.nextSibling);ult=dt});
+  var cad=document.getElementById('rx-cad');if(cad){var h=cad.querySelector('h2,h3,b');}
+ }
+ encaixa(R);capa()}
+var tm=0;function atualiza(){clearTimeout(tm);tm=setTimeout(organiza,150)}
+new MutationObserver(atualiza).observe(document.body,{childList:true,subtree:false});
+var R0;setInterval(function(){var R=document.querySelector('.rx-out');if(R&&R!==R0){R0=R;new MutationObserver(atualiza).observe(R,{childList:true})}},700);
+})();
+</script>
+<style>
+#dv-rxhd{background:#16191E;color:#F3EFE6;padding:22px 30px;border-radius:14px 14px 0 0}#dv-rxhd small{display:block;font:700 .72rem "Hanken Grotesk",sans-serif;letter-spacing:.14em;color:#C9A45C;margin-bottom:6px}#dv-rxhd h2{margin:0;font:600 1.6rem "Fraunces",Georgia,serif;color:#fff}#dv-rxhd p{margin:4px 0 0;color:#B9BDB8;font-size:.9rem}
+.rx-out.dv-org .dv-tema>.rx-card,.rx-out.dv-org .dv-tema>section,.rx-out.dv-org .dv-tema>div{margin:0 30px 14px}
+.rx-out.dv-org #rx-cad h2,.rx-out.dv-org #rx-cad h3{display:none}
+</style>
+<?php endif; ?>
 <script>
 /* PDF organizado: o mesmo roteiro da tela (conclusão, o que fazer, números, temas), sem repetição */
 (function(){
@@ -480,7 +555,7 @@ var CSS='@page{size:A4;margin:14mm 14mm 16mm}*{box-sizing:border-box;-webkit-pri
  '.kv{display:grid;grid-template-columns:repeat(3,1fr);gap:4px 14px}.kv div{padding:3px 0;border-bottom:1px dashed #EEE9DE}.kv b{display:block;font:700 7.4pt Arial,sans-serif;color:#6E6A60}'+
  '.sem{display:grid;grid-template-columns:repeat(3,1fr);gap:6px}.sem>div{border:1px solid #E3DED2;border-radius:6px;padding:6px 8px}.sem b{display:block;font-size:8pt;color:#6E6A60}.mu{color:#6E6A60}.tag{display:inline-block;background:#F0ECE3;border-radius:4px;padding:0 5px;margin:1px;font-size:8pt}'+
  '.fim{break-before:page;font-size:8.6pt;color:#4A4D52}.fim h2{font-size:14pt;margin-bottom:8px}.rod{margin-top:16px;font-size:7.6pt;color:#8A857A;border-top:1px solid #E3DED2;padding-top:6px}';
-function monta(){var R=document.querySelector('.rp.dv-org');if(!R)return null;var hd=R.querySelector('.rp-hd'),nome=((hd&&hd.querySelector('h2'))||{}).textContent||'Relatório',sub=((hd&&hd.querySelector('h2+p,p'))||{}).textContent||'',tipo=((hd&&hd.querySelector('small'))||{}).textContent||'Relatório';
+function monta(){var R=document.querySelector('.dv-org');if(!R)return null;var hd=R.querySelector('.rp-hd'),nome=R.dataset.nome||((hd&&hd.querySelector('h2'))||{}).textContent||'Relatório',sub=R.dataset.sub||((hd&&hd.querySelector('h2+p,p'))||{}).textContent||'',tipo=R.dataset.tipo||((hd&&hd.querySelector('small'))||{}).textContent||'Relatório';
  var hoje=new Date(),dt=hoje.toLocaleDateString('pt-BR')+' às '+hoje.toLocaleTimeString('pt-BR',{hour:'2-digit',minute:'2-digit'});
  var H='<!doctype html><html lang="pt-BR"><head><meta charset="utf-8"><title>'+e(tipo+' - '+nome)+'</title><link href="https://fonts.googleapis.com/css2?family=Hanken+Grotesk:wght@400;600;700&display=swap" rel="stylesheet"><style>'+CSS+'</style></head><body>';
  H+='<div class="cab"><div><div class="k">'+e(tipo)+'</div><h1>'+e(nome)+'</h1><div class="s">'+e(sub)+'</div></div><div class="dt"><div class="br">Desenvolve Estratégias</div><div>Gerado em '+e(dt)+'</div></div></div>';
@@ -496,7 +571,7 @@ function monta(){var R=document.querySelector('.rp.dv-org');if(!R)return null;va
 function imprime(){var H=monta();if(!H)return false;var f=document.createElement('iframe');f.style.cssText='position:fixed;right:0;bottom:0;width:0;height:0;border:0';document.body.appendChild(f);var d=f.contentDocument;d.open();d.write(H);d.close();
  var go=function(){try{f.contentWindow.focus();f.contentWindow.print()}catch(x){}setTimeout(function(){f.remove()},60000)};(d.fonts&&d.fonts.ready?d.fonts.ready:Promise.resolve()).then(function(){setTimeout(go,500)});return true}
 window.dvPdfOrganizado=monta;
-window.addEventListener('click',function(ev){var b=ev.target.closest&&ev.target.closest('[data-pdf]');if(!b||!document.querySelector('.rp.dv-org'))return;ev.preventDefault();ev.stopImmediatePropagation();imprime()},true);
+window.addEventListener('click',function(ev){var b=ev.target.closest&&ev.target.closest('[data-pdf], .dv-pdf-top button');if(!b||!document.querySelector('.dv-org'))return;ev.preventDefault();ev.stopImmediatePropagation();imprime()},true);
 window.addEventListener('beforeprint',function(){});
 })();
 </script>

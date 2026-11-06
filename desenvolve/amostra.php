@@ -164,6 +164,7 @@ add_action( 'rest_api_init', function () {
 			$base = 'https://pncp.gov.br/api/search/?q=&tipos_documento=edital&status=recebendo_proposta&pagina=1&tam_pagina=1' . ( $uf ? '&ufs=' . $uf : '' );
 			$t = dv_am_get( $base, 15 ); $q = dv_am_get( $base . '&modalidades=8%7C9', 15 );
 			$c = array( 'abertas' => (int) ( $t['total'] ?? 0 ), 'rapidas' => (int) ( $q['total'] ?? 0 ), 'uf' => $uf, 'quando' => current_time( 'Y-m-d H:i' ) );
+			if ( current_user_can( 'manage_options' ) ) { $c['pncp'] = $GLOBALS['dv_am_ult'] ?? ''; }
 			if ( $c['abertas'] > 0 && $c['rapidas'] > 0 ) { set_transient( $k, $c, 6 * HOUR_IN_SECONDS ); } elseif ( $c['abertas'] > 0 ) { set_transient( $k, $c, 10 * MINUTE_IN_SECONDS ); }
 		}
 		return new WP_REST_Response( $c, 200, array( 'Cache-Control' => 'public, max-age=3600' ) );

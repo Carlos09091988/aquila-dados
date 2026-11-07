@@ -1226,7 +1226,7 @@ function menu(){var nav=document.querySelector('.dv-side nav');if(!nav||nav.data
  var here=location.pathname,qs=location.search,frag=document.createDocumentFragment();var ini=ex['/painel/'].cloneNode(true);frag.appendChild(ini);
  var busca=document.querySelector('.dv-top .dv-k svg');
  G.forEach(function(g){var gt=document.createElement('div');gt.className='gt';gt.textContent=g[0];frag.appendChild(gt);var gs=document.createElement('div');gs.className='gs';frag.appendChild(gs);
-  g[1].forEach(function(it){var base=ex[pth(it[1]).split('?')[0]]||ex[ICN[it[1]]]||ex['/plataforma/raio-x/'];if(!base)return;var a=base.cloneNode(true);a.setAttribute('href',it[1]);a.removeAttribute('aria-current');a.classList.remove('on');
+  g[1].forEach(function(it){var own=ex[pth(it[1]).split('?')[0]],base=own||ex[ICN[it[1]]]||ex['/plataforma/raio-x/'];if(!base)return;var a=base.cloneNode(true);if(!own||it[1].indexOf('/dossie/?')>=0){var bd0=a.querySelector('.bd');if(bd0)bd0.remove()}a.setAttribute('href',it[1]);a.removeAttribute('aria-current');a.classList.remove('on');
    if(it[1]==='/plataforma/buscador/'&&busca){var ic=a.querySelector('.ic');if(ic)ic.innerHTML=busca.outerHTML}
    var lab=[].find.call(a.querySelectorAll('span'),function(x){return!x.classList.contains('ic')&&!x.classList.contains('bd')});if(lab)lab.textContent=it[0];
    var same=it[1].split('?')[0]===here&&(it[1].indexOf('?ver=')<0||qs.indexOf(it[1].split('?')[1])>=0)&&!(it[1].indexOf('/dossie/?')>=0);if(same){a.classList.add('on');a.setAttribute('aria-current','page')}
@@ -1386,3 +1386,78 @@ var tm;document.addEventListener('input',function(ev){var i=ev.target;if(!i.matc
 })();</script>
 <?php
 }, 99 );
+
+
+// Notícias: aba "Mundo" (licitações e compras públicas fora do Brasil), faixa de notícias fixa no topo de todas as telas
+// da plataforma e sino só com avisos do sistema para o cliente.
+function dv_mundo_np() {
+	$c = get_transient( 'dv_np_mundo2' ); if ( is_array( $c ) ) { return $c; }
+	$F = array(
+		array( 'en-US', 'US', 'US:en', 'Inglês', array( 'public procurement when:7d', 'government tender when:7d', 'government contract awarded when:7d', 'procurement fraud when:14d', 'World Bank procurement when:30d' ) ),
+		array( 'es-419', 'MX', 'MX:es-419', 'Espanhol', array( '"licitación pública" when:7d', '"contratación pública" when:7d', '"compras públicas" when:14d' ) ),
+		array( 'pt-PT', 'PT', 'PT:pt-150', 'Portugal', array( '"contratação pública" when:14d', 'concurso público empreitada when:14d' ) ),
+	);
+	$OK = array( 'reuters.com', 'apnews.com', 'bbc.com', 'bbc.co.uk', 'theguardian.com', 'aljazeera.com', 'dw.com', 'france24.com', 'euronews.com', 'devex.com', 'worldbank.org', 'oecd.org', 'un.org', 'europa.eu', 'gov.uk', 'govtech.com', 'federalnewsnetwork.com', 'nextgov.com', 'fedscoop.com', 'route-fifty.com', 'route-fifty.com', 'publicfinance.co.uk', 'smartcitiesdive.com', 'npr.org', 'cnbc.com', 'politico.com', 'politico.eu', 'abc.net.au', 'cbc.ca', 'efe.com', 'infobae.com', 'elpais.com', 'eltiempo.com', 'lanacion.com.ar', 'clarin.com', 'elcomercio.pe', 'eluniversal.com.mx', 'expansion.mx', 'publico.es', 'rtve.es', 'eldiario.es', 'publico.pt', 'observador.pt', 'rtp.pt', 'sicnoticias.pt', 'dn.pt', 'jn.pt', 'eco.sapo.pt', 'lusa.pt', 'reuters.co.uk', 'channelnewsasia.com', 'scmp.com', 'thehindu.com', 'timesofindia.indiatimes.com', 'news24.com' );
+	$out = array(); $vis = array();
+	foreach ( $F as $f ) {
+		foreach ( $f[4] as $q ) {
+			$u = 'https://news.google.com/rss/search?q=' . rawurlencode( $q ) . '&hl=' . $f[0] . '&gl=' . $f[1] . '&ceid=' . $f[2];
+			$r = wp_remote_get( $u, array( 'timeout' => 12, 'headers' => array( 'User-Agent' => 'Mozilla/5.0 (compatible; Desenvolve/1.0)' ) ) );
+			if ( is_wp_error( $r ) || wp_remote_retrieve_response_code( $r ) !== 200 || ! function_exists( 'dv_np_rss' ) ) { continue; }
+			foreach ( dv_np_rss( wp_remote_retrieve_body( $r ) ) as $it ) {
+				$h = strtolower( preg_replace( '/^www\./', '', (string) $it['host'] ) ); $ok = false;
+				foreach ( $OK as $d ) { if ( $h === $d || substr( $h, -strlen( '.' . $d ) ) === '.' . $d ) { $ok = true; break; } }
+				if ( ! $ok || mb_strlen( $it['titulo'] ) < 25 ) { continue; }
+				$k = md5( mb_strtolower( mb_substr( $it['titulo'], 0, 70 ) ) ); if ( isset( $vis[ $k ] ) ) { continue; } $vis[ $k ] = 1;
+				$out[] = array( 't' => $it['titulo'], 'f' => $it['fonte'] . ' · ' . $f[3], 'u' => $it['url'], 'd' => $it['data'], 'g' => 'Mundo', 'q' => '' );
+			}
+		}
+	}
+	usort( $out, function ( $a, $b ) { return strcmp( $b['d'], $a['d'] ); } );
+	$pf = array(); $out = array_values( array_filter( $out, function ( $x ) use ( &$pf ) { $k = strtolower( $x['f'] ); $pf[ $k ] = ( $pf[ $k ] ?? 0 ) + 1; return $pf[ $k ] <= 4; } ) );
+	$res = array( 'itens' => array_slice( $out, 0, 40 ), 'em' => current_time( 'mysql' ) );
+	if ( $out ) { set_transient( 'dv_np_mundo2', $res, 3 * HOUR_IN_SECONDS ); }
+	return $res;
+}
+add_filter( 'rest_pre_dispatch', function ( $res, $srv, $req ) {
+	if ( $req->get_route() !== '/desenvolve/v1/noticias' || $req->get_param( 'aba' ) !== 'mundo' ) { return $res; }
+	if ( ! is_user_logged_in() ) { return new WP_Error( 'rest_forbidden', 'Entre na sua conta.', array( 'status' => 401 ) ); }
+	return rest_ensure_response( dv_mundo_np() );
+}, 10, 3 );
+add_action( 'wp_footer', function () {
+	if ( ! is_user_logged_in() || ! function_exists( 'dv_app_pagina' ) || ! dv_app_pagina() ) { return; } ?>
+<style>
+html.dv-rail .dv-tkg{left:76px}@media(max-width:980px){html.dv-rail .dv-tkg{left:0}}
+.dv-tkg .t small.w{color:#8FB3D9}
+.dv-bellp .vz{padding:18px 16px;color:#6B6B6B;font-size:.86rem}
+.dv-bellp .it b{display:block;font-weight:700}
+</style>
+<script>(function(){var API=<?php echo wp_json_encode( rest_url( 'desenvolve/v1/' ) ); ?>,NC=<?php echo wp_json_encode( wp_create_nonce( 'wp_rest' ) ); ?>;
+function e(s){return String(s==null?'':s).replace(/[&<>"]/g,function(c){return{'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]})}
+/* faixa de notícias fixa no topo de todas as telas (Brasil + mundo) */
+function faixa(l){if(!l||!l.length||document.querySelector('.dv-tkg'))return;var w=document.createElement('div');w.className='dv-tkg';w.setAttribute('aria-label','Notícias de licitações');
+ var h=l.map(function(x){return'<a href="'+e(x.u)+'" target="_blank" rel="noopener"><small class="'+(x.g==='Mundo'?'w':'')+'">'+e(x.g==='Mundo'?'Mundo':(x.g||'Notícia'))+'</small>'+e(x.t)+'<i>'+e(x.f||'')+'</i></a>'}).join('');
+ w.innerHTML='<b>Notícias</b><div class="w"><div class="t">'+h+h+'</div></div><a class="vt" href="/plataforma/noticias/">Ver todas</a>';document.body.appendChild(w);document.body.classList.add('dv-tkon')}
+function mundo(){var c=null;try{c=JSON.parse(sessionStorage.getItem('dv_np_m')||'null')}catch(x){}if(c&&Date.now()-c.t<3600000)return Promise.resolve(c.i);return fetch(API+'noticias?aba=mundo',{headers:{'X-WP-Nonce':NC},credentials:'same-origin'}).then(function(r){return r.json()}).then(function(j){var i=(j.itens||[]).slice(0,6).map(function(x){return{u:x.u,t:x.t,g:'Mundo',f:x.f}});try{sessionStorage.setItem('dv_np_m',JSON.stringify({t:Date.now(),i:i}))}catch(x){}return i}).catch(function(){return[]})}
+window.dvTicker=function(l){mundo().then(function(m){var out=[],a=(l||[]).slice(),b=m.slice();while(a.length||b.length){out.push.apply(out,a.splice(0,3));if(b.length)out.push(b.shift())}faixa(out)})};
+/* se a lista do Brasil já veio antes deste script, monta com ela */
+try{var c0=JSON.parse(sessionStorage.getItem('dv_np_g')||'null');if(c0&&c0.i&&!document.querySelector('.dv-tkg'))window.dvTicker(c0.i)}catch(x){}
+setTimeout(function(){if(!document.querySelector('.dv-tkg')){fetch(API+'noticias?aba=geral',{headers:{'X-WP-Nonce':NC},credentials:'same-origin'}).then(function(r){return r.json()}).then(function(j){window.dvTicker((j.itens||[]).slice(0,14).map(function(x){return{u:x.u,t:x.t,g:x.g,f:x.f}}))}).catch(function(){})}},2500);
+/* sino: só avisos do sistema para o cliente */
+var AV=[['/plataforma/alertas/','licitação(ões) nova(s) nos seus alertas','Ver nos alertas'],['/plataforma/licitacoes/','sessão(ões) hoje ou amanhã','Abrir a Gestão'],['/plataforma/recursos/','prazo(s) de impugnação ou recurso em até 3 dias','Ver os prazos'],['/plataforma/documentos/','certidão(ões) vencendo ou vencida(s)','Ver documentos']];
+function sino(){var sd=document.querySelector('.dv-sld');if(!sd||document.querySelector('.dv-bell2'))return;var old=document.querySelector('.dv-bell');if(old)old.remove();[].forEach.call(document.querySelectorAll('.dv-bellp'),function(x){x.remove()});
+ var L=[];AV.forEach(function(v){var a=document.querySelector('.dv-side nav a[href="'+v[0]+'"] .bd');var n=a?parseInt(a.textContent,10)||0:0;if(n)L.push('<a class="it" href="'+v[0]+'"><b>'+n+' '+v[1]+'</b><small>'+v[2]+'</small></a>')});
+ if(sd.classList.contains('low'))L.push('<a class="it" href="/creditos/"><b>Seus créditos estão acabando</b><small>Comprar créditos</small></a>');
+ var b=document.createElement('button');b.type='button';b.className='dv-bell dv-bell2';b.setAttribute('aria-label','Avisos'+(L.length?' ('+L.length+')':''));b.setAttribute('aria-expanded','false');
+ b.innerHTML='<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9"/><path d="M10.3 21a1.94 1.94 0 0 0 3.4 0"/></svg>'+(L.length?'<i>'+L.length+'</i>':'');
+ var p=document.createElement('div');p.className='dv-bellp dv-bellp2';p.hidden=true;p.setAttribute('role','dialog');p.setAttribute('aria-label','Avisos');p.innerHTML='<div class="h"><b>Avisos</b></div>'+(L.length?L.join(''):'<p class="vz">Nenhum aviso agora. Aqui aparecem sessões próximas, prazos, certidões vencendo e licitações novas dos seus alertas.</p>');
+ sd.insertBefore(b,sd.firstChild);document.body.appendChild(p);
+ function fecha(){p.hidden=true;b.setAttribute('aria-expanded','false')}
+ b.addEventListener('click',function(ev){ev.stopPropagation();if(!p.hidden)return fecha();var r=sd.getBoundingClientRect();p.style.top=(r.bottom+8)+'px';p.style.right=Math.max(12,window.innerWidth-r.right)+'px';p.hidden=false;b.setAttribute('aria-expanded','true')});
+ document.addEventListener('click',function(ev){if(!p.hidden&&!p.contains(ev.target))fecha()})}
+var tt;new MutationObserver(function(){clearTimeout(tt);tt=setTimeout(function(){var o=document.querySelector('.dv-bell:not(.dv-bell2)');if(o){o.remove();[].forEach.call(document.querySelectorAll('.dv-bellp:not(.dv-bellp2)'),function(x){x.remove()})}sino()},300)}).observe(document.body,{childList:true,subtree:true});setTimeout(sino,800);
+/* página de notícias: aba Mundo */
+var R=document.getElementById('dv-np');if(R){var tb=R.querySelector('.np-tabs');if(tb&&!tb.querySelector('[data-a=mundo]')){var bt=document.createElement('button');bt.type='button';bt.dataset.a='mundo';bt.textContent='Mundo';var d0=tb.querySelector('[data-a=geral]');tb.insertBefore(bt,d0?d0.nextSibling:tb.firstChild)}}
+})();</script>
+<?php
+}, 130 );

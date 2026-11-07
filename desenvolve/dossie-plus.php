@@ -1251,3 +1251,81 @@ function vai(){gestao();recursos()}var tm;new MutationObserver(function(){clearT
 })();</script>
 <?php
 }, 99 );
+
+// Sequência de e-mails da lista: as licitações do ramo saem no dia seguinte (antes: 2 dias depois),
+// usando o que a pessoa escreveu como ramo (ex.: "uniforme escolar"), com valor e link da busca já pronta.
+function dv_seq2_editais( $q ) {
+	$u = 'https://pncp.gov.br/api/search/?q=' . rawurlencode( $q ) . '&tipos_documento=edital&ordenacao=-data&pagina=1&tam_pagina=30&status=recebendo_proposta';
+	$r = wp_remote_get( $u, array( 'timeout' => 20, 'headers' => array( 'User-Agent' => 'Mozilla/5.0 (compatible; DesenvolveBot/1.0)' ) ) );
+	if ( is_wp_error( $r ) || wp_remote_retrieve_response_code( $r ) !== 200 ) { return null; }
+	$j = json_decode( wp_remote_retrieve_body( $r ), true ); $out = array(); $hoje = current_time( 'Y-m-d' );
+	foreach ( (array) ( $j['items'] ?? array() ) as $x ) {
+		if ( ! empty( $x['cancelado'] ) ) { continue; } $fim = substr( (string) ( $x['data_fim_vigencia'] ?? '' ), 0, 10 ); if ( $fim && $fim < $hoje ) { continue; }
+		if ( ! preg_match( '#compras/(\d{14})/(\d{4})/(\d+)#', (string) ( $x['item_url'] ?? '' ), $m ) ) { continue; }
+		$out[] = array( 'objeto' => (string) ( $x['description'] ?? '' ), 'orgao' => (string) ( $x['orgao_nome'] ?? '' ), 'local' => trim( ( $x['municipio_nome'] ?? '' ) . '/' . ( $x['uf'] ?? '' ), '/' ), 'fim' => $fim, 'valor' => (float) ( $x['valor_global'] ?? 0 ), 'link' => 'https://pncp.gov.br/app/editais/' . $m[1] . '/' . $m[2] . '/' . $m[3] );
+		if ( count( $out ) >= 3 ) { break; }
+	}
+	return array( 'itens' => $out, 'total' => (int) ( $j['total'] ?? 0 ) );
+}
+function dv_seq2_rodar() {
+	if ( ! function_exists( 'dv_lista' ) ) { return; }
+	$l = dv_lista(); if ( ! $l ) { return; }
+	$envia = function ( $em, $as, $co ) { if ( function_exists( 'dv_seq_envia' ) ) { return dv_seq_envia( $em, $as, $co ); } return wp_mail( $em, $as, $co . "\n\nEquipe Desenvolve\nhttps://desenvolveestrategias.com.br", array( 'From: Desenvolve <contato@desenvolveestrategias.com.br>' ) ); };
+	$agora = current_time( 'timestamp' ); $lanc = function_exists( 'dv_pre_lancamento' ) ? dv_pre_lancamento() : true; $mudou = false; $env = 0;
+	foreach ( $l as $em => $c ) {
+		if ( $env >= 40 ) { break; }
+		if ( empty( $c['data'] ) || empty( $c['email'] ) ) { continue; }
+		$u = get_user_by( 'email', $c['email'] ); if ( $u && function_exists( 'dv_status' ) && dv_status( $u->ID ) === 'ativo' ) { continue; }
+		$dias = (int) floor( ( $agora - strtotime( $c['data'] ) ) / DAY_IN_SECONDS ); $seq = (int) ( $c['seq'] ?? 0 );
+		$nome = trim( (string) ( $c['nome'] ?? '' ) ); $ola = 'Olá' . ( $nome && strpos( $nome, '@' ) === false ? ', ' . explode( ' ', $nome )[0] : '' ) . '!'; $ok = false;
+		if ( $dias >= 1 && $seq < 2 ) {
+			$ramo = trim( (string) ( $c['ramo'] ?? '' ) ); $q = function_exists( 'dv_seq_ramo_q' ) ? dv_seq_ramo_q( $ramo ) : ''; if ( ! $q && $ramo && mb_strlen( $ramo ) <= 40 && ! preg_match( '/^outro/i', $ramo ) ) { $q = mb_strtolower( $ramo ); }
+			$r = dv_seq2_editais( $q ?: 'contratação' ); $lista = '';
+			foreach ( (array) ( $r['itens'] ?? array() ) as $x ) { $lista .= "\n• " . mb_substr( $x['objeto'], 0, 150 ) . "\n  " . $x['orgao'] . ( $x['local'] ? ' · ' . $x['local'] : '' ) . ( $x['valor'] > 0 ? ' · R$ ' . number_format( $x['valor'], 2, ',', '.' ) : '' ) . ( $x['fim'] ? ' · propostas até ' . date_i18n( 'd/m', strtotime( $x['fim'] ) ) : '' ) . "\n  " . $x['link'] . "\n"; }
+			$tot = (int) ( $r['total'] ?? 0 ); $busca = 'https://desenvolveestrategias.com.br/consulta-gratis/' . ( $q ? '?q=' . rawurlencode( $q ) : '' );
+			$ok = $envia( $c['email'], $q ? '3 licitações abertas de ' . $q . ' para você' : '3 licitações abertas hoje para você', $ola . "\n\n" . ( $q && $tot ? 'Hoje há ' . number_format( $tot, 0, ',', '.' ) . ' licitações abertas de ' . $q . ' no Brasil. Separamos três:' : 'Separamos três licitações abertas agora:' ) . "\n" . ( $lista ?: "\n(As fontes oficiais não responderam agora. Faça a busca pelo site.)\n" ) . "\nPara ver as da sua cidade ou região, com raio em km: " . $busca . "\n\nCom o plano Busca (R$ 19,90 por mês), as novas do seu ramo chegam todo dia por e-mail, com os prazos na agenda." );
+			if ( $ok ) { $l[ $em ]['seq'] = 2; }
+		} elseif ( $dias >= 5 && $seq < 5 ) {
+			$ok = $envia( $c['email'], 'Como funciona o plano Busca, em 1 minuto', $ola . "\n\nO plano Busca da Desenvolve custa R$ 19,90 por mês e faz quatro coisas:\n\n1. Todo dia de manhã, manda por e-mail as licitações novas do que você vende, na sua região.\n2. Busca de licitações abertas por palavra, cidade, estado e raio de atendimento em km, com a opção de ver só contratação rápida (dispensa e emergencial).\n3. Gestão das licitações que você escolheu disputar, com a agenda de prazos e lembretes.\n4. Documentos e certidões com aviso antes de vencer.\n\nÉ o plano de entrada, pensado para MEI, microempresa e empresa de pequeno porte. Quem disputa todo mês e quer o Raio-X do concorrente e do comprador usa o plano Completo, por R$ 79,90.\n\nQuem está na lista assina pelo preço de lançamento, garantido enquanto mantiver a assinatura, e ganha 100 créditos de bônus no primeiro mês.\n\nPlanos: https://desenvolveestrategias.com.br/#lista" );
+			if ( $ok ) { $l[ $em ]['seq'] = 5; }
+		} elseif ( $dias >= 12 && $seq < 12 ) {
+			$ok = $envia( $c['email'], $lanc ? 'Lançamento da Desenvolve em 17 de novembro' : 'A plataforma da Desenvolve já está no ar', $ola . "\n\n" . ( $lanc ? "A plataforma da Desenvolve abre no dia 17 de novembro. Quem está na lista recebe o acesso primeiro, por e-mail, com o preço de lançamento garantido e 100 créditos de bônus no primeiro mês." : "A plataforma da Desenvolve está no ar. O seu preço de lançamento e os 100 créditos de bônus continuam valendo: é só assinar com este mesmo e-mail." ) . "\n\nEnquanto isso, a busca grátis continua aberta: https://desenvolveestrategias.com.br/consulta-gratis/\n\nPlanos: https://desenvolveestrategias.com.br/#lista" );
+			if ( $ok ) { $l[ $em ]['seq'] = 12; }
+		}
+		if ( $ok ) { $mudou = true; $env++; }
+	}
+	if ( $mudou ) { update_option( 'dv_lista', $l, false ); }
+	update_option( 'dv_seq_ultima', current_time( 'mysql' ) . ' · ' . $env . ' e-mail(s) (v2)', false );
+}
+add_action( 'init', function () { remove_all_actions( 'dv_seq_diaria' ); add_action( 'dv_seq_diaria', 'dv_seq2_rodar' ); }, 999 );
+
+// Página inicial e buscadores: vídeo de 30 s ("Veja como funciona") e valor aberto agora no ramo de quem digita.
+add_action( 'wp_footer', function () {
+	if ( is_admin() ) { return; }
+	$home = is_front_page(); ?>
+<style>
+.dv-vbt{display:inline-flex;align-items:center;gap:10px;margin:14px 0 0;background:#fff;border:1px solid #E3DED2;border-radius:999px;padding:8px 16px 8px 8px;font:700 .92rem "Hanken Grotesk",-apple-system,sans-serif;color:#16191E;cursor:pointer}
+.dv-vbt i{display:inline-flex;width:30px;height:30px;border-radius:50%;background:#16191E;color:#F4F2EC;align-items:center;justify-content:center;font-style:normal;font-size:.8rem}
+#dv-vmod{position:fixed;inset:0;background:rgba(12,15,19,.75);z-index:100001;display:flex;align-items:center;justify-content:center;padding:16px}
+#dv-vmod video{max-height:88vh;max-width:92vw;border-radius:18px;background:#000;box-shadow:0 30px 80px rgba(0,0,0,.5)}
+#dv-vmod button{position:absolute;top:16px;right:18px;background:#fff;border:0;border-radius:50%;width:40px;height:40px;font-size:1.3rem;cursor:pointer}
+.dv-rv{margin:8px 0 0;font:500 .9rem/1.35 "Hanken Grotesk",-apple-system,sans-serif;color:#4A4D52}.dv-rv b{color:#86621F;font-weight:800}
+</style>
+<script>(function(){var V='/wp-content/uploads/dv/dv-video-30s.mp4',P='/wp-content/uploads/dv/dv-video-30s.jpg';
+function abre(){var m=document.createElement('div');m.id='dv-vmod';m.innerHTML='<video src="'+V+'" poster="'+P+'" controls autoplay playsinline></video><button type="button" aria-label="Fechar">×</button>';document.body.appendChild(m);m.addEventListener('click',function(ev){if(ev.target===m||ev.target.tagName==='BUTTON'){m.remove()}})}
+window.dvVideo=abre;
+<?php if ( $home ) : ?>
+(function(){var t=0,iv=setInterval(function(){if(++t>40){clearInterval(iv);return}var inp=document.querySelector('input[placeholder*="limpeza"]');if(!inp||document.querySelector('.dv-vbt'))return;var f=inp.closest('form');if(!f)return;clearInterval(iv);var b=document.createElement('button');b.type='button';b.className='dv-vbt';b.innerHTML='<i>▶</i>Veja como funciona em 30 segundos';b.onclick=abre;f.parentNode.insertBefore(b,f.nextSibling)},250)})();
+<?php endif; ?>
+/* valor aberto agora no ramo de quem digita */
+var RAMOS=[['Merenda e alimentação',/merenda|alimentacao escolar|refeic|generos alimenticios|hortifruti|cozinha|lanche|nutricao|alimentacao/],['Vigilância e segurança',/vigilancia|seguranca patrimonial|vigilante|monitoramento eletronico|cftv/],['Limpeza e conservação',/limpeza|conservacao|higienizacao|asseio|zeladoria|material de limpeza/],['Portaria e recepção',/portaria|recepcao|recepcionista|controle de acesso/],['Mão de obra e apoio',/apoio administrativo|mao de obra|mao-de-obra|copeira|terceirizacao|servicos gerais|cessao de mao/],['Resíduos e limpeza urbana',/coleta de lixo|residuos|limpeza urbana|varricao|aterro/],['Jardinagem e roçada',/jardinagem|rocada|rocagem|paisagismo|poda/],['Medicamentos e material hospitalar',/medicament|farmac|material hospitalar|medico-hospitalar|insumos hospitalares|ortese|protese|odontolog|laboratori/],['Saúde (serviços)',/saude|hospital|enfermag|ambulancia|exames|clinica|plantao medico/],['Obras e engenharia',/obra|engenharia|reforma|construcao|pavimenta|edificacao|drenagem|recapeamento|asfalt/],['Manutenção predial e equipamentos',/manutencao|ar condicionado|climatizacao|elevador|instalacoes eletricas/],['Tecnologia',/software|sistema de gestao|informatica|tecnologia da informacao|licenca de uso|computador|notebook|impressora|rede de dados|internet|telefonia/],['Transporte e veículos',/transporte|veiculo|motorista|fretamento|onibus|caminhao|locacao de veic|pneu/],['Combustíveis',/combustiv|gasolina|diesel|etanol|lubrificante/],['Uniformes e confecção',/uniforme|fardamento|vestuario|confeccao|calcado|enxoval/],['Material escolar e de escritório',/material escolar|kit escolar|livro|didatic|material de escritorio|material de expediente|papel/],['Mobiliário e equipamentos',/mobiliario|moveis|cadeira|mesa|equipamento|eletrodomest/],['Eventos, comunicação e publicidade',/evento|show|publicidade|comunicacao|grafica|impressao/],['Consultoria e treinamento',/consultoria|assessoria|treinamento|capacitacao|curso|auditoria/],['Materiais de construção',/material de construcao|materiais de construcao|cimento|areia|brita|tubos|eletrico|hidraulic/]];
+var D=null,pend=null;function dados(){if(D)return Promise.resolve(D);if(pend)return pend;pend=fetch('https://raw.githubusercontent.com/Carlos09091988/aquila-dados/main/data/valores/valores.json',{cache:'no-store'}).then(function(r){return r.ok?r.json():null}).then(function(j){D=j;return j}).catch(function(){return null});return pend}
+function nm(s){return String(s||'').normalize('NFD').replace(/[̀-ͯ]/g,'').toLowerCase()}
+function mc(v){v=+v||0;return v>=1e9?'R$ '+(v/1e9).toLocaleString('pt-BR',{maximumFractionDigits:1})+' bilhões':v>=1e6?'R$ '+Math.round(v/1e6).toLocaleString('pt-BR')+' milhões':'R$ '+Math.round(v/1e3).toLocaleString('pt-BR')+' mil'}
+function linha(inp){var q=nm(inp.value),r=null;if(q.length>=4)RAMOS.some(function(x){if(x[1].test(q)){r=x[0];return true}});var el=inp.parentNode.querySelector('.dv-rv');if(!r){if(el)el.remove();return}
+ dados().then(function(j){var A=j&&j.abertas&&j.abertas.BR&&j.abertas.BR.ramos&&j.abertas.BR.ramos[r];if(!A||!(A.valor>0)){if(el)el.remove();return}if(!el){el=document.createElement('p');el.className='dv-rv';inp.insertAdjacentElement('afterend',el)}
+  el.innerHTML='<b>'+mc(A.valor)+'</b> abertos agora em '+r.toLowerCase()+' · '+(+A.n).toLocaleString('pt-BR')+' licitações'+(A.rn?' ('+(+A.rn).toLocaleString('pt-BR')+' em contratação rápida)':'')})}
+var tm;document.addEventListener('input',function(ev){var i=ev.target;if(!i.matches||!i.matches('input[placeholder*="limpeza"],#bq2 input[name=q],#bq2 .in input,input[name=q]'))return;clearTimeout(tm);tm=setTimeout(function(){linha(i)},500)});
+})();</script>
+<?php
+}, 99 );

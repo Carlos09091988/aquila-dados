@@ -107,10 +107,14 @@ def acumula(tot, uf, rapida, valor, rm='Outros'):
                 s['fora_teto'] += 1
             else:
                 s['valor'] += valor
-        r = g.setdefault('ramos', {}).setdefault(rm, {'n': 0, 'valor': 0.0})
+        r = g.setdefault('ramos', {}).setdefault(rm, {'n': 0, 'valor': 0.0, 'rn': 0, 'rvalor': 0.0})
         r['n'] += 1
         if ok:
             r['valor'] += valor
+        if rapida:
+            r['rn'] = r.get('rn', 0) + 1
+            if ok:
+                r['rvalor'] = r.get('rvalor', 0.0) + valor
 
 
 # ---------- abertas agora (busca do PNCP: mesma fonte do contador do site) ----------
@@ -177,8 +181,8 @@ def soma(a, b):
             for k in ('n', 'valor', 'sem_valor', 'fora_teto'):
                 G[tipo][k] += g[tipo][k]
         for rm, v in (g.get('ramos') or {}).items():
-            R = G.setdefault('ramos', {}).setdefault(rm, {'n': 0, 'valor': 0.0})
-            R['n'] += v['n']; R['valor'] += v['valor']
+            R = G.setdefault('ramos', {}).setdefault(rm, {'n': 0, 'valor': 0.0, 'rn': 0, 'rvalor': 0.0})
+            R['n'] += v['n']; R['valor'] += v['valor']; R['rn'] += v.get('rn', 0); R['rvalor'] += v.get('rvalor', 0.0)
 
 
 def main():
@@ -199,7 +203,7 @@ def main():
         recente = d >= ontem - dt.timedelta(days=3)   # os últimos dias ainda recebem publicações atrasadas: refaz
         if os.path.exists(arq) and not recente:
             try:
-                if 'ramos' in (json.load(open(arq)).get('BR') or {}):
+                if 'rn' in next(iter(((json.load(open(arq)).get('BR') or {}).get('ramos') or {'x': {}}).values())):
                     continue
             except Exception:  # noqa: BLE001
                 pass

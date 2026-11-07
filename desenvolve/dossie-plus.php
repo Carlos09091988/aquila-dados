@@ -622,7 +622,28 @@ function monta(){var R=document.querySelector('.dv-org');if(!R)return null;var h
 function imprime(){var H=monta();if(!H)return false;var f=document.createElement('iframe');f.style.cssText='position:fixed;right:0;bottom:0;width:0;height:0;border:0';document.body.appendChild(f);var d=f.contentDocument;d.open();d.write(H);d.close();
  var go=function(){try{f.contentWindow.focus();f.contentWindow.print()}catch(x){}setTimeout(function(){f.remove()},60000)};(d.fonts&&d.fonts.ready?d.fonts.ready:Promise.resolve()).then(function(){setTimeout(go,500)});return true}
 window.dvPdfOrganizado=monta;
-window.addEventListener('click',function(ev){var b=ev.target.closest&&ev.target.closest('[data-pdf], .dv-pdf-top button');if(!b||!document.querySelector('.dv-org'))return;ev.preventDefault();ev.stopImmediatePropagation();imprime()},true);
+/* PDF igual à tela: imprime o próprio relatório (mesmo visual), com todos os temas abertos e sem menus/botões */
+var PCSS='@page{size:A4;margin:10mm}'+
+'html.dv-printing,html.dv-printing body{background:#fff!important}html.dv-printing *{-webkit-print-color-adjust:exact!important;print-color-adjust:exact!important}'+
+'html.dv-printing body :not(.dv-pa):not(.dv-pr):not(.dv-pr *):not(.dv-ph):not(.dv-ph *){display:none!important}'+
+'html.dv-printing .dv-pa{display:block!important;margin:0!important;padding:0!important;width:auto!important;max-width:none!important;min-height:0!important;position:static!important;overflow:visible!important;transform:none!important;border:0!important;box-shadow:none!important;background:transparent!important}'+
+'html.dv-printing .dv-pr{margin:0!important;max-width:none!important;width:auto!important}'+
+'html.dv-printing .dv-pr button,html.dv-printing .dv-pr input,html.dv-printing .dv-pr select,html.dv-printing .dv-pr textarea,html.dv-printing .dv-pr form,html.dv-printing .dv-pr .dv-rnav,html.dv-printing .dv-pr .dv-mia-w,html.dv-printing .dv-pr #dv-mia-slot,html.dv-printing .dv-pr .dv-pdf-top,html.dv-printing .dv-pr .dv-ia,html.dv-printing .dv-pr #dv-rs,html.dv-printing .dv-pr .modos,html.dv-printing .dv-pr .ent{display:none!important}'+
+'html.dv-printing .dv-pr details>summary::-webkit-details-marker{display:none}html.dv-printing .dv-pr details>summary{list-style:none}'+
+'html.dv-printing .dv-pr details.dv-tema{break-before:page}html.dv-printing .dv-pr details.dv-tema:first-of-type{break-before:auto}'+
+'html.dv-printing .dv-pr li,html.dv-printing .dv-pr tr,html.dv-printing .dv-pr img,html.dv-printing .dv-pr svg,html.dv-printing .dv-pr .dv-pj,html.dv-printing .dv-pr [class*=card],html.dv-printing .dv-pr [class*=kpi]>div{break-inside:avoid}'+
+'.dv-ph{display:none}html.dv-printing .dv-ph{display:flex!important;justify-content:space-between;align-items:center;border-bottom:2px solid #16191E;padding:0 0 8px;margin:0 0 12px;font:600 9pt "Hanken Grotesk",Arial,sans-serif;color:#16191E}html.dv-printing .dv-ph b{font-weight:800;letter-spacing:.05em}html.dv-printing .dv-ph span{color:#6E6A60;font-weight:400}';
+function imprimeTela(){var R=document.querySelector('.dv-org');if(!R)return false;
+ var st=document.getElementById('dv-pcss');if(!st){st=document.createElement('style');st.id='dv-pcss';st.textContent=PCSS;document.head.appendChild(st)}
+ var fech=[].filter.call(R.querySelectorAll('details'),function(d){return!d.open});fech.forEach(function(d){d.open=true});
+ var pa=[],x=R.parentElement;while(x&&x!==document.body){x.classList.add('dv-pa');pa.push(x);x=x.parentElement}R.classList.add('dv-pr');
+ var hoje=new Date(),ph=document.createElement('div');ph.className='dv-ph';ph.innerHTML='<b>DESENVOLVE ESTRATÉGIAS</b><span>Gerado em '+hoje.toLocaleDateString('pt-BR')+' às '+hoje.toLocaleTimeString('pt-BR',{hour:'2-digit',minute:'2-digit'})+'</span>';R.parentNode.insertBefore(ph,R);
+ var t0=document.title,nm=(document.querySelector('#rx-cad h2, .rp-hd h2, #dv-rxhd h2, .dv-org h2')||{}).textContent;if(nm)document.title=(t0.split('|')[0].trim()+' - '+nm.trim()).slice(0,120);
+ document.documentElement.classList.add('dv-printing');window.dispatchEvent(new Event('resize'));
+ var fim=function(){document.documentElement.classList.remove('dv-printing');pa.forEach(function(y){y.classList.remove('dv-pa')});R.classList.remove('dv-pr');ph.remove();fech.forEach(function(d){d.open=false});document.title=t0;window.removeEventListener('afterprint',fim);window.dispatchEvent(new Event('resize'))};
+ window.addEventListener('afterprint',fim);setTimeout(function(){window.print()},350);return true}
+window.dvPdfTela=imprimeTela;
+window.addEventListener('click',function(ev){var b=ev.target.closest&&ev.target.closest('[data-pdf], .dv-pdf-top button');if(!b||!document.querySelector('.dv-org'))return;ev.preventDefault();ev.stopImmediatePropagation();imprimeTela()},true);
 window.addEventListener('beforeprint',function(){});
 })();
 </script>

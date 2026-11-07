@@ -981,8 +981,8 @@ function onde(tx){tx=String(tx||'');var r={plat:[],urls:[],mails:[],fones:[],loc
  (tx.match(/https?:\/\/[^\s,;)"'<>]+|www\.[^\s,;)"'<>]+|\b[a-z0-9-]+(?:\.[a-z0-9-]+)*\.(?:gov|com|org|net|leg|jus)\.br(?:\/[^\s,;)"'<>]*)?/gi)||[]).forEach(function(u){u=u.replace(/[.,:]+$/,'');if(tx.indexOf('@'+u)>=0)return;if(r.urls.indexOf(u)<0&&r.urls.length<6)r.urls.push(u)});
  (tx.match(/[\w.+-]+@[\w-]+(?:\.[\w-]+)+/g)||[]).forEach(function(m){m=m.replace(/[.,]+$/,'');if(r.mails.indexOf(m)<0&&r.mails.length<4)r.mails.push(m)});
  (tx.match(/\(?\b\d{2}\)?\s?\d{4,5}[-.\s]?\d{4}\b/g)||[]).forEach(function(f){if(r.fones.indexOf(f)<0&&r.fones.length<3)r.fones.push(f.trim())});
- var m=tx.match(/[^.]{0,80}(?:edital|instrumento convocat[oó]rio)[^.]{0,40}(?:dispon[ií]ve|obtid|retirad|adquirid|encontra)[^.]{0,200}/i);if(m)r.local=m[0].trim();
- var m2=tx.match(/[^.]{0,60}(?:sess[aã]o|disputa|abertura)[^.]{0,80}(?:realizad|ocorrer|acontecer|atrav[eé]s|por meio|no site|na plataforma|no endere[cç]o)[^.]{0,160}/i);if(m2)r.sessao=m2[0].trim();return r}
+ var S='(?:[^.]|\\.(?=\\S))';var m=tx.match(new RegExp(S+'{0,80}(?:edital|instrumento convocat[oó]rio)'+S+'{0,40}(?:dispon[ií]ve|obtid|retirad|adquirid|encontra)'+S+'{0,220}','i'));if(m)r.local=m[0].trim();
+ var m2=tx.match(new RegExp(S+'{0,60}(?:sess[aã]o|disputa|abertura)'+S+'{0,80}(?:realizad|ocorrer|acontecer|atrav[eé]s|por meio|no site|na plataforma|no endere[cç]o)'+S+'{0,180}','i'));if(m2)r.sessao=m2[0].trim();return r}
 function href(u){return /^https?:/i.test(u)?u:'https://'+u}
 function host(u){try{return new URL(href(u)).hostname.replace(/^www\./,'')}catch(x){return u}}
 /* cartões: mostra onde acontece a disputa / onde pegar o edital */

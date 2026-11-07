@@ -652,6 +652,7 @@ fetch('https://raw.githubusercontent.com/Carlos09091988/aquila-dados/main/data/v
  var H='<div><b>'+mc(A.todas.valor)+'</b><span>em '+n(A.todas.n)+' licitações abertas agora no Brasil</span></div>';
  H+='<div><b>'+mc(A.rapidas.valor)+'</b><span>em '+n(A.rapidas.n)+' contratações rápidas (dispensa e inexigibilidade) abertas agora</span></div>';
  if(Y&&j.dias_cobertos>=360)H+='<div><b>'+mc(Y.todas.valor)+'</b><span>por ano em licitações publicadas, '+mc(Y.rapidas.valor)+' delas em contratações rápidas. Quanto disso é do seu ramo?</span></div>';
+ else if(Y&&j.dias_cobertos>=7&&Y.todas.valor>0)H+='<div><b>'+mc(Y.todas.valor)+'</b><span>em licitações publicadas nos últimos '+j.dias_cobertos+' dias. Quanto disso é do seu ramo?</span></div>';
  else H+='<div><b>'+n(A.todas.n+0)+'</b><span>oportunidades abertas hoje. Quanto disso é do seu ramo? Faça a consulta grátis.</span></div>';
  box.innerHTML=H;
  var nt=document.getElementById('dv-val-n');if(!nt){nt=document.createElement('p');nt.id='dv-val-n';box.parentNode.insertBefore(nt,box.nextSibling)}

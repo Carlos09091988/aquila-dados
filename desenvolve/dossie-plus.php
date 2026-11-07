@@ -949,3 +949,57 @@ document.addEventListener('click',function(ev){var b=ev.target.closest&&ev.targe
 })();</script>
 <?php
 }, 97 );
+
+// Seleção de licitações (fica salva ao trocar de tela) + relatório único em Word (.docx).
+add_action( 'wp_footer', function () {
+	if ( is_admin() ) { return; } ?>
+<style>
+.dv-sel{display:inline-flex;align-items:center;gap:7px;font:600 .8rem "Hanken Grotesk",-apple-system,sans-serif;color:#16191E;cursor:pointer;margin:0 0 8px;user-select:none}
+.dv-sel input{width:18px!important;height:18px!important;margin:0!important;accent-color:#16191E;cursor:pointer}
+.bq2-i.dv-on{border-color:#C9A45C!important;box-shadow:0 0 0 2px rgba(201,164,92,.35)}
+#dv-selbar{position:fixed;left:50%;bottom:18px;transform:translateX(-50%);z-index:99990;display:flex;align-items:center;gap:10px;flex-wrap:wrap;justify-content:center;background:#16191E;color:#F4F2EC;border-radius:14px;padding:10px 12px 10px 18px;box-shadow:0 14px 40px rgba(0,0,0,.3);font:500 .92rem "Hanken Grotesk",-apple-system,sans-serif;max-width:94vw}
+#dv-selbar b{font-weight:800}
+#dv-selbar button{border-radius:10px!important;padding:9px 14px!important;font:700 .88rem "Hanken Grotesk",-apple-system,sans-serif!important;cursor:pointer;border:0!important}
+#dv-selbar .w{background:#2B579A!important;color:#fff!important}#dv-selbar .l{background:transparent!important;color:#C9C3B6!important;border:1px solid #444!important}
+@media print{#dv-selbar{display:none!important}}
+</style>
+<script>(function(){var K='dv_sel_lic';
+function ler(){try{return JSON.parse(localStorage.getItem(K)||'[]')||[]}catch(e){return[]}}
+function grava(l){try{localStorage.setItem(K,JSON.stringify(l))}catch(e){}barra()}
+function T(n){return n?n.textContent.replace(/\s+/g,' ').trim():''}
+function dados(c){var o=c.querySelector('.o'),u=c.querySelector('.u'),t=c.querySelector('.t'),ln=[].find.call(c.querySelectorAll('a[href^="http"]'),function(x){return /pncp|edital|compras|licita|diario/i.test(x.href+x.textContent)});
+ var ts=t?[].map.call(t.children.length?t.children:[t],T).filter(Boolean):[];var ch=c.querySelector('.bq2-ch');var chips=ch?[].map.call(ch.children,T).filter(Boolean):[];
+ return{obj:T(o),org:T(u),meta:ts,chips:chips,link:ln?ln.href:'',em:new Date().toISOString()}}
+function chave(d){return d.link||(d.obj+'|'+d.org).slice(0,300)}
+function marca(){var L=ler(),S={};L.forEach(function(d){S[chave(d)]=1});
+ [].forEach.call(document.querySelectorAll('.bq2-i'),function(c){var cb=c.querySelector('.dv-sel input');if(!cb){var lb=document.createElement('label');lb.className='dv-sel';lb.innerHTML='<input type="checkbox"> Selecionar para o relatório';c.insertBefore(lb,c.firstChild);cb=lb.querySelector('input')}
+  var k=chave(dados(c));c.dataset.dvk=k;cb.checked=!!S[k];c.classList.toggle('dv-on',cb.checked)})}
+function barra(){var L=ler(),b=document.getElementById('dv-selbar');if(!L.length){if(b)b.remove();return}
+ if(!b){b=document.createElement('div');b.id='dv-selbar';document.body.appendChild(b)}
+ b.innerHTML='<span><b>'+L.length+'</b> licitaç'+(L.length>1?'ões selecionadas':'ão selecionada')+'</span><button type="button" class="w">⬇ Gerar relatório em Word</button><button type="button" class="l">Limpar seleção</button>'}
+document.addEventListener('change',function(ev){var cb=ev.target;if(!cb.closest||!cb.closest('.dv-sel'))return;var c=cb.closest('.bq2-i');if(!c)return;var d=dados(c),k=chave(d),L=ler().filter(function(x){return chave(x)!==k});if(cb.checked)L.push(d);c.classList.toggle('dv-on',cb.checked);grava(L)});
+document.addEventListener('click',function(ev){var b=ev.target.closest&&ev.target.closest('#dv-selbar button');if(!b)return;ev.preventDefault();if(b.classList.contains('l')){if(confirm('Limpar todas as licitações selecionadas?')){grava([]);marca()}return}word(b)});
+function valor(d){var s=(d.chips.join(' ')).match(/R\$\s?([\d.]+,\d{2}|[\d.]+)/);if(!s)return 0;return parseFloat(s[1].replace(/\./g,'').replace(',','.'))||0}
+function word(btn){var L=ler();if(!L.length)return;btn.disabled=true;btn.textContent='Gerando…';
+ var go=function(){var D=window.docx,P=D.Paragraph,R=D.TextRun,H=D.HeadingLevel,hoje=new Date(),tot=0;L.forEach(function(d){tot+=valor(d)});
+  var cor='16191E',ouro='A8843F',borda={style:D.BorderStyle.SINGLE,size:4,color:'E3DED2'},bs={top:borda,bottom:borda,left:borda,right:borda};
+  function cel(t,b,w,fill){return new D.TableCell({width:{size:w,type:D.WidthType.PERCENTAGE},shading:fill?{fill:fill,type:D.ShadingType.CLEAR,color:'auto'}:undefined,borders:bs,margins:{top:60,bottom:60,left:90,right:90},children:[new P({children:[new R({text:t||'—',bold:!!b,size:18,color:fill?'FFFFFF':cor})]})]})}
+  var linhas=[new D.TableRow({tableHeader:true,children:[cel('Nº',1,6,cor),cel('Objeto',1,44,cor),cel('Órgão',1,30,cor),cel('Valor estimado',1,20,cor)]})].concat(L.map(function(d,i){var v=valor(d);return new D.TableRow({children:[cel(String(i+1),0,6),cel(d.obj.length>160?d.obj.slice(0,157)+'…':d.obj,0,44),cel(d.org,0,30),cel(v?'R$ '+v.toLocaleString('pt-BR',{minimumFractionDigits:2}):'Não informado',0,20)]})}));
+  var ch=[new P({children:[new R({text:'DESENVOLVE ESTRATÉGIAS',bold:true,color:ouro,size:18})]}),
+   new P({heading:H.TITLE,children:[new R({text:'Licitações selecionadas',bold:true,size:44,color:cor})]}),
+   new P({spacing:{after:200},children:[new R({text:L.length+' licitaç'+(L.length>1?'ões':'ão')+(tot?' · R$ '+tot.toLocaleString('pt-BR',{minimumFractionDigits:2})+' em valor estimado':'')+' · gerado em '+hoje.toLocaleDateString('pt-BR')+' às '+hoje.toLocaleTimeString('pt-BR',{hour:'2-digit',minute:'2-digit'}),color:'6E6A60',size:20})]}),
+   new D.Table({width:{size:100,type:D.WidthType.PERCENTAGE},rows:linhas})];
+  L.forEach(function(d,i){ch.push(new P({pageBreakBefore:true,heading:H.HEADING_1,children:[new R({text:(i+1)+'. '+d.obj,bold:true,size:28,color:cor})]}));
+   if(d.org)ch.push(new P({spacing:{after:120},children:[new R({text:d.org,color:'4A4D52',size:22})]}));
+   d.meta.concat(d.chips).forEach(function(x){ch.push(new P({bullet:{level:0},children:[new R({text:x,size:21})]}))});
+   if(d.link)ch.push(new P({spacing:{before:160},children:[new R({text:'Edital e documentos: ',bold:true,size:21}),new D.ExternalHyperlink({link:d.link,children:[new R({text:d.link,style:'Hyperlink',size:21})]})]}));
+   ch.push(new P({spacing:{before:200},children:[new R({text:'Anotações: ',bold:true,size:21,color:ouro}),new R({text:'________________________________________________',size:21,color:'B9B4A7'})]}))});
+  ch.push(new P({pageBreakBefore:false,spacing:{before:400},children:[new R({text:'Dados das fontes oficiais na data da seleção. Confira o edital antes de participar. Precisa de apoio especializado? Fale com a Desenvolve Estratégias: desenvolveestrategias.com.br',italics:true,size:17,color:'8A857A'})]}));
+  var doc=new D.Document({creator:'Desenvolve Estratégias',title:'Licitações selecionadas',styles:{default:{document:{run:{font:'Calibri'}}}},sections:[{properties:{page:{margin:{top:1000,bottom:1000,left:1000,right:1000}}},children:ch}]});
+  D.Packer.toBlob(doc).then(function(bl){var a=document.createElement('a'),u=URL.createObjectURL(bl);a.href=u;a.download='Licitacoes selecionadas - '+hoje.toLocaleDateString('pt-BR').replace(/\//g,'-')+'.docx';document.body.appendChild(a);a.click();a.remove();setTimeout(function(){URL.revokeObjectURL(u)},5000);btn.disabled=false;btn.textContent='⬇ Gerar relatório em Word'})};
+ if(window.docx)go();else{var s=document.createElement('script');s.src='https://cdn.jsdelivr.net/npm/docx@8.5.0/build/index.umd.js';s.onload=go;s.onerror=function(){btn.disabled=false;btn.textContent='⬇ Gerar relatório em Word';alert('Não foi possível gerar o Word agora. Tente de novo em instantes.')};document.head.appendChild(s)}}
+window.dvWordSel=word;
+var tm;new MutationObserver(function(){clearTimeout(tm);tm=setTimeout(marca,300)}).observe(document.body,{childList:true,subtree:true});marca();barra();
+})();</script>
+<?php
+}, 98 );

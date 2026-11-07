@@ -704,3 +704,9 @@ var q=(new URLSearchParams(location.search).get('cnpj')||'').replace(/\D/g,'');i
 </script>
 	<?php return ob_get_clean();
 } );
+
+/* Página inicial sempre abre no topo (sem restaurar a rolagem anterior) */
+add_action( 'wp_head', function () {
+	if ( ! is_front_page() ) { return; }
+	echo "<script>if(!location.hash){try{history.scrollRestoration='manual'}catch(e){}window.addEventListener('load',function(){if(!location.hash)window.scrollTo(0,0)})}</script>\n";
+}, 1 );

@@ -15,4 +15,4 @@ jobs:
       - run: LIMITE_SEG=2400 ABERTAS_SEG=1200 AMOSTRA_SEG=900 python3 -u scripts/valores_licitacoes.py
       - run: |
           git config user.name "github-actions"; git config user.email "actions@github.com"
-          git add data/valores && (git diff --cached --quiet || (git commit -q -m "Valores das licitacoes" && git pull -q --rebase && git push))
+          git add data/valores && (git diff --cached --quiet || (git commit -q -m "Valores das licitacoes" && git pull -q --rebase -X theirs && git push))

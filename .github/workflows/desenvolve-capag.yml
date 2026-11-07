@@ -1,0 +1,21 @@
+name: Desenvolve - CAPAG (capacidade de pagamento dos órgãos)
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: '41 9 1,15 * *'
+permissions:
+  contents: write
+jobs:
+  capag:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - run: pip install pandas openpyxl xlrd
+      - run: python3 -u scripts/capag.py
+      - run: |
+          git config user.name "desenvolve-bot"
+          git config user.email "bot@desenvolveestrategias.com.br"
+          git add data/capag
+          git diff --cached --quiet || git commit -m "CAPAG atualizada"
+          git pull --rebase -q && git push -q

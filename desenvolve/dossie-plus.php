@@ -1183,6 +1183,9 @@ add_action( 'wp_footer', function () {
 /* barra lateral sempre recolhida (só ícones); o nome aparece num balão ao passar o mouse */
 @media (min-width:901px){
 html.dv-rail .dv-side.ab,html .dv-side.ab{width:76px!important;box-shadow:none!important}
+html.dv-rail .dv-side{transition:none!important}html.dv-rail .dv-side .lg{cursor:default!important}
+html.dv-rail body.dv-app .dv-side nav a,html.dv-rail body.dv-app .dv-side nav a:hover{color:transparent!important}html.dv-rail body.dv-app .dv-side nav a:hover{background:rgba(255,255,255,.06)!important}html.dv-rail body.dv-app .dv-side nav a .ic{color:#C9CDD3}html.dv-rail body.dv-app .dv-side nav a:hover .ic,html.dv-rail body.dv-app .dv-side nav a.on .ic{color:#E6C27A!important}
+html.dv-rail .dv-side.ab .gt{height:1px;margin:10px 14px!important;background:rgba(255,255,255,.07);font-size:0}html.dv-rail .dv-side.ab .ft{display:none}html.dv-rail .dv-side.ab nav a{padding-top:8px!important;padding-bottom:8px!important}
 html.dv-rail .dv-side .gt,html.dv-rail .dv-side .lg b,html.dv-rail .dv-side .lg small,html.dv-rail .dv-side .ft,html.dv-rail .dv-side nav a .bd,html.dv-rail .dv-side .dv-pin,.dv-side .dv-pin{opacity:0!important;pointer-events:none!important}
 html.dv-rail .dv-side nav .gs{height:1px;background:#262B33;margin:8px 14px}
 }
@@ -1193,6 +1196,12 @@ html.dv-rail .dv-side nav .gs{height:1px;background:#262B33;margin:8px 14px}
 </style>
 <script>(function(){var MEU=<?php echo wp_json_encode( strlen( $meu ) === 14 ? $meu : '' ); ?>;
 try{localStorage.removeItem('dv_menu_fixo')}catch(x){}document.documentElement.classList.add('dv-rail');
+/* a barra não abre nunca: bloqueia os gatilhos de abrir e tira a classe na hora, antes de pintar */
+(function(){function sd(){return document.querySelector('.dv-side')}
+document.addEventListener('mouseenter',function(ev){var t=ev.target;if(t&&t.classList&&t.classList.contains('lg')&&t.closest&&t.closest('.dv-side'))ev.stopImmediatePropagation()},true);
+document.addEventListener('focusin',function(ev){var s=sd();if(s&&s.contains(ev.target))ev.stopImmediatePropagation()},true);
+function trava(){var s=sd();if(!s||s.dataset.trava)return;s.dataset.trava=1;s.classList.remove('ab');new MutationObserver(function(){if(s.classList.contains('ab'))s.classList.remove('ab')}).observe(s,{attributes:true,attributeFilter:['class']});var pin=s.querySelector('.dv-pin');if(pin)pin.remove()}
+trava();document.addEventListener('DOMContentLoaded',trava);setTimeout(trava,500)})();
 /* uma ordem só, igual no menu e nos cards: o caminho de quem vende para o governo */
 var G=[
  ['Encontrar licitações',[

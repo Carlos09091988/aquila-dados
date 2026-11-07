@@ -121,34 +121,59 @@ def acumula(tot, uf, rapida, valor, rm='Outros'):
 
 # ---------- abertas agora (busca do PNCP: mesma fonte do contador do site) ----------
 def abertas():
-    base = ('https://pncp.gov.br/api/search/?tipos_documento=edital&status=recebendo_proposta'
-            '&ordenacao=-data&tam_pagina=100&pagina=')
-    p1 = get(base + '1')
-    if not p1 or 'total' not in p1:
+    """Busca do PNCP só entrega 10 mil resultados por consulta (100 páginas de 100): divide por estado e,
+    se preciso, por modalidade. Poucas conexões e pausa curta, porque o PNCP derruba quem pede rápido."""
+    raiz = ('https://pncp.gov.br/api/search/?tipos_documento=edital&status=recebendo_proposta'
+            '&ordenacao=-data&tam_pagina=100')
+    p0 = get(raiz + '&pagina=1')
+    if not p0 or 'total' not in p0:
         print('abertas: busca do PNCP não respondeu', ERROS, flush=True); return None
-    total = int(p1.get('total') or 0); pags = min(800, (total + 99) // 100)
-    print('abertas: total', total, 'páginas', pags, flush=True)
-    res = {1: p1}
-    fim = time.time() + int(os.environ.get('ABERTAS_SEG', '1200'))  # prazo: o robô nunca fica preso aqui
+    total = int(p0.get('total') or 0)
+    print('abertas: total', total, flush=True)
+    fim = time.time() + int(os.environ.get('ABERTAS_SEG', '1500'))
+    UFS = ['SP', 'MG', 'PR', 'RS', 'SC', 'BA', 'GO', 'RJ', 'PE', 'CE', 'ES', 'MT', 'MS', 'PA', 'MA', 'PB', 'RN', 'PI', 'AL', 'SE', 'TO', 'RO', 'AM', 'AC', 'AP', 'RR', 'DF']
+    fatias = []
+    for uf in UFS:
+        b = raiz + '&ufs=' + uf
+        j = get(b + '&pagina=1', tent=3, to=30); time.sleep(0.4)
+        if not j:
+            continue
+        t = int(j.get('total') or 0)
+        if t <= 10000:
+            fatias.append((b, t, j))
+        else:
+            for m in range(1, 14):
+                bm = b + '&modalidades=' + str(m)
+                jm = get(bm + '&pagina=1', tent=3, to=30); time.sleep(0.4)
+                if jm and int(jm.get('total') or 0):
+                    fatias.append((bm, int(jm.get('total') or 0), jm))
+    print('abertas: fatias', len(fatias), 'somando', sum(f[1] for f in fatias), flush=True)
+    res, falhas, pags_tot, n = [], 0, 0, 0
 
-    def pega(p):
+    def pega(u):
         if time.time() > fim:
             return None
-        j = get(base + str(p), tent=3, to=30)
-        if p % 50 == 0:
-            print('abertas: página', p, 'ok' if j else 'falhou', ERROS, flush=True)
+        j = get(u, tent=3, to=30); time.sleep(0.3)
         return j
-    with ThreadPoolExecutor(4) as ex:
-        for p, j in zip(range(2, pags + 1), ex.map(pega, range(2, pags + 1))):
-            res[p] = j
-    for p in [p for p, j in res.items() if j is None]:
-        if time.time() > fim:
-            break
-        time.sleep(1); res[p] = get(base + str(p), tent=2, to=30)
-    falhas = sum(1 for j in res.values() if j is None)
-    print('abertas: %d de %d páginas lidas' % (pags - falhas, pags), ERROS, flush=True)
-    if pags - falhas < max(1, pags * 0.5):
+    urls = []
+    for b, t, j1 in fatias:
+        res.append(j1)
+        for pg in range(2, min(100, (t + 99) // 100) + 1):
+            urls.append(b + '&pagina=' + str(pg))
+    pags_tot = len(urls) + len(fatias)
+    with ThreadPoolExecutor(2) as ex:
+        for j in ex.map(pega, urls):
+            n += 1
+            if j:
+                res.append(j)
+            else:
+                falhas += 1
+            if n % 100 == 0:
+                print('abertas: páginas', n, 'de', len(urls), 'falhas', falhas, ERROS, flush=True)
+    print('abertas: %d de %d páginas lidas' % (pags_tot - falhas, pags_tot), ERROS, flush=True)
+    if pags_tot - falhas < max(1, pags_tot * 0.5):
         print('abertas: poucas páginas, mantém o valor anterior', flush=True); return None
+    res = {i: j for i, j in enumerate(res)}
     tot, vistos = {}, set()
     for j in res.values():
         for i in (j or {}).get('items') or []:
@@ -162,7 +187,7 @@ def abertas():
                 mod = 0
             acumula(tot, i.get('uf'), mod in RAPIDAS, float(i.get('valor_global') or 0), ramo((i.get('description') or '') + ' ' + (i.get('title') or '')))
     # páginas que não vieram: completa proporcionalmente (média das páginas lidas)
-    if falhas and vistos:
+    if vistos and len(vistos) < total * 0.98:
         f = total / float(len(vistos))
         for g in tot.values():
             for tp in ('todas', 'rapidas'):

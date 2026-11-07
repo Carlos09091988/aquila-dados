@@ -739,3 +739,12 @@ var b=ev.target.closest('[data-k]');if(!b)return;ls('dv_minha_ia',b.dataset.k);v
 })();</script>
 <?php
 }, 95 );
+
+// Números grandes (KPIs) que não cabem no quadro: diminui a letra até caber, em qualquer tamanho de tela ou zoom.
+add_action( 'wp_footer', function () { ?>
+<style>.rx-kpis>div,.dv-kpis>div,.kpi{min-width:0}</style>
+<script>(function(){var SEL='.rx-kpis b,.rx-kpis strong,.kpi b,.kpi strong,.dv-kpis b,.dv-kpis strong,#dv-capa b,#dv-capa strong,.dv-pj b,.dv-pj strong,.cp-k b,.cp-k strong,.st .n,.dv-val b';
+function ajusta(){[].forEach.call(document.querySelectorAll(SEL),function(e){if(e.children.length>1)return;var tx=e.textContent.trim();if(tx.length>24||!/\d/.test(tx))return;var p=e.parentElement;if(!p)return;if(!e.dataset.fs){var f=parseFloat(getComputedStyle(e).fontSize);if(f<20)return;e.dataset.fs=f}var f0=+e.dataset.fs,f=f0;e.style.fontSize='';e.style.whiteSpace='nowrap';var cs=getComputedStyle(p),lim=p.clientWidth-parseFloat(cs.paddingLeft)-parseFloat(cs.paddingRight);if(lim<=0)return;var w=e.scrollWidth;if(w>lim){f=Math.max(13,Math.floor(f0*lim/w*0.97));e.style.fontSize=f+'px'}})}
+var t;function ag(){clearTimeout(t);t=setTimeout(ajusta,250)}window.addEventListener('resize',ag);window.addEventListener('load',ag);new MutationObserver(ag).observe(document.body,{childList:true,subtree:true});ag();})();</script>
+<?php
+}, 96 );

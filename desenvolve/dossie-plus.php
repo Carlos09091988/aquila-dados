@@ -859,7 +859,7 @@ add_action( 'wp_head', function () { ?>
 #bq2 .bq2-seg{height:52px;margin-top:7px;border-radius:12px}#bq2 .bq2-seg b{display:flex;align-items:center;justify-content:center;padding:0 10px;font-size:.95rem;font-weight:600}
 #bq2 .bq2-ufs{margin-top:9px}#bq2 .bq2-ufs span{font-size:.8rem;font-weight:600}
 #bq2 small,#bq2 .bq2-h{font-weight:400}
-#bq2 .bq2-act button:not(.g),#bq2 button[type=submit]{background:#C9A45C!important;color:#241A06!important;border:0!important;border-radius:12px!important;height:55px;padding:0 28px!important;font:700 1.05rem "Hanken Grotesk",-apple-system,sans-serif!important}
+html body #bq2 .bq2-act button[type=submit],html body.dv-app .dv-tool #bq2 button[type=submit]{background:#C9A45C!important;color:#241A06!important;border:0!important;border-radius:12px!important;height:55px;padding:0 28px!important;font:700 1.05rem "Hanken Grotesk",-apple-system,sans-serif!important}
 @media(min-width:701px){
 #bq2 .bq2-g{align-items:start}#bq2 .bq2-g3{align-items:end}
 #bq2 .bq2-g{grid-template-columns:minmax(0,1fr) 320px}

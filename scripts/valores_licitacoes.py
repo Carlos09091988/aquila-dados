@@ -214,7 +214,7 @@ def media_aparada(v):
     v = sorted(x for x in v if 0 < x <= TETO)
     if len(v) < 5:
         return None
-    k = int(len(v) * 0.05)
+    k = int(len(v) * 0.10)
     v = v[k:len(v) - k] if len(v) - 2 * k >= 5 else v
     return sum(v) / len(v)
 
@@ -250,6 +250,19 @@ def estima(tot, amostra):
             vr.setdefault(t[0], []).append(v)
             if t[1]:
                 vrap.append(v)
+    # junta com as amostras das rodadas anteriores (até 400 por ramo): o valor fica estável de uma rodada para outra
+    arq = os.path.join(RAIZ, 'amostra_valores.json')
+    try:
+        pool = json.load(open(arq))
+    except Exception:
+        pool = {}
+    for rm, l in vr.items():
+        pool[rm] = (l + pool.get(rm, []))[:400]
+    pool['__rap'] = (vrap + pool.get('__rap', []))[:600]
+    json.dump(pool, open(arq, 'w'), separators=(',', ':'))
+    vr = {rm: l for rm, l in pool.items() if rm != '__rap'}
+    vrap = pool['__rap']
+    print('abertas: amostras acumuladas', {rm: len(l) for rm, l in pool.items()}, flush=True)
     todas = [x for l in vr.values() for x in l]
     mg, mr = media_aparada(todas), media_aparada(vrap)
     if not mg:

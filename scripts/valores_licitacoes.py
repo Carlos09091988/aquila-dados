@@ -23,6 +23,42 @@ MODALIDADES = range(1, 14)
 UA = {'User-Agent': 'desenvolve-valores/1.0', 'Accept': 'application/json'}
 
 
+import re, unicodedata
+
+RAMOS = [  # do mais específico para o mais geral; a primeira regra que casar define o ramo
+    ('Merenda e alimentação', r'merenda|alimentacao escolar|refeic|generos alimenticios|hortifruti|cozinha|lanche|nutricao|alimentacao'),
+    ('Vigilância e segurança', r'vigilancia|seguranca patrimonial|vigilante|monitoramento eletronico|cftv'),
+    ('Limpeza e conservação', r'limpeza|conservacao|higienizacao|asseio|zeladoria|material de limpeza'),
+    ('Portaria e recepção', r'portaria|recepcao|recepcionista|controle de acesso'),
+    ('Mão de obra e apoio', r'apoio administrativo|mao de obra|mao-de-obra|copeira|terceirizacao|servicos gerais|cessao de mao'),
+    ('Resíduos e limpeza urbana', r'coleta de lixo|residuos|limpeza urbana|varricao|aterro'),
+    ('Jardinagem e roçada', r'jardinagem|rocada|rocagem|paisagismo|poda'),
+    ('Medicamentos e material hospitalar', r'medicament|farmac|material hospitalar|medico-hospitalar|insumos hospitalares|ortese|protese|odontolog|laboratori'),
+    ('Saúde (serviços)', r'saude|hospital|enfermag|ambulancia|exames|clinica|plantao medico'),
+    ('Obras e engenharia', r'obra|engenharia|reforma|construcao|pavimenta|edificacao|drenagem|recapeamento|asfalt'),
+    ('Manutenção predial e equipamentos', r'manutencao|ar condicionado|climatizacao|elevador|instalacoes eletricas'),
+    ('Tecnologia', r'software|sistema de gestao|informatica|tecnologia da informacao|licenca de uso|computador|notebook|impressora|rede de dados|internet|telefonia'),
+    ('Transporte e veículos', r'transporte|veiculo|motorista|fretamento|onibus|caminhao|locacao de veic|pneu'),
+    ('Combustíveis', r'combustiv|gasolina|diesel|etanol|lubrificante'),
+    ('Uniformes e confecção', r'uniforme|fardamento|vestuario|confeccao|calcado|enxoval'),
+    ('Material escolar e de escritório', r'material escolar|kit escolar|livro|didatic|material de escritorio|material de expediente|papel'),
+    ('Mobiliário e equipamentos', r'mobiliario|moveis|cadeira|mesa|equipamento|eletrodomest'),
+    ('Eventos, comunicação e publicidade', r'evento|show|publicidade|comunicacao|grafica|impressao'),
+    ('Consultoria e treinamento', r'consultoria|assessoria|treinamento|capacitacao|curso|auditoria'),
+    ('Materiais de construção', r'material de construcao|materiais de construcao|cimento|areia|brita|tubos|eletrico|hidraulic'),
+]
+_RX = [(n, re.compile(r)) for n, r in RAMOS]
+
+
+def ramo(texto):
+    t = unicodedata.normalize('NFD', str(texto or '').lower())
+    t = ''.join(c for c in t if unicodedata.category(c) != 'Mn')
+    for n, rx in _RX:
+        if rx.search(t):
+            return n
+    return 'Outros'
+
+
 ERROS = {}
 
 
@@ -59,7 +95,8 @@ def soma_vazia():
     return {'n': 0, 'valor': 0.0, 'sem_valor': 0, 'fora_teto': 0}
 
 
-def acumula(tot, uf, rapida, valor):
+def acumula(tot, uf, rapida, valor, rm='Outros'):
+    ok = 0 < (valor or 0) <= TETO
     for chave in ('BR', uf or '??'):
         g = tot.setdefault(chave, {'todas': soma_vazia(), 'rapidas': soma_vazia()})
         for tipo in ('todas',) + (('rapidas',) if rapida else ()):
@@ -70,6 +107,10 @@ def acumula(tot, uf, rapida, valor):
                 s['fora_teto'] += 1
             else:
                 s['valor'] += valor
+        r = g.setdefault('ramos', {}).setdefault(rm, {'n': 0, 'valor': 0.0})
+        r['n'] += 1
+        if ok:
+            r['valor'] += valor
 
 
 # ---------- abertas agora (busca do PNCP: mesma fonte do contador do site) ----------
@@ -101,7 +142,7 @@ def abertas():
                 mod = int(i.get('modalidade_licitacao_id') or 0)
             except (TypeError, ValueError):
                 mod = 0
-            acumula(tot, i.get('uf'), mod in RAPIDAS, float(i.get('valor_global') or 0))
+            acumula(tot, i.get('uf'), mod in RAPIDAS, float(i.get('valor_global') or 0), ramo((i.get('description') or '') + ' ' + (i.get('title') or '')))
     print('abertas: somadas', len(vistos), 'BR', tot.get('BR'), flush=True)
     return tot
 
@@ -125,7 +166,7 @@ def dia(d):
                 if k in vistos:
                     continue
                 vistos.add(k)
-                acumula(tot, (i.get('unidadeOrgao') or {}).get('ufSigla'), mod in RAPIDAS, float(i.get('valorTotalEstimado') or 0))
+                acumula(tot, (i.get('unidadeOrgao') or {}).get('ufSigla'), mod in RAPIDAS, float(i.get('valorTotalEstimado') or 0), ramo(i.get('objetoCompra')))
     return tot
 
 
@@ -135,6 +176,9 @@ def soma(a, b):
         for tipo in ('todas', 'rapidas'):
             for k in ('n', 'valor', 'sem_valor', 'fora_teto'):
                 G[tipo][k] += g[tipo][k]
+        for rm, v in (g.get('ramos') or {}).items():
+            R = G.setdefault('ramos', {}).setdefault(rm, {'n': 0, 'valor': 0.0})
+            R['n'] += v['n']; R['valor'] += v['valor']
 
 
 def main():

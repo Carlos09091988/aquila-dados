@@ -1150,3 +1150,34 @@ var t;new MutationObserver(function(){if(!document.querySelector('.bq2-i'))retur
 })();</script>
 <?php
 }, 99 );
+
+// Habilitação do concorrente e Gerador de declarações dentro da plataforma (menu lateral, cards do Início e moldura da plataforma).
+add_action( 'init', function () {
+	if ( get_option( 'dv_pg_ctx2' ) ) { return; }
+	$d = (int) get_option( 'dv_decl_pg' );
+	if ( $d && get_post( $d ) ) {
+		wp_update_post( array( 'ID' => $d, 'post_content' => '[dv_ctx tool="declaracoes"]<section class="dv-th"><small>Ferramenta Desenvolve</small><h1>Gerador de declarações</h1><p>As declarações que todo edital pede, preenchidas com os dados da sua empresa e da licitação, em Word, prontas para assinar.</p></section>[dv_declaracoes]' ) );
+		update_post_meta( $d, '_wp_page_template', 'elementor_canvas' );
+	}
+	$h = get_post( 1761 );
+	if ( $h && strpos( (string) $h->post_content, 'dv_ctx' ) === false ) {
+		wp_update_post( array( 'ID' => 1761, 'post_content' => '[dv_ctx tool="habilitacao"]<section class="dv-th"><small>Ferramenta Desenvolve</small><h1>Habilitação do concorrente</h1><p>As últimas licitações que a empresa venceu ou disputou, com o link para os documentos de habilitação de cada uma.</p></section>[dv_habilitacao]' ) );
+	}
+	update_option( 'dv_pg_ctx2', 1, false );
+}, 20 );
+add_action( 'wp_footer', function () {
+	if ( is_admin() || ! is_user_logged_in() ) { return; } ?>
+<script>(function(){
+var NOVOS=[{depois:'/plataforma/raio-x/',t:'Habilitação do concorrente',u:'/plataforma/habilitacao-concorrente/',d:'Os documentos de habilitação das últimas licitações que a empresa disputou ou venceu.'},
+ {depois:'/plataforma/documentos/',t:'Gerador de declarações',u:'/plataforma/declaracoes/',d:'As declarações do edital preenchidas com os dados da sua empresa, em Word, prontas para assinar.'},
+ {depois:'/plataforma/meus-contratos/',t:'Seguro garantia',u:'#seguro',d:'Cote a garantia de proposta ou do contrato sem trocar de corretor.',card:true}];
+function menu(){var nav=document.querySelector('.dv-side nav');if(!nav||nav.dataset.dvx)return;nav.dataset.dvx=1;var here=location.pathname.replace(/\/$/,'');
+ NOVOS.forEach(function(n){if(n.card)return;var ref=nav.querySelector('a[href="'+n.depois+'"]');if(!ref||nav.querySelector('a[href="'+n.u+'"]'))return;var a=ref.cloneNode(true);a.href=n.u;a.classList.toggle('on',here===n.u.replace(/\/$/,''));if(a.classList.contains('on'))a.setAttribute('aria-current','page');else a.removeAttribute('aria-current');var sp=a.querySelectorAll('span');var lab=[].find.call(sp,function(s){return!s.classList.contains('ic')&&!s.classList.contains('bd')});if(lab)lab.textContent=n.t;var bd=a.querySelector('.bd');if(bd)bd.remove();ref.parentNode.insertBefore(a,ref.nextSibling);
+  if(here===n.u.replace(/\/$/,''))[].forEach.call(nav.querySelectorAll('a.on'),function(o){if(o!==a){o.classList.remove('on');o.removeAttribute('aria-current')}})})}
+function cards(){var g=document.querySelector('.dv-cards');if(!g||g.dataset.dvx)return;g.dataset.dvx=1;
+ NOVOS.forEach(function(n){var ref=g.querySelector('a[href="'+n.depois+'"]');if(!ref)ref=g.lastElementChild;if(!ref||g.querySelector('a[href="'+n.u+'"]'))return;var a=ref.cloneNode(true);a.classList.remove('p1','bq');a.href=n.u;var b=a.querySelector('b'),s=a.querySelector('span'),em=a.querySelector('em');if(b)b.textContent=n.t;if(s)s.textContent=n.d;if(em)em.textContent=n.card?'Cotar':'Abrir';ref.parentNode.insertBefore(a,ref.nextSibling)})}
+document.addEventListener('click',function(ev){var a=ev.target.closest&&ev.target.closest('a[href="#seguro"]');if(!a)return;ev.preventDefault();if(window.dvOrcamento)window.dvOrcamento('seguro','')});
+function vai(){menu();cards()}vai();var t;new MutationObserver(function(){clearTimeout(t);t=setTimeout(vai,200)}).observe(document.body,{childList:true,subtree:true});
+})();</script>
+<?php
+}, 99 );

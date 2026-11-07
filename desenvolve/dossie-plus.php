@@ -869,3 +869,83 @@ html body #bq2 .bq2-act button[type=submit],html body.dv-app .dv-tool #bq2 butto
 </style>
 <?php
 }, 99 );
+
+// Pedidos de orçamento: "Precisa de apoio nesta licitação?" (em cada licitação do buscador) e "Está começando?" (consultor).
+add_action( 'rest_api_init', function () {
+	register_rest_route( 'desenvolve/v1', '/orcamento', array( 'methods' => 'POST', 'permission_callback' => '__return_true',
+		'callback' => function ( WP_REST_Request $r ) {
+			$ip = preg_replace( '/[^0-9a-f:.]/i', '', (string) ( $_SERVER['REMOTE_ADDR'] ?? '' ) ); $k = 'dv_orc_ip_' . md5( $ip );
+			if ( (int) get_transient( $k ) >= 6 ) { return new WP_Error( 'dv_orc', 'Muitos pedidos seguidos. Tente de novo mais tarde.', array( 'status' => 429 ) ); }
+			$p = array(
+				'tipo'  => in_array( $r['tipo'], array( 'licitacao', 'consultor' ), true ) ? $r['tipo'] : 'consultor',
+				'nome'  => mb_substr( sanitize_text_field( (string) $r['nome'] ), 0, 120 ),
+				'email' => sanitize_email( (string) $r['email'] ),
+				'whats' => mb_substr( preg_replace( '/[^0-9()+ -]/', '', (string) $r['whats'] ), 0, 30 ),
+				'msg'   => mb_substr( sanitize_textarea_field( (string) $r['msg'] ), 0, 3000 ),
+				'ref'   => mb_substr( sanitize_textarea_field( (string) $r['ref'] ), 0, 1500 ),
+				'url'   => esc_url_raw( (string) $r['url'] ),
+				'uid'   => get_current_user_id(),
+				'data'  => current_time( 'mysql' ),
+			);
+			if ( $p['nome'] === '' || ( ! is_email( $p['email'] ) && strlen( preg_replace( '/\D/', '', $p['whats'] ) ) < 10 ) ) {
+				return new WP_Error( 'dv_orc', 'Informe seu nome e um e-mail ou WhatsApp para recebermos o pedido.', array( 'status' => 400 ) );
+			}
+			set_transient( $k, (int) get_transient( $k ) + 1, HOUR_IN_SECONDS );
+			$l = get_option( 'dv_orcamentos', array() ); if ( ! is_array( $l ) ) { $l = array(); }
+			array_unshift( $l, $p ); update_option( 'dv_orcamentos', array_slice( $l, 0, 1000 ), false );
+			$tit = $p['tipo'] === 'licitacao' ? 'Pedido de orçamento: apoio em licitação' : 'Pedido de orçamento: consultoria';
+			$txt = "$tit\n\nNome: {$p['nome']}\nE-mail: {$p['email']}\nWhatsApp: {$p['whats']}\n\nO que precisa:\n{$p['msg']}\n\n" . ( $p['ref'] ? "Licitação:\n{$p['ref']}\n\n" : '' ) . "Página: {$p['url']}\n\nVer todos: " . admin_url( 'admin.php?page=dv-orcamentos' );
+			$h = is_email( $p['email'] ) ? array( 'Reply-To: ' . $p['nome'] . ' <' . $p['email'] . '>' ) : array();
+			wp_mail( get_option( 'admin_email' ), $tit . ' - ' . $p['nome'], $txt, $h );
+			return array( 'ok' => true );
+		} ) );
+} );
+
+add_action( 'admin_menu', function () {
+	add_submenu_page( 'dv-painel', 'Pedidos de orçamento', 'Pedidos de orçamento', 'manage_options', 'dv-orcamentos', function () {
+		$l = get_option( 'dv_orcamentos', array() ); if ( ! is_array( $l ) ) { $l = array(); }
+		echo '<div class="wrap"><h1>Pedidos de orçamento (' . count( $l ) . ')</h1><table class="widefat striped"><thead><tr><th>Data</th><th>Tipo</th><th>Nome</th><th>E-mail</th><th>WhatsApp</th><th>O que precisa</th><th>Licitação</th></tr></thead><tbody>';
+		if ( ! $l ) { echo '<tr><td colspan="7">Nenhum pedido ainda.</td></tr>'; }
+		foreach ( $l as $p ) {
+			$w = preg_replace( '/\D/', '', $p['whats'] ); if ( $w && strlen( $w ) <= 11 ) { $w = '55' . $w; }
+			echo '<tr><td>' . esc_html( mysql2date( 'd/m/Y H:i', $p['data'] ) ) . '</td><td>' . ( $p['tipo'] === 'licitacao' ? 'Apoio em licitação' : 'Consultor' ) . '</td><td>' . esc_html( $p['nome'] ) . '</td><td>' . esc_html( $p['email'] ) . '</td><td>' . ( $w ? '<a href="https://wa.me/' . esc_attr( $w ) . '" target="_blank" rel="noopener">' . esc_html( $p['whats'] ) . '</a>' : '' ) . '</td><td>' . nl2br( esc_html( $p['msg'] ) ) . '</td><td>' . nl2br( esc_html( $p['ref'] ) ) . ( $p['url'] ? '<br><a href="' . esc_url( $p['url'] ) . '" target="_blank">página</a>' : '' ) . '</td></tr>';
+		}
+		echo '</tbody></table></div>';
+	} );
+}, 30 );
+
+add_action( 'wp_footer', function () {
+	$u = wp_get_current_user(); $nome = $u && $u->ID ? $u->display_name : ''; $mail = $u && $u->ID ? $u->user_email : ''; ?>
+<style>
+.dv-apoio{background:#FFF9EC!important;border:1px solid #C9A45C!important;color:#6B4E14!important;font-weight:700!important}
+#dv-consult{display:flex;align-items:center;justify-content:space-between;gap:16px;flex-wrap:wrap;background:#16191E;color:#F4F2EC;border-radius:16px;padding:18px 22px;margin:18px 0 6px;font-family:"Hanken Grotesk",-apple-system,sans-serif}
+#dv-consult b{display:block;font-size:1.08rem;font-weight:800}#dv-consult span{font-size:.92rem;color:#C9C3B6}
+#dv-consult button{background:#C9A45C!important;color:#241A06!important;border:0!important;border-radius:12px!important;padding:12px 18px!important;font:700 .95rem "Hanken Grotesk",-apple-system,sans-serif!important;cursor:pointer;white-space:nowrap}
+#dv-orc{position:fixed;inset:0;background:rgba(12,15,19,.55);display:flex;align-items:center;justify-content:center;z-index:100000;padding:16px}
+#dv-orc .bx{background:#FBF9F4;color:#16191E;border-radius:16px;max-width:460px;width:100%;padding:22px;box-shadow:0 20px 60px rgba(0,0,0,.3);font-family:"Hanken Grotesk",-apple-system,sans-serif;max-height:92vh;overflow:auto}
+#dv-orc h3{margin:0 0 4px;font-size:1.2rem;font-weight:800}#dv-orc p{margin:0 0 12px;font-size:.9rem;color:#5E5A52;line-height:1.45}
+#dv-orc .rf{background:#F1ECE1;border-radius:10px;padding:8px 10px;font-size:.82rem;color:#4A4D52;margin-bottom:12px;max-height:90px;overflow:auto}
+#dv-orc label{display:block;font-size:.82rem;font-weight:600;margin:0 0 10px}
+#dv-orc input,#dv-orc textarea{display:block;width:100%;box-sizing:border-box;margin-top:5px;border:1px solid #CFC8B8;border-radius:10px;padding:10px 12px;font:400 .95rem "Hanken Grotesk",-apple-system,sans-serif;background:#fff;color:#16191E}
+#dv-orc textarea{min-height:90px;resize:vertical}
+#dv-orc .ac{display:flex;gap:8px;justify-content:flex-end;margin-top:6px}
+#dv-orc .ac button{border-radius:10px;padding:11px 16px;font:700 .92rem "Hanken Grotesk",-apple-system,sans-serif;cursor:pointer;border:1px solid #16191E}
+#dv-orc .ac .ok{background:#C9A45C!important;border-color:#C9A45C!important;color:#241A06!important}#dv-orc .ac .fx{background:#fff!important;color:#16191E!important;border-color:#E2DCCD!important}
+#dv-orc .er{color:#9A3B2C;font-size:.85rem;min-height:1em;margin:4px 0}
+</style>
+<script>(function(){var API=<?php echo wp_json_encode( esc_url_raw( rest_url( 'desenvolve/v1/orcamento' ) ) ); ?>,NOME=<?php echo wp_json_encode( $nome ); ?>,MAIL=<?php echo wp_json_encode( $mail ); ?>;
+function e(s){return String(s==null?'':s).replace(/[&<>"]/g,function(c){return{'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]})}
+function abre(tipo,ref){var m=document.getElementById('dv-orc');if(m)m.remove();m=document.createElement('div');m.id='dv-orc';
+ var t=tipo==='licitacao'?['Apoio especializado nesta licitação','Diga o que você precisa e mandamos um orçamento.','Ex.: análise do edital, documentos de habilitação, proposta, impugnação, recurso…']:['Fale com um consultor','Está começando? Conte o que precisa e mandamos um orçamento. Preços acessíveis para pequenas empresas.','Ex.: quero começar a vender para prefeituras, preciso de ajuda com cadastro e documentos…'];
+ m.innerHTML='<div class="bx" role="dialog" aria-modal="true"><h3>'+t[0]+'</h3><p>'+t[1]+'</p>'+(ref?'<div class="rf">'+e(ref).replace(/\n/g,'<br>')+'</div>':'')+'<label>Seu nome<input name="nome" value="'+e(NOME)+'" autocomplete="name"></label><label>E-mail<input name="email" type="email" value="'+e(MAIL)+'" autocomplete="email"></label><label>WhatsApp<input name="whats" inputmode="tel" placeholder="(11) 99999-9999" autocomplete="tel"></label><label>O que você precisa?<textarea name="msg" placeholder="'+t[2]+'"></textarea></label><div class="er"></div><div class="ac"><button type="button" class="fx">Cancelar</button><button type="button" class="ok">Pedir orçamento</button></div></div>';
+ document.body.appendChild(m);var q=function(n){return m.querySelector('[name='+n+']')};(NOME?q('msg'):q('nome')).focus();
+ m.addEventListener('click',function(ev){if(ev.target===m||ev.target.classList.contains('fx')){m.remove();return}if(!ev.target.classList.contains('ok'))return;var b=ev.target;b.disabled=true;b.textContent='Enviando…';
+  fetch(API,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({tipo:tipo,nome:q('nome').value,email:q('email').value,whats:q('whats').value,msg:q('msg').value,ref:ref||'',url:location.href})}).then(function(r){return r.json().then(function(j){return{ok:r.ok,j:j}})}).then(function(x){if(!x.ok)throw new Error(x.j&&x.j.message||'Não foi possível enviar.');m.querySelector('.bx').innerHTML='<h3>Pedido recebido</h3><p>Obrigado! Vamos analisar e enviar o orçamento pelo e-mail ou WhatsApp que você informou.</p><div class="ac"><button type="button" class="fx">Fechar</button></div>'}).catch(function(er){m.querySelector('.er').textContent=er.message;b.disabled=false;b.textContent='Pedir orçamento'})})}
+window.dvOrcamento=abre;
+function cartao(c){var o=c.querySelector('.o'),u=c.querySelector('.u'),t=c.querySelector('.t'),a=[].find.call(c.querySelectorAll('a[href^="http"]'),function(x){return /pncp|edital|compras|licita/i.test(x.href+x.textContent)});return[(o&&o.textContent.trim()),(u&&u.textContent.trim()),(t&&t.textContent.replace(/\s+/g,' ').trim()),(a&&a.href)].filter(Boolean).join('\n')}
+setInterval(function(){[].forEach.call(document.querySelectorAll('.bq2-i .bq2-a'),function(a){if(a.querySelector('.dv-apoio'))return;var b=document.createElement('button');b.type='button';b.className='dv-apoio';b.textContent='Precisa de apoio nesta licitação?';var x=a.querySelector('.x');if(x)a.insertBefore(b,x);else a.appendChild(b)});
+ var f=document.getElementById('bq-form');if(f&&!document.getElementById('dv-consult')){var d=document.createElement('div');d.id='dv-consult';d.innerHTML='<div><b>Está começando? Precisa de ajuda?</b><span>Fale com um consultor. Preços acessíveis para pequenas empresas.</span></div><button type="button">Falar com um consultor</button>';f.parentNode.insertBefore(d,f.nextSibling)}},900);
+document.addEventListener('click',function(ev){var b=ev.target.closest&&ev.target.closest('.dv-apoio');if(b){ev.preventDefault();abre('licitacao',cartao(b.closest('.bq2-i')||b.parentNode));return}if(ev.target.closest&&ev.target.closest('#dv-consult button')){ev.preventDefault();abre('consultor','')}});
+})();</script>
+<?php
+}, 97 );

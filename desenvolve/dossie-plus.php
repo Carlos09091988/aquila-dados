@@ -1180,7 +1180,7 @@ add_action( 'init', function () {
 add_action( 'wp_footer', function () {
 	if ( is_admin() || ! is_user_logged_in() ) { return; } $meu = preg_replace( '/\D/', '', (string) get_user_meta( get_current_user_id(), 'dv_doc', true ) ); ?>
 <script>(function(){var MEU=<?php echo wp_json_encode( strlen( $meu ) === 14 ? $meu : '' ); ?>;
-var NOVOS=[{depois:'/plataforma/raio-x/',t:'Raio-X da minha empresa',u:'/plataforma/dossie/'+(MEU?'?cnpj='+MEU:''),d:'Veja sua empresa como o órgão e os concorrentes veem: sanções, dívidas, processos e contratos.',card:true},{depois:'/plataforma/raio-x/',t:'Habilitação do concorrente',u:'/plataforma/habilitacao-concorrente/',d:'Os documentos de habilitação das últimas licitações que a empresa disputou ou venceu.'},
+var NOVOS=[{depois:'/plataforma/raio-x/',t:'Raio-X da minha empresa',u:'/plataforma/dossie/'+(MEU?'?cnpj='+MEU:'?minha=1'),d:'Veja sua empresa como o órgão e os concorrentes veem: sanções, dívidas, processos e contratos.',card:true},{depois:'/plataforma/raio-x/',t:'Habilitação do concorrente',u:'/plataforma/habilitacao-concorrente/',d:'Os documentos de habilitação das últimas licitações que a empresa disputou ou venceu.'},
  {depois:'/plataforma/documentos/',t:'Gerador de declarações',u:'/plataforma/declaracoes/',d:'As declarações do edital preenchidas com os dados da sua empresa, em Word, prontas para assinar.'},
  {depois:'/plataforma/meus-contratos/',t:'Seguro garantia',u:'#seguro',d:'Cote a garantia de proposta ou do contrato sem trocar de corretor.',card:true}];
 function menu(){var nav=document.querySelector('.dv-side nav');if(!nav||nav.dataset.dvx)return;nav.dataset.dvx=1;var here=location.pathname.replace(/\/$/,'');

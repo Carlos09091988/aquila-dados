@@ -171,7 +171,7 @@ def abertas():
             if n % 100 == 0:
                 print('abertas: páginas', n, 'de', len(urls), 'falhas', falhas, ERROS, flush=True)
     print('abertas: %d de %d páginas lidas' % (pags_tot - falhas, pags_tot), ERROS, flush=True)
-    if pags_tot - falhas < max(1, pags_tot * 0.5):
+    if pags_tot - falhas < max(1, pags_tot * 0.35):
         print('abertas: poucas páginas, mantém o valor anterior', flush=True); return None
     res = {i: j for i, j in enumerate(res)}
     tot, vistos, amostra = {}, set(), {}

@@ -858,7 +858,7 @@ add_action( 'wp_head', function () { ?>
 #bq2 .bq2-seg{height:46px;margin-top:6px}#bq2 .bq2-seg b{display:flex;align-items:center;justify-content:center;padding:0 10px;font-size:.92rem}
 #bq2 .bq2-ufs{margin-top:8px}
 @media(min-width:701px){
-#bq2 .bq2-g,#bq2 .bq2-g3{align-items:end}
+#bq2 .bq2-g{align-items:start}#bq2 .bq2-g3{align-items:end}
 #bq2 .bq2-g{grid-template-columns:minmax(0,1fr) 320px}
 #bq2 .bq2-g3{grid-template-columns:repeat(3,minmax(0,1fr))}
 #bq2 .bq2-g3.bq2-perto{grid-template-columns:minmax(0,1.6fr) minmax(0,1fr) minmax(0,1fr)}

@@ -1469,7 +1469,7 @@ function sino(){var sd=document.querySelector('.dv-sld');if(!sd||document.queryS
 var tt;new MutationObserver(function(){clearTimeout(tt);tt=setTimeout(function(){var o=document.querySelector('.dv-bell:not(.dv-bell2)');if(o){o.remove();[].forEach.call(document.querySelectorAll('.dv-bellp:not(.dv-bellp2)'),function(x){x.remove()})}sino()},300)}).observe(document.body,{childList:true,subtree:true});setTimeout(sino,800);
 /* aviso de instabilidade: logo abaixo da faixa de notícias, compacto, sem cobrir nada */
 function inst(){var el=document.getElementById('dv-inst');if(!el)return;var sp=el.querySelector('span');if(!sp)return;
- if(!sp.textContent.trim()){el.hidden=true;return}
+ if(!sp.textContent.trim()){if(!el.hidden)el.hidden=true;return}
  if(sp.innerHTML.indexOf('Instabilidade nas fontes')>=0)sp.innerHTML='<b>Fontes oficiais instáveis agora.</b> A busca pode demorar ou falhar; tente de novo em alguns minutos. Consulta que falha não é cobrada.';
  if(!el.dataset.ob){el.dataset.ob=1;new MutationObserver(inst).observe(el,{childList:true,subtree:true,attributes:true,attributeFilter:['hidden']})}}
 new MutationObserver(inst).observe(document.body,{childList:true});setTimeout(inst,0);setTimeout(inst,1500);

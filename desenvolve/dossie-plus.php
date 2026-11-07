@@ -889,7 +889,7 @@ add_action( 'rest_api_init', function () {
 			$ip = preg_replace( '/[^0-9a-f:.]/i', '', (string) ( $_SERVER['REMOTE_ADDR'] ?? '' ) ); $k = 'dv_orc_ip_' . md5( $ip );
 			if ( (int) get_transient( $k ) >= 6 ) { return new WP_Error( 'dv_orc', 'Muitos pedidos seguidos. Tente de novo mais tarde.', array( 'status' => 429 ) ); }
 			$p = array(
-				'tipo'  => in_array( $r['tipo'], array( 'licitacao', 'consultor', 'seguro', 'revisao' ), true ) ? $r['tipo'] : 'consultor',
+				'tipo'  => in_array( $r['tipo'], array( 'licitacao', 'consultor', 'seguro', 'revisao', 'cnae' ), true ) ? $r['tipo'] : 'consultor',
 				'nome'  => mb_substr( sanitize_text_field( (string) $r['nome'] ), 0, 120 ),
 				'email' => sanitize_email( (string) $r['email'] ),
 				'whats' => mb_substr( preg_replace( '/[^0-9()+ -]/', '', (string) $r['whats'] ), 0, 30 ),
@@ -905,7 +905,7 @@ add_action( 'rest_api_init', function () {
 			set_transient( $k, (int) get_transient( $k ) + 1, HOUR_IN_SECONDS );
 			$l = get_option( 'dv_orcamentos', array() ); if ( ! is_array( $l ) ) { $l = array(); }
 			array_unshift( $l, $p ); update_option( 'dv_orcamentos', array_slice( $l, 0, 1000 ), false );
-			$tit = $p['tipo'] === 'licitacao' ? 'Pedido de orçamento: apoio em licitação' : ( $p['tipo'] === 'seguro' ? 'Cotação de seguro garantia' : ( $p['tipo'] === 'revisao' ? 'Pedido de revisão por advogado' : 'Pedido de orçamento: consultoria' ) );
+			$tit = $p['tipo'] === 'licitacao' ? 'Pedido de orçamento: apoio em licitação' : ( $p['tipo'] === 'seguro' ? 'Cotação de seguro garantia' : ( $p['tipo'] === 'revisao' ? 'Pedido de revisão por advogado' : ( $p['tipo'] === 'cnae' ? 'Pedido de orçamento: incluir atividade (CNAE) no contrato social' : 'Pedido de orçamento: consultoria' ) ) );
 			$txt = "$tit\n\nNome: {$p['nome']}\nE-mail: {$p['email']}\nWhatsApp: {$p['whats']}\n\nO que precisa:\n{$p['msg']}\n\n" . ( $p['ref'] ? "Licitação:\n{$p['ref']}\n\n" : '' ) . "Página: {$p['url']}\n\nVer todos: " . admin_url( 'admin.php?page=dv-orcamentos' );
 			$h = is_email( $p['email'] ) ? array( 'Reply-To: ' . $p['nome'] . ' <' . $p['email'] . '>' ) : array();
 			wp_mail( get_option( 'admin_email' ), $tit . ' - ' . $p['nome'], $txt, $h );
@@ -920,7 +920,7 @@ add_action( 'admin_menu', function () {
 		if ( ! $l ) { echo '<tr><td colspan="7">Nenhum pedido ainda.</td></tr>'; }
 		foreach ( $l as $p ) {
 			$w = preg_replace( '/\D/', '', $p['whats'] ); if ( $w && strlen( $w ) <= 11 ) { $w = '55' . $w; }
-			echo '<tr><td>' . esc_html( mysql2date( 'd/m/Y H:i', $p['data'] ) ) . '</td><td>' . ( $p['tipo'] === 'licitacao' ? 'Apoio em licitação' : ( $p['tipo'] === 'seguro' ? '<b>Seguro garantia</b>' : ( $p['tipo'] === 'revisao' ? '<b>Revisão por advogado</b>' : 'Consultor' ) ) ) . '</td><td>' . esc_html( $p['nome'] ) . '</td><td>' . esc_html( $p['email'] ) . '</td><td>' . ( $w ? '<a href="https://wa.me/' . esc_attr( $w ) . '" target="_blank" rel="noopener">' . esc_html( $p['whats'] ) . '</a>' : '' ) . '</td><td>' . nl2br( esc_html( $p['msg'] ) ) . '</td><td>' . nl2br( esc_html( $p['ref'] ) ) . ( $p['url'] ? '<br><a href="' . esc_url( $p['url'] ) . '" target="_blank">página</a>' : '' ) . '</td></tr>';
+			echo '<tr><td>' . esc_html( mysql2date( 'd/m/Y H:i', $p['data'] ) ) . '</td><td>' . ( $p['tipo'] === 'licitacao' ? 'Apoio em licitação' : ( $p['tipo'] === 'seguro' ? '<b>Seguro garantia</b>' : ( $p['tipo'] === 'revisao' ? '<b>Revisão por advogado</b>' : ( $p['tipo'] === 'cnae' ? '<b>Alteração de CNAE</b>' : 'Consultor' ) ) ) ) . '</td><td>' . esc_html( $p['nome'] ) . '</td><td>' . esc_html( $p['email'] ) . '</td><td>' . ( $w ? '<a href="https://wa.me/' . esc_attr( $w ) . '" target="_blank" rel="noopener">' . esc_html( $p['whats'] ) . '</a>' : '' ) . '</td><td>' . nl2br( esc_html( $p['msg'] ) ) . '</td><td>' . nl2br( esc_html( $p['ref'] ) ) . ( $p['url'] ? '<br><a href="' . esc_url( $p['url'] ) . '" target="_blank">página</a>' : '' ) . '</td></tr>';
 		}
 		echo '</tbody></table></div>';
 	} );
@@ -948,7 +948,7 @@ add_action( 'wp_footer', function () {
 <script>(function(){var API=<?php echo wp_json_encode( esc_url_raw( rest_url( 'desenvolve/v1/orcamento' ) ) ); ?>,NOME=<?php echo wp_json_encode( $nome ); ?>,MAIL=<?php echo wp_json_encode( $mail ); ?>;
 function e(s){return String(s==null?'':s).replace(/[&<>"]/g,function(c){return{'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]})}
 function abre(tipo,ref){var m=document.getElementById('dv-orc');if(m)m.remove();m=document.createElement('div');m.id='dv-orc';
- var t=tipo==='revisao'?['Revisão por advogado','Um advogado especialista revisa a sua peça antes de protocolar. Diga o prazo e mandamos o orçamento na hora.','Ex.: a IA montou a impugnação; preciso de revisão até amanhã às 18h']:tipo==='seguro'?['Cotar seguro garantia','Mandamos a cotação rápido, sem você trocar de corretor.','Ex.: garantia de proposta de 1% do valor estimado; vigência até…']:tipo==='licitacao'?['Apoio especializado nesta licitação','Diga o que você precisa e mandamos um orçamento.','Ex.: análise do edital, documentos de habilitação, proposta, impugnação, recurso…']:['Fale com um consultor','Está começando? Conte o que precisa e mandamos um orçamento. Preços acessíveis para pequenas empresas.','Ex.: quero começar a vender para prefeituras, preciso de ajuda com cadastro e documentos…'];
+ var t=tipo==='cnae'?['Incluir a atividade no contrato social','Fazemos a alteração do contrato social e do CNAE para você poder disputar. Diga o que quer incluir e mandamos o orçamento.','Ex.: vendo limpeza e quero disputar também jardinagem e controle de pragas']:tipo==='revisao'?['Revisão por advogado','Um advogado especialista revisa a sua peça antes de protocolar. Diga o prazo e mandamos o orçamento na hora.','Ex.: a IA montou a impugnação; preciso de revisão até amanhã às 18h']:tipo==='seguro'?['Cotar seguro garantia','Mandamos a cotação rápido, sem você trocar de corretor.','Ex.: garantia de proposta de 1% do valor estimado; vigência até…']:tipo==='licitacao'?['Apoio especializado nesta licitação','Diga o que você precisa e mandamos um orçamento.','Ex.: análise do edital, documentos de habilitação, proposta, impugnação, recurso…']:['Fale com um consultor','Está começando? Conte o que precisa e mandamos um orçamento. Preços acessíveis para pequenas empresas.','Ex.: quero começar a vender para prefeituras, preciso de ajuda com cadastro e documentos…'];
  m.innerHTML='<div class="bx" role="dialog" aria-modal="true"><h3>'+t[0]+'</h3><p>'+t[1]+'</p>'+(ref?'<div class="rf">'+e(ref).replace(/\n/g,'<br>')+'</div>':'')+'<label>Seu nome<input name="nome" value="'+e(NOME)+'" autocomplete="name"></label><label>E-mail<input name="email" type="email" value="'+e(MAIL)+'" autocomplete="email"></label><label>WhatsApp<input name="whats" inputmode="tel" placeholder="(11) 99999-9999" autocomplete="tel"></label>'+(tipo==='seguro'?'<label>CNPJ da sua empresa<input name="cnpj" inputmode="numeric" placeholder="00.000.000/0000-00"></label><label>Tipo de garantia<select name="gar" style="display:block;width:100%;margin-top:5px;border:1px solid #CFC8B8;border-radius:10px;padding:10px 12px;font:400 .95rem Hanken Grotesk,sans-serif;background:#fff"><option>Garantia de proposta (para participar)</option><option>Garantia de execução do contrato</option><option>Ainda não sei</option></select></label>':'')+'<label>'+(tipo==='seguro'?'Percentual ou valor exigido no edital (se souber)':'O que você precisa?')+'<textarea name="msg" placeholder="'+t[2]+'"></textarea></label><div class="er"></div><div class="ac"><button type="button" class="fx">Cancelar</button><button type="button" class="ok">Pedir orçamento</button></div></div>';
  document.body.appendChild(m);var q=function(n){return m.querySelector('[name='+n+']')};(NOME?q('msg'):q('nome')).focus();
  m.addEventListener('click',function(ev){if(ev.target===m||ev.target.classList.contains('fx')){m.remove();return}if(!ev.target.classList.contains('ok'))return;var b=ev.target;b.disabled=true;b.textContent='Enviando…';
@@ -1478,3 +1478,101 @@ var R=document.getElementById('dv-np');if(R){var tb=R.querySelector('.np-tabs');
 })();</script>
 <?php
 }, 130 );
+
+
+// Perfil pelo CNAE: o CNPJ do cliente vira as palavras de busca (CNAE principal, secundários e objeto social colado),
+// cada licitação ganha o selo "Compatível com seu CNAE" ou "Confira o CNAE", filtro "Só o que posso disputar",
+// alerta criado com um clique e sugestão de incluir a atividade no contrato social.
+add_action( 'rest_api_init', function () {
+	register_rest_route( 'desenvolve/v1', '/perfil-cnae', array(
+		array( 'methods' => 'GET', 'permission_callback' => 'is_user_logged_in', 'callback' => function () {
+			$p = json_decode( (string) get_user_meta( get_current_user_id(), 'dv_cnae', true ), true );
+			return array( 'perfil' => is_array( $p ) ? $p : null, 'cnpj' => preg_replace( '/\D/', '', (string) get_user_meta( get_current_user_id(), 'dv_doc', true ) ) );
+		} ),
+		array( 'methods' => 'POST', 'permission_callback' => 'is_user_logged_in', 'callback' => function ( WP_REST_Request $r ) {
+			$cn = array();
+			foreach ( array_slice( (array) $r['cnaes'], 0, 60 ) as $c ) {
+				$cn[] = array( 'c' => preg_replace( '/[^\d\/-]/', '', (string) ( $c['c'] ?? '' ) ), 'd' => mb_substr( sanitize_text_field( (string) ( $c['d'] ?? '' ) ), 0, 200 ), 'on' => empty( $c['off'] ) ? 1 : 0, 'p' => empty( $c['p'] ) ? 0 : 1 );
+			}
+			$p = array( 'cnpj' => substr( preg_replace( '/\D/', '', (string) $r['cnpj'] ), 0, 14 ), 'nome' => mb_substr( sanitize_text_field( (string) $r['nome'] ), 0, 160 ), 'cnaes' => $cn,
+				'obj' => mb_substr( sanitize_textarea_field( (string) $r['obj'] ), 0, 3000 ), 'filtro' => empty( $r['filtro'] ) ? 0 : 1, 'em' => current_time( 'mysql' ) );
+			update_user_meta( get_current_user_id(), 'dv_cnae', wp_slash( wp_json_encode( $p, JSON_UNESCAPED_UNICODE ) ) );
+			return array( 'ok' => true, 'perfil' => $p );
+		} ),
+	) );
+} );
+add_action( 'wp_footer', function () {
+	if ( ! is_user_logged_in() || ! function_exists( 'dv_app_pagina' ) || ! dv_app_pagina() ) { return; } ?>
+<style>
+#dv-cnae{display:flex;align-items:center;gap:10px 14px;flex-wrap:wrap;background:#FBFAF6;border:1px solid #E3DED2;border-radius:12px;padding:10px 14px;margin:0 0 14px;font:500 .88rem/1.4 "Hanken Grotesk",-apple-system,sans-serif;color:#1A202C}
+#dv-cnae b{font-weight:800}#dv-cnae .s{color:#6B6B6B;flex:1;min-width:200px}
+#dv-cnae input[type=text]{border:1px solid #DDD7C9;border-radius:9px;padding:8px 10px;font:inherit;width:190px;background:#fff}
+#dv-cnae button,.dv-cnm button{border:0;border-radius:9px;padding:8px 13px;font:700 .84rem "Hanken Grotesk",-apple-system,sans-serif;cursor:pointer;background:#1A202C;color:#fff}
+#dv-cnae button.l,.dv-cnm button.l{background:transparent;color:#8C6A26;border:1px solid #E3DED2}
+#dv-cnae label{display:flex;align-items:center;gap:7px;font-weight:700;cursor:pointer;white-space:nowrap}
+.dv-cnk{font-size:.76rem;font-weight:700;border-radius:8px;padding:4px 9px;cursor:help;white-space:nowrap}
+.dv-cnk.ok{background:#E8F3EC;color:#1F6B3A}.dv-cnk.no{background:#FFF4E0;color:#7A4E00}
+body.dv-cnf .bq2-i.dv-fora{display:none!important}
+.dv-cnm{position:fixed;inset:0;z-index:100010;background:rgba(15,18,24,.55);display:flex;align-items:center;justify-content:center;padding:16px}
+.dv-cnm>div{background:#fff;border-radius:16px;max-width:640px;width:100%;max-height:88vh;overflow:auto;padding:22px 22px 18px;font:500 .9rem/1.45 "Hanken Grotesk",-apple-system,sans-serif;color:#1A202C}
+.dv-cnm h3{margin:0 0 4px;font-size:1.15rem}.dv-cnm p.m{margin:0 0 14px;color:#6B6B6B}
+.dv-cnm ul{list-style:none;margin:0 0 14px;padding:0;border:1px solid #EEE9DD;border-radius:10px}
+.dv-cnm li{display:flex;gap:10px;padding:9px 12px;border-top:1px solid #EEE9DD}.dv-cnm li:first-child{border-top:0}
+.dv-cnm li code{font:700 .78rem ui-monospace,monospace;color:#8C6A26;white-space:nowrap}
+.dv-cnm textarea{width:100%;min-height:90px;border:1px solid #DDD7C9;border-radius:10px;padding:9px 11px;font:inherit;box-sizing:border-box}
+.dv-cnm .kw{margin:12px 0;color:#6B6B6B;font-size:.82rem}.dv-cnm .ac{display:flex;gap:8px;justify-content:flex-end;flex-wrap:wrap;margin-top:14px}
+#dv-cnt{position:fixed;right:18px;bottom:84px;z-index:100005;max-width:340px;background:#1A202C;color:#F4F2EC;border-radius:12px;padding:14px 16px;font:500 .86rem/1.4 "Hanken Grotesk",-apple-system,sans-serif;box-shadow:0 10px 30px rgba(0,0,0,.25)}
+#dv-cnt button{margin-top:10px;border:0;border-radius:8px;padding:7px 12px;font-weight:700;cursor:pointer;background:#C9A35C;color:#1A202C}#dv-cnt .x{position:absolute;right:8px;top:4px;background:none;color:#aaa;margin:0;padding:4px;font-size:18px}
+</style>
+<script>(function(){var API=<?php echo wp_json_encode( rest_url( 'desenvolve/v1/' ) ); ?>,NC=<?php echo wp_json_encode( wp_create_nonce( 'wp_rest' ) ); ?>;
+var P=null,KW=[],carregado=false;
+function e(s){return String(s==null?'':s).replace(/[&<>"]/g,function(c){return{'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]})}
+function nm(s){return String(s||'').normalize('NFD').replace(/[̀-ͯ]/g,'').toLowerCase()}
+function cnpjF(c){return String(c).replace(/^(\d{2})(\d{3})(\d{3})(\d{4})(\d{2})$/,'$1.$2.$3/$4-$5')}
+function cF(c){c=String(c).replace(/\D/g,'');return c.length===7?c.slice(0,4)+'-'+c[4]+'/'+c.slice(5):c}
+/* palavras de licitação por divisão do CNAE (2 primeiros dígitos) */
+var DIV={'01':'hortifruti,agricultura familiar,gêneros alimentícios,mudas,sementes','02':'mudas,madeira,lenha','03':'pescado,peixe','08':'brita,areia,pedra,cascalho','10':'gêneros alimentícios,merenda,carne,pão,leite,alimentos','11':'água mineral,bebidas','13':'enxoval,cama mesa e banho,toalha,lençol,tecido','14':'uniforme,fardamento,confecção,vestuário,camiseta,jaleco,malharia','15':'calçado,tênis,bota','17':'papel,papelaria','18':'gráfica,impressão,impressos','20':'saneantes,desinfetante,produtos químicos,cloro','21':'medicamentos,fármacos','22':'plástico,saco de lixo,pneu','23':'material de construção,cimento,vidro','25':'estrutura metálica,serralheria','26':'computador,informática,equipamentos eletrônicos','27':'equipamentos elétricos,material elétrico','28':'máquinas,equipamentos','29':'veículo,ambulância,ônibus','31':'mobiliário,móveis,cadeira,armário','32':'brinquedos,material esportivo,material médico,odontológico','33':'manutenção de equipamentos,manutenção preventiva e corretiva','35':'energia elétrica,energia solar,fotovoltaico','36':'água,abastecimento','37':'esgoto,saneamento','38':'coleta de lixo,resíduos sólidos,coleta seletiva,resíduos de saúde','39':'descontaminação,remediação','41':'obra,construção,edificação,reforma','42':'pavimentação,infraestrutura,drenagem,saneamento,obra','43':'reforma,instalação elétrica,instalação hidráulica,pintura,demolição,terraplenagem','45':'manutenção de veículos,peças automotivas,pneus,mecânica,frota','49':'transporte escolar,transporte de passageiros,fretamento,transporte de cargas','52':'armazenagem,logística','53':'entrega,malote,courier','55':'hospedagem,hotel','56':'refeição,alimentação,merenda,restaurante,coffee break,buffet,marmita','58':'licença de software,editora,livros','59':'vídeo,produção audiovisual','60':'rádio,televisão','61':'telecomunicações,internet,link de dados,telefonia','62':'software,sistema,desenvolvimento de sistemas,tecnologia da informação,suporte técnico,informática','63':'hospedagem de sites,processamento de dados,dados','68':'locação de imóvel','69':'assessoria jurídica,advocacia,contabilidade,serviços contábeis','70':'consultoria,assessoria,gestão','71':'projeto,engenharia,arquitetura,topografia,fiscalização de obra,laudo','72':'pesquisa','73':'publicidade,propaganda,comunicação,marketing,pesquisa de opinião','74':'fotografia,design,tradução','75':'veterinário,veterinária','77':'locação de equipamentos,locação de veículos,locação de máquinas','78':'mão de obra,terceirização,apoio administrativo,recepção,cessão de mão de obra','79':'passagens aéreas,agência de viagens','80':'vigilância,segurança patrimonial,monitoramento,portaria,vigia','81':'limpeza,conservação,higienização,jardinagem,dedetização,controle de pragas,zeladoria,paisagismo,facilities','82':'apoio administrativo,teleatendimento,call center,organização de eventos,cobrança','84':'serviços públicos','85':'curso,capacitação,treinamento,ensino,educação','86':'saúde,médico,hospitalar,enfermagem,exames,laboratório,plantão médico,home care','87':'acolhimento,residência terapêutica,casa de repouso','88':'assistência social,acolhimento','90':'show,espetáculo,artístico','91':'biblioteca,museu','93':'esporte,evento esportivo,recreação','94':'associação','95':'manutenção de computadores,reparação','96':'lavanderia,serviço funerário,funerária'};
+var STOP=' comercio atacadista varejista servicos atividades atividade outros outras outro outra fabricacao fabrica exceto especificadas especificados anteriormente artigos produtos produto geral predominancia gerais principalmente partes pecas acessorios relacionadas relacionados similares diversos diversas tipos tipo para pelo pela como sobre mesmo estes estas esses essas nao '; 
+function kws(){var k={};if(!P)return[];(P.cnaes||[]).forEach(function(c){if(!c.on)return;var d=String(c.c).replace(/\D/g,'').slice(0,2);(DIV[d]||'').split(',').forEach(function(w){if(w)k[w]=c});nm(c.d).split(/[^a-z]+/).forEach(function(w){if(w.length>=6&&STOP.indexOf(' '+w+' ')<0)k[w]=c})});
+ nm(P.obj||'').split(/[,;.\n]+/).forEach(function(fr){fr.split(/[^a-z]+/).forEach(function(w){if(w.length>=6&&STOP.indexOf(' '+w+' ')<0)k[w]=k[w]||{c:'objeto social',d:'Objeto do contrato social'}})});
+ return Object.keys(k).map(function(w){return{w:w,n:nm(w).split(/\s+/).filter(function(x){return x.length>2}).map(function(x){return x.length>5?x.slice(0,x.length-(x.length>7?2:1)):x}),c:k[w]}})}
+function casa(tx){tx=nm(tx);for(var i=0;i<KW.length;i++){var k=KW[i];if(k.n.length&&k.n.every(function(x){return tx.indexOf(x)>=0}))return k}return null}
+function salva(){return fetch(API+'perfil-cnae',{method:'POST',headers:{'X-WP-Nonce':NC,'Content-Type':'application/json'},credentials:'same-origin',body:JSON.stringify({cnpj:P.cnpj,nome:P.nome,obj:P.obj,filtro:P.filtro,cnaes:(P.cnaes||[]).map(function(c){return{c:c.c,d:c.d,off:!c.on,p:c.p}})})}).then(function(r){return r.json()})}
+function daReceita(cnpj){return fetch('https://brasilapi.com.br/api/cnpj/v1/'+cnpj).then(function(r){if(!r.ok)throw 0;return r.json()}).then(function(j){var l=[{c:cF(j.cnae_fiscal),d:j.cnae_fiscal_descricao,on:1,p:1}];(j.cnaes_secundarios||[]).forEach(function(x){if(x&&x.codigo)l.push({c:cF(x.codigo),d:x.descricao,on:1,p:0})});return{cnpj:cnpj,nome:j.razao_social||'',cnaes:l,obj:(P&&P.obj)||'',filtro:(P&&P.filtro)||0}})}
+/* faixa no buscador */
+function faixa(){var R=document.getElementById('bq2');if(!R)return;var f=document.getElementById('dv-cnae');if(!f){f=document.createElement('div');f.id='dv-cnae';R.insertBefore(f,R.firstChild)}
+ if(!P||!(P.cnaes||[]).length){f.innerHTML='<span class="s"><b>Mostre só o que você pode disputar.</b> Informe o CNPJ e marcamos cada licitação pelo CNAE da sua empresa.</span><input type="text" inputmode="numeric" placeholder="CNPJ da empresa" aria-label="CNPJ da empresa"><button type="button" data-cn="usar">Usar meu CNAE</button>';return}
+ var pr=(P.cnaes||[]).filter(function(c){return c.p})[0]||P.cnaes[0],n=(P.cnaes||[]).filter(function(c){return c.on}).length;
+ f.innerHTML='<span class="s"><b>Seu CNAE:</b> '+e(pr.c)+' · '+e(String(pr.d||'').slice(0,60))+(n>1?' <span style="color:#8C6A26;font-weight:700">+'+(n-1)+'</span>':'')+'</span><label><input type="checkbox" data-cn="filtro"'+(P.filtro?' checked':'')+'> Só o que posso disputar</label><button type="button" class="l" data-cn="ajustar">Ajustar</button>';
+ document.body.classList.toggle('dv-cnf',!!P.filtro)}
+function selos(){if(!KW.length)return;[].forEach.call(document.querySelectorAll('.bq2-i[data-r]'),function(c){if(c.querySelector('.dv-cnk'))return;var ch=c.querySelector('.bq2-ch')||c.querySelector('.t');if(!ch)return;var o=c.querySelector('.o'),tx=(o?o.textContent:c.textContent);var k=casa(tx),s=document.createElement('span');
+ if(k){s.className='dv-cnk ok';s.textContent='✓ Compatível com seu CNAE';s.title='Bate com: '+k.c.c+' · '+k.c.d;c.classList.remove('dv-fora')}else{s.className='dv-cnk no';s.textContent='Confira o CNAE';s.title='Não achamos este objeto nos CNAEs da sua empresa. Se o edital exigir atividade compatível no contrato social ou no CNPJ, pode dar inabilitação.';c.classList.add('dv-fora')}
+ if(ch.classList.contains('t')){var sp=ch.lastElementChild;ch.insertBefore(s,sp)}else ch.insertBefore(s,ch.firstChild)})}
+function aplica(){KW=kws();faixa();[].forEach.call(document.querySelectorAll('.dv-cnk'),function(x){x.remove()});selos()}
+function janela(){var m=document.createElement('div');m.className='dv-cnm';m.setAttribute('role','dialog');m.setAttribute('aria-modal','true');m.setAttribute('aria-label','Ajustar CNAE');
+ var lis=(P.cnaes||[]).map(function(c,i){return'<li><input type="checkbox" data-i="'+i+'"'+(c.on?' checked':'')+' id="cn'+i+'"><label for="cn'+i+'"><code>'+e(c.c)+'</code> '+e(c.d)+(c.p?' <b style="color:#8C6A26">· principal</b>':'')+'</label></li>'}).join('');
+ m.innerHTML='<div><h3>'+e(P.nome||'Sua empresa')+'</h3><p class="m">CNPJ '+e(cnpjF(P.cnpj))+'. Desmarque as atividades que você não quer disputar.</p><ul>'+lis+'</ul><label style="font-weight:700;display:block;margin-bottom:6px">Objeto do contrato social (opcional)</label><textarea placeholder="Cole aqui o texto do objeto social. Ele também vira palavra de busca.">'+e(P.obj||'')+'</textarea><p class="kw"></p><div class="ac"><button type="button" class="l" data-a="rec">Atualizar pela Receita</button><button type="button" class="l" data-a="al">Criar alerta com essas palavras</button><button type="button" data-a="ok">Salvar</button></div></div>';
+ document.body.appendChild(m);var ta=m.querySelector('textarea');
+ function prev(){var t=kws().map(function(k){return k.w});m.querySelector('.kw').textContent=t.length?'Palavras usadas: '+t.slice(0,18).join(', ')+(t.length>18?'…':''):'Nenhuma palavra: marque pelo menos uma atividade.'}prev();
+ m.addEventListener('change',function(ev){var i=ev.target.dataset.i;if(i!=null){P.cnaes[i].on=ev.target.checked?1:0;prev()}});ta.addEventListener('input',function(){P.obj=ta.value;prev()});
+ function fecha(){m.remove();document.removeEventListener('keydown',esc)}function esc(ev){if(ev.key==='Escape')fecha()}document.addEventListener('keydown',esc);
+ m.addEventListener('click',function(ev){if(ev.target===m)return fecha();var a=ev.target.dataset&&ev.target.dataset.a;if(!a)return;var b=ev.target;
+  if(a==='ok'){P.obj=ta.value;b.disabled=true;salva().then(function(){fecha();aplica()}).catch(function(){b.disabled=false;b.textContent='Tente de novo'})}
+  if(a==='rec'){b.disabled=true;b.textContent='Buscando…';daReceita(P.cnpj).then(function(n){n.obj=ta.value;P=n;fecha();janela()}).catch(function(){b.disabled=false;b.textContent='Receita fora do ar; tente depois'})}
+  if(a==='al'){P.obj=ta.value;var t=kws().map(function(k){return k.w}).filter(function(w){return w.indexOf(' ')>=0||DIVW[w]}).slice(0,6);if(!t.length)t=kws().map(function(k){return k.w}).slice(0,6);b.disabled=true;
+   fetch(API+'alertas/salvar',{method:'POST',headers:{'X-WP-Nonce':NC,'Content-Type':'application/json'},credentials:'same-origin',body:JSON.stringify({nome:'Pelo meu CNAE',termos:t.join(', ')})}).then(function(r){return r.json()}).then(function(j){b.textContent=j&&j.ok?'Alerta criado ✓':(j&&j.message)||'Não deu certo';if(j&&j.ok)salva()}).catch(function(){b.disabled=false;b.textContent='Tente de novo'})}})}
+var DIVW={};Object.keys(DIV).forEach(function(d){DIV[d].split(',').forEach(function(w){DIVW[w]=1})});
+document.addEventListener('click',function(ev){var t=ev.target,a=t.dataset&&t.dataset.cn;if(!a)return;
+ if(a==='usar'){var inp=document.querySelector('#dv-cnae input[type=text]'),c=String(inp&&inp.value||'').replace(/\D/g,'');if(c.length!==14){inp.focus();inp.style.borderColor='#C0392B';return}t.disabled=true;t.textContent='Buscando na Receita…';daReceita(c).then(function(n){P=n;return salva()}).then(function(){aplica()}).catch(function(){t.disabled=false;t.textContent='Receita fora do ar; tente depois'})}
+ if(a==='ajustar')janela()});
+document.addEventListener('change',function(ev){if(ev.target.dataset&&ev.target.dataset.cn==='filtro'){P.filtro=ev.target.checked?1:0;document.body.classList.toggle('dv-cnf',!!P.filtro);salva()}});
+/* marcou para o relatório uma que está fora do CNAE: sugere incluir a atividade */
+document.addEventListener('click',function(ev){var c=ev.target.closest&&ev.target.closest('.bq2-i.dv-fora');if(!c||!ev.target.closest('.dv-sel,[data-sel],input[type=checkbox]'))return;try{if(sessionStorage.getItem('dv_cnt'))return;sessionStorage.setItem('dv_cnt',1)}catch(x){}
+ setTimeout(function(){var d=document.createElement('div');d.id='dv-cnt';d.setAttribute('role','status');var o=c.querySelector('.o');d.innerHTML='<button type="button" class="x" aria-label="Fechar">×</button><b>Esta parece fora do seu CNAE.</b><br>Para disputar sem risco de inabilitação, dá para incluir a atividade no contrato social.<br><button type="button" data-q="1">Pedir orçamento da alteração</button>';document.body.appendChild(d);
+  d.addEventListener('click',function(e2){if(e2.target.classList.contains('x'))d.remove();if(e2.target.dataset.q){d.remove();if(window.dvOrcamento)dvOrcamento('cnae',o?o.textContent.trim():'')}})},300)});
+function inicia(){if(carregado||!document.getElementById('bq2'))return;carregado=true;
+ fetch(API+'perfil-cnae',{headers:{'X-WP-Nonce':NC},credentials:'same-origin'}).then(function(r){return r.json()}).then(function(j){P=j.perfil;if(!P&&j.cnpj&&j.cnpj.length===14){return daReceita(j.cnpj).then(function(n){P=n;return salva()}).catch(function(){})}}).then(aplica).catch(faixa)}
+var tt;new MutationObserver(function(){inicia();clearTimeout(tt);tt=setTimeout(selos,300)}).observe(document.body,{childList:true,subtree:true});inicia();
+})();</script>
+<?php
+}, 140 );

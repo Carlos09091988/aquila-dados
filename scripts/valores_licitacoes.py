@@ -72,29 +72,37 @@ def acumula(tot, uf, rapida, valor):
                 s['valor'] += valor
 
 
-# ---------- abertas agora (PNCP, recebendo proposta) ----------
+# ---------- abertas agora (busca do PNCP: mesma fonte do contador do site) ----------
 def abertas():
-    hoje = dt.date.today()
-    fim = (hoje + dt.timedelta(days=400)).strftime('%Y%m%d')
+    base = ('https://pncp.gov.br/api/search/?tipos_documento=edital&status=recebendo_proposta'
+            '&ordenacao=-data&tam_pagina=100&pagina=')
+    p1 = get(base + '1')
+    if not p1 or 'total' not in p1:
+        print('abertas: busca do PNCP não respondeu', ERROS, flush=True); return None
+    total = int(p1.get('total') or 0); pags = min(800, (total + 99) // 100)
+    print('abertas: total', total, 'páginas', pags, flush=True)
+    res = {1: p1}
+    with ThreadPoolExecutor(6) as ex:
+        for p, j in zip(range(2, pags + 1), ex.map(lambda p: get(base + str(p)), range(2, pags + 1))):
+            res[p] = j
+    for p in [p for p, j in res.items() if j is None]:
+        time.sleep(2); res[p] = get(base + str(p), tent=8)
+    falhas = sum(1 for j in res.values() if j is None)
+    if falhas > max(2, pags * 0.03):
+        print('abertas: %d de %d páginas falharam' % (falhas, pags), ERROS, flush=True); return None
     tot, vistos = {}, set()
-    for mod in MODALIDADES:
-        base = ('https://pncp.gov.br/api/consulta/v1/contratacoes/proposta?dataFinal=' + fim +
-                '&codigoModalidadeContratacao=%d&tamanhoPagina=50&pagina=' % mod)
-        p1 = get(base + '1')
-        if p1 is None:
-            print('abertas: falhou modalidade', mod, file=sys.stderr); return None
-        pags = int(p1.get('totalPaginas') or 0)
-        mais, falhas = paginas(base, pags); res = [p1] + mais
-        if falhas > max(1, pags * 0.02):
-            print('abertas: %d de %d páginas falharam na modalidade %d' % (falhas, pags, mod), ERROS, file=sys.stderr); return None
-        for j in res:
-            for i in (j or {}).get('data') or []:
-                k = i.get('numeroControlePNCP')
-                if k in vistos:
-                    continue
-                vistos.add(k)
-                acumula(tot, (i.get('unidadeOrgao') or {}).get('ufSigla'), mod in RAPIDAS, float(i.get('valorTotalEstimado') or 0))
-        print('abertas modalidade', mod, 'páginas', pags, 'acumulado', tot.get('BR', {}).get('todas', {}).get('n'))
+    for j in res.values():
+        for i in (j or {}).get('items') or []:
+            k = i.get('numero_controle_pncp') or i.get('id')
+            if k in vistos:
+                continue
+            vistos.add(k)
+            try:
+                mod = int(i.get('modalidade_licitacao_id') or 0)
+            except (TypeError, ValueError):
+                mod = 0
+            acumula(tot, i.get('uf'), mod in RAPIDAS, float(i.get('valor_global') or 0))
+    print('abertas: somadas', len(vistos), 'BR', tot.get('BR'), flush=True)
     return tot
 
 
@@ -153,7 +161,7 @@ def main():
         if t is None:
             print('dia falhou', d, file=sys.stderr); continue
         json.dump(t, open(arq, 'w'), separators=(',', ':')); feitos += 1
-        print('dia', d, t.get('BR', {}).get('todas'))
+        print('dia', d, t.get('BR', {}).get('todas'), flush=True)
 
     # apaga dias fora da janela e soma os 365
     validos = {d.isoformat() for d in janela}

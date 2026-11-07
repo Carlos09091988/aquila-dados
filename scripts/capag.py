@@ -42,7 +42,11 @@ def tabelas(conteudo, fmt):
         for i in range(min(15, len(raw))):
             row = [nm(x) for x in raw.iloc[i].tolist()]
             if any('capag' in x or 'classificacao' in x for x in row) and any(x == 'uf' for x in row):
-                df = raw.iloc[i + 1:].copy(); df.columns = [str(x) for x in raw.iloc[i].tolist()]
+                df = raw.iloc[i + 1:].copy(); vis = {}
+                cs = []
+                for x in raw.iloc[i].tolist():
+                    x = str(x); vis[x] = vis.get(x, 0) + 1; cs.append(x if vis[x] == 1 else x + '_' + str(vis[x]))
+                df.columns = cs
                 yield sh, df; break
 
 
@@ -51,11 +55,12 @@ def extrai(df):
     cod = next((cols[c] for c in cols if ('codigo' in c and 'munic' in c) or 'cod. ibge' in c or c in ('cod_ibge', 'codigo ibge', 'ibge', 'cod ibge')), None)
     cap = next((cols[c] for c in cols if c == 'capag'), None) or next((cols[c] for c in cols if 'classificacao' in c and 'capag' in c), None) or next((cols[c] for c in cols if c.startswith('capag') and 'antes' not in c), None)
     uf = next((cols[c] for c in cols if c == 'uf'), None)
-    return cod, cap, uf
+    nome = next((cols[c] for c in cols if 'nome' in c and 'munic' in c), None) or next((cols[c] for c in cols if c in ('instituicao', 'municipio', 'ente')), None)
+    return cod, cap, uf, nome
 
 
 def main():
-    out = {'m': {}, 'e': {}, 'ref': {}}
+    out = {'m': {}, 'e': {}, 'n': {}, 'ref': {}}
     pk = get(CK + 'package_search?q=capag&rows=50')['result']['results']
     print('pacotes:', [p['name'] for p in pk], flush=True)
     for p in pk:
@@ -69,7 +74,7 @@ def main():
             except Exception as e:  # noqa: BLE001
                 print('falhou', r.get('name'), e, flush=True); continue
             for sh, df in tabelas(b, fmt):
-                cod, cap, uf = extrai(df)
+                cod, cap, uf, nome_col = extrai(df)
                 print('recurso:', r.get('name'), '| aba:', sh, '| cod:', cod, '| capag:', cap, '| uf:', uf, '| linhas:', len(df), flush=True)
                 if not cap or not uf:
                     continue
@@ -84,6 +89,8 @@ def main():
                         k = re.match(r'^\d{6,7}', str(row.get(cod))).group(0)
                         if k not in out['m']:
                             out['m'][k] = v; n += 1
+                            if nome_col:
+                                out['n'].setdefault(u + '|' + nm(row.get(nome_col)), k)
                     elif estadual and re.match(r'^[A-Z]{2}$', u) and u not in out['e']:
                         out['e'][u] = v; n += 1
                 if n:

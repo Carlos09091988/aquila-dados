@@ -62,10 +62,12 @@ def ramo(texto):
 ERROS = {}
 
 
-def get(url, tent=6):
+def get(url, tent=6, to=90):
     for t in range(tent):
+        if time.time() - T0 > LIMITE + 240:   # passou do tempo: não espera mais nada
+            return None
         try:
-            with urllib.request.urlopen(urllib.request.Request(url, headers=UA), timeout=90) as r:
+            with urllib.request.urlopen(urllib.request.Request(url, headers=UA), timeout=to) as r:
                 if r.status == 204:
                     return {}
                 b = r.read()
@@ -75,7 +77,7 @@ def get(url, tent=6):
             if c == 204:
                 return {}
             ERROS[c] = ERROS.get(c, 0) + 1
-            time.sleep(min(60, 3 * (2 ** t)))
+            time.sleep(min(20 if to < 90 else 60, 3 * (2 ** t)))
     return None
 
 
@@ -127,14 +129,26 @@ def abertas():
     total = int(p1.get('total') or 0); pags = min(800, (total + 99) // 100)
     print('abertas: total', total, 'páginas', pags, flush=True)
     res = {1: p1}
-    with ThreadPoolExecutor(6) as ex:
-        for p, j in zip(range(2, pags + 1), ex.map(lambda p: get(base + str(p)), range(2, pags + 1))):
+    fim = time.time() + int(os.environ.get('ABERTAS_SEG', '1200'))  # prazo: o robô nunca fica preso aqui
+
+    def pega(p):
+        if time.time() > fim:
+            return None
+        j = get(base + str(p), tent=3, to=30)
+        if p % 50 == 0:
+            print('abertas: página', p, 'ok' if j else 'falhou', ERROS, flush=True)
+        return j
+    with ThreadPoolExecutor(4) as ex:
+        for p, j in zip(range(2, pags + 1), ex.map(pega, range(2, pags + 1))):
             res[p] = j
     for p in [p for p, j in res.items() if j is None]:
-        time.sleep(2); res[p] = get(base + str(p), tent=8)
+        if time.time() > fim:
+            break
+        time.sleep(1); res[p] = get(base + str(p), tent=2, to=30)
     falhas = sum(1 for j in res.values() if j is None)
-    if falhas > max(2, pags * 0.03):
-        print('abertas: %d de %d páginas falharam' % (falhas, pags), ERROS, flush=True); return None
+    print('abertas: %d de %d páginas lidas' % (pags - falhas, pags), ERROS, flush=True)
+    if pags - falhas < max(1, pags * 0.5):
+        print('abertas: poucas páginas, mantém o valor anterior', flush=True); return None
     tot, vistos = {}, set()
     for j in res.values():
         for i in (j or {}).get('items') or []:
@@ -147,6 +161,17 @@ def abertas():
             except (TypeError, ValueError):
                 mod = 0
             acumula(tot, i.get('uf'), mod in RAPIDAS, float(i.get('valor_global') or 0), ramo((i.get('description') or '') + ' ' + (i.get('title') or '')))
+    # páginas que não vieram: completa proporcionalmente (média das páginas lidas)
+    if falhas and vistos:
+        f = total / float(len(vistos))
+        for g in tot.values():
+            for tp in ('todas', 'rapidas'):
+                x = g.get(tp)
+                if x:
+                    x['n'] = int(round(x['n'] * f)); x['valor'] *= f
+            for r in (g.get('ramos') or {}).values():
+                r['n'] = int(round(r['n'] * f)); r['valor'] *= f; r['rn'] = int(round(r.get('rn', 0) * f)); r['rvalor'] = r.get('rvalor', 0.0) * f
+        print('abertas: completadas pela média (fator %.2f)' % f, flush=True)
     print('abertas: somadas', len(vistos), 'BR', tot.get('BR'), flush=True)
     return tot
 
@@ -193,6 +218,7 @@ def main():
     ab = abertas()
     if ab:
         atual['abertas'] = ab; atual['abertas_em'] = dt.datetime.now().strftime('%Y-%m-%d %H:%M')
+        json.dump(atual, open(saida, 'w'), ensure_ascii=False, separators=(',', ':'))  # já grava: o site mostra mesmo se o resto atrasar
 
     # dias de ontem para trás (o dia de hoje ainda está sendo publicado)
     ontem = dt.date.today() - dt.timedelta(days=1)

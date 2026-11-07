@@ -852,11 +852,14 @@ add_action( 'rest_api_init', function () {
 // Buscador: filtros alinhados no padrão da página inicial (rótulo + "(opcional)" na mesma linha, campos na mesma altura).
 add_action( 'wp_head', function () { ?>
 <style>
-#bq2 label{font-size:.92rem;margin:0 0 14px}
-#bq2 label>small{display:inline!important;margin:0 0 0 4px!important;font-size:.8rem}
-#bq2 input:not([type=checkbox]):not([type=radio]),#bq2 select{height:46px;padding:0 14px;margin-top:6px;font-size:.95rem}
-#bq2 .bq2-seg{height:46px;margin-top:6px}#bq2 .bq2-seg b{display:flex;align-items:center;justify-content:center;padding:0 10px;font-size:.92rem}
-#bq2 .bq2-ufs{margin-top:8px}
+#bq2 label{font-size:.84rem!important;font-weight:600!important;margin:0 0 14px;color:#16191E}
+#bq2 label>small{display:inline!important;margin:0 0 0 4px!important;font-size:.72rem!important;font-weight:400!important;color:#6E6A60}
+#bq2 input:not([type=checkbox]):not([type=radio]),#bq2 select{height:52px;padding:0 16px;margin-top:7px;font:400 1rem "Hanken Grotesk",-apple-system,sans-serif!important;border:1px solid #CFC8B8;border-radius:12px;color:#16191E;background:#fff}
+#bq2 input::placeholder{font-weight:400;color:#8A8F96;opacity:1}
+#bq2 .bq2-seg{height:52px;margin-top:7px;border-radius:12px}#bq2 .bq2-seg b{display:flex;align-items:center;justify-content:center;padding:0 10px;font-size:.95rem;font-weight:600}
+#bq2 .bq2-ufs{margin-top:9px}#bq2 .bq2-ufs span{font-size:.8rem;font-weight:600}
+#bq2 small,#bq2 .bq2-h{font-weight:400}
+#bq2 .bq2-act button:not(.g),#bq2 button[type=submit]{background:#C9A45C!important;color:#241A06!important;border:0!important;border-radius:12px!important;height:55px;padding:0 28px!important;font:700 1.05rem "Hanken Grotesk",-apple-system,sans-serif!important}
 @media(min-width:701px){
 #bq2 .bq2-g{align-items:start}#bq2 .bq2-g3{align-items:end}
 #bq2 .bq2-g{grid-template-columns:minmax(0,1fr) 320px}

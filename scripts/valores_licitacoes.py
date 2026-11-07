@@ -198,7 +198,11 @@ def main():
         arq = os.path.join(DIAS, d.isoformat() + '.json')
         recente = d >= ontem - dt.timedelta(days=3)   # os últimos dias ainda recebem publicações atrasadas: refaz
         if os.path.exists(arq) and not recente:
-            continue
+            try:
+                if 'ramos' in (json.load(open(arq)).get('BR') or {}):
+                    continue
+            except Exception:  # noqa: BLE001
+                pass
         if time.time() - T0 > LIMITE:
             break
         t = dia(d)

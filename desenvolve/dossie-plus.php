@@ -1179,17 +1179,74 @@ add_action( 'init', function () {
 }, 20 );
 add_action( 'wp_footer', function () {
 	if ( is_admin() || ! is_user_logged_in() ) { return; } $meu = preg_replace( '/\D/', '', (string) get_user_meta( get_current_user_id(), 'dv_doc', true ) ); ?>
+<style>
+/* barra lateral sempre recolhida (só ícones); o nome aparece num balão ao passar o mouse */
+@media (min-width:901px){
+html.dv-rail .dv-side.ab,html .dv-side.ab{width:76px!important;box-shadow:none!important}
+html.dv-rail .dv-side .gt,html.dv-rail .dv-side .lg b,html.dv-rail .dv-side .lg small,html.dv-rail .dv-side .ft,html.dv-rail .dv-side nav a .bd,html.dv-rail .dv-side .dv-pin,.dv-side .dv-pin{opacity:0!important;pointer-events:none!important}
+html.dv-rail .dv-side nav .gs{height:1px;background:#262B33;margin:8px 14px}
+}
+#dv-tip{position:fixed;z-index:100002;background:#16191E;color:#F4F2EC;border:1px solid #2A2F37;border-radius:8px;padding:6px 10px;font:600 .82rem "Hanken Grotesk",-apple-system,sans-serif;pointer-events:none;white-space:nowrap;box-shadow:0 8px 24px rgba(0,0,0,.3)}
+#dv-tip small{display:block;color:#C9A45C;font-weight:700;font-size:.66rem;letter-spacing:.06em;text-transform:uppercase;margin-bottom:2px}
+.dv-cards .dv-cg{grid-column:1/-1;margin:14px 0 -2px;font:800 .78rem "Hanken Grotesk",-apple-system,sans-serif;letter-spacing:.06em;text-transform:uppercase;color:#8C6A26}
+.dv-cards .dv-cg:first-child{margin-top:0}
+</style>
 <script>(function(){var MEU=<?php echo wp_json_encode( strlen( $meu ) === 14 ? $meu : '' ); ?>;
-var NOVOS=[{depois:'/plataforma/raio-x/',t:'Raio-X da minha empresa',u:'/plataforma/dossie/'+(MEU?'?cnpj='+MEU:'?minha=1'),d:'Veja sua empresa como o órgão e os concorrentes veem: sanções, dívidas, processos e contratos.',card:true},{depois:'/plataforma/raio-x/',t:'Habilitação do concorrente',u:'/plataforma/habilitacao-concorrente/',d:'Os documentos de habilitação das últimas licitações que a empresa disputou ou venceu.'},
- {depois:'/plataforma/documentos/',t:'Gerador de declarações',u:'/plataforma/declaracoes/',d:'As declarações do edital preenchidas com os dados da sua empresa, em Word, prontas para assinar.'},
- {depois:'/plataforma/meus-contratos/',t:'Seguro garantia',u:'#seguro',d:'Cote a garantia de proposta ou do contrato sem trocar de corretor.',card:true}];
-function menu(){var nav=document.querySelector('.dv-side nav');if(!nav||nav.dataset.dvx)return;nav.dataset.dvx=1;var here=location.pathname.replace(/\/$/,'');
- NOVOS.forEach(function(n){if(n.card)return;var ref=nav.querySelector('a[href="'+n.depois+'"]');if(!ref||nav.querySelector('a[href="'+n.u+'"]'))return;var a=ref.cloneNode(true);a.href=n.u;a.classList.toggle('on',here===n.u.replace(/\/$/,''));if(a.classList.contains('on'))a.setAttribute('aria-current','page');else a.removeAttribute('aria-current');var sp=a.querySelectorAll('span');var lab=[].find.call(sp,function(s){return!s.classList.contains('ic')&&!s.classList.contains('bd')});if(lab)lab.textContent=n.t;var bd=a.querySelector('.bd');if(bd)bd.remove();ref.parentNode.insertBefore(a,ref.nextSibling);
-  if(here===n.u.replace(/\/$/,''))[].forEach.call(nav.querySelectorAll('a.on'),function(o){if(o!==a){o.classList.remove('on');o.removeAttribute('aria-current')}})})}
-function cards(){var g=document.querySelector('.dv-cards');if(!g||g.dataset.dvx)return;g.dataset.dvx=1;
- NOVOS.forEach(function(n){var ref=g.querySelector('a[href="'+n.depois+'"]');if(!ref)ref=g.lastElementChild;if(!ref||g.querySelector('a[href="'+n.u+'"]'))return;var a=ref.cloneNode(true);a.classList.remove('p1','bq');a.href=n.u;var b=a.querySelector('b'),s=a.querySelector('span'),em=a.querySelector('em');if(b)b.textContent=n.t;if(s)s.textContent=n.d;if(em)em.textContent=n.u==='#seguro'?'Cotar':'Abrir';ref.parentNode.insertBefore(a,ref.nextSibling)})}
+try{localStorage.removeItem('dv_menu_fixo')}catch(x){}document.documentElement.classList.add('dv-rail');
+/* uma ordem só, igual no menu e nos cards: o caminho de quem vende para o governo */
+var G=[
+ ['Encontrar licitações',[
+  ['Pesquisa de editais','/plataforma/buscador/','Busque licitações abertas por palavra, estado, cidade e raio de atendimento.','busca'],
+  ['Alertas do seu ramo','/plataforma/alertas/','Receba por e-mail, todo dia, as licitações novas do que você vende.'],
+  ['Contratos vencendo','/plataforma/contratos-vencendo/','Contratos públicos do seu ramo que estão acabando: a próxima licitação vem aí.'],
+  ['Notícias de licitações','/plataforma/noticias/','O que mudou nas licitações e nos órgãos que compram de você.']]],
+ ['Analisar antes de disputar',[
+  ['Raio-X do órgão comprador','/plataforma/raio-x-comprador/','O órgão paga em dia? Quanto compra, de quem e o que está aberto agora.'],
+  ['Raio-X do concorrente','/plataforma/raio-x/','Quem disputa com você: onde ganha, por quanto, punições, dívidas e sócios.'],
+  ['Habilitação do concorrente','/plataforma/habilitacao-concorrente/','Os documentos de habilitação das últimas licitações que a empresa disputou ou venceu.'],
+  ['Banco de preços','/plataforma/banco-de-precos/','Quanto o governo já pagou pelo que você vende.']]],
+ ['Preparar e disputar',[
+  ['Gestão de licitações','/plataforma/licitacoes/','Organize as licitações que você vai disputar, etapa por etapa.'],
+  ['Agenda','/painel/?ver=agenda','Todos os prazos e sessões, separados por dia.'],
+  ['Documentos e certidões','/plataforma/documentos/','Guarde a validade das certidões e receba aviso antes de vencer.'],
+  ['Gerador de declarações','/plataforma/declaracoes/','As declarações do edital preenchidas com os dados da sua empresa, em Word.'],
+  ['Seguro garantia','#seguro','Cote a garantia de proposta ou do contrato sem trocar de corretor.']]],
+ ['Contestar',[
+  ['Impugnações e recursos','/plataforma/recursos/','Conteste um edital ou um resultado, com o prazo já calculado.'],
+  ['Banco de teses','/plataforma/banco-de-teses/','Decisões de tribunais para fundamentar a sua peça.']]],
+ ['Empresas',[
+  ['Raio-X da minha empresa','/plataforma/dossie/'+(MEU?'?cnpj='+MEU:'?minha=1'),'Veja sua empresa como o órgão e os concorrentes veem.'],
+  ['Due Diligence completa','/plataforma/dossie/','Tudo sobre qualquer empresa: sanções, dívidas, processos, contratos e filiais.'],
+  ['Raio-X em lote','/plataforma/raio-x-lote/','Até 20 CNPJs de uma vez.']]],
+ ['Depois de ganhar',[
+  ['Meus contratos e garantias','/plataforma/meus-contratos/','Vencimentos, prorrogações e garantias dos contratos que você já ganhou.']]]];
+var ICN={'/plataforma/buscador/':'/plataforma/alertas/','/painel/?ver=agenda':'/plataforma/contratos-vencendo/','/plataforma/declaracoes/':'/plataforma/documentos/','#seguro':'/plataforma/meus-contratos/','/plataforma/banco-de-teses/':'/plataforma/recursos/','/plataforma/habilitacao-concorrente/':'/plataforma/raio-x/'};
+function pth(h){return String(h||'').replace(/^https?:\/\/[^\/]+/,'').split('#')[0]}
+function menu(){var nav=document.querySelector('.dv-side nav');if(!nav||nav.dataset.dvo)return;var ex={};[].forEach.call(nav.querySelectorAll('a'),function(a){ex[pth(a.getAttribute('href')).split('?')[0]]=a});if(!ex['/painel/'])return;nav.dataset.dvo=1;
+ var here=location.pathname,qs=location.search,frag=document.createDocumentFragment();var ini=ex['/painel/'].cloneNode(true);frag.appendChild(ini);
+ var busca=document.querySelector('.dv-top .dv-k svg');
+ G.forEach(function(g){var gt=document.createElement('div');gt.className='gt';gt.textContent=g[0];frag.appendChild(gt);var gs=document.createElement('div');gs.className='gs';frag.appendChild(gs);
+  g[1].forEach(function(it){var base=ex[pth(it[1]).split('?')[0]]||ex[ICN[it[1]]]||ex['/plataforma/raio-x/'];if(!base)return;var a=base.cloneNode(true);a.setAttribute('href',it[1]);a.removeAttribute('aria-current');a.classList.remove('on');
+   if(it[1]==='/plataforma/buscador/'&&busca){var ic=a.querySelector('.ic');if(ic)ic.innerHTML=busca.outerHTML}
+   var lab=[].find.call(a.querySelectorAll('span'),function(x){return!x.classList.contains('ic')&&!x.classList.contains('bd')});if(lab)lab.textContent=it[0];
+   var same=it[1].split('?')[0]===here&&(it[1].indexOf('?ver=')<0||qs.indexOf(it[1].split('?')[1])>=0)&&!(it[1].indexOf('/dossie/?')>=0);if(same){a.classList.add('on');a.setAttribute('aria-current','page')}
+   a.dataset.g=g[0];frag.appendChild(a)})});
+ [['Minha conta',['/creditos/','/assinar/']]].forEach(function(g){var gt=document.createElement('div');gt.className='gt';gt.textContent=g[0];frag.appendChild(gt);var gs=document.createElement('div');gs.className='gs';frag.appendChild(gs);g[1].forEach(function(u){if(ex[u]){var a=ex[u].cloneNode(true);a.dataset.g=g[0];frag.appendChild(a)}})});
+ if(here==='/painel/'&&!qs){ini.classList.add('on')}else ini.classList.remove('on');
+ nav.innerHTML='';nav.appendChild(frag)}
+function cards(){var g=document.querySelector('.dv-cards');if(!g||g.dataset.dvo)return;var ex={};[].forEach.call(g.querySelectorAll('a.dv-card'),function(a){ex[a.getAttribute('href')]=a});var mod=g.querySelector('a.dv-card:not(.p1)')||g.querySelector('a.dv-card');if(!mod)return;g.dataset.dvo=1;
+ var frag=document.createDocumentFragment();
+ G.forEach(function(gr){var h=document.createElement('div');h.className='dv-cg';h.textContent=gr[0];frag.appendChild(h);
+  gr[1].forEach(function(it,i){var a=ex[it[1]]||(it[1].indexOf('/plataforma/dossie/')===0&&it[0]==='Due Diligence completa'?ex['/plataforma/dossie/']:null);a=a?a.cloneNode(true):mod.cloneNode(true);a.classList.remove('p1');if(gr[0]==='Encontrar licitações'&&i===0)a.classList.add('p1');a.setAttribute('href',it[1]);
+   var b=a.querySelector('b'),sp=a.querySelector('span'),em=a.querySelector('em');if(b)b.textContent=it[0];if(sp)sp.textContent=it[2];if(em&&!a.classList.contains('bq'))em.textContent=it[1]==='#seguro'?'Cotar':'Abrir';frag.appendChild(a)})});
+ g.innerHTML='';g.appendChild(frag)}
+/* balão com o nome no menu recolhido */
+var tip=null;document.addEventListener('mouseover',function(ev){var a=ev.target.closest&&ev.target.closest('.dv-side nav a');if(!a||window.innerWidth<=900){if(tip){tip.remove();tip=null}return}var lab=[].find.call(a.querySelectorAll('span'),function(x){return!x.classList.contains('ic')&&!x.classList.contains('bd')});if(!tip){tip=document.createElement('div');tip.id='dv-tip';document.body.appendChild(tip)}tip.innerHTML=(a.dataset.g?'<small>'+a.dataset.g+'</small>':'')+(lab?lab.textContent:'');var r=a.getBoundingClientRect();tip.style.left=(r.right+10)+'px';tip.style.top=(r.top+r.height/2-tip.offsetHeight/2)+'px'});
+document.addEventListener('mouseout',function(ev){var a=ev.target.closest&&ev.target.closest('.dv-side nav a');if(a&&tip&&!a.contains(ev.relatedTarget)){tip.remove();tip=null}});
+/* impede abrir a barra */
+document.addEventListener('mouseover',function(){var s=document.querySelector('.dv-side.ab');if(s&&window.innerWidth>900)s.classList.remove('ab')},true);
 document.addEventListener('click',function(ev){var a=ev.target.closest&&ev.target.closest('a[href="#seguro"]');if(!a)return;ev.preventDefault();if(window.dvOrcamento)window.dvOrcamento('seguro','')});
-function vai(){menu();cards()}vai();var t;new MutationObserver(function(){clearTimeout(t);t=setTimeout(vai,200)}).observe(document.body,{childList:true,subtree:true});
+function vai(){menu();cards();var s=document.querySelector('.dv-side.ab');if(s&&window.innerWidth>900)s.classList.remove('ab')}vai();var t;new MutationObserver(function(){clearTimeout(t);t=setTimeout(vai,120)}).observe(document.body,{childList:true,subtree:true,attributes:true,attributeFilter:['class']});
 })();</script>
 <?php
 }, 99 );

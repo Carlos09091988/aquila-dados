@@ -174,7 +174,7 @@ def abertas():
     if pags_tot - falhas < max(1, pags_tot * 0.5):
         print('abertas: poucas páginas, mantém o valor anterior', flush=True); return None
     res = {i: j for i, j in enumerate(res)}
-    tot, vistos = {}, set()
+    tot, vistos, amostra = {}, set(), {}
     for j in res.values():
         for i in (j or {}).get('items') or []:
             k = i.get('numero_controle_pncp') or i.get('id')
@@ -185,7 +185,10 @@ def abertas():
                 mod = int(i.get('modalidade_licitacao_id') or 0)
             except (TypeError, ValueError):
                 mod = 0
-            acumula(tot, i.get('uf'), mod in RAPIDAS, float(i.get('valor_global') or 0), ramo((i.get('description') or '') + ' ' + (i.get('title') or '')))
+            rm = ramo((i.get('description') or '') + ' ' + (i.get('title') or ''))
+            acumula(tot, i.get('uf'), mod in RAPIDAS, float(i.get('valor_global') or 0), rm)
+            if i.get('orgao_cnpj') and i.get('ano') and i.get('numero_sequencial'):
+                amostra.setdefault((rm, mod in RAPIDAS), []).append(i)
     # páginas que não vieram: completa proporcionalmente (média das páginas lidas)
     if vistos and len(vistos) < total * 0.98:
         f = total / float(len(vistos))
@@ -197,8 +200,68 @@ def abertas():
             for r in (g.get('ramos') or {}).values():
                 r['n'] = int(round(r['n'] * f)); r['valor'] *= f; r['rn'] = int(round(r.get('rn', 0) * f)); r['rvalor'] = r.get('rvalor', 0.0) * f
         print('abertas: completadas pela média (fator %.2f)' % f, flush=True)
+    if tot.get('BR', {}).get('todas', {}).get('valor', 0) <= 0 and amostra:
+        estima(tot, amostra)
     print('abertas: somadas', len(vistos), 'BR', tot.get('BR'), flush=True)
     return tot
+
+
+def media_aparada(v):
+    v = sorted(x for x in v if 0 < x <= TETO)
+    if len(v) < 5:
+        return None
+    k = int(len(v) * 0.05)
+    v = v[k:len(v) - k] if len(v) - 2 * k >= 5 else v
+    return sum(v) / len(v)
+
+
+def estima(tot, amostra):
+    """A busca do PNCP não traz o valor estimado: lê o valor de uma amostra de cada ramo na consulta da compra
+    e multiplica a média (sem os 5% maiores e menores) pela quantidade aberta do ramo."""
+    import random
+    random.seed(17)
+    POR = int(os.environ.get('AMOSTRA_RAMO', '45'))
+    fila = []
+    for (rm, rap), l in amostra.items():
+        for i in random.sample(l, min(len(l), POR if not rap else max(10, POR // 3))):
+            fila.append((rm, rap, i))
+    fim = time.time() + int(os.environ.get('AMOSTRA_SEG', '1200'))
+
+    def val(t):
+        if time.time() > fim:
+            return t, None
+        i = t[2]
+        j = get('https://pncp.gov.br/api/consulta/v1/orgaos/%s/compras/%s/%s' % (i['orgao_cnpj'], i['ano'], i['numero_sequencial']), tent=3, to=30)
+        time.sleep(0.3)
+        try:
+            return t, float((j or {}).get('valorTotalEstimado') or 0) if j is not None else None
+        except (TypeError, ValueError):
+            return t, None
+    vr, vrap, lidos = {}, [], 0
+    with ThreadPoolExecutor(2) as ex:
+        for t, v in ex.map(val, fila):
+            if v is None:
+                continue
+            lidos += 1
+            vr.setdefault(t[0], []).append(v)
+            if t[1]:
+                vrap.append(v)
+    todas = [x for l in vr.values() for x in l]
+    mg, mr = media_aparada(todas), media_aparada(vrap)
+    if not mg:
+        print('abertas: amostra de valores insuficiente', lidos, ERROS, flush=True); return
+    mramo = {rm: (media_aparada(l) or mg) for rm, l in vr.items()}
+    mr = mr or mg
+    for g in tot.values():
+        st, sr = 0.0, 0.0
+        for rm, r in (g.get('ramos') or {}).items():
+            r['valor'] = r['n'] * mramo.get(rm, mg); r['rvalor'] = r.get('rn', 0) * mr
+            st += r['valor']; sr += r['rvalor']
+        if g.get('todas'):
+            g['todas']['valor'] = st; g['todas']['estimado'] = 1
+        if g.get('rapidas'):
+            g['rapidas']['valor'] = sr; g['rapidas']['estimado'] = 1
+    print('abertas: valores pela amostra de %d compras (média geral R$ %.0f, rápidas R$ %.0f)' % (lidos, mg, mr), flush=True)
 
 
 # ---------- publicadas por dia (para a janela de 12 meses) ----------

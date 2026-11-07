@@ -579,7 +579,7 @@ setInterval(function(){var D=window.DVDS;if(D&&D.judicial){poe(document.getEleme
 </style>
 <script>
 /* Leva o botão "Analisar com a minha IA" do resumo antigo (escondido) para baixo do mapa de temas */
-setInterval(function(){var R=document.querySelector('.dv-org');if(!R)return;var w=document.querySelector('#dv-rs .dv-mia-w'),mp=document.getElementById('dv-mapa');if(!w||!mp)return;var sl=document.getElementById('dv-mia-slot');if(!sl){sl=document.createElement('div');sl.id='dv-mia-slot';mp.parentNode.insertBefore(sl,mp.nextSibling)}sl.appendChild(w)},800);
+setInterval(function(){var R=document.querySelector('.dv-org');if(!R)return;var w=document.querySelector('#dv-rs .dv-mia-w'),mp=document.getElementById('dv-mapa');if(!w||!mp)return;var sl=document.getElementById('dv-mia-slot');if(!sl){sl=document.createElement('div');sl.id='dv-mia-slot';mp.parentNode.insertBefore(sl,mp.nextSibling)}sl.innerHTML='';sl.appendChild(w)},800);
 </script>
 <script>
 /* PDF organizado: o mesmo roteiro da tela (conclusão, o que fazer, números, temas), sem repetição */
@@ -710,3 +710,31 @@ add_action( 'wp_head', function () {
 	if ( ! is_front_page() ) { return; }
 	echo "<script>if(!location.hash){try{history.scrollRestoration='manual'}catch(e){}window.addEventListener('load',function(){if(!location.hash)window.scrollTo(0,0)})}</script>\n";
 }, 1 );
+
+// Analisar com a minha IA: sempre mostra o menu (IA lembrada no topo, outras IAs e "copiar o texto").
+add_action( 'wp_footer', function () { ?>
+<style>#dv-mia-m .op button.us{border-color:#C9A45C;background:#FFF9EC!important}#dv-mia-m .op button.cp{background:#16191E!important;color:#F4F2EC!important;border-color:#16191E}#dv-mia-m .op button.cp small{color:#C9C3B6}</style>
+<script>(function(){
+var IAS={chatgpt:{n:'ChatGPT',u:'https://chatgpt.com/?q='},claude:{n:'Claude',u:'https://claude.ai/new?q='},gemini:{n:'Gemini',b:'https://gemini.google.com/app'},copilot:{n:'Copilot',b:'https://copilot.microsoft.com/'},perplexity:{n:'Perplexity',u:'https://www.perplexity.ai/search?q='}};
+var P={licitacao:'Trabalho em uma empresa que vende para o Poder Público. Analise a licitação abaixo e responda de forma objetiva: 1) o que está sendo contratado e os pontos principais; 2) exigências de habilitação e riscos que merecem atenção; 3) se vale a pena participar e o que preparar; 4) prazos importantes. Se o link do edital estiver disponível, leia o edital completo; se não conseguir, diga o que devo conferir nele.',
+concorrente:'Analise o relatório abaixo, feito com dados públicos de uma empresa que concorre comigo em licitações. Responda de forma objetiva: 1) o perfil e a força dessa empresa; 2) pontos fracos e riscos (sanções, dívidas, contratos); 3) como posso me posicionar para competir com ela.',
+dossie:'Analise o relatório de due diligence abaixo, feito com dados públicos de uma empresa. Responda de forma objetiva: 1) os principais riscos (sanções, dívidas, processos, situação cadastral); 2) o que pede atenção antes de contratar, fazer parceria ou consórcio com ela; 3) que documentos ou confirmações devo pedir.',
+noticia:'Trabalho em uma empresa que vende para o Poder Público. Leia a notícia do link abaixo e me explique, de forma objetiva: 1) o que aconteceu; 2) o que isso muda para quem participa de licitações e contratos públicos; 3) se devo tomar alguma providência. Se não conseguir abrir o link, diga o que dá para concluir pelo título e o que devo conferir.',
+comprador:'Analise o relatório abaixo, feito com dados públicos de um órgão público comprador. Responda de forma objetiva: 1) como esse órgão costuma comprar e pagar; 2) oportunidades para quem vende para ele; 3) riscos e cuidados.'};
+function ls(k,v){try{if(v===undefined)return localStorage.getItem(k);localStorage.setItem(k,v)}catch(e){return null}}
+function toast(h,ms){var t=document.getElementById('dv-mia-t');if(t)t.remove();t=document.createElement('div');t.id='dv-mia-t';t.innerHTML=h;document.body.appendChild(t);setTimeout(function(){t.remove()},ms||7000)}
+function copiar(s){var ok=false;try{if(navigator.clipboard){navigator.clipboard.writeText(s);ok=true}}catch(e){}if(!ok){var a=document.createElement('textarea');a.value=s;a.style.position='fixed';a.style.opacity='0';document.body.appendChild(a);a.select();try{document.execCommand('copy')}catch(e){}a.remove()}}
+function limpa(t){return String(t||'').split('\n').filter(function(l){return!/desenvolve/i.test(l)}).join('\n').replace(/[ \t]+/g,' ').replace(/\n\s*\n\s*\n+/g,'\n\n').trim().slice(0,20000)}
+function prompt(tipo,txt){return (P[tipo]||P.concorrente)+'\n\nResponda em português.\n\n'+limpa(txt)}
+function abrir(k,pr,w){var I=IAS[k],enc=encodeURIComponent(pr),curto=I.u&&enc.length<7500,url=curto?I.u+enc:(I.b||I.u.replace(/\?q=$/,''));copiar(pr);if(w){try{w.opener=null}catch(e){}w.location.href=url}else window.open(url,'_blank');
+toast(curto?'Abrimos o '+I.n+' com a análise pronta para enviar.':'Abrimos o '+I.n+'. O texto já está copiado: é só colar na conversa (Ctrl+V ou segurar e colar).',curto?6000:12000)}
+window.dvMinhaIA=function(tipo,txt){var pr=prompt(tipo,txt),us=ls('dv_minha_ia'),ks=Object.keys(IAS);if(us&&IAS[us])ks=[us].concat(ks.filter(function(k){return k!==us}));
+var m=document.getElementById('dv-mia-m');if(m)m.remove();m=document.createElement('div');m.id='dv-mia-m';
+m.innerHTML='<div class="bx" role="dialog" aria-modal="true"><h3>Analisar com a sua IA</h3><p>Escolha a IA que você usa. Ela abre em outra aba, na sua conta, com o relatório pronto para análise.</p><div class="op">'+ks.map(function(k){var I=IAS[k];return'<button type="button" data-k="'+k+'"'+(k===us?' class="us"':'')+'>'+I.n+'<small>'+(k===us?'a que você usou da última vez':(I.u?'abre preenchido':'o texto vai copiado'))+'</small></button>'}).join('')+'<button type="button" class="cp" data-cp>Copiar o texto<small>para colar em qualquer IA</small></button></div><button type="button" class="fx">Cancelar</button></div>';
+document.body.appendChild(m);
+m.addEventListener('click',function(ev){if(ev.target===m||ev.target.classList.contains('fx')){m.remove();return}
+if(ev.target.closest('[data-cp]')){copiar(pr);m.remove();toast('Texto copiado. É só colar na IA que você preferir (Ctrl+V ou segurar e colar).',8000);return}
+var b=ev.target.closest('[data-k]');if(!b)return;ls('dv_minha_ia',b.dataset.k);var w=window.open('about:blank','_blank');m.remove();abrir(b.dataset.k,pr,w)})};
+})();</script>
+<?php
+}, 95 );

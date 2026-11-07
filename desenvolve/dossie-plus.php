@@ -649,14 +649,14 @@ fetch('https://raw.githubusercontent.com/Carlos09091988/aquila-dados/main/data/v
  var A=j.abertas&&j.abertas.BR,Y=j.ano&&j.ano.BR,ok=A&&A.todas&&A.todas.valor>0;if(!ok)return;
  var alvo=document.getElementById('viva')||document.querySelector('.cg-hero, .hero, main h1');if(!alvo)return;
  var box=document.getElementById('dv-val');if(!box){box=document.createElement('div');box.id='dv-val';alvo.parentNode.insertBefore(box,alvo.nextSibling)}
- var H='<div><b>'+mc(A.todas.valor)+'</b><span>em '+n(A.todas.n)+' licitações abertas agora no Brasil</span></div>';
- H+='<div><b>'+mc(A.rapidas.valor)+'</b><span>em '+n(A.rapidas.n)+' contratações rápidas (dispensa e inexigibilidade) abertas agora</span></div>';
- if(Y&&j.dias_cobertos>=360)H+='<div><b>'+mc(Y.todas.valor)+'</b><span>por ano em licitações publicadas, '+mc(Y.rapidas.valor)+' delas em contratações rápidas. Quanto disso é do seu ramo?</span></div>';
- else if(Y&&j.dias_cobertos>=7&&Y.todas.valor>0)H+='<div><b>'+mc(Y.todas.valor)+'</b><span>em licitações publicadas nos últimos '+j.dias_cobertos+' dias. Quanto disso é do seu ramo?</span></div>';
- else H+='<div><b>'+n(A.todas.n+0)+'</b><span>oportunidades abertas hoje. Quanto disso é do seu ramo? Faça a consulta grátis.</span></div>';
+ var H='<div><b>'+mc(A.todas.valor)+'</b><span>abertos agora em licitações</span></div>';
+ H+='<div><b>'+mc(A.rapidas.valor)+'</b><span>em contratações rápidas</span></div>';
+ if(Y&&j.dias_cobertos>=360)H+='<div><b>'+mc(Y.todas.valor)+'</b><span>por ano. Quanto disso pode ser seu?</span></div>';
+ else if(Y&&j.dias_cobertos>=7&&Y.todas.valor>0)H+='<div><b>'+mc(Y.todas.valor)+'</b><span>nos últimos '+j.dias_cobertos+' dias. Quanto disso pode ser seu?</span></div>';
+ else H+='<div><b>'+n(A.todas.n+0)+'</b><span>oportunidades abertas hoje. Quanto disso pode ser seu?</span></div>';
  box.innerHTML=H;
  var nt=document.getElementById('dv-val-n');if(!nt){nt=document.createElement('p');nt.id='dv-val-n';box.parentNode.insertBefore(nt,box.nextSibling)}
- nt.textContent='Valores estimados pelos órgãos no PNCP, atualizados em '+String(j.abertas_em||'').split(' ')[0].split('-').reverse().join('/')+'. Licitações com valor sigiloso não entram na soma.';
+ nt.textContent='Fonte: PNCP · '+String(j.abertas_em||'').split(' ')[0].split('-').reverse().join('/');
 }).catch(function(){});
 })();
 </script>

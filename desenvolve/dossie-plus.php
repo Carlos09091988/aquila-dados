@@ -713,7 +713,7 @@ add_action( 'wp_head', function () {
 
 // Analisar com a minha IA: sempre mostra o menu (IA lembrada no topo, outras IAs e "copiar o texto").
 add_action( 'wp_footer', function () { ?>
-<style>#dv-mia-m .op button.us{border-color:#C9A45C;background:#FFF9EC!important}#dv-mia-m .op button.cp{background:#16191E!important;color:#F4F2EC!important;border-color:#16191E}#dv-mia-m .op button.cp small{color:#C9C3B6}</style>
+<style>body:has([data-mia-r]) .dv-ia{display:none!important}#dv-mia-m .op button.us{border-color:#C9A45C;background:#FFF9EC!important}#dv-mia-m .op button.cp{background:#16191E!important;color:#F4F2EC!important;border-color:#16191E}#dv-mia-m .op button.cp small{color:#C9C3B6}</style>
 <script>(function(){
 var IAS={chatgpt:{n:'ChatGPT',u:'https://chatgpt.com/?q='},claude:{n:'Claude',u:'https://claude.ai/new?q='},gemini:{n:'Gemini',b:'https://gemini.google.com/app'},copilot:{n:'Copilot',b:'https://copilot.microsoft.com/'},perplexity:{n:'Perplexity',u:'https://www.perplexity.ai/search?q='}};
 var P={licitacao:'Trabalho em uma empresa que vende para o Poder Público. Analise a licitação abaixo e responda de forma objetiva: 1) o que está sendo contratado e os pontos principais; 2) exigências de habilitação e riscos que merecem atenção; 3) se vale a pena participar e o que preparar; 4) prazos importantes. Se o link do edital estiver disponível, leia o edital completo; se não conseguir, diga o que devo conferir nele.',

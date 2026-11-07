@@ -654,6 +654,20 @@ function linhas(el){var R=[];if(!el)return R;var c=el.cloneNode(true);[].forEach
   vai(ch)})}
  vai(c);return R}
 function nomeAba(t,usadas){t=String(t||'Aba').replace(/[\\\/\?\*\[\]:]/g,' ').trim().slice(0,28)||'Aba';var n=t,i=2;while(usadas[n])n=t.slice(0,25)+' '+(i++);usadas[n]=1;return n}
+/* Todos os dados brutos que compõem o relatório (contratos, publicações, processos, sanções...) viram abas */
+var NOMES={contratos:'Contratos',publicacoes:'Publicações',processos:'Processos',sancoes:'Sanções',ceis:'CEIS',cnep:'CNEP',socios:'Sócios',qsa:'Sócios',filiais:'Filiais',unidades:'Unidades',pagamentos:'Pagamentos',licitacoes:'Licitações',vencidas:'Licitações vencidas',participacoes:'Participações',atas:'Atas',noticias:'Notícias',diarios:'Diários oficiais',destaques:'Processos em destaque',por_tipo:'Processos por tipo',por_tribunal:'Processos por tribunal',pgfn:'Dívida ativa',dividas:'Dívida ativa',orgaos:'Órgãos',fornecedores:'Fornecedores',itens:'Itens',empenhos:'Empenhos',vinculos:'Vínculos',cnaes:'CNAEs',cnaes_secundarios:'CNAEs secundários'};
+function hum(k){k=String(k);return NOMES[k]||k.replace(/_/g,' ').replace(/^./,function(c){return c.toUpperCase()})}
+function plano(o,pre,out){out=out||{};Object.keys(o||{}).forEach(function(k){var v=o[k],n=pre?pre+' · '+hum(k):hum(k);if(v==null)out[n]='';else if(Array.isArray(v)){if(v.length&&typeof v[0]==='object')out[n]=v.length+' itens';else out[n]=v.join('; ')}else if(typeof v==='object')plano(v,n,out);else out[n]=v});return out}
+function brutos(X,wb,us){var D=window.DVRAW||{};var ks=Object.keys(D);if(!ks.length){var w0=X.utils.aoa_to_sheet([['Os dados completos ficam disponíveis nos relatórios gerados a partir de hoje.'],['Para baixar tudo deste relatório, faça uma nova consulta.']]);X.utils.book_append_sheet(wb,w0,nomeAba('Dados completos',us));return}
+ var ger=[['Fonte','Campo','Valor']],tabs=[];
+ ks.forEach(function(src){var fonte=src.replace(/^.*\/(v1|int)\//,'').replace(/[?#].*$/,'').replace(/\//g,' · ');
+  (function vai(o,path){if(Array.isArray(o)){if(o.length&&o[0]&&typeof o[0]==='object'){tabs.push({nome:path||fonte,rows:o})}else if(o.length)ger.push([fonte,path,o.join('; ')]);return}
+   if(!o||typeof o!=='object')return;Object.keys(o).forEach(function(k){if(k==='_st')return;var v=o[k],pth=path?path+' · '+hum(k):hum(k);
+    if(v&&typeof v==='object'){if(!Array.isArray(v)&&Object.keys(v).length&&Object.keys(v).every(function(z){return typeof v[z]==='number'})&&Object.keys(v).length>3){tabs.push({nome:pth,rows:Object.keys(v).map(function(z){return{item:z,quantidade:v[z]}})});return}vai(v,pth)}else ger.push([fonte,pth,v==null?'':v])})})(D[src],'')});
+ var wg=X.utils.aoa_to_sheet(ger);wg['!cols']=[{wch:24},{wch:44},{wch:70}];X.utils.book_append_sheet(wb,wg,nomeAba('Dados gerais',us));
+ tabs.forEach(function(t){var lin=t.rows.map(function(r){return typeof r==='object'?plano(r,''):{Valor:r}}),cols=[];lin.forEach(function(l){Object.keys(l).forEach(function(c){if(cols.indexOf(c)<0)cols.push(c)})});
+  var aoa=[cols].concat(lin.map(function(l){return cols.map(function(c){var v=l[c];return v===undefined?'':v})}));var w=X.utils.aoa_to_sheet(aoa);w['!cols']=cols.map(function(c){return{wch:Math.min(60,Math.max(12,c.length+2))}});if(aoa.length>1)w['!autofilter']={ref:X.utils.encode_range({s:{r:0,c:0},e:{r:aoa.length-1,c:Math.max(0,cols.length-1)}})};
+  var nm=t.nome.split(' · ').pop();X.utils.book_append_sheet(wb,w,nomeAba(nm+' ('+t.rows.length+')',us))})}
 function excel(){var R=document.querySelector('.dv-org');if(!R)return;
  var go=function(){var X=window.XLSX,wb=X.utils.book_new(),us={},nm=txt(document.querySelector('#rx-cad h2, .rp-hd h2, #dv-rxhd h2, .dv-org h2'))||'Relatório',hoje=new Date();
   var res=[[nm],['Gerado em '+hoje.toLocaleDateString('pt-BR')+' às '+hoje.toLocaleTimeString('pt-BR',{hour:'2-digit',minute:'2-digit'})+' · Desenvolve Estratégias'],[]];
@@ -661,6 +675,7 @@ function excel(){var R=document.querySelector('.dv-org');if(!R)return;
   var T=[].slice.call(R.querySelectorAll(':scope > details.dv-tema'));if(T.length){res.push([]);res.push(['RESUMO POR TEMA']);T.forEach(function(t){res.push([txt(t.querySelector('summary b')),txt(t.querySelector('summary span'))])})}
   var ws=X.utils.aoa_to_sheet(res);ws['!cols']=[{wch:60},{wch:40},{wch:22},{wch:22},{wch:22}];X.utils.book_append_sheet(wb,ws,nomeAba('Resumo',us));
   (T.length?T:[R]).forEach(function(t){var tt=t.querySelector&&t.querySelector('summary b'),rows=[[txt(tt)||nm]].concat(linhas(t).filter(function(r){return r.length&&!(tt&&r[0]===txt(tt).toUpperCase())}));var w=X.utils.aoa_to_sheet(rows);w['!cols']=[{wch:60},{wch:30},{wch:22},{wch:22},{wch:22},{wch:22}];X.utils.book_append_sheet(wb,w,nomeAba(txt(tt)||'Relatório',us))});
+  brutos(X,wb,us);
   var arq=(document.title.split('|')[0].trim()+' - '+nm).replace(/[\\\/:*?"<>|]/g,' ').slice(0,90)+'.xlsx';arq=arq.replace(/\.+\.xlsx$/,'.xlsx');X.writeFile(wb,arq)};
  if(window.XLSX)go();else{var sc=document.createElement('script');sc.src='https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js';sc.onload=go;sc.onerror=function(){alert('Não foi possível gerar o Excel agora. Tente de novo em instantes.')};document.head.appendChild(sc)}}
 window.dvExcel=excel;
@@ -795,3 +810,41 @@ function ajusta(){[].forEach.call(document.querySelectorAll(SEL),function(e){if(
 var t;function ag(){clearTimeout(t);t=setTimeout(ajusta,250)}window.addEventListener('resize',ag);window.addEventListener('load',ag);new MutationObserver(ag).observe(document.body,{childList:true,subtree:true});ag();})();</script>
 <?php
 }, 96 );
+
+
+// Guarda os dados brutos de cada consulta (para o Excel completo), inclusive nos relatórios salvos.
+add_action( 'wp_head', function () {
+	if ( is_admin() || ! is_user_logged_in() ) { return; }
+	$api = esc_url_raw( rest_url( 'desenvolve/v1/' ) ); $nonce = wp_create_nonce( 'wp_rest' ); ?>
+<script>(function(){window.DVRAW=window.DVRAW||{};var of=window.fetch;if(!of)return;var API=<?php echo wp_json_encode( $api ); ?>,NONCE=<?php echo wp_json_encode( $nonce ); ?>;
+var OK=/\/(dvtools|desenvolve|int)\/[^?]*(fornecedor|comprador|concorrente|dossie|processos|noticias|vencidas|participac|contratos|sanc|diarios|filiais|unidades|orgao)/,NAO=/\/(relatorio|dossie\/job|dossie\/rodar|admin|notific|credit|valores|saldo|alerta|monitor)/;
+window.fetch=function(u,o){var U=String(u&&u.url||u),m=String(o&&o.method||'GET').toUpperCase();
+ if(/\/desenvolve\/v1\/relatorio(\?|$)/.test(U)&&m==='POST'&&o&&typeof o.body==='string'){try{var b=JSON.parse(o.body),raw=JSON.stringify(window.DVRAW);if(raw.length>2&&raw.length<6e6){b.brutos=raw;o=Object.assign({},o,{body:JSON.stringify(b)});return of.call(this,u,o)}}catch(e){}}
+ var pr=of.apply(this,arguments);
+ if(OK.test(U)&&!NAO.test(U))pr.then(function(r){if(!r.ok)return;r.clone().json().then(function(j){if(j&&typeof j==='object'&&!j.code){var k=U.replace(/^https?:\/\/[^\/]+/,'').replace(/[?&]_?(nonce|_wpnonce|t)=[^&]*/g,'');window.DVRAW[k.split('?')[0]+(/(processos|vencidas|participacoes)/.test(k)?'':'')]=j}}).catch(function(){})}).catch(function(){});
+ return pr};
+var REL=new URLSearchParams(location.search).get('rel');if(REL)of(API+'relatorio-dados?id='+encodeURIComponent(REL),{credentials:'same-origin',headers:{'X-WP-Nonce':NONCE}}).then(function(r){return r.ok?r.json():null}).then(function(j){if(j&&j.brutos){try{var d=JSON.parse(j.brutos);Object.keys(d).forEach(function(k){if(!window.DVRAW[k])window.DVRAW[k]=d[k]})}catch(e){}}}).catch(function(){});
+})();</script>
+<?php
+}, 1 );
+
+add_filter( 'rest_request_after_callbacks', function ( $resp, $handler, $req ) {
+	if ( $req->get_route() !== '/desenvolve/v1/relatorio' || $req->get_method() !== 'POST' || is_wp_error( $resp ) ) { return $resp; }
+	$b = (string) $req->get_param( 'brutos' ); $d = $resp instanceof WP_REST_Response ? $resp->get_data() : $resp;
+	$id = is_array( $d ) ? (int) ( $d['id'] ?? 0 ) : 0;
+	if ( $id && $b !== '' && strlen( $b ) < 6000000 && json_decode( $b ) !== null ) {
+		set_transient( 'dv_relraw_' . $id, base64_encode( gzcompress( $b, 6 ) ), 31 * DAY_IN_SECONDS );
+	}
+	return $resp;
+}, 10, 3 );
+
+add_action( 'rest_api_init', function () {
+	register_rest_route( 'desenvolve/v1', '/relatorio-dados', array( 'methods' => 'GET', 'permission_callback' => function () { return is_user_logged_in(); },
+		'callback' => function ( WP_REST_Request $r ) {
+			global $wpdb; $id = (int) $r['id']; $t = $wpdb->prefix . 'dv_rel';
+			$dono = (int) $wpdb->get_var( $wpdb->prepare( "SELECT user_id FROM $t WHERE id=%d", $id ) );
+			if ( ! $id || ( $dono !== get_current_user_id() && ! current_user_can( 'manage_options' ) ) ) { return new WP_Error( 'dv_rel', 'Relatório não encontrado.', array( 'status' => 404 ) ); }
+			$v = get_transient( 'dv_relraw_' . $id );
+			return array( 'brutos' => $v ? (string) gzuncompress( base64_decode( $v ) ) : '' );
+		} ) );
+} );

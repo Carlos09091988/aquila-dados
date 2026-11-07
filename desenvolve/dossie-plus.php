@@ -627,7 +627,8 @@ var PCSS='@page{size:A4;margin:10mm}'+
 'html.dv-printing,html.dv-printing body{background:#fff!important}html.dv-printing *{-webkit-print-color-adjust:exact!important;print-color-adjust:exact!important}'+
 'html.dv-printing body :not(.dv-pa):not(.dv-pr):not(.dv-pr *):not(.dv-ph):not(.dv-ph *){display:none!important}'+
 'html.dv-printing .dv-pa{display:block!important;margin:0!important;padding:0!important;width:auto!important;max-width:none!important;min-height:0!important;position:static!important;overflow:visible!important;transform:none!important;border:0!important;box-shadow:none!important;background:transparent!important}'+
-'html.dv-printing .dv-pr{margin:0!important;max-width:none!important;width:auto!important}'+
+'html.dv-printing .dv-pr{margin:0!important;max-width:none!important;width:1040px!important;zoom:.69}html.dv-printing .dv-ph{width:1040px;zoom:.69}'+
+'html.dv-printing .dv-pr *{max-width:100%}html.dv-printing .dv-pr table{width:100%!important;table-layout:auto}html.dv-printing .dv-pr td,html.dv-printing .dv-pr th{word-break:break-word}'+
 'html.dv-printing .dv-pr button,html.dv-printing .dv-pr input,html.dv-printing .dv-pr select,html.dv-printing .dv-pr textarea,html.dv-printing .dv-pr form,html.dv-printing .dv-pr .dv-rnav,html.dv-printing .dv-pr .dv-mia-w,html.dv-printing .dv-pr #dv-mia-slot,html.dv-printing .dv-pr .dv-pdf-top,html.dv-printing .dv-pr .dv-ia,html.dv-printing .dv-pr #dv-rs,html.dv-printing .dv-pr .modos,html.dv-printing .dv-pr .ent{display:none!important}'+
 'html.dv-printing .dv-pr details>summary::-webkit-details-marker{display:none}html.dv-printing .dv-pr details>summary{list-style:none}'+
 'html.dv-printing .dv-pr details.dv-tema{break-before:page}html.dv-printing .dv-pr details.dv-tema:first-of-type{break-before:auto}'+
@@ -643,7 +644,29 @@ function imprimeTela(){var R=document.querySelector('.dv-org');if(!R)return fals
  var fim=function(){document.documentElement.classList.remove('dv-printing');pa.forEach(function(y){y.classList.remove('dv-pa')});R.classList.remove('dv-pr');ph.remove();fech.forEach(function(d){d.open=false});document.title=t0;window.removeEventListener('afterprint',fim);window.dispatchEvent(new Event('resize'))};
  window.addEventListener('afterprint',fim);setTimeout(function(){window.print()},350);return true}
 window.dvPdfTela=imprimeTela;
-window.addEventListener('click',function(ev){var b=ev.target.closest&&ev.target.closest('[data-pdf], .dv-pdf-top button');if(!b||!document.querySelector('.dv-org'))return;ev.preventDefault();ev.stopImmediatePropagation();imprimeTela()},true);
+/* Excel: baixa os dados do relatório (resumo + um aba por tema) */
+function txt(n){return String(n&&n.textContent||'').replace(/\s+/g,' ').trim()}
+function linhas(el){var R=[];if(!el)return R;var c=el.cloneNode(true);[].forEach.call(c.querySelectorAll('button,input,select,textarea,script,style,svg,.dv-rnav,.dv-mia-w,#dv-mia-slot,.dv-pdf-top,.dv-ia,#dv-rs'),function(x){x.remove()});
+ function vai(n,sec){[].forEach.call(n.children,function(ch){var tg=ch.tagName;if(/^H[1-4]$/.test(tg)){var t=txt(ch);if(t){R.push([]);R.push([t.toUpperCase()])}return}
+  if(tg==='TABLE'){[].forEach.call(ch.querySelectorAll('tr'),function(tr){var r=[].map.call(tr.children,function(td){var v=txt(td),num=v.replace(/^R\$\s?/,'').replace(/\./g,'').replace(',','.');return /^-?\d+(\.\d+)?%?$/.test(num)&&!/%$/.test(num)&&v.length<20?+num:v});if(r.join(''))R.push(r)});return}
+  if(tg==='LI'||(ch.children.length<=3&&ch.querySelector&&ch.querySelector(':scope>b,:scope>strong')&&txt(ch).length<220&&!ch.querySelector('div div'))){var b=ch.querySelector(':scope>b,:scope>strong'),t=txt(ch);if(b&&tg!=='LI'){var bt=txt(b),rest=t.replace(bt,'').trim();R.push(rest?[rest,bt]:[bt])}else R.push([t]);return}
+  if(ch.children.length===0){var t=txt(ch);if(t)R.push([t]);return}
+  vai(ch)})}
+ vai(c);return R}
+function nomeAba(t,usadas){t=String(t||'Aba').replace(/[\\\/\?\*\[\]:]/g,' ').trim().slice(0,28)||'Aba';var n=t,i=2;while(usadas[n])n=t.slice(0,25)+' '+(i++);usadas[n]=1;return n}
+function excel(){var R=document.querySelector('.dv-org');if(!R)return;
+ var go=function(){var X=window.XLSX,wb=X.utils.book_new(),us={},nm=txt(document.querySelector('#rx-cad h2, .rp-hd h2, #dv-rxhd h2, .dv-org h2'))||'Relatório',hoje=new Date();
+  var res=[[nm],['Gerado em '+hoje.toLocaleDateString('pt-BR')+' às '+hoje.toLocaleTimeString('pt-BR',{hour:'2-digit',minute:'2-digit'})+' · Desenvolve Estratégias'],[]];
+  var cp=document.getElementById('dv-capa');if(cp)res=res.concat(linhas(cp));
+  var T=[].slice.call(R.querySelectorAll(':scope > details.dv-tema'));if(T.length){res.push([]);res.push(['RESUMO POR TEMA']);T.forEach(function(t){res.push([txt(t.querySelector('summary b')),txt(t.querySelector('summary span'))])})}
+  var ws=X.utils.aoa_to_sheet(res);ws['!cols']=[{wch:60},{wch:40},{wch:22},{wch:22},{wch:22}];X.utils.book_append_sheet(wb,ws,nomeAba('Resumo',us));
+  (T.length?T:[R]).forEach(function(t){var tt=t.querySelector&&t.querySelector('summary b'),rows=[[txt(tt)||nm]].concat(linhas(t).filter(function(r){return r.length&&!(tt&&r[0]===txt(tt).toUpperCase())}));var w=X.utils.aoa_to_sheet(rows);w['!cols']=[{wch:60},{wch:30},{wch:22},{wch:22},{wch:22},{wch:22}];X.utils.book_append_sheet(wb,w,nomeAba(txt(tt)||'Relatório',us))});
+  var arq=(document.title.split('|')[0].trim()+' - '+nm).replace(/[\\\/:*?"<>|]/g,' ').slice(0,90)+'.xlsx';X.writeFile(wb,arq)};
+ if(window.XLSX)go();else{var sc=document.createElement('script');sc.src='https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js';sc.onload=go;sc.onerror=function(){alert('Não foi possível gerar o Excel agora. Tente de novo em instantes.')};document.head.appendChild(sc)}}
+window.dvExcel=excel;
+setInterval(function(){[].forEach.call(document.querySelectorAll('.dv-pdf-top'),function(t){if(t.querySelector('[data-xls]'))return;var pb=t.querySelector('button');if(!pb)return;var b=document.createElement('button');b.type='button';b.setAttribute('data-xls','');b.className=pb.className;b.style.cssText=(pb.getAttribute('style')||'')+';margin-left:8px;background:#1F6F43!important;border-color:#1F6F43!important;color:#fff!important';b.textContent='⬇ Baixar dados em Excel';pb.insertAdjacentElement('afterend',b)})},900);
+window.addEventListener('click',function(ev){var b=ev.target.closest&&ev.target.closest('[data-xls]');if(!b)return;ev.preventDefault();ev.stopImmediatePropagation();excel()},true);
+window.addEventListener('click',function(ev){var b=ev.target.closest&&ev.target.closest('[data-pdf], .dv-pdf-top button');if(b&&b.hasAttribute('data-xls'))return;if(!b||!document.querySelector('.dv-org'))return;ev.preventDefault();ev.stopImmediatePropagation();imprimeTela()},true);
 window.addEventListener('beforeprint',function(){});
 })();
 </script>

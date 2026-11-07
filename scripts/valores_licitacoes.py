@@ -120,6 +120,9 @@ def acumula(tot, uf, rapida, valor, rm='Outros'):
 
 
 # ---------- abertas agora (busca do PNCP: mesma fonte do contador do site) ----------
+UFTOT = {}
+
+
 def abertas():
     """Busca do PNCP só entrega 10 mil resultados por consulta (100 páginas de 100): divide por estado e,
     se preciso, por modalidade. Poucas conexões e pausa curta, porque o PNCP derruba quem pede rápido."""
@@ -139,6 +142,7 @@ def abertas():
         if not j:
             continue
         t = int(j.get('total') or 0)
+        UFTOT[uf] = t
         if t <= 10000:
             fatias.append((b, t, j))
         else:
@@ -304,6 +308,9 @@ def main():
     atual = json.load(open(saida)) if os.path.exists(saida) else {}
 
     ab = abertas()
+    if len(UFTOT) >= 20:
+        atual['abertas_uf'] = UFTOT; atual['abertas_uf_em'] = dt.datetime.now().strftime('%Y-%m-%d %H:%M')
+        json.dump(atual, open(saida, 'w'), ensure_ascii=False, separators=(',', ':'))
     if ab:
         atual['abertas'] = ab; atual['abertas_em'] = dt.datetime.now().strftime('%Y-%m-%d %H:%M')
         json.dump(atual, open(saida, 'w'), ensure_ascii=False, separators=(',', ':'))  # já grava: o site mostra mesmo se o resto atrasar

@@ -15,4 +15,4 @@ jobs:
       - run: python3 scripts/fontes_pdf.py && python3 scripts/outras_fontes.py
       - run: |
           git config user.name "github-actions"; git config user.email "actions@github.com"
-          git add aquila/jur && (git diff --cached --quiet || (git commit -m "Fontes PDF: atualizacao" && git pull --rebase && git push))
+          git add aquila/jur && (git diff --cached --quiet || (git commit -m "Fontes PDF: atualizacao" && (for i in 1 2 3 4 5; do git pull -q --rebase && git push -q && exit 0; sleep $((i*7)); done; exit 1)))

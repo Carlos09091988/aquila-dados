@@ -20,4 +20,4 @@ jobs:
       - run: LIMITE_SEG=18000 python3 scripts/contratos_vencendo.py ${{ github.event.inputs.modo || 'semanal' }}
       - run: |
           git config user.name "github-actions"; git config user.email "actions@github.com"
-          git add data/contratos && (git diff --cached --quiet || (git commit -q -m "Contratos vencendo: atualizacao" && git pull -q --rebase && git push))
+          git add data/contratos && (git diff --cached --quiet || (git commit -q -m "Contratos vencendo: atualizacao" && (for i in 1 2 3 4 5; do git pull -q --rebase && git push -q && exit 0; sleep $((i*7)); done; exit 1)))

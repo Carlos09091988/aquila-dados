@@ -15,4 +15,4 @@ jobs:
       - run: python3 scripts/compliance.py
       - run: |
           git config user.name "github-actions"; git config user.email "actions@github.com"
-          git add data/compliance && (git diff --cached --quiet || (git commit -q -m "Compliance: trabalho escravo e embargos" && git pull -q --rebase && git push))
+          git add data/compliance && (git diff --cached --quiet || (git commit -q -m "Compliance: trabalho escravo e embargos" && (for i in 1 2 3 4 5; do git pull -q --rebase && git push -q && exit 0; sleep $((i*7)); done; exit 1)))

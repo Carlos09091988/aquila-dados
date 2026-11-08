@@ -14,4 +14,4 @@ jobs:
       - run: python3 scripts/sancoes.py
       - run: |
           git config user.name "github-actions"; git config user.email "actions@github.com"
-          git add data/sancoes && (git diff --cached --quiet || (git commit -q -m "Sancoes: CEIS e CNEP" && git pull -q --rebase && git push))
+          git add data/sancoes && (git diff --cached --quiet || (git commit -q -m "Sancoes: CEIS e CNEP" && (for i in 1 2 3 4 5; do git pull -q --rebase && git push -q && exit 0; sleep $((i*7)); done; exit 1)))

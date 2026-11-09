@@ -364,6 +364,9 @@ def atos(texto, doc):
     return out
 
 
+RX_CNPJ = re.compile(r'\b\d{2}\.\d{3}\.\d{3}\s*/\s*\d{4}\s*-\s*\d{2}\b')
+
+
 def trecho(t, i, j):
     return re.sub(r'\s+', ' ', t[max(0, i - 300):j + 300]).strip()
 
@@ -432,6 +435,7 @@ def main():
             log(nome, 'erro', str(e)[:200])
 
     achados, avisos, vistos = [], [], set()
+    cnpjs, vistos_c = [], set()
 
     def processa(doc):
         if doc.get('arquivo'):
@@ -484,6 +488,16 @@ def main():
                         continue
                     vistos.add(k)
                     achados.append({'chave': ch, 'data': doc['data'], 'municipio': a['municipio'], 'uf': doc['uf'], 'link': a['link'], 'trecho': trecho(t, i, i + len(v)), 'fonte': doc['fonte']})
+                # índice de CNPJs citados (Due Diligence): só CNPJ escrito com pontuação, para não pegar outros números
+                for mc in RX_CNPJ.finditer(t):
+                    c = re.sub(r'\D', '', mc.group(0))
+                    if len(c) != 14 or c == c[0] * 14:
+                        continue
+                    kc = (c, a['link'], a['cod'])
+                    if kc in vistos_c:
+                        continue
+                    vistos_c.add(kc)
+                    cnpjs.append({'cnpj': c, 'data': doc['data'], 'uf': doc['uf'], 'municipio': a['municipio'] or doc.get('municipio', ''), 'fonte': doc['fonte'], 'link': a['link'], 'cod': a['cod'], 'trecho': trecho(t, mc.start(), mc.end())[:700]})
                 # avisos de licitação (SIGPub já entra pela busca ao vivo)
                 if doc['plat'] != 'sigpub':
                     cab = norm(t[:500])
@@ -492,6 +506,7 @@ def main():
                         avisos.append({'id': hashlib.sha1((a['link'] + '|' + a['cod'] + '|' + t[:80]).encode()).hexdigest()[:32], 'data': doc['data'], 'uf': doc['uf'], 'municipio': a['municipio'] or doc.get('municipio', ''), 'fonte': doc['fonte'], 'link': a['link'], 'titulo': tit, 'texto': re.sub(r'\s+', ' ', t)[:6000]})
     log('edições lidas', feitos, 'de', len(docs), '| avisos', len(avisos), '| citações', len(achados))
     log('gravados avisos', post('avisos', avisos), '| gravados citações', post('achados', achados))
+    log('cnpjs citados', len(cnpjs), '| gravados', post('cnpjs', cnpjs))
     json.dump({'quando': dt.datetime.now().isoformat(), 'edicoes': len(docs), 'lidas': feitos, 'avisos': len(avisos), 'citacoes': len(achados), 'por_fonte': {p: sum(1 for d in docs if d['plat'] == p) for p in ('sigpub', 'famem', 'dosp', 'dompi', 'doem', 'atende', 'qd')}}, open(os.path.join(DADOS, 'ultimo%s.json' % ('-qd-' + os.environ.get('GRUPO', '') if os.environ.get('QD_DB') else '')), 'w'), indent=1)
 
 

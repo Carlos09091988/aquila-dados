@@ -504,6 +504,31 @@ def main():
                     if RX_QUER.search(cab) and not RX_NAO.search(norm(t[:160])):
                         tit = re.sub(r'\s+', ' ', t[:200]).strip()[:200]
                         avisos.append({'id': hashlib.sha1((a['link'] + '|' + a['cod'] + '|' + t[:80]).encode()).hexdigest()[:32], 'data': doc['data'], 'uf': doc['uf'], 'municipio': a['municipio'] or doc.get('municipio', ''), 'fonte': doc['fonte'], 'link': a['link'], 'titulo': tit, 'texto': re.sub(r'\s+', ' ', t)[:6000]})
+    # Diário Oficial do Estado de SP: busca direta de cada termo monitorado (API pública do DOE-SP)
+    if not os.environ.get('QD_DB') and (not os.environ.get('SO_FONTES') or 'doesp' in os.environ['SO_FONTES']):
+        ini = (HOJE - dt.timedelta(days=max(DIAS, 2))).isoformat(); nd = 0
+        for t in termos:
+            for v in t.get('variantes', []):
+                if not tempo_ok():
+                    break
+                d = re.sub(r'\D', '', v)
+                q = v if len(d) != 14 else '%s.%s.%s/%s-%s' % (d[:2], d[2:5], d[5:8], d[8:12], d[12:])
+                if len(d) != 14 and len(norm(q)) < 6:
+                    continue
+                u = 'https://do-api-web-search.doe.sp.gov.br/v2/advanced-search/publications?' + urllib.parse.urlencode({'FromDate': ini, 'ToDate': HOJE.isoformat(), 'Terms': '"%s"' % q if len(d) != 14 else q, 'PageNumber': 1, 'PageSize': 50})
+                try:
+                    j = json.loads(get(u, timeout=40) or '{}')
+                except Exception:
+                    j = {}
+                for it in j.get('items', []) or []:
+                    link = 'https://doe.sp.gov.br/' + str(it.get('slug', '')).lstrip('/')
+                    k = (t['chave'], link, '')
+                    if k in vistos or not it.get('slug'):
+                        continue
+                    vistos.add(k); nd += 1
+                    org = str(it.get('slug', '')).split('/')[1].replace('-', ' ').capitalize() if '/' in str(it.get('slug', '')) else ''
+                    achados.append({'chave': t['chave'], 'data': str(it.get('date', ''))[:10], 'municipio': 'Governo do Estado de SP' + (' · ' + org if org else ''), 'uf': 'SP', 'link': link, 'trecho': re.sub(r'\s+', ' ', (it.get('title') or '') + ' — ' + (it.get('excerpt') or ''))[:700], 'fonte': 'Diário Oficial do Estado de São Paulo'})
+        log('doesp citações', nd)
     log('edições lidas', feitos, 'de', len(docs), '| avisos', len(avisos), '| citações', len(achados))
     log('gravados avisos', post('avisos', avisos), '| gravados citações', post('achados', achados))
     log('cnpjs citados', len(cnpjs), '| gravados', post('cnpjs', cnpjs))

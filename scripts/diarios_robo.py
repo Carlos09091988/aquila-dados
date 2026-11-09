@@ -296,7 +296,7 @@ def atende_testa(uf, slug):
 
 
 def docs_cidades(plat, arq, ufs, testa, edicoes_de):
-    amostra = {'doem': ('BA', 'catu'), 'atende': ('PR', 'castro')}.get(plat)
+    amostra = {'doem': ('BA', 'catu'), 'atende': ('PR', 'castro'), 'instar': ('MG', 'campobelo'), 'adiarios': ('MA', 'anajatuba'), 'diof': ('BA', 'adustina'), 'dobr': ('TO', 'camposlindos'), 'munonline': ('SE', 'aquidaba'), 'ptio': ('RJ', 'areal')}.get(plat)
     if amostra:
         log(plat, 'teste com', amostra, '->', testa(*amostra))
     cidades = descobrir(arq, plat, ufs, testa)
@@ -324,6 +324,200 @@ def docs_doem():
 def docs_atende():
     # a página 1 traz as edições mais recentes; basta para o período do robô (2 dias)
     return docs_cidades('atende', 'atende.json', ATENDE_UFS, atende_testa, lambda uf, slug, d: atende_edicoes(get(atende_url(slug), timeout=30), slug) if d.month == HOJE.month else [])
+
+
+# ---- Mais plataformas de diário por cidade (09/11/2026) ------------------------------------
+# Instar, ADiários v1, DIOF/SAI, DiárioOficialBR, Município Online e Portal da Transparência (PTIO).
+# Mesma ideia do DOEM/Atende: descoberta semanal em todos os municípios do IBGE e, todo dia,
+# só as edições novas. Formatos conferidos nos coletores abertos do Querido Diário (MIT).
+TODAS_UFS = ['AC', 'AL', 'AM', 'AP', 'BA', 'CE', 'ES', 'GO', 'MA', 'MG', 'MS', 'MT', 'PA', 'PB', 'PE', 'PI', 'PR', 'RJ', 'RN', 'RO', 'RR', 'RS', 'SC', 'SE', 'SP', 'TO']
+
+
+def post_json(u, dados, headers=None, timeout=40):
+    try:
+        h = dict(UA); h.update({'Content-Type': 'application/json', 'Accept': 'application/json'}); h.update(headers or {})
+        r = urllib.request.urlopen(urllib.request.Request(u, data=json.dumps(dados).encode(), headers=h), timeout=timeout)
+        b = r.read()
+        if r.headers.get('Content-Encoding') == 'gzip':
+            b = gzip.decompress(b)
+        return json.loads(b.decode('utf-8', 'replace'))
+    except Exception:
+        return None
+
+
+def br(d):
+    return d.strftime('%d/%m/%Y')
+
+
+def fim_mes(d):
+    return (d.replace(day=28) + dt.timedelta(days=4)).replace(day=1) - dt.timedelta(days=1)
+
+
+# Instar: https://www.{cidade}.{uf}.gov.br/portal/diario-oficial
+def instar_base(uf, slug):
+    return 'https://www.%s.%s.gov.br/portal/diario-oficial' % (slug, uf.lower())
+
+
+def instar_testa(uf, slug):
+    h = get(instar_base(uf, slug), timeout=15, tent=1)
+    return bool(h) and ('dof_publicacao_diario' in h or 'sw_qtde_resultados' in h)
+
+
+def instar_edicoes(uf, slug, d):
+    b = instar_base(uf, slug); ini = max(d, min(dt.date.fromisoformat(x) for x in DATAS)); fim = min(fim_mes(d), HOJE)
+    h = get('%s/1/%s/%s/0/0/' % (b, ini.strftime('%d-%m-%Y'), fim.strftime('%d-%m-%Y')), timeout=30)
+    r = []
+    for bl in re.split(r'class="dof_publicacao_diario', h or '')[1:]:
+        dd = data_texto(bl[:1500]); a = re.search(r'href="([^"]+)"', bl)
+        if not dd or not a:
+            continue
+        e = get(urllib.parse.urljoin(b + '/', html.unescape(a.group(1))), timeout=30)
+        m = re.search(r'class="d_titulo_edicao[^"]*"[^>]*>.*?href="([^"]+)"', e or '', re.S)
+        if m:
+            r.append((dd, urllib.parse.urljoin(b + '/', html.unescape(m.group(1)))))
+    return r
+
+
+# ADiários v1: https://www.{cidade}.{uf}.gov.br/diariooficial.php
+def adiarios_base(uf, slug):
+    return 'https://www.%s.%s.gov.br' % (slug, uf.lower())
+
+
+def adiarios_testa(uf, slug):
+    h = get(adiarios_base(uf, slug) + '/diariooficial.php', timeout=15, tent=1)
+    return bool(h) and ('diario_lista' in h or 'calendarioIcon' in h)
+
+
+def adiarios_edicoes(uf, slug, d):
+    b = adiarios_base(uf, slug); fim = min(fim_mes(d), HOJE)
+    h = get('%s/diariooficial.php?%s' % (b, urllib.parse.urlencode({'dtini': br(d), 'dtfim': br(fim)})), timeout=30)
+    r = []
+    for bl in re.split(r'id="diario_lista"', h or '')[1:]:
+        dd = data_texto(bl[:800]); m = re.search(r'id=(\d+)', bl)
+        if dd and m:
+            r.append((dd, '%s/arquivos_download.php?id=%s&pg=diariooficial' % (b, m.group(1))))
+    return r
+
+
+# DIOF/SAI: https://diario.{cidade}.{uf}.gov.br (API diof.io.org.br) ou sai.io.org.br/{uf}/{cidade}
+DIOF_API = 'https://diof.io.org.br/api'
+_diof_cli = {}
+
+
+def diof_cliente(uf, slug):
+    k = (uf, slug)
+    if k in _diof_cli:
+        return _diof_cli[k]
+    c = None
+    site = 'https://diario.%s.%s.gov.br' % (slug, uf.lower())
+    try:
+        h = dict(UA); h.update({'Accept': 'application/json, text/plain, */*', 'Origin': site, 'Referer': site + '/'})
+        r = urllib.request.urlopen(urllib.request.Request(DIOF_API + '/dados-cliente/info/', headers=h), timeout=15)
+        b = r.read()
+        if r.headers.get('Content-Encoding') == 'gzip':
+            b = gzip.decompress(b)
+        c = json.loads(b.decode()).get('cod_cliente')
+    except Exception:
+        c = None
+    if not c:
+        t = get('https://sai.io.org.br/%s/%s/site/diariooficial' % (uf.lower(), slug), timeout=15, tent=1)
+        m = re.search(r'<iframe[^>]+src="[^"]*?(\d{2,})', t or '')
+        c = m.group(1) if m else None
+    _diof_cli[k] = c
+    return c
+
+
+def diof_testa(uf, slug):
+    return bool(diof_cliente(uf, slug))
+
+
+def diof_edicoes(uf, slug, d):
+    c = diof_cliente(uf, slug)
+    if not c:
+        return []
+    j = post_json(DIOF_API + '/diario-oficial/edicoes-anteriores-group', {'cod_cliente': str(c), 'dat_envio_ini': d.isoformat(), 'dat_envio_fim': min(fim_mes(d), HOJE).isoformat(), 'des_observacao': '', 'edicao': None, 'page': 1}) or {}
+    r = []
+    for g in j.get('data', []) or []:
+        for e in g.get('elements', []) or []:
+            if e.get('des_arquivoa4') and e.get('dat_envio'):
+                r.append((str(e['dat_envio'])[:10], '%s/diario-oficial/download/%s.pdf' % (DIOF_API, e['des_arquivoa4'])))
+    return r
+
+
+# DiárioOficialBR: https://{cidade}.diariooficialbr.com.br
+def dobr_testa(uf, slug):
+    h = get('https://%s.diariooficialbr.com.br/' % slug, timeout=15, tent=1)
+    return bool(h) and ('card-downloads' in h or '/pesquisa' in h) and uf.lower() in (h or '').lower()
+
+
+def dobr_edicoes(uf, slug, d):
+    b = 'https://%s.diariooficialbr.com.br' % slug
+    h = get('%s/pesquisa/search?initDate=%s&endDate=%s' % (b, d.isoformat(), min(fim_mes(d), HOJE).isoformat()), timeout=30)
+    r = []
+    for bl in re.split(r'card-downloads', h or '')[1:]:
+        dd = data_texto(re.sub(r'<[^>]+>', ' ', bl[:3000])); a = re.search(r'href="([^"]*/download[^"]*)"', bl)
+        if dd and a:
+            r.append((dd, urllib.parse.urljoin(b + '/', html.unescape(a.group(1)))))
+    return r
+
+
+# Município Online: https://www.municipioonline.com.br/{uf}/prefeitura/{cidade}/cidadao/diariooficial
+def mo_url(uf, slug):
+    return 'https://www.municipioonline.com.br/%s/prefeitura/%s/cidadao/diariooficial' % (uf.lower(), slug)
+
+
+def mo_testa(uf, slug):
+    h = get(mo_url(uf, slug), timeout=15, tent=1)
+    return bool(h) and 'panel-title' in h
+
+
+def mo_edicoes(uf, slug, d):
+    if d.month != HOJE.month:
+        return []
+    u = mo_url(uf, slug); h = get(u, timeout=30)  # a página traz as edições mais recentes
+    r = []
+    for bl in re.split(r'class="panel[ "]', h or '')[1:]:
+        dd = data_texto(re.sub(r'<[^>]+>', ' ', bl[:1500])); m = re.search(r"l=([^'\"]+)'", bl)
+        if dd and m:
+            r.append((dd, u + '/diario?n=diario.pdf&l=' + m.group(1)))
+    return r
+
+
+# Portal da Transparência (PTIO): http://{uf}.portaldatransparencia.com.br/prefeitura/{cidade}/
+def ptio_url(uf, slug):
+    return 'http://%s.portaldatransparencia.com.br/prefeitura/%s/' % (uf.lower(), slug)
+
+
+def ptio_testa(uf, slug):
+    h = get(ptio_url(uf, slug), timeout=15, tent=1)
+    return bool(h) and "class='edicoes'" in h or bool(h) and 'class="edicoes"' in h
+
+
+def ptio_edicoes(uf, slug, d):
+    if d.month != HOJE.month:
+        return []
+    u = ptio_url(uf, slug); h = get(u, timeout=30)
+    r = []
+    for bl in re.split(r"class=['\"]edicoes['\"]", h or '')[1:]:
+        dd = data_texto(re.sub(r'<[^>]+>', ' ', bl[:1500])); m = re.search(r"href=['\"]([^'\"]*\?[^'\"]+)['\"]", bl)
+        if dd and m:
+            sub = html.unescape(m.group(1)); r.append((dd, urllib.parse.urljoin(u, sub[sub.index('?'):])))
+    return r
+
+
+PLATAFORMAS = {
+    'instar': (instar_testa, instar_edicoes),
+    'adiarios': (adiarios_testa, adiarios_edicoes),
+    'diof': (diof_testa, diof_edicoes),
+    'dobr': (dobr_testa, dobr_edicoes),
+    'munonline': (mo_testa, mo_edicoes),
+    'ptio': (ptio_testa, ptio_edicoes),
+}
+
+
+def docs_plataforma(plat):
+    testa, eds = PLATAFORMAS[plat]
+    return docs_cidades(plat, plat + '.json', TODAS_UFS, testa, eds)
 
 
 # ------------------------------------------------------------------ texto -> atos
@@ -423,7 +617,7 @@ def main():
     log('termos', len(termos), 'variantes', len(busca), 'datas', sorted(DATAS))
 
     docs = []
-    fontes = (('sigpub', docs_sigpub), ('famem', docs_famem), ('dosp', docs_dosp), ('dompi', docs_dompi), ('doem', docs_doem), ('atende', docs_atende))
+    fontes = (('sigpub', docs_sigpub), ('famem', docs_famem), ('dosp', docs_dosp), ('dompi', docs_dompi), ('doem', docs_doem), ('atende', docs_atende)) + tuple((p, (lambda p=p: docs_plataforma(p))) for p in PLATAFORMAS)
     if os.environ.get('SO_FONTES'):
         fontes = tuple(f for f in fontes if f[0] in os.environ['SO_FONTES'].split(','))
     if os.environ.get('QD_DB'):

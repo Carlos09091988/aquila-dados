@@ -1,16 +1,16 @@
 {
- "quando": "2026-11-08T11:36:05.443165",
- "edicoes": 12,
- "lidas": 9,
- "avisos": 7,
+ "quando": "2026-11-09T03:13:28.562322",
+ "edicoes": 14,
+ "lidas": 14,
+ "avisos": 36,
  "citacoes": 0,
  "por_fonte": {
   "sigpub": 0,
   "famem": 0,
-  "dosp": 8,
+  "dosp": 1,
   "dompi": 0,
-  "doem": 1,
-  "atende": 3,
+  "doem": 13,
+  "atende": 0,
   "qd": 0
  }
 }

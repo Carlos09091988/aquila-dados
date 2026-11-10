@@ -616,6 +616,25 @@ def atos(texto, doc):
     return out
 
 
+RX_TIPO_ATO = (
+    ('Penalidade', re.compile(r'PENALIDADE|APLICACAO DE (A )?MULTA|APLICA(R|CAO DA?) (SANCAO|ADVERTENCIA|PENALIDADE)|IMPEDIMENTO DE LICITAR|DECLARACAO DE INIDONEIDADE|SUSPENSAO TEMPORARIA|PROCESSO (ADMINISTRATIVO )?SANCIONATORIO|NOTIFICACAO (PARA DEFESA|EXTRAJUDICIAL)')),
+    ('Rescisão', re.compile(r'RESCISAO (UNILATERAL|CONTRATUAL|DO CONTRATO|AMIGAVEL)|DISTRATO')),
+    ('Aditivo', re.compile(r'TERMO ADITIVO|ADITIVO (N|AO CONTRATO|DE PRAZO|DE VALOR)|APOSTILAMENTO|REAJUSTE|REPACTUACAO|PRORROGACAO D[OE] (CONTRATO|PRAZO)')),
+    ('Extrato de contrato', re.compile(r'EXTRATO D[OE] (CONTRATO|TERMO|ATA)|EXTRATO CONTRAT|CONTRATO N[O ]?\s*\d|CONTRATO ADMINISTRATIVO N')),
+    ('Ata de registro de preços', re.compile(r'ATA DE REGISTRO DE PRECOS?')),
+    ('Homologação', re.compile(r'HOMOLOGACAO|HOMOLOGO|ADJUDICACAO|ADJUDICO|RESULTADO (DA|DE|DO) (LICITACAO|JULGAMENTO|PREGAO)|TERMO DE HOMOLOGACAO')),
+    ('Dispensa / inexigibilidade', re.compile(r'RATIFICACAO|RATIFICO|EXTRATO DE DISPENSA|DISPENSA DE LICITACAO|INEXIGIBILIDADE')),
+)
+
+
+def tipo_contratacao(t):
+    n = norm(t[:400])
+    for nome, rx in RX_TIPO_ATO:
+        if rx.search(n):
+            return nome
+    return None
+
+
 RX_ORGAO = re.compile(r'(PREFEITURA|MUNICIPIO D|CAMARA MUNICIPAL|CAMARA DE VEREADORES|FUNDO MUNICIPAL|SECRETARIA MUNICIPAL|INSTITUTO DE PREVIDENCIA|SERVICO AUTONOMO|AUTARQUIA|CONSORCIO INTERMUNICIPAL|FUNDACAO MUNICIPAL|PODER EXECUTIVO|PODER LEGISLATIVO)')
 RX_EMPRESA = re.compile(r'\b(LTDA|EIRELI|S A|SA|ME|EPP|MEI|EMPRESA|CONTRATAD[AO]|FORNECEDOR|DETENTOR[AE]|VENCEDOR[AE]|ADJUDICATARI[AO]|COMERCIO|SERVICOS|CONSTRUTORA|INDUSTRIA)\b')
 RX_CNPJ = re.compile(r'\b\d{2}\.\d{3}\.\d{3}\s*/\s*\d{4}\s*-\s*\d{2}\b')
@@ -690,6 +709,7 @@ def main():
 
     achados, avisos, vistos = [], [], set()
     cnpjs, vistos_c, orgaos_ed = [], set(), {}
+    atos_c, vistos_a = [], set()
 
     def processa(doc):
         if doc.get('arquivo'):
@@ -752,6 +772,13 @@ def main():
                         continue
                     vistos.add(k)
                     achados.append({'chave': ch, 'data': doc['data'], 'municipio': a['municipio'], 'uf': doc['uf'], 'link': a['link'], 'trecho': trecho(t, i, i + len(v)), 'fonte': doc['fonte']})
+                # atos de contratação (extratos, contratos, aditivos, homologações, penalidades...): guardados 90 dias com busca por texto
+                tipo_ato = tipo_contratacao(t)
+                if tipo_ato:
+                    ka = (a['link'], a['cod'], hashlib.md5(t[:200].encode('utf-8', 'ignore')).hexdigest())
+                    if ka not in vistos_a:
+                        vistos_a.add(ka)
+                        atos_c.append({'id': hashlib.sha1(('|'.join(ka)).encode()).hexdigest()[:32], 'data': doc['data'], 'uf': doc['uf'], 'municipio': a['municipio'] or doc.get('municipio', ''), 'fonte': doc['fonte'], 'link': a['link'], 'tipo': tipo_ato, 'titulo': re.sub(r'\s+', ' ', t[:200]).strip()[:300], 'texto': re.sub(r'\s+', ' ', t)[:3000]})
                 # índice de CNPJs citados (Due Diligence): só CNPJ escrito com pontuação, para não pegar outros números
                 for mc in RX_CNPJ.finditer(t):
                     c = re.sub(r'\D', '', mc.group(0))
@@ -801,6 +828,7 @@ def main():
     log('edições lidas', feitos, 'de', len(docs), '| avisos', len(avisos), '| citações', len(achados))
     log('gravados avisos', post('avisos', avisos), '| gravados citações', post('achados', achados))
     log('cnpjs citados', len(cnpjs), '| gravados', post('cnpjs', cnpjs))
+    log('atos de contratação', len(atos_c), '| gravados', post('atos', atos_c))
     # municípios cujo diário foi lido (qualquer ato), guardados por 90 dias: entram na conta da cobertura
     if not os.environ.get('QD_DB'):
         arq = os.path.join(DADOS, 'lidos.json')

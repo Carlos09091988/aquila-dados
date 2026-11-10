@@ -88,9 +88,11 @@ def html_atual(j):
     enc = [e for e in j.get('encoding', []) if isinstance(e, dict) and 'html' in str(e.get('encodingFormat', ''))]
     cur = [e for e in enc if e.get('version') == 'Current'] or [e for e in enc if e.get('version') == 'Intermediate'] or enc
     if not cur: return ''
-    for i in range(3):
+    u0 = cur[-1]['contentUrl']
+    for i, u in enumerate([u0.replace('/api/binario/', '/api/public/binario/'), u0, u0.replace('/texto', '')]):
         try:
-            b = urllib.request.urlopen(urllib.request.Request(cur[-1]['contentUrl'], headers=UA), timeout=180).read()
+            b = urllib.request.urlopen(urllib.request.Request(u, headers=UA), timeout=180).read()
+            if len(b) < 500: continue
             for cod in ('utf-8', 'latin-1'):
                 try: return b.decode(cod)
                 except UnicodeDecodeError: pass

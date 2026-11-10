@@ -11,16 +11,16 @@ jobs:
           python3 - <<'PY'
           import json
           j=json.load(open('l.json'))
-          print('TOP', list(j.keys()))
-          def walk(o,path='',d=0,seen=set()):
-              if d>7: return
+          for e in j['encoding']: print('ENC', e.get('version'), e.get('additionalType'), e.get('encodingFormat'), e.get('contentUrl'), str(e.get('name'))[:80])
+          art=j['hasPart']['hasPart'][1]
+          print('PART1 keys', list(art.keys()), art.get('legislationIdentifier'))
+          def find(o,depth=0):
               if isinstance(o,dict):
-                  k=tuple(sorted(o.keys()))
-                  if (path,k) not in seen and len(seen)<60:
-                      seen.add((path,k)); print(path, '->', {kk:(str(v)[:120] if not isinstance(v,(dict,list)) else type(v).__name__) for kk,v in o.items()})
-                  for kk,v in o.items(): walk(v,path+'/'+kk,d+1,seen)
-              elif isinstance(o,list) and o:
-                  walk(o[0],path+'[0]',d+1,seen)
-                  if len(o)>3: walk(o[3],path+'[3]',d+1,seen)
-          walk(j)
+                  lid=o.get('legislationIdentifier','')
+                  if lid.endswith('!art6') or lid.endswith('!art6_cpt') or lid.endswith('!art75') or '!art75_cpt_inc2' in lid[-20:]:
+                      print('NODE', lid, json.dumps(o, ensure_ascii=False)[:1500])
+                  for v in o.values(): find(v,depth+1)
+              elif isinstance(o,list):
+                  for v in o: find(v,depth+1)
+          find(j)
           PY

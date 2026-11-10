@@ -7,9 +7,7 @@ jobs:
     timeout-minutes: 15
     steps:
       - run: |
-          echo "== resumo"; curl -sL -m 120 -r 0-5000 https://sites.tcu.gov.br/dados-abertos/jurisprudencia/arquivos/acordao-completo/acordao-completo-resumo.csv | head -c 5000; echo
-          echo "== boletim"; curl -sL -m 120 -r 0-2500 https://sites.tcu.gov.br/dados-abertos/jurisprudencia/arquivos/boletim-jurisprudencia/boletim-jurisprudencia.csv | head -c 2500; echo
-          echo "== normas js"
-          curl -sL -m 60 'https://normas.leg.br/?urn=urn:lex:br:federal:lei:2021-04-01;14133' | grep -oE 'src="[^"]+\.js"' | head
-          for js in $(curl -sL -m 60 'https://normas.leg.br/' | grep -oE 'src="main[^"]*\.js"' | sed 's/src="//;s/"//'); do curl -sL -m 60 "https://normas.leg.br/$js" | grep -oE '"[^"]*api[^"]*"' | sort -u | head -30; done
-          for u in 'https://normas.leg.br/api/normas?urn=urn:lex:br:federal:lei:2021-04-01;14133&tipo_documento=maior-detalhe' 'https://normas.leg.br/api/normas?urn=urn:lex:br:federal:lei:2021-04-01;14133'; do echo "-- $u"; curl -sL -m 60 -o /tmp/p -w "%{http_code} %{size_download} %{content_type}\n" "$u"; head -c 1500 /tmp/p; echo; done
+          curl -sL -m 60 https://normas.leg.br/main.d77ca558be6c3a0a.js -o m.js
+          grep -oE '.{0,160}/api/public/.{0,200}' m.js | head -12
+          echo; echo "== tentativas"
+          for p in 'normas?urn=urn:lex:br:federal:lei:2021-04-01;14133' 'normas/urn:lex:br:federal:lei:2021-04-01;14133' 'norma?urn=urn:lex:br:federal:lei:2021-04-01;14133'; do echo "-- $p"; curl -sL -m 60 -o /tmp/p -w "%{http_code} %{size_download} %{content_type}\n" "https://normas.leg.br/api/public/$p"; head -c 800 /tmp/p; echo; done

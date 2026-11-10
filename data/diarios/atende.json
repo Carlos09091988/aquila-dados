@@ -1,6 +1,21 @@
 {
-"quando": 0,
+"quando": 1794280347.88426,
 "cidades": [
+[
+"MG",
+"carmopolisdeminas",
+"Carmópolis de Minas"
+],
+[
+"MG",
+"itabirito",
+"Itabirito"
+],
+[
+"MG",
+"oliveira",
+"Oliveira"
+],
 [
 "PR",
 "apucarana",
@@ -200,6 +215,16 @@
 "SC",
 "saocarlos",
 "São Carlos"
+],
+[
+"SP",
+"saocarlos",
+"São Carlos"
+],
+[
+"SP",
+"saojosedoriopardo",
+"São José do Rio Pardo"
 ]
 ]
 }

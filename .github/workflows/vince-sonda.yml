@@ -8,6 +8,6 @@ jobs:
     steps:
       - run: |
           curl -sL -m 60 https://normas.leg.br/main.d77ca558be6c3a0a.js -o m.js
-          grep -oE '.{0,160}/api/public/.{0,200}' m.js | head -12
+          grep -oE '.{0,40}publicApiUrl.{0,260}' m.js | head -20
           echo; echo "== tentativas"
-          for p in 'normas?urn=urn:lex:br:federal:lei:2021-04-01;14133' 'normas/urn:lex:br:federal:lei:2021-04-01;14133' 'norma?urn=urn:lex:br:federal:lei:2021-04-01;14133'; do echo "-- $p"; curl -sL -m 60 -o /tmp/p -w "%{http_code} %{size_download} %{content_type}\n" "https://normas.leg.br/api/public/$p"; head -c 800 /tmp/p; echo; done
+          for p in 'normas?urn=urn:lex:br:federal:lei:2021-04-01;14133&tipo_documento=maior-detalhe' 'normas?urn=urn:lex:br:federal:lei:2021-04-01;14133&tipo_documento=json' ; do echo "-- $p"; curl -sL -m 60 -o /tmp/p -w "%{http_code} %{size_download} %{content_type}\n" "https://normas.leg.br/api/public/$p"; head -c 1200 /tmp/p; echo; done

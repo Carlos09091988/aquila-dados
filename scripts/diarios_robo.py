@@ -565,6 +565,8 @@ def atos(texto, doc):
     return out
 
 
+RX_ORGAO = re.compile(r'(PREFEITURA|MUNICIPIO D|CAMARA MUNICIPAL|CAMARA DE VEREADORES|FUNDO MUNICIPAL|SECRETARIA MUNICIPAL|INSTITUTO DE PREVIDENCIA|SERVICO AUTONOMO|AUTARQUIA|CONSORCIO INTERMUNICIPAL|FUNDACAO MUNICIPAL|PODER EXECUTIVO|PODER LEGISLATIVO)')
+RX_EMPRESA = re.compile(r'\b(LTDA|EIRELI|S A|SA|ME|EPP|MEI|EMPRESA|CONTRATAD[AO]|FORNECEDOR|DETENTOR[AE]|VENCEDOR[AE]|ADJUDICATARI[AO]|COMERCIO|SERVICOS|CONSTRUTORA|INDUSTRIA)\b')
 RX_CNPJ = re.compile(r'\b\d{2}\.\d{3}\.\d{3}\s*/\s*\d{4}\s*-\s*\d{2}\b')
 
 
@@ -636,7 +638,7 @@ def main():
             log(nome, 'erro', str(e)[:200])
 
     achados, avisos, vistos = [], [], set()
-    cnpjs, vistos_c = [], set()
+    cnpjs, vistos_c, orgaos_ed = [], set(), {}
 
     def processa(doc):
         if doc.get('arquivo'):
@@ -692,7 +694,12 @@ def main():
                 # índice de CNPJs citados (Due Diligence): só CNPJ escrito com pontuação, para não pegar outros números
                 for mc in RX_CNPJ.finditer(t):
                     c = re.sub(r'\D', '', mc.group(0))
-                    if len(c) != 14 or c == c[0] * 14:
+                    if len(c) != 14 or c == c[0] * 14 or c in orgaos_ed.get(doc['link'], ()):
+                        continue
+                    # CNPJ do próprio órgão (cabeçalho "Prefeitura Municipal de X, CNPJ ...") não interessa ao Due Diligence
+                    seg = norm(re.split(r'[.;:\n]', t[max(0, mc.start() - 160):mc.start()])[-1])
+                    if RX_ORGAO.search(seg) and not RX_EMPRESA.search(seg):
+                        orgaos_ed.setdefault(doc['link'], set()).add(c)
                         continue
                     kc = (c, a['link'], a['cod'])
                     if kc in vistos_c:

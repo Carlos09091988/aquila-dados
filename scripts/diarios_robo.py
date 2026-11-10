@@ -519,6 +519,50 @@ def ptio_edicoes_html(u, h):
     return r
 
 
+# DIOF/IO por código de cliente (diario.io.org.br/{cod}): descobre os clientes ativos testando os códigos
+# direto na consulta pública de edições; o município e a UF saem do texto da edição.
+UF_NOME = {'ACRE': 'AC', 'ALAGOAS': 'AL', 'AMAZONAS': 'AM', 'AMAPA': 'AP', 'BAHIA': 'BA', 'CEARA': 'CE', 'ESPIRITO SANTO': 'ES', 'GOIAS': 'GO', 'MARANHAO': 'MA', 'MINAS GERAIS': 'MG', 'MATO GROSSO DO SUL': 'MS', 'MATO GROSSO': 'MT', 'PARA': 'PA', 'PARAIBA': 'PB', 'PERNAMBUCO': 'PE', 'PIAUI': 'PI', 'PARANA': 'PR', 'RIO DE JANEIRO': 'RJ', 'RIO GRANDE DO NORTE': 'RN', 'RONDONIA': 'RO', 'RORAIMA': 'RR', 'RIO GRANDE DO SUL': 'RS', 'SANTA CATARINA': 'SC', 'SERGIPE': 'SE', 'SAO PAULO': 'SP', 'TOCANTINS': 'TO'}
+
+
+def uf_do_texto(t):
+    m = re.search(r'ESTADO D[AOE] (MATO GROSSO DO SUL|RIO GRANDE DO NORTE|RIO GRANDE DO SUL|RIO DE JANEIRO|MINAS GERAIS|SANTA CATARINA|ESPIRITO SANTO|SAO PAULO|MATO GROSSO|[A-Z]+)', norm(t[:6000]))
+    return UF_NOME.get(m.group(1)) if m else None
+
+
+def io_eds(cod, ini, fim):
+    j = post_json(DIOF_API + '/diario-oficial/edicoes-anteriores-group', {'cod_cliente': str(cod), 'dat_envio_ini': ini.isoformat(), 'dat_envio_fim': fim.isoformat(), 'des_observacao': '', 'edicao': None, 'page': 1}, timeout=25) or {}
+    r = []
+    for g in j.get('data', []) or []:
+        for e in g.get('elements', []) or []:
+            if e.get('des_arquivoa4') and e.get('dat_envio'):
+                r.append((str(e['dat_envio'])[:10], '%s/diario-oficial/download/%s.pdf' % (DIOF_API, e['des_arquivoa4'])))
+    return r
+
+
+def docs_io():
+    arq = os.path.join(DADOS, 'io.json')
+    try:
+        st = json.load(open(arq))
+    except Exception:
+        st = {'quando': 0, 'clientes': []}
+    if time.time() - st.get('quando', 0) > 7 * 86400 and tempo_ok():
+        ini = HOJE - dt.timedelta(days=45)
+        with cf.ThreadPoolExecutor(16) as ex:
+            ativos = [c for c, eds in zip(range(1, 1601), ex.map(lambda c: io_eds(c, ini, HOJE), range(1, 1601))) if eds]
+        st = {'quando': time.time(), 'clientes': ativos}
+        json.dump(st, open(arq, 'w'))
+        log('io descoberta: clientes ativos', len(ativos))
+    ini = min(dt.date.fromisoformat(x) for x in DATAS)
+    out = []
+    with cf.ThreadPoolExecutor(16) as ex:
+        for cod, eds in zip(st['clientes'], ex.map(lambda c: io_eds(c, ini, HOJE), st['clientes'])):
+            for d, u in eds:
+                if d in DATAS:
+                    out.append({'fonte': 'Diário Oficial (IO, cliente %s)' % cod, 'plat': 'io', 'uf': '', 'municipio': '', 'data': d, 'url': u, 'link': u})
+    log('io clientes', len(st['clientes']), 'edições no período', len(out))
+    return out
+
+
 PLATAFORMAS = {
     'instar': (instar_testa, instar_edicoes),
     # 'adiarios': o download das edições exige verificação anti-robô (captcha); não contornamos.
@@ -633,7 +677,7 @@ def main():
     log('termos', len(termos), 'variantes', len(busca), 'datas', sorted(DATAS))
 
     docs = []
-    fontes = (('sigpub', docs_sigpub), ('famem', docs_famem), ('dosp', docs_dosp), ('dompi', docs_dompi), ('doem', docs_doem), ('atende', docs_atende)) + tuple((p, (lambda p=p: docs_plataforma(p))) for p in PLATAFORMAS)
+    fontes = (('sigpub', docs_sigpub), ('famem', docs_famem), ('dosp', docs_dosp), ('dompi', docs_dompi), ('doem', docs_doem), ('atende', docs_atende)) + tuple((p, (lambda p=p: docs_plataforma(p))) for p in PLATAFORMAS) + (('io', docs_io),)
     if os.environ.get('SO_FONTES'):
         fontes = tuple(f for f in fontes if f[0] in os.environ['SO_FONTES'].split(','))
     if os.environ.get('QD_DB'):
@@ -672,12 +716,17 @@ def main():
             if not txt:
                 continue
             feitos += 1
-            if doc['plat'] == 'dosp':
+            if not doc.get('uf'):
+                u0 = uf_do_texto(txt)
+                if not u0:
+                    continue
+                doc = dict(doc, uf=u0)
+            if doc['plat'] in ('dosp', 'io') and not doc.get('municipio'):
                 m = RX_MUN.search(txt[:4000])
                 if m:
                     nm = re.sub(r'\s+', ' ', m.group(1)).strip().title()
                     nm = re.sub(r'\b(De|Da|Do|Das|Dos|E)\b', lambda x: x.group(1).lower(), nm)
-                    doc = dict(doc, municipio=nm, fonte='Diário Oficial de %s (DiOE)' % nm)
+                    doc = dict(doc, municipio=nm, fonte=('Diário Oficial de %s (DiOE)' if doc['plat'] == 'dosp' else 'Diário Oficial de %s') % nm)
             for a in atos(txt, doc):
                 mlido = (a['municipio'] or doc.get('municipio') or '').strip()
                 if mlido and len(mlido) < 60:

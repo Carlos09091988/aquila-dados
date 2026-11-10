@@ -1,0 +1,20 @@
+name: Vince - base de direito administrativo (leis e TCU)
+on:
+  schedule:
+    - cron: '41 8 4 * *'   # todo dia 4, 05:41 em Brasilia
+  workflow_dispatch:
+permissions:
+  contents: write
+jobs:
+  atualizar:
+    runs-on: ubuntu-latest
+    timeout-minutes: 120
+    steps:
+      - uses: actions/checkout@v4
+      - name: Leis artigo por artigo (normas.leg.br)
+        run: python3 scripts/vince_leis.py || echo "leis: mantido o arquivo anterior"
+      - name: Acordaos do TCU e Boletim de Jurisprudencia
+        run: python3 scripts/vince_tcu.py
+      - run: |
+          git config user.name "github-actions"; git config user.email "actions@github.com"
+          git add aquila/jur && (git diff --cached --quiet || (git commit -m "Base do Vince: leis e acordaos do TCU" && (for i in 1 2 3 4 5; do git pull -q --rebase && git push -q && exit 0; sleep $((i*7)); done; exit 1)))

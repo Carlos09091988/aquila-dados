@@ -12,7 +12,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - name: Leis artigo por artigo (normas.leg.br)
-        run: python3 scripts/vince_leis.py || echo "leis: mantido o arquivo anterior"
+        run: python3 scripts/vince_leis.py || echo "leis - mantido o arquivo anterior"
       - name: Acordaos do TCU e Boletim de Jurisprudencia
         run: python3 scripts/vince_tcu.py
       - run: |

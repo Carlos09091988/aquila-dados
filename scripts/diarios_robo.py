@@ -576,6 +576,20 @@ def docs_io():
     return out
 
 
+# Diário Oficial do Estado do Tocantins (edições em PDF na página inicial)
+def docs_doeto():
+    h = get('https://diariooficial.to.gov.br/', timeout=40) or ''
+    out = []
+    for href, rot in re.findall(r'<a[^>]+href="(https://doe\.to\.gov\.br/diario/\d+/download)"[^>]*>(.*?)</a>', h, re.S):
+        m = re.search(r'(\d{2})/(\d{2})/(\d{4})', re.sub(r'<[^>]+>', ' ', rot))
+        if m:
+            d = '%s-%s-%s' % (m.group(3), m.group(2), m.group(1))
+            if d in DATAS:
+                out.append({'fonte': 'Diário Oficial do Estado do Tocantins', 'plat': 'doeto', 'uf': 'TO', 'municipio': 'Governo do Estado do TO', 'data': d, 'url': href, 'link': href})
+    log('doe-to edições no período', len(out))
+    return out
+
+
 PLATAFORMAS = {
     'instar': (instar_testa, instar_edicoes),
     # 'adiarios': o download das edições exige verificação anti-robô (captcha); não contornamos.
@@ -709,7 +723,7 @@ def main():
     log('termos', len(termos), 'variantes', len(busca), 'datas', sorted(DATAS))
 
     docs = []
-    fontes = (('sigpub', docs_sigpub), ('famem', docs_famem), ('dosp', docs_dosp), ('dompi', docs_dompi), ('doem', docs_doem), ('atende', docs_atende)) + tuple((p, (lambda p=p: docs_plataforma(p))) for p in PLATAFORMAS) + (('io', docs_io),)
+    fontes = (('sigpub', docs_sigpub), ('famem', docs_famem), ('dosp', docs_dosp), ('dompi', docs_dompi), ('doem', docs_doem), ('atende', docs_atende)) + tuple((p, (lambda p=p: docs_plataforma(p))) for p in PLATAFORMAS) + (('io', docs_io), ('doeto', docs_doeto))
     if os.environ.get('SO_FONTES'):
         fontes = tuple(f for f in fontes if f[0] in os.environ['SO_FONTES'].split(','))
     if os.environ.get('QD_DB'):
@@ -739,7 +753,7 @@ def main():
         b = get(doc['url'], timeout=120, binario=True)
         if not b or b[:4] != b'%PDF':
             return doc, None
-        return doc, pdf_texto(b, 900 if doc['plat'] == 'dompi' else 180)
+        return doc, pdf_texto(b, 900 if doc['plat'] in ('dompi', 'doeto') else 180)
 
     feitos = 0; lidos = {}
     with cf.ThreadPoolExecutor(6) as ex:

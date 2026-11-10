@@ -547,15 +547,28 @@ def docs_io():
         st = {'quando': 0, 'clientes': []}
     if time.time() - st.get('quando', 0) > 7 * 86400 and tempo_ok():
         ini = HOJE - dt.timedelta(days=45)
-        with cf.ThreadPoolExecutor(16) as ex:
-            ativos = [c for c, eds in zip(range(1, 1601), ex.map(lambda c: io_eds(c, ini, HOJE), range(1, 1601))) if eds]
-        st = {'quando': time.time(), 'clientes': ativos}
-        json.dump(st, open(arq, 'w'))
+        ja = {}
+        with cf.ThreadPoolExecutor(8) as ex:
+            for c, eds in zip(range(1, 1601), ex.map(lambda c: io_eds(c, ini, HOJE), range(1, 1601))):
+                if eds:
+                    ja[c] = eds
+        ativos = sorted(ja)
+        st = {'quando': time.time(), 'clientes': ativos, '_eds': ja}
+        json.dump({'quando': st['quando'], 'clientes': ativos}, open(arq, 'w'))
         log('io descoberta: clientes ativos', len(ativos))
     ini = min(dt.date.fromisoformat(x) for x in DATAS)
     out = []
-    with cf.ThreadPoolExecutor(16) as ex:
-        for cod, eds in zip(st['clientes'], ex.map(lambda c: io_eds(c, ini, HOJE), st['clientes'])):
+    def eds_de(c):
+        if c in st.get('_eds', {}):
+            return st['_eds'][c]
+        for _ in range(3):
+            r = io_eds(c, ini, HOJE)
+            if r:
+                return r
+            time.sleep(1)
+        return []
+    with cf.ThreadPoolExecutor(4) as ex:
+        for cod, eds in zip(st['clientes'], ex.map(eds_de, st['clientes'])):
             for d, u in eds:
                 if d in DATAS:
                     out.append({'fonte': 'Diário Oficial (IO, cliente %s)' % cod, 'plat': 'io', 'uf': '', 'municipio': '', 'data': d, 'url': u, 'link': u})

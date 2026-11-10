@@ -368,11 +368,11 @@ def instar_edicoes(uf, slug, d):
     h = get('%s/1/%s/%s/0/0/' % (b, ini.strftime('%d-%m-%Y'), fim.strftime('%d-%m-%Y')), timeout=30)
     r = []
     for bl in re.split(r'class="dof_publicacao_diario', h or '')[1:]:
-        dd = data_texto(bl[:1500]); a = re.search(r'href="([^"]+)"', bl)
+        dd = data_texto(re.sub(r'<[^>]+>', ' ', bl[:9000])); a = re.search(r'href="([^"]+)"', bl)
         if not dd or not a:
             continue
         e = get(urllib.parse.urljoin(b + '/', html.unescape(a.group(1))), timeout=30)
-        m = re.search(r'class="d_titulo_edicao[^"]*"[^>]*>.*?href="([^"]+)"', e or '', re.S)
+        m = re.search(r'["\']((?:https?://[^"\']+)?/uploads/[^"\']+\.pdf)["\']', e or '') or re.search(r'class="d_titulo_edicao[^"]*"[^>]*>.*?href="([^"]+)"', e or '', re.S)
         if m:
             r.append((dd, urllib.parse.urljoin(b + '/', html.unescape(m.group(1)))))
     return r
@@ -435,7 +435,8 @@ def diof_edicoes(uf, slug, d):
     c = diof_cliente(uf, slug)
     if not c:
         return []
-    j = post_json(DIOF_API + '/diario-oficial/edicoes-anteriores-group', {'cod_cliente': str(c), 'dat_envio_ini': d.isoformat(), 'dat_envio_fim': min(fim_mes(d), HOJE).isoformat(), 'des_observacao': '', 'edicao': None, 'page': 1}) or {}
+    site = 'https://diario.%s.%s.gov.br' % (slug, uf.lower())
+    j = post_json(DIOF_API + '/diario-oficial/edicoes-anteriores-group', headers={'Origin': site, 'Referer': site + '/'}, dados={'cod_cliente': str(c), 'dat_envio_ini': d.isoformat(), 'dat_envio_fim': min(fim_mes(d), HOJE).isoformat(), 'des_observacao': '', 'edicao': None, 'page': 1}) or {}
     r = []
     for g in j.get('data', []) or []:
         for e in g.get('elements', []) or []:
@@ -490,13 +491,19 @@ def ptio_url(uf, slug):
 
 def ptio_testa(uf, slug):
     h = get(ptio_url(uf, slug), timeout=15, tent=1)
-    return bool(h) and "class='edicoes'" in h or bool(h) and 'class="edicoes"' in h
+    if not h or not re.search(r"class=['\"]edicoes['\"]", h):
+        return False
+    return slug in re.sub(r'[^a-z0-9]', '', norm(re.sub(r'<[^>]+>', ' ', h[:20000])).lower()) and bool(ptio_edicoes_html(ptio_url(uf, slug), h))
 
 
 def ptio_edicoes(uf, slug, d):
     if d.month != HOJE.month:
         return []
-    u = ptio_url(uf, slug); h = get(u, timeout=30)
+    u = ptio_url(uf, slug)
+    return ptio_edicoes_html(u, get(u, timeout=30))
+
+
+def ptio_edicoes_html(u, h):
     r = []
     for bl in re.split(r"class=['\"]edicoes['\"]", h or '')[1:]:
         dd = data_texto(re.sub(r'<[^>]+>', ' ', bl[:1500])); m = re.search(r"href=['\"]([^'\"]*\?[^'\"]+)['\"]", bl)
@@ -507,7 +514,7 @@ def ptio_edicoes(uf, slug, d):
 
 PLATAFORMAS = {
     'instar': (instar_testa, instar_edicoes),
-    'adiarios': (adiarios_testa, adiarios_edicoes),
+    # 'adiarios': o download das edições exige verificação anti-robô (captcha); não contornamos.
     'diof': (diof_testa, diof_edicoes),
     'dobr': (dobr_testa, dobr_edicoes),
     'munonline': (mo_testa, mo_edicoes),

@@ -29,14 +29,19 @@ except Exception as e:
     print('resumos IA: falhou', e)
 
 ini = int(sys.argv[1]) if len(sys.argv) > 1 else 2021
+# Chaves de TODOS os acórdãos lidos (qualquer assunto), para o Vince conferir se uma citação existe: "numero/ano/P|1|2"
+CH = 'aquila/jur/vince-tcu-chaves.json'
+chaves = set(json.load(open(CH))['chaves']) if os.path.exists(CH) else set()
+def col(c): c = (c or '').lower(); return 'P' if c.startswith('plen') else ('1' if c.startswith('primeira') else ('2' if c.startswith('segunda') else '?'))
 ano_atual = int(time.strftime('%Y'))
 for ano in range(ini, ano_atual + 1):
     arq = f'aquila/jur/vince-tcu-acordaos-{ano}.json'
-    if ano < ano_atual - 1 and os.path.exists(arq) and len(sys.argv) <= 1:
+    if ano < ano_atual - 1 and os.path.exists(arq) and len(sys.argv) <= 1 and any(c.split('/')[1] == str(ano) for c in list(chaves)[:200000]):
         print(ano, 'já existe; mantido'); continue
     out = []
     try:
         for r in abrir(f'acordao-completo/acordao-completo-{ano}.csv'):
+            chaves.add(f"{r.get('NUMACORDAO','')}/{r.get('ANOACORDAO','')}/{col(r.get('COLEGIADO'))}")
             tp = r.get('TIPOPROCESSO', '')
             base = (r.get('ASSUNTO', '') + ' ' + r.get('SUMARIO', ''))
             if FORA.search(tp) or not LIC.search(base): continue
@@ -51,6 +56,9 @@ for ano in range(ini, ano_atual + 1):
         if not out: continue
     json.dump({'ano': ano, 'acordaos': out}, open(arq, 'w'), ensure_ascii=False, separators=(',', ':'))
     print(ano, len(out), 'acórdãos de licitação/contratos', round(os.path.getsize(arq) / 1e6, 1), 'MB')
+
+json.dump({'chaves': sorted(chaves)}, open(CH, 'w'), separators=(',', ':'))
+print('chaves de acórdãos:', len(chaves))
 
 # Boletim de Jurisprudência (geral) — só os enunciados de licitações e contratos
 bol = []

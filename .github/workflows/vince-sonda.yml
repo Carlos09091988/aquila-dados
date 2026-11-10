@@ -4,13 +4,14 @@ on:
 jobs:
   sonda:
     runs-on: ubuntu-latest
-    timeout-minutes: 10
+    timeout-minutes: 15
     steps:
       - run: |
-          curl -sL -m 60 https://sites.tcu.gov.br/dados-abertos/jurisprudencia/ | grep -oE 'href="[^"]+"' | sort -u | head -200
-          echo ======
-          curl -sL -m 60 https://sites.tcu.gov.br/dados-abertos/jurisprudencia/arquivos/ | head -100
-          echo ======
-          for f in acordao-completo/acordao-completo-2025.csv acordao/acordao-2025.csv resumo-acordao/resumo-acordao.csv; do curl -sIL -m 60 https://sites.tcu.gov.br/dados-abertos/jurisprudencia/arquivos/$f | grep -iE '^HTTP|content-length' ; echo "<- $f"; done
-          echo ======
-          curl -sL -m 60 -A Mozilla/5.0 https://www.planalto.gov.br/ccivil_03/_ato2019-2022/2021/lei/l14133.htm | head -c 1500
+          B=https://sites.tcu.gov.br/dados-abertos/jurisprudencia
+          curl -sL -m 60 $B/ | grep -oE '(src|href)="[^"]+\.(js|json)"' | sort -u
+          for j in $(curl -sL -m 60 $B/ | grep -oE 'src="[^"]+\.js"' | sed 's/src="//;s/"//'); do echo "== $j"; curl -sL -m 60 "$B/$j" | grep -oE '[A-Za-z0-9_./-]*\.(json|csv)' | sort -u | head -40; done
+          for j in arquivos.json dados.json js/arquivos.json; do echo "== $j"; curl -sL -m 60 $B/$j | head -c 3000; echo; done
+          echo "== header acordao-completo-2025"
+          curl -sL -m 120 -r 0-6000 $B/arquivos/acordao-completo/acordao-completo-2025.csv | head -c 6000
+          echo; echo "== planalto variantes"
+          for u in https://www.planalto.gov.br/ccivil_03/_ato2019-2022/2021/lei/l14133.htm http://www.planalto.gov.br/ccivil_03/_ato2019-2022/2021/lei/L14133.htm https://normas.leg.br/?urn=urn:lex:br:federal:lei:2021-04-01;14133 "https://legis.senado.leg.br/dadosabertos/legislacao/lista?tipo=LEI&numero=14133&ano=2021"; do echo "-- $u"; curl -sL -m 60 -A "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 Chrome/130 Safari/537.36" -o /tmp/p -w "%{http_code} %{size_download}\n" "$u"; head -c 400 /tmp/p; echo; done

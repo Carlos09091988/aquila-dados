@@ -2,7 +2,7 @@
 Fonte: normas.leg.br (Senado/Congresso, licença CC BY 4.0). Gera aquila/jur/vince-leis.json.
 Cada artigo: {'l': 'Lei 14.133/2021', 'a': '75', 't': texto completo do artigo (caput, incisos, parágrafos), 'r': 1 se revogado, 'u': urn}.
 Para cada dispositivo usa a versão mais recente (workExample com a maior data)."""
-import json, re, sys, time, urllib.request, urllib.parse
+import html as H, json, re, sys, time, urllib.request, urllib.parse
 
 API = 'https://normas.leg.br/api/public/normas?tipo_documento=maior-detalhe&urn='
 LEIS = [
@@ -106,7 +106,7 @@ def artigos_html(h):
     h = re.sub(r'(?is)<(script|style|head)\b.*?</\1>', ' ', h)
     h = re.sub(r'(?i)<br\s*/?>|</p>|</div>|</tr>', '\n', h)
     t = re.sub(r'<[^>]+>', ' ', h)
-    t = t.replace('&nbsp;', ' ').replace('&quot;', '"').replace('&amp;', '&').replace('&#8211;', '–')
+    t = H.unescape(t).replace('\xa0', ' ')
     linhas = [re.sub(r'\s+', ' ', l).strip() for l in t.split('\n')]
     linhas = [l for l in linhas if l]
     arts = []; cur = None

@@ -857,7 +857,7 @@ def main():
     log('cnpjs citados', len(cnpjs), '| gravados', post('cnpjs', cnpjs))
     log('atos de contratação', len(atos_c), '| gravados', post('atos', atos_c))
     # municípios cujo diário foi lido (qualquer ato), guardados por 90 dias: entram na conta da cobertura
-    if not os.environ.get('QD_DB'):
+    if not os.environ.get('QD_DB') and lidos:
         arq = os.path.join(DADOS, 'lidos.json')
         try:
             ant = json.load(open(arq)).get('munis', {})

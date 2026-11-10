@@ -63,14 +63,22 @@ def texto(n, prof=0):
     return out
 
 def artigos(raiz):
-    """Percorre a árvore e devolve os nós que são artigos (identificador terminando em !artN ou _artN)."""
+    """Percorre a árvore e devolve os nós que são artigos. Leis novas usam identificador !artN;
+    as mais antigas usam !dispositivo_NNN, e aí vale o tipo do dispositivo (artigo) e o rótulo "Art. 89"."""
     achados = []
     def anda(n):
         if not isinstance(n, dict): return
         lid = n.get('legislationIdentifier', '')
+        lt = n.get('legislationType'); lt = lt.get('@id', '') if isinstance(lt, dict) else str(lt or '')
         m = re.search(r'!art(\d+[a-z]?(?:-\d+)?)$', lid)
-        if m and '@' not in lid:
-            achados.append((m.group(1), n)); return
+        num = None
+        if m and '@' not in lid: num = m.group(1)
+        elif lt.endswith(':artigo') or lt.endswith('dispositivo:artigo'):
+            nm = limpa(versao(n).get('name', ''))
+            mm = re.match(r'Art(?:igo)?\.?\s*(\d+)\s*[º°o]?\s*(?:-\s*([A-Z]))?', nm)
+            if mm: num = mm.group(1) + ('-' + mm.group(2) if mm.group(2) else '')
+        if num:
+            achados.append((num, n)); return
         for f in filhos(n): anda(f)
     anda(raiz)
     return achados

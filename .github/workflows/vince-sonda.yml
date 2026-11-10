@@ -1,0 +1,15 @@
+name: Vince - sonda de fontes
+on:
+  workflow_dispatch:
+jobs:
+  sonda:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - run: |
+          for ref in 46374500000194/2026/8928 46374500000194/2026/8932; do
+            echo "== $ref"; curl -sL -m 60 "https://pncp.gov.br/api/pncp/v1/orgaos/${ref%%/*}/compras/$(echo $ref|cut -d/ -f2)/$(echo $ref|cut -d/ -f3)/arquivos" | python3 -c "import json,sys; [print(x.get('sequencialDocumento'), x.get('tipoDocumentoNome'), x.get('titulo'), x.get('url')) for x in json.load(sys.stdin)]"
+            U=$(curl -sL -m 60 "https://pncp.gov.br/api/pncp/v1/orgaos/${ref%%/*}/compras/$(echo $ref|cut -d/ -f2)/$(echo $ref|cut -d/ -f3)/arquivos" | python3 -c "import json,sys; print(json.load(sys.stdin)[0]['url'])")
+            curl -sIL -m 60 "$U" | grep -iE "^HTTP|content-type|content-length|content-disposition|location"
+            curl -sL -m 120 -r 0-15 "$U" | xxd | head -2
+          done

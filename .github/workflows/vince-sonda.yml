@@ -7,7 +7,9 @@ jobs:
     timeout-minutes: 15
     steps:
       - run: |
-          echo "== lista TCU"; curl -sL -m 60 https://sites.tcu.gov.br/dados-abertos/jurisprudencia/arquivos/jurisprudencia-arquivos.csv | head -80
-          echo "== planalto"
-          UA="Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/130.0 Safari/537.36"
-          for u in 'https://www.planalto.gov.br/ccivil_03/_ato2019-2022/2021/lei/l14133.htm' 'http://www.planalto.gov.br/ccivil_03/_ato2019-2022/2021/lei/L14133.htm' 'https://www.planalto.gov.br/ccivil_03/leis/l9784.htm' 'https://normas.leg.br/?urn=urn:lex:br:federal:lei:2021-04-01;14133' 'https://www.lexml.gov.br/urn/urn:lex:br:federal:lei:2021-04-01;14133'; do echo "-- $u"; curl -sL -m 60 -A "$UA" -o /tmp/p -w "%{http_code} %{size_download} %{url_effective}\n" "$u" || echo falhou; head -c 300 /tmp/p | tr '\n' ' '; echo; done
+          echo "== resumo"; curl -sL -m 120 -r 0-5000 https://sites.tcu.gov.br/dados-abertos/jurisprudencia/arquivos/acordao-completo/acordao-completo-resumo.csv | head -c 5000; echo
+          echo "== boletim"; curl -sL -m 120 -r 0-2500 https://sites.tcu.gov.br/dados-abertos/jurisprudencia/arquivos/boletim-jurisprudencia/boletim-jurisprudencia.csv | head -c 2500; echo
+          echo "== normas js"
+          curl -sL -m 60 'https://normas.leg.br/?urn=urn:lex:br:federal:lei:2021-04-01;14133' | grep -oE 'src="[^"]+\.js"' | head
+          for js in $(curl -sL -m 60 'https://normas.leg.br/' | grep -oE 'src="main[^"]*\.js"' | sed 's/src="//;s/"//'); do curl -sL -m 60 "https://normas.leg.br/$js" | grep -oE '"[^"]*api[^"]*"' | sort -u | head -30; done
+          for u in 'https://normas.leg.br/api/normas?urn=urn:lex:br:federal:lei:2021-04-01;14133&tipo_documento=maior-detalhe' 'https://normas.leg.br/api/normas?urn=urn:lex:br:federal:lei:2021-04-01;14133'; do echo "-- $u"; curl -sL -m 60 -o /tmp/p -w "%{http_code} %{size_download} %{content_type}\n" "$u"; head -c 1500 /tmp/p; echo; done

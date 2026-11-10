@@ -503,8 +503,15 @@ def ptio_edicoes(uf, slug, d):
     return ptio_edicoes_html(u, get(u, timeout=30))
 
 
+_ptio_log = [0]
+
+
 def ptio_edicoes_html(u, h):
     r = []
+    if _ptio_log[0] < 3 and h:
+        _ptio_log[0] += 1
+        bl = (re.split(r"class=['\"]edicoes['\"]", h) + ['', ''])[1]
+        log('ptio amostra', u, re.sub(r'\s+', ' ', bl[:600]))
     for bl in re.split(r"class=['\"]edicoes['\"]", h or '')[1:]:
         dd = data_texto(re.sub(r'<[^>]+>', ' ', bl[:1500])); m = re.search(r"href=['\"]([^'\"]*\?[^'\"]+)['\"]", bl)
         if dd and m:
@@ -657,7 +664,7 @@ def main():
             return doc, None
         return doc, pdf_texto(b, 900 if doc['plat'] == 'dompi' else 180)
 
-    feitos = 0
+    feitos = 0; lidos = {}
     with cf.ThreadPoolExecutor(6) as ex:
         for doc, txt in ex.map(processa, docs):
             if not tempo_ok():
@@ -672,6 +679,11 @@ def main():
                     nm = re.sub(r'\b(De|Da|Do|Das|Dos|E)\b', lambda x: x.group(1).lower(), nm)
                     doc = dict(doc, municipio=nm, fonte='Diário Oficial de %s (DiOE)' % nm)
             for a in atos(txt, doc):
+                mlido = (a['municipio'] or doc.get('municipio') or '').strip()
+                if mlido and len(mlido) < 60:
+                    k = doc['uf'] + '|' + mlido
+                    if lidos.get(k, '') < doc['data']:
+                        lidos[k] = doc['data']
                 t = a['texto']; n = ' ' + norm(t) + ' '; dg = None
                 for ch, tp, v in busca:
                     if tp == 'cnpj':
@@ -740,6 +752,20 @@ def main():
     log('edições lidas', feitos, 'de', len(docs), '| avisos', len(avisos), '| citações', len(achados))
     log('gravados avisos', post('avisos', avisos), '| gravados citações', post('achados', achados))
     log('cnpjs citados', len(cnpjs), '| gravados', post('cnpjs', cnpjs))
+    # municípios cujo diário foi lido (qualquer ato), guardados por 90 dias: entram na conta da cobertura
+    if not os.environ.get('QD_DB'):
+        arq = os.path.join(DADOS, 'lidos.json')
+        try:
+            ant = json.load(open(arq)).get('munis', {})
+        except Exception:
+            ant = {}
+        lim = (HOJE - dt.timedelta(days=90)).isoformat()
+        for k, d in lidos.items():
+            if ant.get(k, '') < d:
+                ant[k] = d
+        ant = {k: d for k, d in ant.items() if d >= lim}
+        json.dump({'quando': time.time(), 'munis': ant}, open(arq, 'w'), ensure_ascii=False, indent=0)
+        log('municípios lidos (90 dias)', len(ant))
     json.dump({'quando': dt.datetime.now().isoformat(), 'edicoes': len(docs), 'lidas': feitos, 'avisos': len(avisos), 'citacoes': len(achados), 'por_fonte': {p: sum(1 for d in docs if d['plat'] == p) for p in ('sigpub', 'famem', 'dosp', 'dompi', 'doem', 'atende', 'qd')}}, open(os.path.join(DADOS, 'ultimo%s.json' % ('-qd-' + os.environ.get('GRUPO', '') if os.environ.get('QD_DB') else '')), 'w'), indent=1)
 
 

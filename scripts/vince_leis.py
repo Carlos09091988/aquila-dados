@@ -83,12 +83,62 @@ def artigos(raiz):
     anda(raiz)
     return achados
 
+def html_atual(j):
+    """Leis sem a árvore de dispositivos: usa o texto compilado (versão Current) em HTML."""
+    enc = [e for e in j.get('encoding', []) if isinstance(e, dict) and 'html' in str(e.get('encodingFormat', ''))]
+    cur = [e for e in enc if e.get('version') == 'Current'] or [e for e in enc if e.get('version') == 'Intermediate'] or enc
+    if not cur: return ''
+    for i in range(3):
+        try:
+            b = urllib.request.urlopen(urllib.request.Request(cur[-1]['contentUrl'], headers=UA), timeout=180).read()
+            for cod in ('utf-8', 'latin-1'):
+                try: return b.decode(cod)
+                except UnicodeDecodeError: pass
+        except Exception as e:
+            print('  html tentativa', i + 1, e); time.sleep(5)
+    return ''
+
+def artigos_html(h):
+    """Corta o HTML compilado em artigos. Texto riscado (revogado/alterado) sai."""
+    h = re.sub(r'(?is)<(strike|s|del)\b.*?</\1>', ' ', h)
+    h = re.sub(r'(?is)<(script|style|head)\b.*?</\1>', ' ', h)
+    h = re.sub(r'(?i)<br\s*/?>|</p>|</div>|</tr>', '\n', h)
+    t = re.sub(r'<[^>]+>', ' ', h)
+    t = t.replace('&nbsp;', ' ').replace('&quot;', '"').replace('&amp;', '&').replace('&#8211;', '–')
+    linhas = [re.sub(r'\s+', ' ', l).strip() for l in t.split('\n')]
+    linhas = [l for l in linhas if l]
+    arts = []; cur = None
+    for l in linhas:
+        m = re.match(r'^Art\.?\s*(\d+)\s*[º°o]?\s*(?:-\s*([A-Z])\b)?', l)
+        if m:
+            if cur: arts.append(cur)
+            cur = [m.group(1) + ('-' + m.group(2) if m.group(2) else ''), [l]]
+        elif cur:
+            if re.match(r'^(CAPÍTULO|TÍTULO|Seção|SEÇÃO|Subseção|LIVRO)\b', l) or re.match(r'^Brasília,', l): arts.append(cur); cur = None
+            else: cur[1].append(l)
+    if cur: arts.append(cur)
+    # remove as anotações do Planalto entre parênteses no fim das linhas, ex.: (Redação dada pela Lei nº ...)
+    out = []
+    for num, ls in arts:
+        txt = '\n'.join(re.sub(r'\s*\((?:Redação dada|Incluído|Incluída|Vide|Revogado|Revogada|Regulamento|Promulgação|Vigência)[^)]*\)', '', x) for x in ls)
+        out.append((num, txt.strip()))
+    return out
+
 saida = []
 for rot, urn, so in LEIS:
     print(rot)
     j = baixar(urn)
     if not j: print('  FALHOU'); continue
     n = 0
+    if not j.get('hasPart'):
+        vistos = set()
+        for num, t in artigos_html(html_atual(j)):
+            if so and num.split('-')[0] not in so: continue
+            if num in vistos or len(t) < 15: continue
+            vistos.add(num)
+            saida.append({'l': rot, 'a': num, 't': t[:12000], 'r': 1 if re.search(r'^Art\.?\s*[\dº°-]+[A-Z]?\.?\s*$', t) else 0, 'u': urn + '!art' + num})
+            n += 1
+        print('  artigos (texto compilado):', n); time.sleep(2); continue
     for num, no in artigos(j.get('hasPart', {})):
         if so and num.split('-')[0] not in so: continue
         linhas = texto(no)

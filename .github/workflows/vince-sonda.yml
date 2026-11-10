@@ -1,0 +1,16 @@
+name: Vince - sonda de fontes
+on:
+  workflow_dispatch:
+jobs:
+  sonda:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - run: |
+          curl -sL -m 60 https://sites.tcu.gov.br/dados-abertos/jurisprudencia/ | grep -oE 'href="[^"]+"' | sort -u | head -200
+          echo ======
+          curl -sL -m 60 https://sites.tcu.gov.br/dados-abertos/jurisprudencia/arquivos/ | head -100
+          echo ======
+          for f in acordao-completo/acordao-completo-2025.csv acordao/acordao-2025.csv resumo-acordao/resumo-acordao.csv; do curl -sIL -m 60 https://sites.tcu.gov.br/dados-abertos/jurisprudencia/arquivos/$f | grep -iE '^HTTP|content-length' ; echo "<- $f"; done
+          echo ======
+          curl -sL -m 60 -A Mozilla/5.0 https://www.planalto.gov.br/ccivil_03/_ato2019-2022/2021/lei/l14133.htm | head -c 1500

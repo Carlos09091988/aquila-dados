@@ -7,7 +7,20 @@ jobs:
     timeout-minutes: 15
     steps:
       - run: |
-          curl -sL -m 60 https://normas.leg.br/main.d77ca558be6c3a0a.js -o m.js
-          grep -oE '.{0,40}publicApiUrl.{0,260}' m.js | head -20
-          echo; echo "== tentativas"
-          for p in 'normas?urn=urn:lex:br:federal:lei:2021-04-01;14133&tipo_documento=maior-detalhe' 'normas?urn=urn:lex:br:federal:lei:2021-04-01;14133&tipo_documento=json' ; do echo "-- $p"; curl -sL -m 60 -o /tmp/p -w "%{http_code} %{size_download} %{content_type}\n" "https://normas.leg.br/api/public/$p"; head -c 1200 /tmp/p; echo; done
+          curl -sL -m 120 -o l.json 'https://normas.leg.br/api/public/normas?urn=urn:lex:br:federal:lei:2021-04-01;14133&tipo_documento=maior-detalhe'
+          python3 - <<'PY'
+          import json
+          j=json.load(open('l.json'))
+          print('TOP', list(j.keys()))
+          def walk(o,path='',d=0,seen=set()):
+              if d>7: return
+              if isinstance(o,dict):
+                  k=tuple(sorted(o.keys()))
+                  if (path,k) not in seen and len(seen)<60:
+                      seen.add((path,k)); print(path, '->', {kk:(str(v)[:120] if not isinstance(v,(dict,list)) else type(v).__name__) for kk,v in o.items()})
+                  for kk,v in o.items(): walk(v,path+'/'+kk,d+1,seen)
+              elif isinstance(o,list) and o:
+                  walk(o[0],path+'[0]',d+1,seen)
+                  if len(o)>3: walk(o[3],path+'[3]',d+1,seen)
+          walk(j)
+          PY

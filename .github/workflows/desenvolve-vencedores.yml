@@ -1,0 +1,27 @@
+name: Desenvolve - robo dos vencedores (PNCP)
+# Todo dia, 05:13 e 12:13 em Brasilia: contratos publicados nos ultimos 3 dias.
+# Para a carga inicial, rode manualmente com dias=30.
+on:
+  schedule:
+    - cron: '13 8 * * *'
+    - cron: '13 15 * * *'
+  push:
+    branches: [main]
+    paths: ['scripts/vencedores.py']
+  workflow_dispatch:
+    inputs:
+      dias:
+        description: 'quantos dias reler'
+        default: '3'
+permissions:
+  contents: write
+jobs:
+  vencedores:
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    steps:
+      - uses: actions/checkout@v4
+      - run: DIAS=${{ github.event.inputs.dias || '3' }} LIMITE_SEG=3000 python3 scripts/vencedores.py
+      - run: |
+          git config user.name "github-actions"; git config user.email "actions@github.com"
+          git add -A data/vencedores && (git diff --cached --quiet || (git commit -q -m "Robo dos vencedores: atualizacao" && (for i in 1 2 3 4 5; do git pull -q --rebase && git push -q && exit 0; sleep $((i*7)); done; exit 1)))

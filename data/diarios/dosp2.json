@@ -1,5 +1,5 @@
 {
-"quando": 1793882749.183931,
+"quando": 1794539686.3920398,
 "ent": {
 "687": {
 "uf": "CE",
@@ -24,6 +24,10 @@
 "1526": {
 "uf": "MS",
 "slug": "rio-brilhante"
+},
+"1629": {
+"uf": "MG",
+"slug": "borda-da-mata"
 },
 "1908": {
 "uf": "MG",
@@ -1193,6 +1197,10 @@
 "uf": "SP",
 "slug": "panorama-legislativo"
 },
+"5550": {
+"uf": "SP",
+"slug": "cedral-legislativo"
+},
 "5551": {
 "uf": "MA",
 "slug": "palmeirandia-legislativo"
@@ -1232,6 +1240,10 @@
 "5560": {
 "uf": "SP",
 "slug": "buritama-legislativo"
+},
+"5561": {
+"uf": "SP",
+"slug": "nova-alianca-legislativo"
 },
 "5563": {
 "uf": "MA",

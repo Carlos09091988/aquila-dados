@@ -59,7 +59,7 @@ def pdf_texto(b, limite=180):
 
 
 # ------------------------------------------------------------------ fontes
-SIGPUB = {'amm-mg': 'MG', 'famurs': 'RS', 'amp': 'PR', 'amupe': 'PE', 'femurn': 'RN', 'amm-mt': 'MT', 'famup': 'PB', 'agm': 'GO', 'fgm': 'GO', 'aprece': 'CE',
+SIGPUB = {'amm-mg': 'MG', 'famurs': 'RS', 'amp': 'PR', 'amupe': 'PE', 'femurn': 'RN', 'famup': 'PB', 'agm': 'GO', 'fgm': 'GO', 'aprece': 'CE',
           'famep': 'PA', 'ama': 'AL', 'aam': 'AM', 'ms': 'MS', 'arom': 'RO', 'appm': 'PI', 'amr': 'RR', 'amurc': 'BA', 'sergipe': 'SE', 'aemerj': 'RJ', 'apm': 'SP', 'bahia': 'BA'}
 
 
@@ -124,6 +124,72 @@ def docs_dosp():
     with cf.ThreadPoolExecutor(12) as ex:
         for r in ex.map(ed, list(ent.items())):
             out += r
+    return out
+
+
+def docs_domsc():
+    """DOM/SC (Consórcio CIGA): os dados abertos trazem o texto de cada ato, com município e entidade, em lotes de horário
+    (dados.ciga.sc.gov.br, conjunto domsc-publicacoes-de-MM-AAAA). Não precisa baixar PDF."""
+    import io, zipfile
+    out = []
+    meses = sorted({d[:7] for d in DATAS})
+    for m in meses:
+        y, mo = m.split('-')
+        t = get('https://dados.ciga.sc.gov.br/api/3/action/package_show?id=domsc-publicacoes-de-%s-%s' % (mo, y), timeout=60)
+        try:
+            res = json.loads(t or '{}').get('result', {}).get('resources', [])
+        except Exception:
+            res = []
+        for r in res:
+            mm = re.search(r'(\d{2})/(\d{2})/(\d{4})', r.get('name', ''))
+            if not mm:
+                continue
+            d = '%s-%s-%s' % (mm.group(3), mm.group(2), mm.group(1))
+            if d in DATAS and r.get('url'):
+                out.append({'fonte': 'Diário Oficial dos Municípios de SC (DOM/SC)', 'plat': 'domsc', 'uf': 'SC', 'municipio': '', 'data': d, 'url': r['url'], 'link': 'https://diariomunicipal.sc.gov.br/'})
+    return out
+
+
+def domsc_atos(b):
+    """Abre o ZIP do DOM/SC e devolve os atos já separados (texto sem HTML)."""
+    import io, zipfile
+    r = []
+    try:
+        z = zipfile.ZipFile(io.BytesIO(b))
+    except Exception:
+        return r
+    for nm in z.namelist():
+        if not nm.endswith('.json'):
+            continue
+        try:
+            j = json.loads(z.read(nm).decode('utf-8', 'replace'))
+        except Exception:
+            continue
+        itens = list(j.get('autopublicacoes', []) or [])
+        for e in j.get('edicoes_ordinarias_exclusivas', []) or []:
+            for a in e.get('atos', []) or []:
+                itens.append(dict(a, municipio=a.get('municipio') or e.get('municipio', '')))
+        for a in itens:
+            tx = str(a.get('texto') or '')
+            tx = html.unescape(re.sub(r'<[^>]+>', ' ', re.sub(r'(?is)<(head|script|style).*?</\1>', ' ', tx)))
+            tx = re.sub(r'[ \t]+', ' ', tx).strip()
+            if len(tx) < 40:
+                tx = (str(a.get('titulo') or '') + '\n' + tx).strip()
+            cod = str(a.get('codigo') or '')
+            r.append({'texto': tx, 'municipio': str(a.get('municipio') or '').strip(), 'link': 'https://diariomunicipal.sc.gov.br/atos/' + cod if cod else 'https://diariomunicipal.sc.gov.br/', 'cod': cod})
+    return r
+
+
+def docs_ammmt():
+    """Jornal Oficial AMM-MT (amm.diariomunicipal.org): uma ou mais edições em PDF por dia, com as prefeituras de MT.
+    O antigo endereço no SIGPub (diariomunicipal.com.br/amm-mt) está parado desde 2015."""
+    out = []
+    for d in sorted(DATAS):
+        h = get('https://amm.diariomunicipal.org/edicoes/?dates=' + d, timeout=60)
+        if not h:
+            log('amm-mt falhou', d); continue
+        for u in sorted(set(re.findall(r'https://cdn-amm\.diariomunicipal\.org/edicoes/%s/[^"\' <>]+?\.pdf' % d.replace('-', '/'), h))):
+            out.append({'fonte': 'Jornal Oficial dos Municípios de MT (AMM)', 'plat': 'ammmt', 'uf': 'MT', 'municipio': '', 'data': d, 'url': u, 'link': u})
     return out
 
 
@@ -613,9 +679,11 @@ RX_NAO = re.compile(r'HOMOLOG|ADJUDICA|EXTRATO|RATIFICA|RESULTADO|REVOGA|ANULA|A
 
 def atos(texto, doc):
     """Divide a edição em atos. SIGPub/Siganet terminam cada ato com 'Código Identificador'."""
+    if doc.get('atos_prontos') is not None:
+        return [a for a in doc['atos_prontos'] if len(a['texto']) >= 40]
     partes = re.split(r'C[oó]digo\s+Identificador\s*:?\s*([A-Z0-9]{6,12})', texto)
     r = []
-    if doc['plat'] == 'dompi':
+    if doc['plat'] == 'dompi' or (doc['plat'] == 'ammmt' and len(partes) <= 2):
         pos = [m.start() for m in re.finditer(r'(?m)^[ \t]*(?:PREFEITURA|C[AÂ]MARA)\s+MUNICIPAL\s+D[EOA]', texto)]
         pos = [0] + pos + [len(texto)]
         r = [(texto[pos[i]:pos[i + 1]], 'a%d' % i) for i in range(len(pos) - 1)]
@@ -723,7 +791,7 @@ def main():
     log('termos', len(termos), 'variantes', len(busca), 'datas', sorted(DATAS))
 
     docs = []
-    fontes = (('sigpub', docs_sigpub), ('famem', docs_famem), ('dosp', docs_dosp), ('dompi', docs_dompi), ('doem', docs_doem), ('atende', docs_atende)) + tuple((p, (lambda p=p: docs_plataforma(p))) for p in PLATAFORMAS) + (('io', docs_io), ('doeto', docs_doeto))
+    fontes = (('sigpub', docs_sigpub), ('domsc', docs_domsc), ('ammmt', docs_ammmt), ('famem', docs_famem), ('dosp', docs_dosp), ('dompi', docs_dompi), ('doem', docs_doem), ('atende', docs_atende)) + tuple((p, (lambda p=p: docs_plataforma(p))) for p in PLATAFORMAS) + (('io', docs_io), ('doeto', docs_doeto))
     if os.environ.get('SO_FONTES'):
         fontes = tuple(f for f in fontes if f[0] in os.environ['SO_FONTES'].split(','))
     if os.environ.get('QD_DB'):
@@ -751,9 +819,12 @@ def main():
                 t = html.unescape(re.sub(r'<[^>]+>', ' ', re.sub(r'(?is)<(script|style).*?</\1>', ' ', t)))
             return doc, t
         b = get(doc['url'], timeout=120, binario=True)
+        if doc['plat'] == 'domsc':
+            at = domsc_atos(b) if b and b[:2] == b'PK' else []
+            return (dict(doc, atos_prontos=at), 'domsc') if at else (doc, None)
         if not b or b[:4] != b'%PDF':
             return doc, None
-        return doc, pdf_texto(b, 900 if doc['plat'] in ('dompi', 'doeto') else 180)
+        return doc, pdf_texto(b, 900 if doc['plat'] in ('dompi', 'doeto', 'ammmt') else 180)
 
     feitos = 0; lidos = {}
     with cf.ThreadPoolExecutor(6) as ex:
@@ -870,7 +941,7 @@ def main():
         ant = {k: d for k, d in ant.items() if d >= lim}
         json.dump({'quando': time.time(), 'munis': ant}, open(arq, 'w'), ensure_ascii=False, indent=0)
         log('municípios lidos (90 dias)', len(ant))
-    json.dump({'quando': dt.datetime.now().isoformat(), 'edicoes': len(docs), 'lidas': feitos, 'avisos': len(avisos), 'citacoes': len(achados), 'por_fonte': {p: sum(1 for d in docs if d['plat'] == p) for p in ('sigpub', 'famem', 'dosp', 'dompi', 'doem', 'atende', 'qd')}}, open(os.path.join(DADOS, 'ultimo%s.json' % ('-qd-' + os.environ.get('GRUPO', '') if os.environ.get('QD_DB') else '')), 'w'), indent=1)
+    json.dump({'quando': dt.datetime.now().isoformat(), 'edicoes': len(docs), 'lidas': feitos, 'avisos': len(avisos), 'citacoes': len(achados), 'por_fonte': {p: sum(1 for d in docs if d['plat'] == p) for p in ('sigpub', 'domsc', 'ammmt', 'famem', 'dosp', 'dompi', 'doem', 'atende', 'qd')}}, open(os.path.join(DADOS, 'ultimo%s.json' % ('-qd-' + os.environ.get('GRUPO', '') if os.environ.get('QD_DB') else '')), 'w'), indent=1)
 
 
 if __name__ == '__main__':

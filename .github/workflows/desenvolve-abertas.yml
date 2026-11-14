@@ -1,0 +1,25 @@
+name: Desenvolve - robo das licitacoes abertas (PNCP)
+# A cada 3 horas: copia pela API oficial do PNCP todas as licitacoes com proposta aberta.
+# O site da Desenvolve importa data/abertas/ e faz a busca da consulta gratis na propria base.
+on:
+  schedule:
+    - cron: '37 */3 * * *'
+  push:
+    branches: [main]
+    paths: ['scripts/abertas.py']
+  workflow_dispatch:
+permissions:
+  contents: write
+concurrency:
+  group: abertas
+  cancel-in-progress: false
+jobs:
+  abertas:
+    runs-on: ubuntu-latest
+    timeout-minutes: 55
+    steps:
+      - uses: actions/checkout@v4
+      - run: LIMITE_SEG=2700 THREADS=10 python3 scripts/abertas.py
+      - run: |
+          git config user.name "github-actions"; git config user.email "actions@github.com"
+          git add -A data/abertas && (git diff --cached --quiet || (git commit -q -m "Robo das licitacoes abertas: atualizacao" && (for i in 1 2 3 4 5; do git pull -q --rebase && git push -q && exit 0; sleep $((i*7)); done; exit 1)))

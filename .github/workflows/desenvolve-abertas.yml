@@ -1,0 +1,23 @@
+name: Desenvolve - copia das licitacoes abertas (passos no site)
+# A cada hora mantem a conexao aberta com o site enquanto ele copia, pela API oficial do PNCP,
+# as licitacoes com proposta aberta (a hospedagem corta processos em segundo plano).
+# Cada chamada roda cerca de 40 s; para quando o site responde que a copia esta pronta.
+on:
+  schedule:
+    - cron: '23 * * * *'
+  workflow_dispatch:
+concurrency:
+  group: abertas
+  cancel-in-progress: false
+jobs:
+  passos:
+    runs-on: ubuntu-latest
+    timeout-minutes: 58
+    steps:
+      - run: |
+          for i in $(seq 1 60); do
+            r=$(curl -s -X POST --max-time 120 "https://desenvolveestrategias.com.br/wp-json/desenvolve/v1/abertas/passo" || true)
+            echo "$i $r"
+            case "$r" in *'"pronta":1'*) exit 0;; esac
+            case "$r" in *ocupado*) sleep 30;; esac
+          done

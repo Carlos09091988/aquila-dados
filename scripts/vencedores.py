@@ -123,6 +123,7 @@ def main():
     n = DIAS if len(dias) >= 20 else max(DIAS, GUARDA)   # sem a base completa: recarrega os últimos 30 dias
     fila = [HOJE - dt.timedelta(days=k) for k in range(n)]
     fila += [dt.date.fromisoformat(k) for k in incompletos if dt.date.fromisoformat(k) not in fila]
+    fila += [HOJE - dt.timedelta(days=k) for k in range(3, GUARDA) if (HOJE - dt.timedelta(days=k)).isoformat() not in dias]   # dias que ficaram de fora
     for d in fila:
         if time.time() - T0 > LIMITE_SEG:
             break

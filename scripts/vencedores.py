@@ -91,20 +91,24 @@ def dia(d):
     j = get(url(1))
     if j is None:
         return None
-    pags, total = [j], j.get('totalPaginas') or 0
+    pags, total, falta = [j], j.get('totalPaginas') or 0, []
     if total > 1:
-        with ThreadPoolExecutor(max_workers=4) as ex:
-            res = list(ex.map(lambda p: get(url(p)), range(2, total + 1)))
-        if sum(1 for r in res if r is None) > max(2, total // 10):
-            return None
-        pags += [r for r in res if r]
+        falta = list(range(2, total + 1))
+        for rodada in range(3):   # o PNCP falha em páginas soltas: tenta de novo só as que faltaram
+            with ThreadPoolExecutor(max_workers=4 if rodada == 0 else 2) as ex:
+                res = list(ex.map(lambda p: (p, get(url(p))), falta))
+            pags += [r for _, r in res if r]
+            falta = [p for p, r in res if r is None]
+            if not falta:
+                break
+            time.sleep(20 * (rodada + 1))
     o = {}
     for pg in pags:
         for c in pg.get('data') or []:
             x = item(c)
             if x and x[0]:
                 o[x[0]] = x
-    return sorted(o.values(), key=lambda x: -x[10])
+    return sorted(o.values(), key=lambda x: -x[10]), len(falta)
 
 
 def main():
@@ -115,16 +119,27 @@ def main():
     except Exception:
         idx = {}
     dias = idx.get('dias', {})
-    n = DIAS if dias else max(DIAS, GUARDA)   # primeira rodada: carga dos últimos 30 dias
-    for k in range(n):
+    incompletos = sorted((k for k, v in dias.items() if v.get('faltam_paginas')), reverse=True)
+    n = DIAS if len(dias) >= 20 else max(DIAS, GUARDA)   # sem a base completa: recarrega os últimos 30 dias
+    fila = [HOJE - dt.timedelta(days=k) for k in range(n)]
+    fila += [dt.date.fromisoformat(k) for k in incompletos if dt.date.fromisoformat(k) not in fila]
+    for d in fila:
         if time.time() - T0 > LIMITE_SEG:
             break
-        d = HOJE - dt.timedelta(days=k)
-        lst = dia(d)
-        if lst is None:
+        r = dia(d)
+        if r is None:
             print(d, 'PNCP não respondeu; fica para a próxima rodada', flush=True)
             continue
+        lst, falta = r
         ds = d.isoformat()
+        if falta:   # dia incompleto: soma ao que já estava salvo em vez de apagar
+            ant = {}
+            for f in sorted(os.listdir(pasta)):
+                if f.startswith(ds + '-'):
+                    for x in json.load(open(os.path.join(pasta, f), encoding='utf-8')):
+                        ant[x[0]] = x
+            ant.update({x[0]: x for x in lst})
+            lst = sorted(ant.values(), key=lambda x: -x[10])
         for f in os.listdir(pasta):
             if f.startswith(ds + '-'):
                 os.remove(os.path.join(pasta, f))
@@ -132,8 +147,8 @@ def main():
         for p in range(partes):
             with open(os.path.join(pasta, f'{ds}-{p + 1}.json'), 'w', encoding='utf-8') as fh:
                 json.dump(lst[p * PARTE:(p + 1) * PARTE], fh, ensure_ascii=False, separators=(',', ':'))
-        dias[ds] = {'n': len(lst), 'partes': partes, 'valor': round(sum(x[10] for x in lst), 2), 'lido': dt.datetime.now().isoformat(timespec='minutes')}
-        print(ds, len(lst), 'contratos', flush=True)
+        dias[ds] = {'n': len(lst), 'partes': partes, 'valor': round(sum(x[10] for x in lst), 2), 'lido': dt.datetime.now().isoformat(timespec='minutes'), 'faltam_paginas': falta}
+        print(ds, len(lst), 'contratos', ('(faltaram %d páginas)' % falta) if falta else '', flush=True)
     corte = (HOJE - dt.timedelta(days=GUARDA)).isoformat()
     for f in os.listdir(pasta):
         if f[:10] < corte:
